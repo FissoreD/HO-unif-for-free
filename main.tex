@@ -1,0 +1,244 @@
+\documentclass{rapport}
+
+\usepackage{myTools}
+
+\usepackage{macros}
+
+\author{Davide Fissore}
+\title{Report - HO unification in Elpi} 
+\date{January 29, 2024}
+
+\xspaceaddexceptions{]\}}
+
+\begin{document}
+
+\maketitle
+
+\def\elpi{\proglang{elpi}}
+\def\coqelpi{\proglang{coq-elpi}}
+\def\lambdaprolog{\proglang{$\lambda$-prolog}}
+\def\coq{\proglang{coq}}
+\newcommand*{\eqtau}{\ensuremath{\mathrel{\overset{\mathrm{\tau}}{=}}}}
+
+
+\section{Higher-order unification in \texorpdfstring{$L_\lambda$}{L\_lambda}}
+
+Higher-order unification is a unification problem known to be undecidable. The
+goal is to determine a most general unifier between two lambda terms, where at
+least one of contain a sub-term $F$ applied to a non empty list of arguments
+$a_1,\dots,a_n$ and $F$ is a variable. Some researches have been done in order to
+identify some easy patterns where it is possible to solve this kind of
+unification.
+
+In \cite{miller1991}, D. Miller provides a unification algorithm (the function
+$\eqtau$) for higher-order variable when they are in the so-called pattern
+fragment. 
+
+\section{From the object to the target language}
+
+Higher order unification becomes difficult when we try to unify terms
+represented in the syntax of an object language embedded inside another
+language. This kind of interaction between different languages is something that
+happens quite often in \coqelpi, a \coq plugin embedding \elpi.
+
+\elpi is a variant of \lambdaprolog equipped with constraint handling rules. On
+the other hand, \coq is a proof assistant used to reason about mathematical
+properties and certify them thanks to its typing system.
+
+Both languages allows to quantify higher-order variables and are able to perform
+higher-order unification when needed. However, when we want to reason with the
+\coq unification inside \elpi, it is less evident to reproduce the unification
+between two terms. With this paper, we want to provide a framework explaining
+how the unification of an object language (\coq in our case) can be expressed in
+the targeted language (\elpi in our case).
+
+Without any loss of generality, in \cref{table:coq2elpi} we present a subset of
+the terms in the object language and for each term we give its representation in
+the targeted language.
+
+  
+\begin{table}
+  \centering
+  \begin{tabular}{c||c|c}
+  Term        & Obj. lang.                    & Targ. lang.                                   \\
+  \hline\hline
+  Constant    & a                             & `a'                                     \\
+  Application & f a\_1 a\_2 ... a\_n          & app{[}`f', `a\_1', `a\_2', ..., `a\_n'{]}     \\
+  Abstraction & fun (x : T) $\Rightarrow$ f x & fun `x' T (x\textbackslash app{[}`f', `x'{]}) \\
+  Variable    & X                             & X                                             \\
+  \end{tabular}
+  \caption{Obj. lang. terms to targ. lang. terms representation}
+  \label{table:coq2elpi}
+\end{table}
+
+\section{First-order unification}
+
+Just as an introduction, we briefly show some small example of unification
+between terms with only first-order unification variables. This way, we would
+like the reader to become familiar between the communication of the two
+languages.
+
+Let's take as an example the following unification problem in the obj. lang.: 
+
+\begin{equation}
+  f\ x\ 1 \eqtau f\ Y\ Z
+  \label{eq:unif-fo-coq}
+\end{equation}
+
+\noindent where $f$, $x$ and $1$ are defined constant and $Y$ and $Z$ are both
+unification variables. By convention we use upper case letter for quantified
+variables. Moreover, for this first representation we do not really focus on the
+type of the manipulated objects, since they do not condition the unification
+algorithm.
+
+It is quite evident that a valid substitution for \cref{eq:unif-fo-coq} is $\theta =
+\{Y \mapsto `x', Z \mapsto `1'\}$. Now let's consider the same problem translated in
+the targeted language.
+
+\begin{equation}
+  app[`f', `x', `1'] \eqtau app[`f', Y, Z]
+  \label{eq:unif-fo-elpi}
+\end{equation}
+
+The unification of these terms is again quite simple since it is sufficient to
+do a simple matching sub-term by sub-term so that variables can be instantiated.
+We can therefore note that the same substitution $\theta$ will be produced.
+
+\section{Higher-order unification}
+
+The unification problem treated before was enough easy to be correctly
+understood by both language representation. We want now to go a bit further and
+reason with a more complex problem where a variable is a function of
+higher-order. 
+
+We propose two different higher-order unification problem in the following
+equations where, in the former we have rigid-flexible unification and in the
+latter we have a flexible-flexible unification.
+
+\begin{equation}
+  f\ x\ 1 \eqtau F\ x
+  \label{eq:unif-ho-coq1}
+\end{equation}
+
+\begin{equation}
+  G\ x\ y \eqtau H\ y\ x
+  \label{eq:unif-ho-coq2}
+\end{equation}
+
+The two substitutions for the previous examples are $\theta_1 = \{F \mapsto fun\
+x \Rightarrow f\ x\ 1\}$ and $\theta_2 = \{H \mapsto fun\ y\ x \Rightarrow G\ x\
+y\}$. We can note that to be in the pattern fragment, a functional variable
+should be applied to distinct names.
+
+If we translate the problem before in the target language, the unification
+problems showed above become
+
+\begin{equation}
+  app[`f',\ `x',\ `1'] \eqtau app[F,\ `x']
+  \label{eq:unif-ho-elpi1}
+\end{equation}
+
+\begin{equation}
+  app[G,\ `x',\ `y'] \eqtau app[H,\ `y',\ `x']
+  \label{eq:unif-ho-elpi2}
+\end{equation}
+
+Now, the new unification problems are no more expressed in the logic of the
+targeted language and, therefore, in both cases, unification fails. The
+procedure we can adopt in order to transform a higher-order unification problem
+of the object language into the logic of the targeted language is to transform
+the entry of the problem in a problem which can be understood by the targeted
+language. The procedure is made of two steps:
+
+\begin{enumerate}
+  \item In the first place, we need to recognize the structure of the pattern
+        fragment expressed in the term received in entry. This means that we
+        need to find all the sub-terms of the form `app[X | L]', where `X' is
+        a flexible variable and `L' is a list of distinct names.
+  \item For any sub-term representing a higher-order unification in the object 
+        language, we build a fresh variable `X\texttt{'}' such that the names 
+        `L' are not in the scope of `X\texttt{'}', we call `X\texttt{'}' the 
+        twin variable of `X'.
+  \item We solve the new goal where each pattern fragment problem is replaced
+        with a problem using twin variables and after each of these problems, we
+        add a new premise linking these twin variables. The linking is done
+        using the following criteria: for each abstraction in the resulting term
+        `X\texttt{'}', unify recursively `X' to a lambda abstraction in the
+        object language.
+\end{enumerate}
+
+The previous algorithm can be applied to \cref{eq:unif-ho-coq1,eq:unif-ho-coq2}
+to provide the wanting solution. In particular, \cref{eq:unif-ho-coq1} is
+transformed into the unification problem:
+
+\begin{equation}
+  f\ x\ 1 \eqtau F'\ x,\ ho-link\ F'\ F
+  \label{eq:unif-ho-elpi1'}
+\end{equation}
+
+\begin{equation}
+  G'\ x\ y \eqtau H'\ y\ x, ho-link\ G'\ G, ho-link\ H'\ H
+  \label{eq:unif-ho-elpi2'}
+\end{equation}
+
+For instance, the former unification problem produce the substitution $\theta_1
+= \{F' \mapsto (x\backslash\ f\ x\ 1)\}$. The ho-link function is then applied
+to transform the substitution of $F'$ into the corresponding term of the object
+langue: $F \mapsto fun \_\ \_\ (x\backslash\ f\ x\ 1)$ which correspond to the
+term $fun\ x \Rightarrow f\ x\ 1$. The latter unification problem gives the
+substitution $\theta_2 = \{H' \mapsto (y\ x \backslash G'\ x\ y)\}$ in the
+targeted language. The first ho-link simply unify $G$ to $G'$ since $G'$ is
+flexible, whereas $H$ is mapped to $fun\ y\ x \Rightarrow G'\ x\ y$.
+
+The role of the ho-link is not only to instantiate the higher-order variable F
+of the object language when F is flexible and the twin variable in the targeted
+language is rigid. It may happen that F has already been partially instantiated.
+The unification problem below gives such an example in the object language:
+
+\begin{equation}
+  G\ x\ y \eqtau H\ y\ x, H\ x\ y \eqtau x 
+  \label{eq:unif-ho-coq4}
+\end{equation}
+
+\noindent producing the following substitution $\theta = \{G \mapsto (fun\ x\
+y\Rightarrow x); F \mapsto (fun\ x\ y\Rightarrow y)\}$. This unification problem
+is translated into:
+
+\begin{equation}
+  \begin{split}
+    G'\ x\ y &\eqtau H'\ y\ x,\ ho-link\ G'\ G,\ ho-link\ H'\ H\\
+    H''\ x\ y &\eqtau x,\ ho-link\ H''\ H
+  \end{split}
+  \label{eq:unif-ho-elpi4}
+\end{equation}
+
+\noindent The first line produces the same substitution as before: $\theta = \{H'
+\mapsto (x\ y \backslash G'\ y\ x)\}$, where $G'$ is unified with $G$ and $H$ is
+instantiated to <<$fun\ x\ y \Rightarrow G'\ y\ x$>>. While executing the second
+line, we see $H''$ instantiated to the function $(x\ y\backslash x)$ in the
+targeted language. The last ho-link is charged to link $H''$ with $H$ but this
+time $H$ has already been partially instantiated. In particular the call to this
+ho-link is as follows: $ho-link\ (x\ y\backslash x)\
+(prod\ \_\ \_\ (x\backslash\ prod\ \_\ \_\ (y\backslash\ app [G', x, y])))$.
+
+Since the two arguments have rigid heads, we start to traverse both terms
+recursively by eating each lambda-abstraction. At the end of this procedure, the
+remaining sub-terms are \todo{in our code this example though the eta mess
+error} now $x$ and $app[G', x, y]$, 
+
+\section{HO unification in typed languages}
+
+TODO: ho-link need the type of original term to produce a typed term in the
+object language, example: f x 1 = F x => type of F = (A -> Prof) if type of f is 
+(A -> nat -> Prop)
+
+\section{Proof automation from \coq to \elpi}
+
+TODO: representing a logic programming language into an other: compile rules
+keeping higher order unification
+
+\subsection{Dealing with FO \textit{non-syntactical} unification}
+
+\subsection{Dealing with HO unification}
+
+\end{document}

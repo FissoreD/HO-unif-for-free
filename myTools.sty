@@ -1,0 +1,75 @@
+\usepackage{mathtools}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+
+\usepackage{xcolor}
+\usepackage{latexsym,amsmath,amssymb,multicol,booktabs,calligra}
+\usepackage[capitalise,noabbrev,nameinlink]{cleveref}
+\usepackage{graphicx,pstricks,listings,stackengine}
+% \usetikzlibrary{positioning}
+
+\usepackage{lmodern}
+\usepackage[english]{babel}
+\usepackage{calligra}
+\usepackage[outputdir=".aux", newfloat]{minted}
+\usepackage{changepage}
+\usepackage{calc}
+\usepackage[lined,ruled]{algorithm2e}
+\usepackage{xspace}
+
+\RequirePackage{geometry,tikz,afterpage}
+\usetikzlibrary{calc,math}
+\usepackage{csquotes}
+
+% To read csv files
+% \usepackage{filecontents}
+% To plot graphs
+% \usepackage{pgfplots}
+% \pgfplotsset{compat=1.7}
+\usepackage{subcaption}
+\usepackage{caption}
+\usepackage{tcolorbox}
+
+\captionsetup[table]{position=below}
+
+\def\etc{\textit{etc.}}
+
+\renewcommand{\MintedPygmentize}{./pygmentize.py}
+
+\tcbuselibrary{breakable, skins}
+
+\definecolor{LightGray}{gray}{0.9}
+\setminted{
+  numbersep=3pt,
+  % linenos=true,
+  autogobble,
+  breaklines,
+  % frame=single,
+  % bgcolor=LightGray
+}
+\usemintedstyle{emacs}
+
+\newenvironment{code}{\captionsetup{type=listing}}{}
+\SetupFloatingEnvironment{listing}{name=Listing}
+
+\let\oldcenter\center
+\let\oldendcenter\endcenter
+\renewenvironment{center}{\setlength\topsep{2pt}\oldcenter}{\oldendcenter}
+
+\usepackage{enumitem}
+\setlist[itemize]{noitemsep, topsep=2pt}
+\setlist[description]{noitemsep, topsep=2pt}
+
+\newlist{inlinelist}{enumerate*}{1}
+\setlist*[inlinelist,1]{%
+  label=(\roman*),
+}
+
+% \crefname{algocf}{alg.}{algs.}
+\Crefname{algocf}{Algorithm}{Algorithms}
+
+\usepackage{mathabx}
+\usepackage{bussproofs}
+\usepackage{relsize}%
+
+\usepackage{pifont}% http://ctan.org/pkg/pifont
