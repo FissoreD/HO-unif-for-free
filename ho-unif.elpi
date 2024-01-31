@@ -1,0 +1,150 @@
+kind tm type.
+
+type app list tm -> tm.
+type abs (tm -> tm) -> tm.
+type uv int -> tm.
+type const int -> tm.
+
+typeabbrev theta (list tm).
+
+pred copy i:tm, o:tm.
+copy (app L) (app L') :- std.map L copy L'.
+copy (abs T) (abs T') :- pi x\ copy (T x) (T' x).
+copy (uv N) (uv N).
+copy (const C) (const C).
+copy X X :- name X, !.
+copy L _ :- halt "Error in copy" L.
+
+pred bind i:list tm, i:tm, o:tm.
+bind [] T T' :- copy T T'.
+bind [X | TL] T (abs T') :-
+  pi x\ copy X x => bind TL T (T' x).
+
+pred nth i:int, i:tm, i:theta, o:theta.
+nth 0 T [] [T] :- !.
+% TODO: nth should be unification between X and T ?
+nth 0 T [X | TL] [T | TL] :- !, std.assert! (X = T) "nth: Error in unificaton".
+
+nth N T [] [X_|TL] :- N > 0, !, M is N - 1, nth M T [] TL.
+nth N T [X|TL] [X|TL'] :- N > 0, !, M is N - 1, nth M T TL TL'.
+
+pred pattern-fragment i:list tm.
+pattern-fragment L :- distinct_names L.
+
+pred mk-app i:tm, i:list tm, o:tm.
+mk-app A [] A :- !.
+mk-app (abs Bo) [H | L] R :- !,
+  mk-app (Bo H) L R.
+mk-app (app A) L (app X) :- !, std.append A L X.
+mk-app HD TL (app [HD | TL]).
+
+pred unif i:tm, i:tm, i:theta, o:theta.
+% (Uvar, T)
+unif (uv N) Tm T T' :- !,
+  nth N Tm T T'.
+
+% (AppUvar, T)
+unif (app [uv N | L]) Tm T T' :- !,
+  pattern-fragment L, 
+  bind L Tm Tm',
+  nth N Tm' T T'.
+
+% (Beta, T)
+unif (app [abs B | L]) X' T T' :- !,
+  mk-app (abs B) L X,
+  unif X X' T T'.
+
+% (Eta, T)
+unif (abs X) X' T T' :-
+  not (X' = abs _), !,
+  pi x\ sigma X''\
+    mk-app X' [x] X'',
+    unif (X x) X'' T T'.
+
+% Reciproque
+
+% (T, Uvar) 
+unif Tm (uv N) T T' :- !,
+  unif (uv N) Tm T T'.
+
+% (T, AppUvar)
+unif Tm (app [uv N | L]) T T' :- !,
+  unif (app [uv N | L]) Tm T T'.
+
+% (T, Beta)
+unif X' (app [abs B | L]) T T' :- !,
+  unif (app [abs B | L]) X' T T'.
+
+% (T, Eta)
+unif X' (abs X) T T' :-
+  not (X' = abs _), !,
+  unif (abs X) X' T T'.
+
+% Classic
+unif (app L) (app L') T T' :-
+  std.fold2 L L' T unif T'. 
+unif (abs L) (abs L') T T' :-
+  pi x\ unif (L x) (L' x) T T'.
+unif (const C) (const C) T T.
+unif A A T T :- name A, !.
+
+unif A _ _ _ :- halt A.
+
+pred test-bind.
+test-bind :-
+  pi x y z\ sigma T\
+    T =  app [const 0, (abs w\ app [x, w, uv 0, app [uv 1, x, y]])],
+    bind [x, y, z] T R,
+    print R.
+
+pred test-unif-beta.
+% (λx. f x) 1 = f 1
+test-unif-beta :-
+    T1 = app [abs (w\ app [const 0, w]), const 1],
+    T2 = app [const 0, const 1],
+    unif T1 T2 [] T,
+    print T2 T.
+
+pred test-unif-1.
+% F x y = G y x
+test-unif-1 :-
+  pi x y\ sigma T1 T2\
+    T1 = app [uv 1, x, y],
+    T2 = app [uv 2, y, x],
+    unif T1 T2 [] T,
+    print "Final Theta = " T.
+
+pred test-unif-2.
+% F x y = 2
+test-unif-2 :-
+  pi x y\ sigma T1 T2\
+    T1 = app [uv 1, x, y],
+    T2 = const 2,
+    unif T1 T2 [] T,
+    print "Final Theta = " T.
+
+pred test-unif-3.
+% ETA : (λ x. f x) = f
+test-unif-3 :-
+  pi x y\ sigma T1 T2\
+    T1 = abs (x\ app[const 0, x]),
+    T2 = const 0,
+    unif T1 T2 [] T,
+    print "Final Theta = " T.
+
+pred test-unif-4.
+test-unif-4 :-
+  pi x y\ sigma T1 T2 T3\
+    T1 = app [uv 1, x, y],
+    T2 = app [uv 2, y, x],
+    T3 = x,
+    unif T1 T2 [] T,
+    print "First Theta" T,
+    unif T2 T3 T T',
+    print "Final Theta = " T'.
+
+
+main :-
+  test-unif-4.
+  % test-bind,
+  % print "CIAO".
