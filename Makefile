@@ -10,3 +10,6 @@ list: $(MYDIR)/*.tex
 		cd - ; \
 		${BUILD_TEX} $${file} ; \
 	done
+
+test:
+	elpi -test main.elpi

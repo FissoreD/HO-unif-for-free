@@ -1,0 +1,27 @@
+kind nat type.
+type z nat.
+type s nat -> nat.
+
+kind bool type.
+type tt bool.
+type ff bool.
+
+type assigned? nat -> list A -> A -> o.
+assigned? z (X :: _) Y  :- not (var X), X = Y.
+assigned? (s N) (_ :: L) X :- assigned? N L X.
+
+type assign nat -> list A -> A -> o.
+assign z (X :: _) Y  :- std.assert! (var X) "assign", X = Y.
+assign (s N) (_ :: L) X :- assign N L X.
+
+kind test type -> type.
+type test A -> A -> bool -> test A.
+type declare-test (test A -> o) -> test A -> o.
+
+type runtests list o -> bool -> o.
+runtests [] B :- var B, print "ALL GOOD!".
+runtests [] _ :- print "SOME TEST FAIL!", fail.
+runtests [declare-test F (test L R B as T)|TS] ERR :-
+  if (B = tt) (Rel = "===") (Rel = "=/="),
+  if (F T) (print "ok" L Rel R, runtests TS ERR)
+           (print "\n<<<<<\nko" L Rel R "\n>>>>>\n", ERR = tt, runtests TS ERR).
