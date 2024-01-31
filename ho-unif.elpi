@@ -105,6 +105,14 @@ test-unif-beta :-
     unif T1 T2 [] T,
     print T2 T.
 
+pred test-unif-beta-1.
+% (λx. x) 1 = 1
+test-unif-beta-1 :-
+    T1 = app [abs (w\ w), const 1],
+    T2 = const 1,
+    unif T1 T2 [] T,
+    print T2 T.
+
 pred test-unif-1.
 % F x y = G y x
 test-unif-1 :-
@@ -133,6 +141,7 @@ test-unif-3 :-
     print "Final Theta = " T.
 
 pred test-unif-4.
+% X x y = G y x, G y x = x
 test-unif-4 :-
   pi x y\ sigma T1 T2 T3\
     T1 = app [uv 1, x, y],
@@ -143,8 +152,51 @@ test-unif-4 :-
     unif T2 T3 T T',
     print "Final Theta = " T'.
 
+pred test-unif-5.
+% X x y = G y x, x = G y x
+test-unif-5 :-
+  pi x y\ sigma T1 T2 T3\
+    T1 = app [uv 1, x, y],
+    T2 = app [uv 2, y, x],
+    T3 = x,
+    unif T1 T2 [] T,
+    print "First Theta" T,
+    unif T3 T2 T T',
+    print "Final Theta = " T'.
+
+pred test-unif-6.
+% X x y = G y x, G y x = x, x = G y x
+test-unif-6 :-
+  pi x y\ sigma T1 T2 T3\
+    T1 = app [uv 1, x, y],
+    T2 = app [uv 2, y, x],
+    T3 = x,
+    unif T1 T2 [] T,
+    print "First Theta" T,
+    unif T3 T2 T T',
+    print "Second Theta" T',
+    unif T2 T3 T' T'',
+    print "Final Theta = " T''.
+
+pred test-unif-7.
+% λx y. F x y = λ x y. f y 
+test-unif-7 :-
+  pi f\ sigma T1 T2 T\
+  T1 = (abs x\ abs y\ app [uv 0, x, y]),
+  T2 = (abs x\ abs y\ app [f, y]),
+  unif T1 T2 [] T,
+  print T.
+
+pred test-unif-8.
+% X a = X
+test-unif-8 :-
+  pi f\ sigma T1 T2\
+    T1 = app [uv 1, const 0],
+    T2 = app [uv 1],
+    not (unif T1 T2 [] _),
+    print "Good: it fails".
 
 main :-
-  test-unif-4.
+  test-unif-beta-1.
   % test-bind,
   % print "CIAO".
