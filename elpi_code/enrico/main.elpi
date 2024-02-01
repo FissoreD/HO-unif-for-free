@@ -1,8 +1,8 @@
 accumulate common.
-accumulate unif-fo.
-accumulate unif-fo-test.
-accumulate unif-ho-naive.
-accumulate unif-ho-naive-test.
+accumulate unif-1-fo.
+accumulate unif-1-fo-test.
+accumulate unif-2-ho-naive.
+accumulate unif-2-ho-naive-test.
 
 main :-
   std.findall (declare-test _ _) L,
