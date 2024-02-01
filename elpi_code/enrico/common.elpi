@@ -33,7 +33,7 @@ type all list o -> o.
 all [].
 all [P|PS] :- P, all PS.
 
-type len list a -> nat -> o.
+type len list A -> nat -> o.
 len [] z.
 len [_|L] (s X) :- len L X.
 

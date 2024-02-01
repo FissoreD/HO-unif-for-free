@@ -21,6 +21,7 @@ beta A [] A.
 beta (lam Bo) [H | L] R :- beta (Bo H) L R.
 beta (app A) L (app X) :- std.append A L X.
 beta (uv N A) L (uv N X) :- std.append A L X.
+beta c ... app
 
 type occ nat -> tm -> o.
 occ N (uv N _).
@@ -38,7 +39,8 @@ bind [] T T' :- copy T T'.
 bind [X | TL] T (lam T') :- pi x\ copy X x => bind TL T (T' x).
 
 type equal tm -> tm -> list tm -> o.
-equal (uv N Args) T1 S :- assigned? N S F, beta F Args T, equal T T1 S.
+equal A B S :- print A "===?===" B, fail.
+equal (uv N Args) T1 S :- std.spy(assigned? N S F), std.spy(beta F Args T), equal T T1 S.
 equal T1 (uv N Args) S :- assigned? N S F, beta F Args T, equal T1 T S.
 equal (app L1) (app L2) S :- forall2 (x\y\equal x y S) L1 L2.
 equal (lam F1) (lam F2) S :- pi x\ equal x x S => equal (F1 x) (F2 x) S.
@@ -91,7 +93,20 @@ type ho-link nat -> tm -> A -> o.
 ho-link z T T.
 ho-link (s A) (lam F) (x\X x) :- pi x\ ho-link A (F x) (X x).
 
+type ho-link-eta nat -> tm -> A -> o.
 ho-link-eta A T X :- ho-link A T' X, eta-contract T' T.
+
+type eta-contract tm -> tm -> o.
+eta-contract (c X) (c X).
+eta-contract (app L) (app L1) :- forall2 eta-contract L L1.
+eta-contract (lam F) T :- contract [] (lam F) T.
+eta-contract (lam F) (lam F1) :- pi x\ eta-contract x x => eta-contract (F x) (F1 x).
+eta-contract (uv X Args) (uv X Args).
+
+type contract list tm -> tm -> tm -> o.
+contract L (lam F) T :- pi x\ contract [x|L] (F x) T. % also checks H Prefix does not see x
+contract L (app [H|Args]) T :- std.rev L LRev, std.appendR Prefix LRev Args,
+  if (Prefix = []) (T = H) (T = app [H|Prefix]).
 
 }
 
