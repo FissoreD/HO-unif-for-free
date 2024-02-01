@@ -13,8 +13,40 @@ type ho3.test test ho3.tm -> o.
 ho3.test (test L R tt) :- ho3.unif L R S, std.assert! (ho3.equal L R S) "bug". %, print "Sigma=" S.
 ho3.test (test L R ff) :- not(ho3.unif L R _).
 
+type ho3c1.test test ho3.tm -> o.
+ho3c1.test (test L R tt) :- std.do! [
+  comp1.comp L L1 SO SE,
+  comp1.comp R R1 SO SE,
+  L1 = R1,
+  print SO SE,
+  std.assert! (ho3.equal L R SO) "bug",
+].
+ho3c1.test (test L R ff) :-
+  comp1.comp L L1 SO SE,
+  comp1.comp R R1 SO SE,
+  not(L1 = R1).
+
+/*
+type ho3c2.test test ho3.tm -> o.
+ho3c2.test (test L R tt) :- std.spy-do! [
+  comp2.comp L L1 SO [] Links',
+  comp2.comp R R1 SO Links' Links,
+  L1 = R1,
+  Links,
+  print SO,
+  std.assert! (ho3.equal L R SO) "bug",
+].
+ho3c2.test (test L R ff) :-
+  comp2.comp L L1 SO [] Links',
+  comp2.comp R R1 SO Links' Links,
+  not(L1 = R1, Links).
+*/
+
 macro @ok X Y :- declare-test ho3.test (test X Y tt).
 macro @ko X Y :- declare-test ho3.test (test X Y ff).
+
+macro @okc1 X Y :- declare-test ho3c1.test (test X Y tt).
+macro @koc1 X Y :- declare-test ho3c1.test (test X Y ff).
 
 @ok (app [@f, @X []]) (app [@f, @a]).
 @ok (app [@X [], @a]) (app [@f, @a]).
@@ -23,7 +55,8 @@ macro @ko X Y :- declare-test ho3.test (test X Y ff).
 @ok (app [@f, @X [], @Y [], @X []]) (app [@f, (app [@f, @Y []]), @b, (app [@f, @b])]).
 @ok (lam x\ (app [@f, @X []])) (lam x\ (app [@f, @a])).
 
-@ok (lam x\ lam y\ @X [x, y]) (lam x\ lam y\ app [@f, y]).
+@ok   (lam x\ lam y\ @X [x, y]) (lam x\ lam y\ app [@f, y]).
+@okc1 (lam x\ lam y\ @X [x, y]) (lam x\ lam y\ app [@f, y]).
 
 % we want this, the solution for X could be eta-contracted.
 % if we are smart in the HO link, we might recover it
@@ -34,7 +67,17 @@ macro @ko X Y :- declare-test ho3.test (test X Y ff).
          ])
     (app [(lam x\ lam y\ app [@f, y]),
           lam x\ @f]).
-
+%@koc1 assert failure since we asign twice SO
+%  assign z [ho3.lam c1 \ ho3.lam c2 \ X14 c1 c2 | X19]
+%           (ho3.lam c1 \ c2 \ X14 c1 c2)
+% @okc2 (app [(lam x\ lam y\ @X [x, y]),
+%           (lam x\ @X [x]) % X = lam a\lam b\app [f, b]
+%                           % beta (lam a\lam b\app [f, b]) [x] (lam b\app [f, b])
+%                           % boom: (lam b\app [f, b]) != f
+%          ])
+%     (app [(lam x\ lam y\ app [@f, y]),
+%           lam x\ @f]).
+% 
 % we want this, no way this time
 % compilation needs to untroduce two vars and link them
 @ko (app [(lam x\ lam y\ @X [x, y]),

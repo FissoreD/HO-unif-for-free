@@ -14,12 +14,20 @@ type assign nat -> list A -> A -> o.
 assign z (X :: _) Y  :- std.assert! (var X) "assign", X = Y.
 assign (s N) (_ :: L) X :- assign N L X.
 
+type nth nat -> list A -> A -> o.
+nth z (X :: _) Y  :- X = Y.
+nth (s N) (_ :: L) X :- nth N L X.
+
 type exists (A -> o) -> list A -> o.
 exists F [X|XS] :- F X ; exists F XS.
 
 type forall2 (A -> A -> o) -> list A -> list A -> o.
 forall2 _ [] [].
 forall2 F [X|XS] [Y|YS] :- F X Y, forall2 F XS YS.
+
+type fold2 (A -> A -> B -> B -> o) -> list A -> list A -> B -> B -> o.
+fold2 _ [] [] A A.
+fold2 F [X|XS] [Y|YS] A A1 :- F X Y A A0, fold2 F XS YS A0 A1.
 
 pred pattern-fragment i:list A.
 pattern-fragment L :- distinct_names L.
