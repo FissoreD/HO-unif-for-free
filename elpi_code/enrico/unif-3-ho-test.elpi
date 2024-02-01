@@ -1,0 +1,36 @@
+macro @X L :- ho3.uv z L.
+macro @Y L :- ho3.uv (s z) L.
+macro @Z L :- ho3.uv (s (s z)) L.
+macro @f :- ho3.c "f".
+macro @g :- ho3.c "g".
+macro @h :- ho3.c "h".
+macro @a :- ho3.c "a".
+macro @b :- ho3.c "b".
+macro @c :- ho3.c "c".
+shorten ho3.{ app , lam }.
+
+type ho3.test test ho3.tm -> o.
+ho3.test (test L R tt) :- ho3.unif L R S, ho3.equal L R S. %, print "Sigma=" S.
+ho3.test (test L R ff) :- not(ho3.unif L R _).
+
+macro @ok X Y :- declare-test ho3.test (test X Y tt).
+macro @ko X Y :- declare-test ho3.test (test X Y ff).
+
+@ok (app [@f, @X []]) (app [@f, @a]).
+@ok (app [@X [], @a]) (app [@f, @a]).
+@ko (app [@f, @X []]) (@X []).
+@ko (app [@f, @X [], @X []]) (app [@f, @a, @b]).
+@ok (app [@f, @X [], @Y [], @X []]) (app [@f, (app [@f, @Y []]), @b, (app [@f, @b])]).
+@ok (lam x\ (app [@f, @X []])) (lam x\ (app [@f, @a])).
+
+@ok (lam x\ lam y\ @X [x, y]) (lam x\ lam y\ app [@f, y]).
+
+% we want this
+@ko (app [(lam x\ lam y\ @X [x, y]),
+          (lam x\ @X [x]) % X = lam a\lam b\app [f, b]
+                          % beta (lam a\lam b\app [f, b]) [x] (lam b\app [f, b])
+                          % boom: (lam b\app [f, b]) != f
+         ])
+    (app [(lam x\ lam y\ app [@f, y]),
+          lam x\ @f]).
+
