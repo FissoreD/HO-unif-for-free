@@ -12,4 +12,4 @@ list: $(MYDIR)/*.tex
 	done
 
 test:
-	elpi -test main.elpi
+	cd elpi_code/enrico ; elpi -test main.elpi
