@@ -34,13 +34,13 @@ occ N (lam F) :- pi x\ occ N (F x).
 type exists (A -> o) -> list A -> o.
 exists F [X|XS] :- F X ; exists F XS.
 
-pred copy i:tm, o:tm.
+type copy tm -> tm -> o.
 copy (app L) (app L') :- forall2 copy L L'.
 copy (lam T) (lam T') :- pi x\ copy x x => copy (T x) (T' x).
 copy (uv N L) (uv N L') :- forall2 copy L L'.
 copy (c C) (c C).
 
-pred bind i:list tm, i:tm, o:tm.
+type bind list tm -> tm -> tm -> o.
 bind [] T T' :- copy T T'.
 bind [X | TL] T (lam T') :- pi x\ copy X x => bind TL T (T' x).
 

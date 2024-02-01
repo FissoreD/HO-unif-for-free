@@ -10,7 +10,7 @@ macro @c :- fo.c "c".
 macro @app X Y :- fo.app X Y.
 
 type fo.test test fo.tm -> o.
-fo.test (test L R tt) :- fo.unif L R S, fo.equal L R S.
+fo.test (test L R tt) :- fo.unif L R S, std.assert! (fo.equal L R S) "bug".
 fo.test (test L R ff) :- not(fo.unif L R _).
 
 macro @ok X Y :- declare-test fo.test (test X Y tt).

@@ -10,7 +10,7 @@ macro @c :- ho.c "c".
 shorten ho.{ app , lam }.
 
 type ho.test test ho.tm -> o.
-ho.test (test L R tt) :- ho.unif L R S, ho.equal L R S.
+ho.test (test L R tt) :- ho.unif L R S, std.assert! (ho.equal L R S) "bug".
 ho.test (test L R ff) :- not(ho.unif L R _).
 
 macro @ok X Y :- declare-test ho.test (test X Y tt).

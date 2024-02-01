@@ -10,7 +10,7 @@ macro @c :- ho3.c "c".
 shorten ho3.{ app , lam }.
 
 type ho3.test test ho3.tm -> o.
-ho3.test (test L R tt) :- ho3.unif L R S, ho3.equal L R S. %, print "Sigma=" S.
+ho3.test (test L R tt) :- ho3.unif L R S, std.assert! (ho3.equal L R S) "bug". %, print "Sigma=" S.
 ho3.test (test L R ff) :- not(ho3.unif L R _).
 
 macro @ok X Y :- declare-test ho3.test (test X Y tt).
@@ -25,7 +25,8 @@ macro @ko X Y :- declare-test ho3.test (test X Y ff).
 
 @ok (lam x\ lam y\ @X [x, y]) (lam x\ lam y\ app [@f, y]).
 
-% we want this
+% we want this, the solution for X could be eta-contracted.
+% if we are smart in the HO link, we might recover it
 @ko (app [(lam x\ lam y\ @X [x, y]),
           (lam x\ @X [x]) % X = lam a\lam b\app [f, b]
                           % beta (lam a\lam b\app [f, b]) [x] (lam b\app [f, b])
@@ -34,3 +35,16 @@ macro @ko X Y :- declare-test ho3.test (test X Y ff).
     (app [(lam x\ lam y\ app [@f, y]),
           lam x\ @f]).
 
+% we want this, no way this time
+% compilation needs to untroduce two vars and link them
+@ko (app [(lam x\ lam y\ @X [x, y]),
+          (lam x\ @X [x]) % X = lam a\lam b\app [f, a]
+                          % beta (lam a\lam b\app [f, a]) [x] (lam b\app [f, x])
+                          % boom: (lam b\app [f, x]) != f
+         ])
+    (app [(lam x\ lam y\ app [@f, x]),
+          lam x\ @f]).
+
+% TODO:
+% (app[X,a]) --> X = lam --> beta problem, we could compile this to
+% Z + link-beta (app X a) Z anche se X a non è pattern...
