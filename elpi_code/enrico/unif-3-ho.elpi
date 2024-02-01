@@ -10,8 +10,8 @@ type c string -> tm.
 type unif tm -> tm -> list tm -> o.
 unif (uv N Args) T S :- assigned? N S F, beta F Args T1, unif T1 T S.
 unif T (uv N Args) S :- assigned? N S F, beta F Args T1, unif T T1 S.
-unif (uv N Args) T S :- not(assigned? N S _), not (occ N T), bind Args T T1, assign N S T1.
-unif T (uv N Args) S :- not(assigned? N S _), not (occ N T), bind Args T T1, assign N S T1.
+unif (uv N Args) T S :- not(assigned? N S _), not (occ N T), pattern-fragment Args, bind Args T T1, assign N S T1.
+unif T (uv N Args) S :- not(assigned? N S _), not (occ N T), pattern-fragment Args, bind Args T T1, assign N S T1.
 unif (app L1) (app L2) S :- forall2 (x\y\unif x y S) L1 L2.
 unif (lam F1) (lam F2) S :- pi x\ unif (F1 x) (F2 x) S.
 unif (c X) (c X) _.
@@ -22,17 +22,10 @@ beta (lam Bo) [H | L] R :- beta (Bo H) L R.
 beta (app A) L (app X) :- std.append A L X.
 beta (uv N A) L (uv N X) :- std.append A L X.
 
-type forall2 (A -> A -> o) -> list A -> list A -> o.
-forall2 _ [] [].
-forall2 F [X|XS] [Y|YS] :- F X Y, forall2 F XS YS.
-
 type occ nat -> tm -> o.
 occ N (uv N _).
 occ N (app L) :- exists (occ N) L.
 occ N (lam F) :- pi x\ occ N (F x).
-
-type exists (A -> o) -> list A -> o.
-exists F [X|XS] :- F X ; exists F XS.
 
 type copy tm -> tm -> o.
 copy (app L) (app L') :- forall2 copy L L'.
@@ -52,5 +45,24 @@ equal (lam F1) (lam F2) S :- pi x\ equal x x S => equal (F1 x) (F2 x) S.
 equal (c X) (c X) _.
 equal (uv N L1) (uv N L2) S :- forall2 (x\y\equal x y S) L1 L2.
 
+
+}
+
+namespace comp1 {
+
+shorten ho3.{ lam, app, uv, c, copy, bind }.
+typeabbrev tm ho3.tm.
+
+type comp tm -> tm -> list tm -> list A -> o.
+comp (c X) (c X) _ _.
+comp (app L) (app L1) SO SM :- forall2 (x\y\comp x y SO SM) L L1.
+comp (lam F) (lam F1) SO SM :- pi x\ comp x x SO SM => comp (F x) (F1 x) SO SM.
+comp (uv N L) X SO SM :- pattern-fragment L, std.length L Nabs,
+  assign N SM X,
+  nabs Nabs X T, assign N SO T.
+
+type nabs int -> A -> tm -> o.
+nabs 0 T T.
+nabs N T (lam T') :- M is N - 1, pi x\ nabs M (T x) (T' x).
 
 }
