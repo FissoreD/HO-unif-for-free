@@ -91,6 +91,8 @@ type ho-link nat -> tm -> A -> o.
 ho-link z T T.
 ho-link (s A) (lam F) (x\X x) :- pi x\ ho-link A (F x) (X x).
 
-ho-link-eta :- ho-link, eta-contract.
+ho-link-eta A T X :- ho-link A T' X, eta-contract T' T.
 
 }
+
+% TODO: comp3 (app [uv ... |...]) -> X + ho-link-beta
