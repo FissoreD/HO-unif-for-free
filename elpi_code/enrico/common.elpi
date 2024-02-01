@@ -29,6 +29,14 @@ type fold2 (A -> A -> B -> B -> o) -> list A -> list A -> B -> B -> o.
 fold2 _ [] [] A A.
 fold2 F [X|XS] [Y|YS] A A1 :- F X Y A A0, fold2 F XS YS A0 A1.
 
+type all list o -> o.
+all [].
+all [P|PS] :- P, all PS.
+
+type len list a -> nat -> o.
+len [] z.
+len [_|L] (s X) :- len L X.
+
 pred pattern-fragment i:list A.
 pattern-fragment L :- distinct_names L.
 

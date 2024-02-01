@@ -48,6 +48,8 @@ equal (uv N L1) (uv N L2) S :- forall2 (x\y\equal x y S) L1 L2.
 
 }
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 namespace comp1 {
 
 shorten ho3.{ lam, app, uv, c, copy }.
@@ -68,7 +70,9 @@ ho-link [] T T.
 ho-link [_|VS] T (lam T') :- pi x\ ho-link VS (T x) (T' x).
 
 }
-/*
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 namespace comp2 {
 
 shorten ho3.{ lam, app, uv, c, copy }.
@@ -76,17 +80,17 @@ typeabbrev tm ho3.tm.
 
 type comp tm -> tm -> list tm -> list o -> list o -> o.
 comp (c X) (c X) _ L L.
-comp (app L) (app L1) SO A A1 :- fold2 (x\y\comp x y SO) L L1 A A1.
-comp (lam F) (lam F1) SO A A1 :- pi x\ (pi A\ comp x x SO A A) => comp (F x) (F1 x) SO A A1.
-comp (uv N L) XL SO SM :- std.do! [
-  pattern-fragment L, var XL X L, prune XL L,
-  assign N SM X,
-  ho-link L X T, assign-unif N SO T, % otherwise non-linear var
+comp (app A) (app A1) SO L L1 :- fold2 (x\y\comp x y SO) A A1 L L1.
+comp (lam F) (lam F1) SO L L1 :- pi x\ (pi A\ comp x x SO A A) => comp (F x) (F1 x) SO L L1. % TODO pi
+comp (uv N S) XV SO L L1 :- std.do! [
+  pattern-fragment S, var XV X _, prune XV S,
+  nth N SO T, len S A, L1 = [ho-link-eta A T X| L],
 ].
 
-type ho-link list tm -> A -> tm -> o.
-ho-link [] T T.
-ho-link [_|VS] T (lam T') :- pi x\ ho-link VS (T x) (T' x).
+type ho-link nat -> tm -> A -> o.
+ho-link z T T.
+ho-link (s A) (lam F) (x\X x) :- pi x\ ho-link A (F x) (X x).
+
+ho-link-eta :- ho-link, eta-contract.
 
 }
-*/
