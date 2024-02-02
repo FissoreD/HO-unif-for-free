@@ -39,6 +39,7 @@ bind [] T T' :- copy T T'.
 bind [X | TL] T (lam T') :- pi x\ copy X x => bind TL T (T' x).
 
 type equal tm -> tm -> list tm -> o.
+equal X Y _ :- (var X ; var Y), halt "flex".
 equal (uv N Args) T1 S :-assigned? N S F, beta F Args T, equal T T1 S.
 equal T1 (uv N Args) S :- assigned? N S F, beta F Args T, equal T1 T S.
 equal (app L1) (app L2) S :- forall2 (x\y\equal x y S) L1 L2.
@@ -60,10 +61,11 @@ type comp tm -> tm -> list tm -> list A -> o.
 comp (c X) (c X) _ _.
 comp (app L) (app L1) SO SM :- forall2 (x\y\comp x y SO SM) L L1.
 comp (lam F) (lam F1) SO SM :- pi x\ comp x x SO SM => comp (F x) (F1 x) SO SM.
-comp (uv N L) XL SO SM :- std.do! [
-  pattern-fragment L, var XL X _, prune XL L,
+comp (uv N S) XV SO SM :- std.do! [
+  pattern-fragment S, var XV _ _, prune XV S, var XV X _,
+
   assign N SM X,
-  ho-link L X T, assign N SO T,
+  ho-link S X T, nth N SO T,
 ].
 
 type ho-link list tm -> A -> tm -> o.
@@ -81,37 +83,58 @@ typeabbrev tm ho3.tm.
 
 type pi-close (tm -> list o) -> list o -> o.
 pi-close (x\ []) [].
+pi-close (x\ [A | TL x]) [A | TL'] :- 
+  pi-close TL TL'.
 pi-close (x\ [A x | TL x]) [pi x\ A x | TL'] :- 
   pi-close TL TL'.
 
-type comp tm -> tm -> list tm -> list o -> list o -> o.
-comp (c X) (c X) _ L L.
-comp (app A) (app A1) SO L L1 :- fold2 (x\y\comp x y SO) A A1 L L1.
-comp (lam F) (lam F1) SO L L2 :- 
-  (pi x\ (pi A\ comp x x SO A A) => comp (F x) (F1 x) SO L (L1 x)),
+% TODO: remove SM
+type comp tm -> tm -> list tm -> list A -> list o -> list o -> o.
+comp (c X) (c X) _ _ L L.
+comp (app A) (app A1) SO SM L L1 :- fold2 (x\y\comp x y SO SM) A A1 L L1.
+comp (lam F) (lam F1) SO SM L L2 :- 
+  (pi x\ (pi A\ comp x x SO SM A A) => comp (F x) (F1 x) SO SM L (L1 x)),
   pi-close L1 L2.
-comp (uv N S) XV SO L L1 :- std.do! [
-  pattern-fragment S, var XV X _, prune XV S,
-  nth N SO T, len S A, L1 = [ho-link-eta A T X| L],
+comp (uv N S) XV SO SM L L1 :- std.do! [
+  pattern-fragment S, var XV _ _, prune XV S, var XV X _,
+  nth N SO T, len S A, 
+  L1 = [ho-link-eta SO A T X| L],
 ].
 
-type ho-link nat -> tm -> A -> o.
-ho-link z T T.
-ho-link (s A) (lam F) (x\X x) :- pi x\ ho-link A (F x) (X x).
+type ho-link list tm -> nat -> tm -> A -> o.
+ho-link SO z X X.
+ho-link SO (s A) (lam F) (x\X x) :- pi x\ ho-link SO A (F x) (X x).
 
-type ho-link-eta nat -> tm -> A -> o.
-ho-link-eta A T X :- 
-  print "--------------------- Make ho-link between" T "and" X,
-  ho-link A T' X, 
-  print "After HO-link, T' is" T',
-  eta-contract T' T,
-  print "The final T is" T.
+type decomp list tm -> A -> o.
+decomp SO XV :- var XV X S, !, new SO N, XV = (uv N S).
+decomp _ X :- name X.
+decomp SO (app L) :- std.forall L (decomp SO).
+decomp SO (lam F)  :- pi x\ decomp SO (F x).
+decomp SO (c X).
+decomp SO (uv N S).
+
+
+copyl L [] :- var L, !.
+copyl [X|L] [X|L1] :- copyl L L1.
+
+type new list tm -> nat -> o.
+new L z :- var L, !, L = [FRESH_|TAIL_].
+new [_|L] (s N) :- new L N.
+
+type ho-link-eta list tm -> nat -> tm -> A -> o.
+ho-link-eta SO A T X :- 
+  % print "--------------------- Make ho-link between" T "and" X,
+  ho-link SO A T' X, 
+  %print "After HO-link, T' is" T',
+  eta-contract T' T.
+  %print "The final T is" T.
 
 type eta-contract tm -> tm -> o.
+eta-contract X X :- var X, !.
 eta-contract (c X) (c X).
 eta-contract (app L) (app L1) :- forall2 eta-contract L L1.
 eta-contract (lam F) T :- contract [] (lam F) T.
-eta-contract (lam F) (lam F1) :- pi x\ eta-contract x x => eta-contract (F x) (F1 x).
+eta-contract (lam F) (lam F1) :- pi x\ (pi X Y\ eta-contract X Y :- name X, X = Y) => eta-contract (F x) (F1 x).
 eta-contract (uv X Args) (uv X Args).
 
 type contract list tm -> tm -> tm -> o.
@@ -120,7 +143,7 @@ contract L X T :- var X, !, fail.
 contract L (lam F) T :- 
   pi x\ contract [x|L] (F x) T. % also checks H Prefix does not see x
 contract L (app [H|Args]) T :- 
-  print "Base case",
+  %print "Base case",
   std.rev L LRev, std.appendR Prefix LRev Args,
   if (Prefix = []) (T = H) (T = app [H|Prefix]).
 }

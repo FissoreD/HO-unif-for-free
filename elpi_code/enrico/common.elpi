@@ -33,6 +33,10 @@ type all list o -> o.
 all [].
 all [P|PS] :- P, all PS.
 
+type forall (X -> o) -> list X -> o.
+forall _ L :- var L, !.
+forall P [X|XS] :- P X. % , forall P XS.
+
 type len list A -> nat -> o.
 len [] z.
 len [_|L] (s X) :- len L X.
@@ -47,7 +51,7 @@ type declare-test (test A -> o) -> test A -> o.
 type runtests list o -> bool -> o.
 runtests [] B :- var B, print "ALL GOOD!".
 runtests [] _ :- print "SOME TEST FAIL!", fail.
-runtests [declare-test F (test L R B as T)|TS] ERR :-
+runtests [declare-test F (test L R B as T)|TS] ERR :- print "\n------------\n\n\n",
   if (B = tt) (Rel = "===") (Rel = "=/="),
   if (F T) (print "ok" L Rel R, runtests TS ERR)
            (print "\n<<<<<\nko" L Rel R "\n>>>>>\n", ERR = tt, runtests TS ERR).

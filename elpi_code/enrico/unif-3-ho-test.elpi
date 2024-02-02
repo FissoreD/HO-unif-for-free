@@ -27,17 +27,20 @@ ho3c1.test (test L R ff) :-
   not(L1 = R1).
 
 type ho3c2.test test ho3.tm -> o.
-ho3c2.test (test L R tt) :- std.spy-do! [
-  comp2.comp L L1 SO [] Links',
-  comp2.comp R R1 SO Links' Links,
+ho3c2.test (test L R tt) :- std.do! [
+  comp2.comp L L1 SO SM [] Links',
+  comp2.comp R R1 SO SM Links' Links,
   L1 = R1,
   all Links,
-  print SO,
+  % print "SO=" SO,
+  comp2.copyl SO S1,
+  forall (comp2.decomp SO) S1,
+  print "S1=" SO,
   std.assert! (ho3.equal L R SO) "bug",
 ].
 ho3c2.test (test L R ff) :-
-  comp2.comp L L1 SO [] Links',
-  comp2.comp R R1 SO Links' Links,
+  comp2.comp L L1 SO SM [] Links',
+  comp2.comp R R1 SO SM Links' Links,
   not(L1 = R1, all Links).
 
 macro @ok X Y :- declare-test ho3.test (test X Y tt).
@@ -58,7 +61,6 @@ macro @koc2 X Y :- declare-test ho3c2.test (test X Y ff).
 
 @ok   (lam x\ lam y\ @X [x, y]) (lam x\ lam y\ app [@f, y]).
 @okc1 (lam x\ lam y\ @X [x, y]) (lam x\ lam y\ app [@f, y]).
-
 % we want this, the solution for X could be eta-contracted.
 % if we are smart in the HO link, we might recover it
 @ko (app [(lam x\ lam y\ @X [x, y]),
@@ -68,24 +70,23 @@ macro @koc2 X Y :- declare-test ho3c2.test (test X Y ff).
          ])
     (app [(lam x\ lam y\ app [@f, y]),
           lam x\ @f]).
+
 %@koc1 assert failure since we asign twice SO
 %  assign z [ho3.lam c1 \ ho3.lam c2 \ X14 c1 c2 | X19]
 %           (ho3.lam c1 \ c2 \ X14 c1 c2)
+@okc2 (app [(lam x\ lam y\ app[@X [x] , y]),
+            (lam x\ @X [x])
+         ])
+    (app [(lam x\ lam y\ app [@f, y]),
+          lam x\ @f]).
 @okc2 (app [(lam x\ lam y\ @X [x, y]),
             (lam x\ @X [x])
          ])
     (app [(lam x\ lam y\ app [@f, y]),
           lam x\ @f]).
 
-% we want this, no way this time
-% compilation needs to untroduce two vars and link them
-@ko (app [(lam x\ lam y\ @X [x, y]),
-          (lam x\ @X [x]) % X = lam a\lam b\app [f, a]
-                          % beta (lam a\lam b\app [f, a]) [x] (lam b\app [f, x])
-                          % boom: (lam b\app [f, x]) != f
-         ])
-    (app [(lam x\ lam y\ app [@f, x]),
-          lam x\ @f]).
+@okc2 (lam x\ lam y\ @X [x, y]) (lam x\ lam y\ @X [y, x]).
+
 
 % TODO:
 % (app[X,a]) --> X = lam --> beta problem, we could compile this to
