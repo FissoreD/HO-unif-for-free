@@ -146,6 +146,7 @@ contract L (app [H|Args]) T :-
   %print "Base case",
   std.rev L LRev, std.appendR Prefix LRev Args,
   if (Prefix = []) (T = H) (T = app [H|Prefix]).
+%TODO: uv N Args
 }
 
 % TODO: comp3 (app [uv ... |...]) -> X + ho-link-beta
