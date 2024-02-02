@@ -39,8 +39,7 @@ bind [] T T' :- copy T T'.
 bind [X | TL] T (lam T') :- pi x\ copy X x => bind TL T (T' x).
 
 type equal tm -> tm -> list tm -> o.
-equal A B S :- print A "===?===" B, fail.
-equal (uv N Args) T1 S :- std.spy(assigned? N S F), std.spy(beta F Args T), equal T T1 S.
+equal (uv N Args) T1 S :-assigned? N S F, beta F Args T, equal T T1 S.
 equal T1 (uv N Args) S :- assigned? N S F, beta F Args T, equal T1 T S.
 equal (app L1) (app L2) S :- forall2 (x\y\equal x y S) L1 L2.
 equal (lam F1) (lam F2) S :- pi x\ equal x x S => equal (F1 x) (F2 x) S.
@@ -80,10 +79,17 @@ namespace comp2 {
 shorten ho3.{ lam, app, uv, c, copy }.
 typeabbrev tm ho3.tm.
 
+type pi-close (tm -> list o) -> list o -> o.
+pi-close (x\ []) [].
+pi-close (x\ [A x | TL x]) [pi x\ A x | TL'] :- 
+  pi-close TL TL'.
+
 type comp tm -> tm -> list tm -> list o -> list o -> o.
 comp (c X) (c X) _ L L.
 comp (app A) (app A1) SO L L1 :- fold2 (x\y\comp x y SO) A A1 L L1.
-comp (lam F) (lam F1) SO L L1 :- pi x\ (pi A\ comp x x SO A A) => comp (F x) (F1 x) SO L L1. % TODO pi
+comp (lam F) (lam F1) SO L L2 :- 
+  (pi x\ (pi A\ comp x x SO A A) => comp (F x) (F1 x) SO L (L1 x)),
+  pi-close L1 L2.
 comp (uv N S) XV SO L L1 :- std.do! [
   pattern-fragment S, var XV X _, prune XV S,
   nth N SO T, len S A, L1 = [ho-link-eta A T X| L],
@@ -94,7 +100,12 @@ ho-link z T T.
 ho-link (s A) (lam F) (x\X x) :- pi x\ ho-link A (F x) (X x).
 
 type ho-link-eta nat -> tm -> A -> o.
-ho-link-eta A T X :- ho-link A T' X, eta-contract T' T.
+ho-link-eta A T X :- 
+  print "--------------------- Make ho-link between" T "and" X,
+  ho-link A T' X, 
+  print "After HO-link, T' is" T',
+  eta-contract T' T,
+  print "The final T is" T.
 
 type eta-contract tm -> tm -> o.
 eta-contract (c X) (c X).
@@ -104,10 +115,14 @@ eta-contract (lam F) (lam F1) :- pi x\ eta-contract x x => eta-contract (F x) (F
 eta-contract (uv X Args) (uv X Args).
 
 type contract list tm -> tm -> tm -> o.
-contract L (lam F) T :- pi x\ contract [x|L] (F x) T. % also checks H Prefix does not see x
-contract L (app [H|Args]) T :- std.rev L LRev, std.appendR Prefix LRev Args,
+% contract A B _ :- print A B, fail.
+contract L X T :- var X, !, fail.
+contract L (lam F) T :- 
+  pi x\ contract [x|L] (F x) T. % also checks H Prefix does not see x
+contract L (app [H|Args]) T :- 
+  print "Base case",
+  std.rev L LRev, std.appendR Prefix LRev Args,
   if (Prefix = []) (T = H) (T = app [H|Prefix]).
-
 }
 
 % TODO: comp3 (app [uv ... |...]) -> X + ho-link-beta
