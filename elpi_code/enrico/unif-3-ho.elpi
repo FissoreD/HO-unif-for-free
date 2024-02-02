@@ -21,7 +21,7 @@ beta A [] A.
 beta (lam Bo) [H | L] R :- beta (Bo H) L R.
 beta (app A) L (app X) :- std.append A L X.
 beta (uv N A) L (uv N X) :- std.append A L X.
-beta c ... app
+beta (c H) L (app [c H | L]).
 
 type occ nat -> tm -> o.
 occ N (uv N _).
