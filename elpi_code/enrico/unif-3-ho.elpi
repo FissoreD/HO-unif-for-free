@@ -38,6 +38,10 @@ type bind list tm -> tm -> tm -> o.
 bind [] T T' :- copy T T'.
 bind [X | TL] T (lam T') :- pi x\ copy X x => bind TL T (T' x).
 
+type validSO list tm -> o.
+validSO L :- var L.
+validSO [X|XS] :- (ground_term X ; var X), validSO XS.
+
 type equal tm -> tm -> list tm -> o.
 equal X Y _ :- (var X ; var Y), halt "flex".
 equal (uv N Args) T1 S :-assigned? N S F, beta F Args T, equal T T1 S.
@@ -113,6 +117,10 @@ decomp SO (lam F)  :- pi x\ decomp SO (F x).
 decomp SO (c X).
 decomp SO (uv N S).
 
+type decompSO list tm -> o.
+decompSO SO :-
+  copyl SO S1,
+  forall (decomp SO) S1.
 
 copyl L [] :- var L, !.
 copyl [X|L] [X|L1] :- copyl L L1.

@@ -18,7 +18,7 @@ ho3c1.test (test L R tt) :- std.do! [
   comp1.comp L L1 SO SE,
   comp1.comp R R1 SO SE,
   L1 = R1,
-  print SO SE,
+  std.assert! (ho3.validSO SO) "invalid SO",
   std.assert! (ho3.equal L R SO) "bug",
 ].
 ho3c1.test (test L R ff) :-
@@ -32,10 +32,8 @@ ho3c2.test (test L R tt) :- std.do! [
   comp2.comp R R1 SO SM Links' Links,
   L1 = R1,
   all Links,
-  % print "SO=" SO,
-  comp2.copyl SO S1,
-  forall (comp2.decomp SO) S1,
-  print "S1=" SO,
+  comp2.decompSO SO,
+  std.assert! (ho3.validSO SO) "invalid SO",
   std.assert! (ho3.equal L R SO) "bug",
 ].
 ho3c2.test (test L R ff) :-
