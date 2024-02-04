@@ -18,6 +18,10 @@ type occ nat -> tm -> o.
 occ N (uv N).
 occ N (app A B) :- occ N A ; occ N B.
 
+type validSO list tm -> o.
+validSO L :- var L.
+validSO [X|XS] :- (ground_term X ; var X), validSO XS.
+
 type equal tm -> tm -> list tm -> o.
 equal (app H A) (app H1 A1) S :- equal H H1 S, equal A A1 S.
 equal (uv N) T1 S :- assigned? N S T, equal T T1 S.

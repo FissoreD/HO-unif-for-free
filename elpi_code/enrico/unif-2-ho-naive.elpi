@@ -28,6 +28,10 @@ occ N (lam F) :- pi x\ occ N (F x).
 type exists (A -> o) -> list A -> o.
 exists F [X|XS] :- F X ; exists F XS.
 
+type validSO list tm -> o.
+validSO L :- var L.
+validSO [X|XS] :- (ground_term X ; var X), validSO XS.
+
 type equal tm -> tm -> list tm -> o.
 equal (uv N) T1 S :- assigned? N S T, equal T T1 S.
 equal T1 (uv N) S :- assigned? N S T, equal T1 T S.
