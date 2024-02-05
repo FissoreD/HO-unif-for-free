@@ -21,57 +21,107 @@
 \newcommand*{\eqtau}{\ensuremath{\mathrel{\overset{\mathrm{\tau}}{=}}}}
 
 
-\section{Higher-order unification in \texorpdfstring{$L_\lambda$}{L\_lambda}}
+\begin{abstract}
 
-Higher-order unification is a unification problem known to be undecidable. The
-goal is to determine a most general unifier between two lambda terms, where at
-least one of contain a sub-term $F$ applied to a non empty list of arguments
-$a_1,\dots,a_n$ and $F$ is a variable. Some researches have been done in order to
-identify some easy patterns where it is possible to solve this kind of
-unification.
+Unification is a fundamental process behind goal resolution in logic
+programming. Two terms $t_1$ and $t_2$ unify up to $\eta\beta$-reduction if it
+exist a substitution $\theta$ such that $\theta t_1 = \theta t_2$. A
+substitution is a mapping from unification variables to terms and it is the most
+general, if forall substitution $\theta'$, such that $\theta' t_1 = \theta'
+t_2$, it exists a substitution $\theta''$ such that $\theta' = \theta \theta''$.
+Unification has been widely studied in the 90s [here the refs]. In this paper we
+want to give a framework to reason about unification in meta-programming.
 
-In \cite{miller1991}, D. Miller provides a unification algorithm (the function
-$\eqtau$) for higher-order variable when they are in the so-called pattern
-fragment. 
+\end{abstract}
 
-\section{From the object to the target language}
+\section{Introduction}
 
-Higher order unification becomes difficult when we try to unify terms
-represented in the syntax of an object language embedded inside another
-language. This kind of interaction between different languages is something that
-happens quite often in \coqelpi, a \coq plugin embedding \elpi.
+Meta programming \cite{hill1994} is a programming technique in which a program
+can treat an other program as its data. This latter program is called object
+language, while the former is called meta language. At the heart of meta
+programming lays the necessity of representing terms of the object language in
+the meta language so that a wide set of program manipulation ranging from
+interpretation to compilation. Furthermore, since a logic program is a set of
+clauses, the behavior of the object language can be modified by simply adding
+new rules inside the database of the meta program.
 
-\elpi is a variant of \lambdaprolog equipped with constraint handling rules. On
-the other hand, \coq is a proof assistant used to reason about mathematical
-properties and certify them thanks to its typing system.
+The motivation pushing us to reason about unification of terms of the object
+language represented as terms of the meta language is to implement a type class
+solver for the \coq proof assistant into the \elpi logic programming language. A
+type class \cite{wadler89, sozeau08} is a typing structure allowing to introduce
+ad hoc polymorphism in functional languages and instances are implementations of
+type classes. From the point of view of logic programming, type class represent
+predicates parametrized by their argument and instances rules for those
+predicates. For instance, if \texttt{XXX} is the type class representing the
+AAA, then ZZZ and WWW are instances for XXX. In the code snippet below, we give
+such implementation in \coq.
 
-Both languages allows to quantify higher-order variables and are able to perform
-higher-order unification when needed. However, when we want to reason with the
-\coq unification inside \elpi, it is less evident to reproduce the unification
-between two terms. With this paper, we want to provide a framework explaining
-how the unification of an object language (\coq in our case) can be expressed in
-the targeted language (\elpi in our case).
+\begin{mintedTcolorbox}{coq}
+  Class XXX Args := {methods ...}.
+  Instance ZZZ : bla bla -> XXX Args := {...} Qed.
+  Instance WWW : bla bla -> XXX Args := {...} Qed.
+\end{mintedTcolorbox}
+
+This small set of instance thanks a first phase of class and instance\todo{explain compilation of pred and inst?}
+compilation is translated into the following \elpi program:
+
+\begin{mintedTcolorbox}{elpi}
+  type XXX Args .. -> term -> o.
+  XXX Args ... (ZZZ P1 ... PN) :-
+    premese...
+  WWW Args ... (ZZZ P1 ... PN) :-
+    premese...
+\end{mintedTcolorbox}
+
+Type-class resolution starts from a query, that is a class applied to some
+argument. This \coq term is translated into a term of the meta language and the
+search for a solution in the database is started. However, since unification is
+performed on the head of the clause, it may happen that the term representation
+in the meta language is not sufficiently powerful to understand that two terms
+unifying in the object language should also unify in the meta language.
+
+
+% \section{Higher-order unification in \texorpdfstring{$L_\lambda$}{L\_lambda}}
+
+% Higher-order unification is a unification problem known to be undecidable. The
+% goal is to determine a most general unifier between two lambda terms, where at
+% least one of contain a sub-term $F$ applied to a non empty list of arguments
+% $a_1,\dots,a_n$ and $F$ is a variable. Some researches have been done in order to
+% identify some easy patterns where it is possible to solve this kind of
+% unification.
+
+% In \cite{miller1991}, D. Miller provides a unification algorithm (the function
+% $\eqtau$) for higher-order variable when they are in the so-called pattern
+% fragment. 
+
+\section{From the object to the meta language}
+
+In \coq, terms unify up to $\eta\beta\delta\iota\zeta$-equivalence and
+unification is also possible when dealing with higher order variables. Whereas
+\elpi allows higher order unification up to $\eta\beta$-equivalence, and the
+representation of \coq terms is more syntactical than one would expect, making 
+two terms that unify in \coq not unifiable in \elpi.
 
 Without any loss of generality, in \cref{table:coq2elpi} we present a subset of
 the terms in the object language and for each term we give its representation in
-the targeted language.
+the meta language.
 
   
 \begin{table}
   \centering
   \begin{tabular}{c||c|c}
-  Term        & Obj. lang.                    & Targ. lang.                                   \\
+  Term        & Obj. lang.                    & Meta lang.                                   \\
   \hline\hline
   Constant    & a                             & `a'                                     \\
   Application & f a\_1 a\_2 ... a\_n          & app{[}`f', `a\_1', `a\_2', ..., `a\_n'{]}     \\
   Abstraction & fun (x : T) $\Rightarrow$ f x & fun `x' T (x\textbackslash app{[}`f', `x'{]}) \\
   Variable    & X                             & X                                             \\
   \end{tabular}
-  \caption{Obj. lang. terms to targ. lang. terms representation}
+  \caption{Obj. lang. terms to meta lang. terms representation}
   \label{table:coq2elpi}
 \end{table}
 
-\section{First-order unification}
+\subsection{First-order unification}
 
 Just as an introduction, we briefly show some small example of unification
 between terms with only first-order unification variables. This way, we would
@@ -93,7 +143,7 @@ algorithm.
 
 It is quite evident that a valid substitution for \cref{eq:unif-fo-coq} is $\theta =
 \{Y \mapsto `x', Z \mapsto `1'\}$. Now let's consider the same problem translated in
-the targeted language.
+the meta language.
 
 \begin{equation}
   app[`f', `x', `1'] \eqtau app[`f', Y, Z]
@@ -104,7 +154,7 @@ The unification of these terms is again quite simple since it is sufficient to
 do a simple matching sub-term by sub-term so that variables can be instantiated.
 We can therefore note that the same substitution $\theta$ will be produced.
 
-\section{Higher-order unification}
+\subsection{Higher-order unification}
 
 The unification problem treated before was enough easy to be correctly
 understood by both language representation. We want now to go a bit further and
@@ -130,7 +180,7 @@ x \Rightarrow f\ x\ 1\}$ and $\theta_2 = \{H \mapsto fun\ y\ x \Rightarrow G\ x\
 y\}$. We can note that to be in the pattern fragment, a functional variable
 should be applied to distinct names.
 
-If we translate the problem before in the target language, the unification
+If we translate the problem before in the meta language, the unification
 problems showed above become
 
 \begin{equation}
@@ -144,10 +194,10 @@ problems showed above become
 \end{equation}
 
 Now, the new unification problems are no more expressed in the logic of the
-targeted language and, therefore, in both cases, unification fails. The
+meta language and, therefore, in both cases, unification fails. The
 procedure we can adopt in order to transform a higher-order unification problem
-of the object language into the logic of the targeted language is to transform
-the entry of the problem in a problem which can be understood by the targeted
+of the object language into the logic of the meta language is to transform
+the entry of the problem in a problem which can be understood by the meta
 language. The procedure is made of two steps:
 
 \begin{enumerate}
@@ -187,11 +237,11 @@ to transform the substitution of $F'$ into the corresponding term of the object
 langue: $F \mapsto fun \_\ \_\ (x\backslash\ f\ x\ 1)$ which correspond to the
 term $fun\ x \Rightarrow f\ x\ 1$. The latter unification problem gives the
 substitution $\theta_2 = \{H' \mapsto (y\ x \backslash G'\ x\ y)\}$ in the
-targeted language. The first ho-link simply unify $G$ to $G'$ since $G'$ is
+meta language. The first ho-link simply unify $G$ to $G'$ since $G'$ is
 flexible, whereas $H$ is mapped to $fun\ y\ x \Rightarrow G'\ x\ y$.
 
 The role of the ho-link is not only to instantiate the higher-order variable F
-of the object language when F is flexible and the twin variable in the targeted
+of the object language when F is flexible and the twin variable in the meta
 language is rigid. It may happen that F has already been partially instantiated.
 The unification problem below gives such an example in the object language:
 
@@ -216,7 +266,7 @@ is translated into:
 \mapsto (x\ y \backslash G'\ y\ x)\}$, where $G'$ is unified with $G$ and $H$ is
 instantiated to <<$fun\ x\ y \Rightarrow G'\ y\ x$>>. While executing the second
 line, we see $H''$ instantiated to the function $(x\ y\backslash x)$ in the
-targeted language. The last ho-link is charged to link $H''$ with $H$ but this
+meta language. The last ho-link is charged to link $H''$ with $H$ but this
 time $H$ has already been partially instantiated. In particular the call to this
 ho-link is as follows: $ho-link\ (x\ y\backslash x)\
 (prod\ \_\ \_\ (x\backslash\ prod\ \_\ \_\ (y\backslash\ app [G', x, y])))$.
