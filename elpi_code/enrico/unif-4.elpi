@@ -1,0 +1,208 @@
+
+namespace try4 {
+
+%%%%%%%%%%%%%%%%%%% the OL %%%%%%%%%%%%%%%%%%%%%
+namespace fo {
+
+kind tm type.
+type app list tm -> tm.
+type lam (tm -> tm) -> tm.
+type uv  nat -> tm.
+type c string -> tm.
+
+typeabbrev subst list (option tm).
+
+type equal subst -> tm -> tm -> o.
+equal _ X Y :- (var X ; var Y), halt "flex".
+equal S (uv N) T1 :- assigned? N S T, equal S T T1.
+equal S T1 (uv N) :- assigned? N S T, equal S T1 T.
+equal S (app [uv N|Args]) T1 :- assigned? N S F, beta F Args T, equal S T T1.
+equal S T1 (app [uv N|Args]) :- assigned? N S F, beta F Args T, equal S T1 T.
+equal S (app L1) (app L2) :- forall2 (equal S) L1 L2.
+equal S (lam F1) (lam F2) :- pi x\ equal S x x => equal S (F1 x) (F2 x).
+equal _ (c X) (c X).
+equal _ (uv N) (uv N).
+% add eta
+% add more beta
+
+type alloc-subst subst -> tm -> o.
+alloc-subst S (uv N) :- nth N S none.
+alloc-subst S (lam F) :- pi x\ alloc-subst S x => alloc-subst S (F x).
+alloc-subst _ (c _).
+alloc-subst S (app L) :- forall (alloc-subst S) L.
+
+type beta tm -> list tm -> tm -> o.
+beta A [] A.
+beta (lam Bo) [H | L] R :- beta (Bo H) L R.
+beta (app A) L (app X) :- std.append A L X.
+beta (uv N) L (app [uv N | L]).
+beta (c H) L (app [c H | L]).
+
+type new subst -> nat -> subst -> o.
+new [] z [none].
+new [X|XS] (s N) [X|YS] :- new XS N YS.
+
+
+}
+
+%%%%%%%%%%%%%%%%%%% the ML %%%%%%%%%%%%%%%%%%%%%
+
+namespace ho {
+
+typeabbrev subst list (option tm).
+
+kind tm type.
+type app list tm -> tm.
+type lam (tm -> tm) -> tm.
+type uv  nat -> list tm -> tm.
+type c string -> tm.
+
+type unif tm -> tm -> subst -> subst ->  o.
+unif (uv N Args) T S S1 :- assigned? N S F, beta F Args T1, unif T1 T S S1.
+unif T (uv N Args) S S1 :- assigned? N S F, beta F Args T1, unif T T1 S S1.
+unif (uv N Args) T S S1 :- not (occ N S T), pattern-fragment Args, bind Args T T1, assign N S T1 S1.
+unif T (uv N Args) S S1 :- not (occ N S T), pattern-fragment Args, bind Args T T1, assign N S T1 S1.
+unif (app L1) (app L2) S S1 :- fold2 unif L1 L2 S S1.
+unif (lam F1) (lam F2) S S1 :- pi x\ (pi S\ unif x x S S) => unif (F1 x) (F2 x) S S1.
+unif (c X) (c X) S S.
+% add eta
+
+type beta tm -> list tm -> tm -> o.
+beta A [] A.
+beta (lam Bo) [H | L] R :- beta (Bo H) L R.
+beta (app A) L (app X) :- std.append A L X.
+beta (uv N A) L (uv N X) :- std.append A L X.
+beta (c H) L (app [c H | L]).
+
+type occ nat -> subst -> tm -> o.
+occ N _ (uv N _) .
+occ N S (uv M Args) :- assigned? M S F, beta F Args T, occ N S T.
+occ N S (app L) :- exists (occ N S) L.
+occ N S (lam F) :- pi x\ occ N S (F x).
+
+type copy tm -> tm -> o.
+copy (app L) (app L') :- forall2 copy L L'.
+copy (lam T) (lam T') :- pi x\ copy x x => copy (T x) (T' x).
+copy (uv N L) (uv N L') :- forall2 copy L L'.
+copy (c C) (c C).
+
+type bind list tm -> tm -> tm -> o.
+bind [] T T' :- copy T T'.
+bind [X | TL] T (lam T') :- pi x\ copy X x => bind TL T (T' x).
+
+type new subst -> nat -> subst -> o.
+new [] z [none].
+new [X|XS] (s N) [X|YS] :- new XS N YS.
+
+}
+
+namespace comp {
+
+kind link type.
+type link nat -> nat -> link.
+
+type comp fo.tm -> ho.tm -> list link -> list link -> ho.subst -> ho.subst -> o.
+comp (fo.c X)   (ho.c X) L L S S.
+comp (fo.app [fo.uv N|Args]) (ho.uv M Args1) L L2 S S2 :-
+  pattern-fragment Args,
+  fold4 comp Args Args1 L L1 S S1,
+  ho.new S1 M S2,
+  L2 = [link N M| L1].
+comp (fo.app A) (ho.app A1) L L1 S S1 :- fold4 comp A A1 L L1 S S1.
+comp (fo.lam F) (ho.lam F1) L L1 S S1 :- 
+  (pi x y\ (pi A S\ comp x y A A S S) => comp (F x) (F1 y) L L1 S S1).
+comp (fo.uv N) (ho.uv M []) L [link N M|L] S S1 :- ho.new S M S1.
+
+type solve-link list link -> list link -> ho.subst -> ho.subst -> o.
+solve-link [link N M|L] LR HO HO1 :- take-link L (link N M') L1, !,
+  assigned? M HO T,
+  assigned? M' HO T',
+  ho.unif T T' HO HO2,
+  solve-link [link N M|L1] LR HO2 HO1.
+solve-link [L|LS] [L|LS'] HO HO1 :- solve-link LS LS' HO HO1.
+solve-link [] [] X X.
+
+type take-link list link -> link -> list link -> o.
+take-link [L|XS] L XS.
+take-link [L|XS] L' [L|YS] :- not(L = L'), take-link XS L' YS.
+
+type decompl list link -> list link -> ho.subst -> fo.subst -> fo.subst -> o.
+decompl [link N M|L] LK HO FO FO1 :-
+  assigned? M HO T,
+  decomp LK T T' FO FO',
+  assign N FO' T' FO2,
+  decompl L LK HO FO2 FO1.
+decompl [] _ _ X X.
+
+type decomp list link -> ho.tm -> fo.tm -> fo.subst -> fo.subst -> o.
+decomp _ (ho.c X)   (fo.c X) S S.
+decomp LK (ho.app L) (fo.app L1) S S1 :- fold2 (decomp LK) L L1 S S1.
+decomp LK (ho.lam F) (fo.lam F1) S S1 :-
+  pi x y\ (pi S\ decomp LK x y S S) => decomp LK (F x) (F1 y) S S1.
+decomp LK (ho.uv N Args) (fo.app [fo.uv X|Args1]) S S1 :-
+  fold2 (decomp LK) Args Args1 S S2,
+  if (take-link LK (link X N) _) (S1 = S2) (fo.new S2 X S1). % bug
+
+/*
+type eta-contract tm -> tm -> o.
+eta-contract X X :- var X, !.
+eta-contract (c X) (c X).
+eta-contract (app L) (app L1) :- forall2 eta-contract L L1.
+eta-contract (lam F) T :- contract [] (lam F) T.
+eta-contract (lam F) (lam F1) :- pi x\ (pi X Y\ eta-contract X Y :- name X, X = Y) => eta-contract (F x) (F1 x).
+eta-contract (uv X Args) (uv X Args).
+
+type contract list tm -> tm -> tm -> o.
+% contract A B _ :- print A B, fail.
+contract L X T :- var X, !, fail.
+contract L (lam F) T :- 
+  pi x\ contract [x|L] (F x) T. % also checks H Prefix does not see x
+contract L (app [H|Args]) T :- 
+  %print "Base case",
+  std.rev L LRev, std.appendR Prefix LRev Args,
+  if (Prefix = []) (T = H) (T = app [H|Prefix]).
+*/
+    
+}}
+
+macro @X :- try4.fo.uv z.
+macro @Y :- try4.fo.uv (s z).
+macro @Z :- try4.fo.uv (s (s z)).
+macro @f :- try4.fo.c "f".
+macro @g :- try4.fo.c "g".
+macro @h :- try4.fo.c "h".
+macro @a :- try4.fo.c "a".
+macro @b :- try4.fo.c "b".
+macro @c :- try4.fo.c "c".
+macro @app L :- try4.fo.app L.
+macro @lam L :- try4.fo.lam L.
+
+type xtest test try4.fo.tm -> o.
+xtest (test L R tt) :- std.spy-do! [
+  std.assert! (try4.comp.comp L LH [] Link0 [] HO0) "b1",
+  std.assert! (try4.comp.comp R RH Link0 Link HO0 HO) "b2",
+  try4.ho.unif LH RH HO SOL,
+  try4.comp.solve-link Link Link SOL SOL1,
+  try4.fo.alloc-subst FOSol L,
+  try4.fo.alloc-subst FOSol R,
+  len FOSol _, % close
+  std.assert! (try4.comp.decompl Link Link SOL1 FOSol FOSol1) "b3",
+  try4.fo.equal FOSol1 L R,
+].
+
+xtest (test L R ff) :- std.spy-do! [
+  std.assert! (try4.comp.comp L LH [] Link0 [] HO0) "b1",
+  std.assert! (try4.comp.comp R RH Link0 Link HO0 HO) "b2",
+  not(try4.ho.unif LH RH HO SOL, try4.comp.solve-link Link Link SOL _SOL1),
+].
+
+macro @ok X Y :- declare-test xtest (test X Y tt).
+macro @ko X Y :- declare-test xtest (test X Y ff).
+
+@ok (@app [@f, @X]) (@app [@f, @a]).
+@ok (@app [@X, @a]) (@app [@f, @a]).
+@ko (@app [@f, @X]) @X.
+@ko (@app [@f, @X, @X]) (@app [@f, @a, @b]).
+@ok (@app [@f, @X, @Y, @X]) (@app [@f, (@app [@f, @Y]), @b, (@app [@f, @b])]).
+@ok (@lam x\ (@app [@f, @X])) (@lam x\ (@app [@f, @a])).
+@ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@f, y]).
