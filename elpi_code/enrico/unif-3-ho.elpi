@@ -105,12 +105,13 @@ ho-link z X X.
 ho-link (s A) (lam F) (x\X x) :- pi x\ ho-link A (F x) (X x).
 
 type decomp list tm -> A -> o.
-decomp SO XV :- var XV X S, !, new SO N, XV = (uv N S).
+decomp SO XV :- var XV _ S, !, new SO N, XV = (uv N S).
 decomp _ X :- name X.
 decomp SO (app L) :- std.forall L (decomp SO).
 decomp SO (lam F)  :- pi x\ decomp SO (F x).
-decomp SO (c X).
-decomp SO (uv N S).
+decomp _ _.
+% decomp SO (c X).
+% decomp SO (uv N S).
 
 type new list tm -> nat -> o.
 new L z :- var L, !, L = [FRESH_|TAIL_].
@@ -134,11 +135,10 @@ eta-contract (uv X Args) (uv X Args).
 
 type contract list tm -> tm -> tm -> o.
 % contract A B _ :- print A B, fail.
-contract L X T :- var X, !, fail.
+contract _ X _ :- var X, !, fail.
 contract L (lam F) T :- 
   pi x\ contract [x|L] (F x) T. % also checks H Prefix does not see x
-contract L (app [H|Args]) T :- 
-  %print "Base case",
+contract L (app [H|Args]) T :-
   std.rev L LRev, std.appendR Prefix LRev Args,
   if (Prefix = []) (T = H) (T = app [H|Prefix]).
 %TODO: uv N Args
