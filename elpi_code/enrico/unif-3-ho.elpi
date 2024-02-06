@@ -108,6 +108,22 @@ comp (app [uv N Args | S]) XV SO L L1 :- std.do! [
   nth N SO T, len Args' Arity, 
   L1 = [ho-link-eta Arity T X | L],
 ].
+
+type ho-link-beta nat -> tm -> list tm -> tm -> o.
+
+ho-link-beta N C E (app L) :- var C,
+  std.appendR [C] E L.
+% TODO: if C is not a var, then ho3.beta C E = (app L)
+ho-link-beta _ _ _ _.
+
+% Working with FO unification: Args are in PF, S can be any list.
+% This adds the new list: beta (app (uv N Args) S) (app XV S) 
+comp (app [uv N Args | S]) X SO L L2 :- std.do! [
+  pattern-fragment Args, prune XV Args, var XV X _,
+  nth N SO T, len Args Arity, 
+  fold2 (x\y\comp x y SO) S S1 L L1,
+  L2 = [ho-link-beta Arity T S1 X | L1]
+].
 comp (app A) (app A1) SO L L1 :- fold2 (x\y\comp x y SO) A A1 L L1.
 comp (lam F) (lam F1) SO L L2 :- 
   (pi x\ (pi A\ comp x x SO A A) => comp (F x) (F1 x) SO L (L1 x)),
