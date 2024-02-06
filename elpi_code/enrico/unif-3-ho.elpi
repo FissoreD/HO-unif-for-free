@@ -91,6 +91,7 @@ pi-close (x\ [A x | TL x]) [pi x\ A x | TL'] :-
 % [comp T TComp Theta OldLinks NewLinks] 
 % - T        : the term in the OL
 % - TComp    : the compiled version of T
+% - Theta    : the set of substitution in the OL
 % - OldLinks : the links before the compil
 % - NewLinks : the links after the compil
 type comp tm -> tm -> list A -> list o -> list o -> o.
@@ -100,9 +101,9 @@ comp (lam F) (lam F1) SO L L2 :-
   (pi x\ (pi A\ comp x x SO A A) => comp (F x) (F1 x) SO L (L1 x)),
   pi-close L1 L2.
 comp (uv N S) XV SO L L1 :- std.do! [
-  pattern-fragment S, var XV _ _, prune XV S, var XV X _,
-  nth N SO T, len S A, 
-  L1 = [ho-link-eta A T X| L],
+  pattern-fragment S, prune XV S, var XV X _,
+  nth N SO T, len S Arity, 
+  L1 = [ho-link-eta Arity T X | L],
 ].
 
 % [ho-link Arity T TM]
@@ -113,7 +114,12 @@ type ho-link nat -> tm -> A -> o.
 ho-link z X X.
 ho-link (s A) (lam F) (x\X x) :- pi x\ ho-link A (F x) (X x).
 
-type decomp list tm -> A -> o.
+% [decomp Theta T]
+% - Theta : the substitution of the OL
+% - T     : the term being analized 
+%           in particular, if T contains any uvar of the ML, then this uvar is
+%           replaced with an uvar of the OL
+type decomp list tm -> tm -> o.
 decomp SO XV :- var XV _ S, !, new SO N, XV = (uv N S).
 decomp _ X :- name X.
 decomp SO (app L) :- std.forall L (decomp SO).
