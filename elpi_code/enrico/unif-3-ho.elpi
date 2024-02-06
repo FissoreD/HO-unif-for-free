@@ -88,6 +88,11 @@ pi-close (x\ [A | TL x]) [A | TL'] :-
 pi-close (x\ [A x | TL x]) [pi x\ A x | TL'] :- 
   pi-close TL TL'.
 
+% [comp T TComp Theta OldLinks NewLinks] 
+% - T        : the term in the OL
+% - TComp    : the compiled version of T
+% - OldLinks : the links before the compil
+% - NewLinks : the links after the compil
 type comp tm -> tm -> list A -> list o -> list o -> o.
 comp (c X) (c X) _ L L.
 comp (app A) (app A1) SO L L1 :- fold2 (x\y\comp x y SO) A A1 L L1.
@@ -100,6 +105,10 @@ comp (uv N S) XV SO L L1 :- std.do! [
   L1 = [ho-link-eta A T X| L],
 ].
 
+% [ho-link Arity T TM]
+% - Arity : the arity of the terms to build
+% - T     : the term of the OL
+% - TM    : the term of LP
 type ho-link nat -> tm -> A -> o.
 ho-link z X X.
 ho-link (s A) (lam F) (x\X x) :- pi x\ ho-link A (F x) (X x).
