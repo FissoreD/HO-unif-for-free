@@ -27,7 +27,7 @@ ho3c1.test (test L R ff) :-
   not(L1 = R1).
 
 type ho3c2.test test ho3.tm -> o.
-ho3c2.test (test L R tt) :- std.do! [
+ho3c2.test (test L R tt) :- std.spy-do! [
   comp2.comp L L1 SO [] Links',
   comp2.comp R R1 SO Links' Links,
   L1 = R1,
@@ -84,6 +84,21 @@ macro @koc2 X Y :- declare-test ho3c2.test (test X Y ff).
           lam x\ @f]).
 
 @okc2 (lam x\ lam y\ @X [x, y]) (lam x\ lam y\ @X [y, x]).
+@okc2 (lam x\ lam y\ app[@X [], x, y]) (lam x\ lam y\ app[@X [], y, x]).
+
+% TODO: Should pass
+% @okc2 (lam a\ lam x\ lam y\ app [@X [a], x, y]) (lam a\ lam x\ lam y\ app [@X [a], y, x]).
+
+% TODO: Note this does not typecheck, but we do not detect it...
+% @okc2 (lam x\ lam y\ app[@X [], x, y]) (lam x\ lam y\ @X [y, x]).
+
+% TODO: here we have a beta in FO
+% @okc2 (app [@X [], app [@X [], @a]]) (app [lam (x\ app[@f, x, x]), app[@f, @a, @a]]).
+
+% TODO: The following are beta and eta redexes, should we normalize the goal
+% before solving it?
+% okc2 (app [lam (x\ app[@f, x]), @a]) (app [@f, @a]).
+% okc2 (lam (x\ app[@f, x])) @f.
 
 
 % TODO:
