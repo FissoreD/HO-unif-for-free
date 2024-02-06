@@ -62,14 +62,14 @@ such implementation in \coq.
   Instance WWW : bla bla -> XXX Args := {...} Qed.
 \end{mintedTcolorbox}
 
-This small set of instance thanks a first phase of class and instance\todo{explain compilation of pred and inst?}
-compilation is translated into the following \elpi program:
+This small set of instances after a first phase of\todo{explain compilation of pred and inst?}
+compilation is translated into the following \elpi rules:
 
 \begin{mintedTcolorbox}{elpi}
   type XXX Args .. -> term -> o.
-  XXX Args ... (ZZZ P1 ... PN) :-
+  XXX Args ... (WWW P1 ... PN) :-
     premese...
-  WWW Args ... (ZZZ P1 ... PN) :-
+  XXX Args ... (ZZZ P1 ... PN) :-
     premese...
 \end{mintedTcolorbox}
 
@@ -77,8 +77,8 @@ Type-class resolution starts from a query, that is a class applied to some
 argument. This \coq term is translated into a term of the meta language and the
 search for a solution in the database is started. However, since unification is
 performed on the head of the clause, it may happen that the term representation
-in the meta language is not sufficiently powerful to understand that two terms
-unifying in the object language should also unify in the meta language.
+in the meta language may hide some unification properties that are true in the
+object language.
 
 
 % \section{Higher-order unification in \texorpdfstring{$L_\lambda$}{L\_lambda}}
@@ -104,8 +104,21 @@ two terms that unify in \coq not unifiable in \elpi.
 
 Without any loss of generality, in \cref{table:coq2elpi} we present a subset of
 the terms in the object language and for each term we give its representation in
-the meta language.
+the meta language. This encoding is enough to fall into unification problems.
+For example, rules like 
 
+\begin{center}
+  \elpiIn{p (lam x\ (app F x)) :- ... F ...}
+\end{center}
+
+cannot unify with goals like 
+
+\begin{center}
+  \elpiIn{p (lam x\ app (app (const "f") x) x).}
+\end{center}
+
+Since \elpiIn{F} does not see \elpiIn{x} even though it is applied to \elpiIn{x}
+in the object language.
   
 \begin{table}
   \centering
