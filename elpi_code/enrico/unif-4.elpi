@@ -60,12 +60,28 @@ type c string -> tm.
 type unif tm -> tm -> subst -> subst ->  o.
 unif (uv N Args) T S S1 :- assigned? N S F, beta F Args T1, unif T1 T S S1.
 unif T (uv N Args) S S1 :- assigned? N S F, beta F Args T1, unif T T1 S S1.
+unif (uv N Args1) (uv N Args2) S S1 :- pattern-fragment Args1, pattern-fragment Args2, std.spy(prunex N Args1 Args2 S S1).
 unif (uv N Args) T S S1 :- not (occ N S T), pattern-fragment Args, bind Args T T1, assign N S T1 S1.
 unif T (uv N Args) S S1 :- not (occ N S T), pattern-fragment Args, bind Args T T1, assign N S T1 S1.
 unif (app L1) (app L2) S S1 :- fold2 unif L1 L2 S S1.
 unif (lam F1) (lam F2) S S1 :- pi x\ (pi S\ unif x x S S) => unif (F1 x) (F2 x) S S1.
 unif (c X) (c X) S S.
 % add eta
+unif (lam F) (c X) S S1 :- pi x\ (pi S\ unif x x S S) => unif (F x) (app [c X,x]) S S1.
+unif (c X) (lam F) S S1 :- pi x\ (pi S\ unif x x S S) => unif (app [c X,x]) (F x) S S1.
+
+
+type prunex nat -> list tm -> list tm -> subst -> subst -> o.
+prunex N A1 A2 S S2 :-
+  new S M S1,
+  prune-aux (uv M []) A1 A2 F ff,
+  assign N S1 F S2.
+prunex _ _ _ S S.
+
+type prune-aux tm -> list tm -> list tm -> tm -> bool -> o.
+prune-aux N [] [] N tt.
+prune-aux N [X|XS] [X|YS] (lam F) O :- pi x\ prune-aux {beta N [x]} XS YS (F x) O.
+prune-aux N [_|XS] [_|YS] (lam F) _ :- pi x\ prune-aux N XS YS (F x) tt.
 
 type beta tm -> list tm -> tm -> o.
 beta A [] A.
@@ -75,7 +91,6 @@ beta (uv N A) L (uv N X) :- std.append A L X.
 beta (c H) L (app [c H | L]).
 
 type occ nat -> subst -> tm -> o.
-occ N _ (uv N _) .
 occ N S (uv M Args) :- assigned? M S F, beta F Args T, occ N S T.
 occ N S (app L) :- exists (occ N S) L.
 occ N S (lam F) :- pi x\ occ N S (F x).
@@ -99,7 +114,7 @@ new [X|XS] (s N) [X|YS] :- new XS N YS.
 namespace comp {
 
 kind link type.
-type link nat -> nat -> link.
+type link nat -> nat -> nat -> link.
 
 type comp fo.tm -> ho.tm -> list link -> list link -> ho.subst -> ho.subst -> o.
 comp (fo.c X)   (ho.c X) L L S S.
@@ -107,41 +122,56 @@ comp (fo.app [fo.uv N|Args]) (ho.uv M Args1) L L2 S S2 :-
   pattern-fragment Args,
   fold4 comp Args Args1 L L1 S S1,
   ho.new S1 M S2,
-  L2 = [link N M| L1].
+  len Args Len,
+  L2 = [link N M Len| L1].
 comp (fo.app A) (ho.app A1) L L1 S S1 :- fold4 comp A A1 L L1 S S1.
 comp (fo.lam F) (ho.lam F1) L L1 S S1 :- 
   (pi x y\ (pi A S\ comp x y A A S S) => comp (F x) (F1 y) L L1 S S1).
-comp (fo.uv N) (ho.uv M []) L [link N M|L] S S1 :- ho.new S M S1.
+comp (fo.uv N) (ho.uv M []) L [link N M z|L] S S1 :- ho.new S M S1.
 
 type solve-link list link -> list link -> ho.subst -> ho.subst -> o.
-solve-link [link N M|L] LR HO HO1 :- take-link L (link N M') L1, !,
-  assigned? M HO T,
-  assigned? M' HO T',
-  ho.unif T T' HO HO2,
-  solve-link [link N M|L1] LR HO2 HO1.
+solve-link [link N M Len|L] LR HO HO1 :- take-link L (link N M' _) L1, !, std.spy-do! [
+  same-assign M M' Len W HO HO2,
+  solve-link [link N W Len|L1] LR HO2 HO1,
+].
 solve-link [L|LS] [L|LS'] HO HO1 :- solve-link LS LS' HO HO1.
 solve-link [] [] X X.
+
+type same-assign nat -> nat -> nat -> nat -> ho.subst -> ho.subst -> o.
+same-assign M M' Len W HO HO2 :-
+  (assigned? M HO T, W = M ; eta (ho.uv M []) Len T), % FIXME args
+  (assigned? M' HO T', W = M' ; eta (ho.uv M' []) Len T'),
+  std.spy(ho.unif T T' HO HO2).
+%same-assign M _ M S S :- assigned? M S _.
+%same-assign _ M M S S :- assigned? M S _.
+
+type eta ho.tm -> nat -> ho.tm -> o.
+eta X z X.
+eta X (s N) (ho.lam F) :- pi x\ eta {ho.beta X [x]} N (F x).
 
 type take-link list link -> link -> list link -> o.
 take-link [L|XS] L XS.
 take-link [L|XS] L' [L|YS] :- not(L = L'), take-link XS L' YS.
 
 type decompl list link -> list link -> ho.subst -> fo.subst -> fo.subst -> o.
-decompl [link N M|L] LK HO FO FO1 :-
+decompl [link N M _|L] LK HO FO FO1 :-
   assigned? M HO T,
-  decomp LK T T' FO FO',
+  decomp LK HO T T' FO FO',
   assign N FO' T' FO2,
   decompl L LK HO FO2 FO1.
 decompl [] _ _ X X.
 
-type decomp list link -> ho.tm -> fo.tm -> fo.subst -> fo.subst -> o.
-decomp _ (ho.c X)   (fo.c X) S S.
-decomp LK (ho.app L) (fo.app L1) S S1 :- fold2 (decomp LK) L L1 S S1.
-decomp LK (ho.lam F) (fo.lam F1) S S1 :-
-  pi x y\ (pi S\ decomp LK x y S S) => decomp LK (F x) (F1 y) S S1.
-decomp LK (ho.uv N Args) (fo.app [fo.uv X|Args1]) S S1 :-
-  fold2 (decomp LK) Args Args1 S S2,
-  if (take-link LK (link X N) _) (S1 = S2) (fo.new S2 X S1). % bug
+type decomp list link -> ho.subst -> ho.tm -> fo.tm -> fo.subst -> fo.subst -> o.
+decomp _ _ (ho.c X)   (fo.c X) S S.
+decomp LK HO (ho.app L) (fo.app L1) S S1 :- fold2 (decomp LK HO) L L1 S S1.
+decomp LK HO (ho.lam F) (fo.lam F1) S S1 :-
+  pi x y\ (pi S\ decomp LK HO x y S S) => decomp LK HO (F x) (F1 y) S S1.
+decomp LK HO (ho.uv N Args) (fo.app [fo.uv X|Args1]) S S1 :-
+  fold2 (decomp LK HO) Args Args1 S S2,
+  if (take-link LK (link X N _) _) (S1 = S2)
+     (fo.new S2 X S1',
+      if (assigned? N HO T) (decomp LK HO T T' S1' S1'', assign X S1'' T' S1)
+        (S1 = S1')).
 
 /*
 type eta-contract tm -> tm -> o.
@@ -182,27 +212,29 @@ xtest (test L R tt) :- std.spy-do! [
   std.assert! (try4.comp.comp L LH [] Link0 [] HO0) "b1",
   std.assert! (try4.comp.comp R RH Link0 Link HO0 HO) "b2",
   try4.ho.unif LH RH HO SOL,
-  try4.comp.solve-link Link Link SOL SOL1,
+  try4.comp.solve-link Link LinkU SOL SOL1,
   try4.fo.alloc-subst FOSol L,
   try4.fo.alloc-subst FOSol R,
   len FOSol _, % close
-  std.assert! (try4.comp.decompl Link Link SOL1 FOSol FOSol1) "b3",
+  std.assert! (try4.comp.decompl LinkU LinkU SOL1 FOSol FOSol1) "b3",
   try4.fo.equal FOSol1 L R,
 ].
 
 xtest (test L R ff) :- std.spy-do! [
   std.assert! (try4.comp.comp L LH [] Link0 [] HO0) "b1",
   std.assert! (try4.comp.comp R RH Link0 Link HO0 HO) "b2",
-  not(try4.ho.unif LH RH HO SOL, try4.comp.solve-link Link Link SOL _SOL1),
+  not(try4.ho.unif LH RH HO SOL, try4.comp.solve-link Link _LinkU SOL _SOL1),
 ].
 
 macro @ok X Y :- declare-test xtest (test X Y tt).
 macro @ko X Y :- declare-test xtest (test X Y ff).
 
-@ok (@app [@f, @X]) (@app [@f, @a]).
-@ok (@app [@X, @a]) (@app [@f, @a]).
-@ko (@app [@f, @X]) @X.
-@ko (@app [@f, @X, @X]) (@app [@f, @a, @b]).
-@ok (@app [@f, @X, @Y, @X]) (@app [@f, (@app [@f, @Y]), @b, (@app [@f, @b])]).
-@ok (@lam x\ (@app [@f, @X])) (@lam x\ (@app [@f, @a])).
-@ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@f, y]).
+%@ok (@app [@f, @X]) (@app [@f, @a]).
+%@ok (@app [@X, @a]) (@app [@f, @a]).
+%@ko (@app [@f, @X]) @X.
+%@ko (@app [@f, @X, @X]) (@app [@f, @a, @b]).
+%@ok (@app [@f, @X, @Y, @X]) (@app [@f, (@app [@f, @Y]), @b, (@app [@f, @b])]).
+%@ok (@lam x\ (@app [@f, @X])) (@lam x\ (@app [@f, @a])).
+%@ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@f, y]).
+@ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@X, y, x]).
+@ok (@lam x\ @lam y\ @app [@X, y, x]) (@lam x\ @lam y\ @app [@X, y, x]).

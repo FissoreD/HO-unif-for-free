@@ -20,6 +20,61 @@
 \def\coq{\proglang{coq}}
 \newcommand*{\eqtau}{\ensuremath{\mathrel{\overset{\mathrm{\tau}}{=}}}}
 
+\section{intro}
+
+we are interested in using a meta language in LF style to write
+automation, proof search. In various works... they achieve that
+for a OL which is simpler than the LF, the equational theory is included
+in the one of the ML. This is exploited to piggy back on the unif
+of the ML.
+the peculiarity of our setting is that the OL has a richer equational
+theory of the ML, eg beta eta zeta bla bla. Moreover is HO logic, so
+quantifies over functions, so unif variable range on that too.
+We want to piggy back on the ML unif whenever the problem fits
+in its domain, eg pattern fragment.
+this is important for practical purposes.
+
+\subsection{in a nutshell}
+example, a rule for theorem
+$$
+forall f : A -> B, .. bla f .. -> prove (\forall x, f x)
+bla g
+$$
+\begin{minted}{elpi}
+type app ..
+prove (forall x\ app F x) :- ... bla F ...
+\end{minted}
+on goal \mint{elpi}|prove (forall x\ app (app g x) x))|
+would fail since \mint{elpi}|F != app g x|.
+
+of course one wants to avoid
+\begin{minted}{elpi}
+prove P S S'' :- ol-unif P S (forall x\ app "F" x) S', ... assignment "F" S' F, bla F S' ...
+\end{minted}
+
+Now, ML has HO variables
+\begin{minted}{elpi}
+type lam ..
+prove (forall x\ F x) :- ... bla F ...
+\end{minted}
+this time  \mint{elpi}|F x != app (app g x) x| has solution
+\mint{elpi}|F = a\ app (app g x) x| but F is not a term so
+bla needs to be adapted,
+\begin{minted}{elpi}
+prove (forall x\ F x) :- ... bla (lam F) ...
+bla g.
+\end{minted}
+this is too simplistic since \mint{elpi}|g != lam x\ app g x|
+
+\subsection{contribution}
+\begin{itemize}
+\item prover for HO OL in ML that uses unif
+\item eta beta
+\item test on stdpp and TLC
+\end{itemize}
+
+
+
 
 \section{Higher-order unification in \texorpdfstring{$L_\lambda$}{L\_lambda}}
 
