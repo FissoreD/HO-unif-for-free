@@ -56,21 +56,41 @@ predicates. For instance, if \texttt{XXX} is the type class representing the
 AAA, then ZZZ and WWW are instances for XXX. In the code snippet below, we give
 such implementation in \coq.
 
-\begin{mintedTcolorbox}{coq}
-  Class XXX Args := {methods ...}.
-  Instance ZZZ : bla bla -> XXX Args := {...} Qed.
-  Instance WWW : bla bla -> XXX Args := {...} Qed.
+
+\begin{mintedTcolorbox}[escapeinside=&&]{coq}
+  Inductive sig (A : Type) (P : A -> Prop) : Type := ...
+
+  Class Decision (P : Prop) := decide : {P} + {not P}.
+  Class RelDecision {A B: Type} (R : A -> B -> Prop).
+  Class ProofIrrel (A : Type) : Prop := proof_irrel (x y : A) : x = y.
+
+  Instance decide_rel: forall (A B : Type) (R : A -> B -> Prop),
+    RelDecision R -> forall (x : A) (y : B), Decision (R x y). Admitted.
+  Instance True_pi : ProofIrrel True. Admitted.
+  Instance sig_eq_dec: forall (A : Type) (P : A -> Prop),
+    (forall x, ProofIrrel (P x)) -> RelDecision (@eq A) ->
+    RelDecision (@eq (sig A P)). Admitted.
 \end{mintedTcolorbox}
 
 This small set of instances after a first phase of\todo{explain compilation of pred and inst?}
 compilation is translated into the following \elpi rules:
 
 \begin{mintedTcolorbox}{elpi}
-  type XXX Args .. -> term -> o.
-  XXX Args ... (WWW P1 ... PN) :-
-    premese...
-  XXX Args ... (ZZZ P1 ... PN) :-
-    premese...
+  type tc-Decision term -> term -> o.
+  type tc-RelDecision term -> term -> term -> term -> o.
+  type tc-ProofIrrel term -> term -> o.
+
+  tc-ProofIrrel (`True`) (`True_pi`).
+  tc-Decision (app [R, X, Y]) 
+    (app [`decide_rel`, A, B, R, P, X, Y]) :-
+    tc-RelDecision A B R P.
+  tc-RelDecision (app [`sig`, A, P]) 
+    (app [`sig`, A, P]) 
+    (app [`eq`, app [`sig`, A, P]]) 
+    (app [`sig_eq_dec`, A, P, P1, P2]) :-
+    pi-decl c0 `x` A =>
+      tc-ProofIrrel (app [P, c0]) (app [P1, c0]), 
+    tc-RelDecision A A (app [`eq`, A]) P2.
 \end{mintedTcolorbox}
 
 Type-class resolution starts from a query, that is a class applied to some
@@ -78,7 +98,17 @@ argument. This \coq term is translated into a term of the meta language and the
 search for a solution in the database is started. However, since unification is
 performed on the head of the clause, it may happen that the term representation
 in the meta language may hide some unification properties that are true in the
-object language.
+object language. In the example below, the goal \texttt{Decision (@eq T a b)}
+for some \texttt{a} and \texttt{b} unifies with \texttt{Decision (R x y)} in the
+object language but not in its meta representation. Similarly, the goal
+\texttt{RelDecision (@eq (sig T ?P))} where \texttt{?P}, under the hypothesis
+\texttt{RelDecision (@eq nat)}, will trying to apply the rule for
+\texttt{sig\_eq\_dec}, we fall into an higher order unification problem, where
+\texttt{P} is applied to the local name \texttt{x}. However, the corresponding
+rule in the meta language exploit a first order variable \texttt{P}. Therefore,
+after the refinement of the goal to \texttt{sig\_eq\_dec}, the resolution
+immediately fail to solve the premise \texttt{tc-ProofIrrel (app [P, c0]) (app
+[P1, c0])}.
 
 
 % \section{Higher-order unification in \texorpdfstring{$L_\lambda$}{L\_lambda}}
