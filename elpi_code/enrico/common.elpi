@@ -34,16 +34,12 @@ all [].
 all [P|PS] :- P, all PS.
 
 type forall (X -> o) -> list X -> o.
-forall _ [].
-forall P [X|XS] :- P X, forall P XS.
+forall _ L :- var L, !.
+forall P [X|XS] :- P X. % , forall P XS.
 
 type len list A -> nat -> o.
 len [] z.
 len [_|L] (s X) :- len L X.
-
-type copyl list A -> list A -> o.
-copyl L [] :- var L, !.
-copyl [X|L] [X|L1] :- copyl L L1.
 
 pred pattern-fragment i:list A.
 pattern-fragment L :- distinct_names L.
