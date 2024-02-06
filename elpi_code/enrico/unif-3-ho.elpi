@@ -114,13 +114,13 @@ comp (app [uv N Args | S]) XV SO L L1 :- std.do! [
   L1 = [ho-link-eta Arity T X | L],
 ].
 
-type ho-link-beta nat -> tm -> list tm -> tm -> o.
+type ho-link-beta nat -> tm -> list tm -> tm -> list A -> o.
 
 % TODO: what about N_?
-ho-link-beta N_ C E (app L) :- var C,
-  std.appendR [C] E L, !.
-% TODO: if C is not a var, then ho3.beta C E = (app L)
-ho-link-beta _ _ _ _.
+ho-link-beta N_ C E (app L) _ :- var C,
+  std.appendR [C] E L.
+ho-link-beta N_ H L T SO :- not (var H),
+  ho3.beta H L T', ho3.equal T' T SO.
 
 % Working with FO unification: Args are in PF, S can be any list.
 % This adds the new list: beta (app (uv N Args) S) (app XV S) 
@@ -128,7 +128,7 @@ comp (app [uv N Args | S]) X SO L L2 :- std.do! [
   pattern-fragment Args, prune XV Args, var XV X _,
   nth N SO T, len Args Arity, 
   fold2 (x\y\comp x y SO) S S1 L L1,
-  L2 = [ho-link-beta Arity T S1 X | L1]
+  L2 = [ho-link-beta Arity T S1 X SO | L1]
 ].
 comp (app A) (app A1) SO L L1 :- fold2 (x\y\comp x y SO) A A1 L L1.
 comp (lam F) (lam F1) SO L L2 :- 
@@ -152,7 +152,7 @@ type ho-link nat -> tm -> A -> o.
 % a kind of typechecking: a variable X unify with Y if they have the same "arity" 
 ho-link z X Y :- var X _ L, var Y _ M, print L M, !, same-len L M, X = Y.
 ho-link z X X.
-ho-link (s A) (lam F) (x\X x) :- pi x\ std.spy(ho-link A (F x) (X x)).
+ho-link (s A) (lam F) (x\X x) :- pi x\ ho-link A (F x) (X x).
 
 % [decomp Theta T]
 % - Theta : the substitution of the OL

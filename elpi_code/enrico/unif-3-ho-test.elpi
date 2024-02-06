@@ -90,8 +90,15 @@ macro @koc2 X Y :- declare-test ho3c2.test (test X Y ff).
 
 % here we have a beta in FO
 @okc2 (app [@X [], app [@X [], @a]]) (app [lam (x\ app[@f, x, x]), app[@f, @a, @a]]).
+@okc2 (app [lam (x\ app[@f, x, x]), app[@f, @a, @a]]) (app [@X [], app [@X [], @a]]).
 @okc2 (app [@X [], app [@X [], @a]]) (app [lam (x\ app[@f, x]), app[@f, @a]]).
+@okc2 (app [lam (x\ app[@f, x]), app[@f, @a]]) (app [@X [], app [@X [], @a]]).
 @okc2 (app [@X [], @X []]) (app [lam (x\ app[@f, x]), @f]).
+
+@okc2 (app [@X [], @X []]) (app[@Y [], @f]).
+@okc2 (app [@X [], @a]) (app[@f, @a]). % Here we make aprrox first order
+@koc2 (app [@X [], @a]) (app[@f, @b]). % Note this not pass since we are not in PF
+@koc2 (app [@X [], @a]) @f.            % Same here
 
 % Here no compilation is done, only test for equal function
 % @okc2 (app [lam (x\ app[@f, x]), @a]) (app [@f, @a]).
@@ -103,6 +110,3 @@ macro @koc2 X Y :- declare-test ho3c2.test (test X Y ff).
 
 @koc2 (lam x\ lam y\ app[@X [], x]) (lam x\ lam y\ @X [y, x]).
 
-% TODO:
-% (app[X,a]) --> X = lam --> beta problem, we could compile this to
-% Z + link-beta (app X a) Z anche se X a non è pattern...
