@@ -27,7 +27,7 @@ ho3c1.test (test L R ff) :-
   not(L1 = R1).
 
 type ho3c2.test test ho3.tm -> o.
-ho3c2.test (test L R tt) :- std.spy-do! [
+ho3c2.test (test L R tt) :- std.do! [
   comp2.comp L L1 SO [] Links',
   comp2.comp R R1 SO Links' Links,
   L1 = R1,
@@ -36,10 +36,10 @@ ho3c2.test (test L R tt) :- std.spy-do! [
   std.assert! (ho3.validSO SO) "invalid SO",
   std.assert! (ho3.equal L R SO) "bug",
 ].
-ho3c2.test (test L R ff) :-
+ho3c2.test (test L R ff) :- std.spy-do![
   comp2.comp L L1 SO [] Links',
   comp2.comp R R1 SO Links' Links,
-  not(L1 = R1, all Links).
+  not(std.spy(print "A", L1 = R1, print "B", std.spy(all Links), print "BB"))].
 
 macro @ok X Y :- declare-test ho3.test (test X Y tt).
 macro @ko X Y :- declare-test ho3.test (test X Y ff).
@@ -88,18 +88,20 @@ macro @koc2 X Y :- declare-test ho3c2.test (test X Y ff).
 
 @okc2 (lam a\ lam x\ lam y\ app [@X [a], x, y]) (lam a\ lam x\ lam y\ app [@X [a], y, x]).
 
-% TODO: Note this does not typecheck, but we do not detect it...
-% @okc2 (lam x\ lam y\ app[@X [], x, y]) (lam x\ lam y\ @X [y, x]).
-
 % here we have a beta in FO
 @okc2 (app [@X [], app [@X [], @a]]) (app [lam (x\ app[@f, x, x]), app[@f, @a, @a]]).
 @okc2 (app [@X [], app [@X [], @a]]) (app [lam (x\ app[@f, x]), app[@f, @a]]).
 @okc2 (app [@X [], @X []]) (app [lam (x\ app[@f, x]), @f]).
 
 % Here no compilation is done, only test for equal function
-okc2 (app [lam (x\ app[@f, x]), @a]) (app [@f, @a]).
-okc2 (lam (x\ app[@f, x])) @f.
+% @okc2 (app [lam (x\ app[@f, x]), @a]) (app [@f, @a]).
+% @okc2 (lam (x\ app[@f, x])) @f.
 
+% It is a weird test (not possible in elpi?) but it works, since by definition
+% app[@X [], x, y] === @X [y, x]
+@okc2 (lam x\ lam y\ app[@X [], x, y]) (lam x\ lam y\ @X [y, x]).
+
+@koc2 (lam x\ lam y\ app[@X [], x]) (lam x\ lam y\ @X [y, x]).
 
 % TODO:
 % (app[X,a]) --> X = lam --> beta problem, we could compile this to

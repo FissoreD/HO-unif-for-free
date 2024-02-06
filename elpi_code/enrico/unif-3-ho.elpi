@@ -58,7 +58,7 @@ equal T (lam B) S :- not (T = lam _),
 equal (lam F1) (lam F2) S :- pi x\ equal x x S => equal (F1 x) (F2 x) S.
 equal (c X) (c X) _.
 equal (uv N L1) (uv N L2) S :- forall2 (x\y\equal x y S) L1 L2.
-equal A B _ :- halt "Unifying" A B.
+% equal A B _ :- halt "Unifying" A B.
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -116,7 +116,8 @@ comp (app [uv N Args | S]) XV SO L L1 :- std.do! [
 
 type ho-link-beta nat -> tm -> list tm -> tm -> o.
 
-ho-link-beta N C E (app L) :- var C,
+% TODO: what about N_?
+ho-link-beta N_ C E (app L) :- var C,
   std.appendR [C] E L, !.
 % TODO: if C is not a var, then ho3.beta C E = (app L)
 ho-link-beta _ _ _ _.
@@ -139,13 +140,19 @@ comp (uv N S) XV SO L L1 :- std.do! [
   L1 = [ho-link-eta Arity T X | L],
 ].
 
+type same-len list A -> list A -> o.
+same-len [] [].
+same-len [_|L] [_|M] :- same-len L M.
+
 % [ho-link Arity T TM]
 % - Arity : the arity of the terms to build
 % - T     : the term of the OL
 % - TM    : the term of LP
 type ho-link nat -> tm -> A -> o.
+% a kind of typechecking: a variable X unify with Y if they have the same "arity" 
+ho-link z X Y :- var X _ L, var Y _ M, print L M, !, same-len L M, X = Y.
 ho-link z X X.
-ho-link (s A) (lam F) (x\X x) :- pi x\ ho-link A (F x) (X x).
+ho-link (s A) (lam F) (x\X x) :- pi x\ std.spy(ho-link A (F x) (X x)).
 
 % [decomp Theta T]
 % - Theta : the substitution of the OL
