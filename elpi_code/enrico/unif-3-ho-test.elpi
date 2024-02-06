@@ -93,6 +93,8 @@ macro @koc2 X Y :- declare-test ho3c2.test (test X Y ff).
 
 % TODO: here we have a beta in FO
 @okc2 (app [@X [], app [@X [], @a]]) (app [lam (x\ app[@f, x, x]), app[@f, @a, @a]]).
+@okc2 (app [@X [], app [@X [], @a]]) (app [lam (x\ app[@f, x]), app[@f, @a]]).
+@okc2 (app [@X [], @X []]) (app [lam (x\ app[@f, x]), @f]).
 
 % TODO: The following are beta and eta redexes, should we normalize the goal
 % before solving it?

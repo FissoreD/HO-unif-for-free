@@ -48,12 +48,17 @@ equal (uv N Args) T1 S :-assigned? N S F, beta F Args T, equal T T1 S.
 equal T1 (uv N Args) S :- assigned? N S F, beta F Args T, equal T1 T S.
 equal (app [uv N Args | L]) T1 S :- assigned? N S F, beta F {std.append Args L} T, equal T T1 S.
 equal T1 (app [uv N Args | L]) S :- assigned? N S F, beta F {std.append Args L} T, equal T1 T S.
+equal (app [lam B | L]) T S :- beta (lam B) L T1, equal T1 T S. 
+equal T (app [lam B | L]) S :- beta (lam B) L T1, equal T T1 S. 
 equal (app L1) (app L2) S :- forall2 (x\y\equal x y S) L1 L2.
+equal (lam B) T S :- not (T = lam _),
+  pi x\ beta T [x] (B' x), equal (lam B) (lam B') S.
+equal T (lam B) S :- not (T = lam _),
+  pi x\ beta T [x] (B' x), equal (lam B') (lam B) S.
 equal (lam F1) (lam F2) S :- pi x\ equal x x S => equal (F1 x) (F2 x) S.
 equal (c X) (c X) _.
 equal (uv N L1) (uv N L2) S :- forall2 (x\y\equal x y S) L1 L2.
-
-
+equal A B _ :- halt "Unifying" A B.
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -112,7 +117,7 @@ comp (app [uv N Args | S]) XV SO L L1 :- std.do! [
 type ho-link-beta nat -> tm -> list tm -> tm -> o.
 
 ho-link-beta N C E (app L) :- var C,
-  std.appendR [C] E L.
+  std.appendR [C] E L, !.
 % TODO: if C is not a var, then ho3.beta C E = (app L)
 ho-link-beta _ _ _ _.
 
@@ -181,6 +186,7 @@ eta-contract X X :- var X, !.
 eta-contract (c X) (c X).
 eta-contract (app L) (app L1) :- forall2 eta-contract L L1.
 eta-contract (lam F) T :- contract [] (lam F) T.
+eta-contract T (lam F) :- contract [] (lam F) T.
 eta-contract (lam F) (lam F1) :- pi x\ (pi X Y\ eta-contract X Y :- name X, X = Y) => eta-contract (F x) (F1 x).
 eta-contract (uv X Args) (uv X Args).
 
