@@ -46,8 +46,8 @@ type equal tm -> tm -> list tm -> o.
 equal X Y _ :- (var X ; var Y), halt "flex".
 equal (uv N Args) T1 S :-assigned? N S F, beta F Args T, equal T T1 S.
 equal T1 (uv N Args) S :- assigned? N S F, beta F Args T, equal T1 T S.
-equal (app [uv N [] | L]) T1 S :- assigned? N S F, beta F L T, equal T T1 S.
-equal T1 (app [uv N [] | L]) S :- assigned? N S F, beta F L T, equal T1 T S.
+equal (app [uv N Args | L]) T1 S :- assigned? N S F, beta F {std.append Args L} T, equal T T1 S.
+equal T1 (app [uv N Args | L]) S :- assigned? N S F, beta F {std.append Args L} T, equal T1 T S.
 equal (app L1) (app L2) S :- forall2 (x\y\equal x y S) L1 L2.
 equal (lam F1) (lam F2) S :- pi x\ equal x x S => equal (F1 x) (F2 x) S.
 equal (c X) (c X) _.
@@ -102,9 +102,10 @@ pi-close (x\ [A x | TL x]) [pi x\ A x | TL'] :-
 % - NewLinks : the links after the compil
 type comp tm -> tm -> list A -> list o -> list o -> o.
 comp (c X) (c X) _ L L.
-comp (app [uv N [] | S]) XV SO L L1 :- std.do! [
-  pattern-fragment S, prune XV S, var XV X _,
-  nth N SO T, len S Arity, 
+comp (app [uv N Args | S]) XV SO L L1 :- std.do! [
+  std.append Args S Args',
+  pattern-fragment Args', prune XV Args', var XV X _,
+  nth N SO T, len Args' Arity, 
   L1 = [ho-link-eta Arity T X | L],
 ].
 comp (app A) (app A1) SO L L1 :- fold2 (x\y\comp x y SO) A A1 L L1.

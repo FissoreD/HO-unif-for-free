@@ -86,8 +86,7 @@ macro @koc2 X Y :- declare-test ho3c2.test (test X Y ff).
 @okc2 (lam x\ lam y\ @X [x, y]) (lam x\ lam y\ @X [y, x]).
 @okc2 (lam x\ lam y\ app[@X [], x, y]) (lam x\ lam y\ app[@X [], y, x]).
 
-% TODO: Should pass
-% @okc2 (lam a\ lam x\ lam y\ app [@X [a], x, y]) (lam a\ lam x\ lam y\ app [@X [a], y, x]).
+@okc2 (lam a\ lam x\ lam y\ app [@X [a], x, y]) (lam a\ lam x\ lam y\ app [@X [a], y, x]).
 
 % TODO: Note this does not typecheck, but we do not detect it...
 % @okc2 (lam x\ lam y\ app[@X [], x, y]) (lam x\ lam y\ @X [y, x]).
