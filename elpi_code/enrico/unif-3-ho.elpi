@@ -128,14 +128,15 @@ decomp SO XV :- var XV _ S, !, new SO N, XV = (uv N S).
 decomp _ X :- name X.
 decomp SO (app L) :- std.forall L (decomp SO).
 decomp SO (lam F)  :- pi x\ decomp SO (F x).
-decomp SO (c X).
-decomp SO (uv N S).
+decomp _ (c _X).
+decomp _ (uv _N _S).
 
 type decompSO list tm -> o.
 decompSO SO :-
   copyl SO S1,
   forall (decomp SO) S1.
 
+type copyl list A -> list A -> o.
 copyl L [] :- var L, !.
 copyl [X|L] [X|L1] :- copyl L L1.
 
