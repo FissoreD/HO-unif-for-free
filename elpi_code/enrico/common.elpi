@@ -33,9 +33,13 @@ type all list o -> o.
 all [].
 all [P|PS] :- P, all PS.
 
+type copyl list A -> list A -> o.
+copyl L [] :- var L, !.
+copyl [X|L] [X|L1] :- copyl L L1.
+
 type forall (X -> o) -> list X -> o.
-forall _ L :- var L, !.
-forall P [X|XS] :- P X. % , forall P XS.
+forall _ [].
+forall P [X|XS] :- P X, forall P XS.
 
 type len list A -> nat -> o.
 len [] z.
