@@ -87,8 +87,12 @@ unif (uv N Args1) (uv M Args2) S S3 :- pattern-fragment Args1, pattern-fragment 
 unif (uv N Args) T S S1 :- not (T = uv _ _), print "In here", std.spy-do![not (occ N S T), pattern-fragment Args, bind Args T T1, assign N S T1 S1].
 unif T (uv N Args) S S1 :- not (T = uv _ _), not (std.spy(occ N S T)), pattern-fragment Args, bind Args T T1, assign N S T1 S1.
 
-% unif (app [uv N L | Args]) T S S1 :- unif (uv N {std.append L Args}) T S S1.
-% unif T (app [uv N L | Args]) S S1 :- unif T (uv N {std.append L Args}) S S1.
+% TODO: here we make FO unification -> should be moved in 
+unif (app [uv N L | Args]) (app L1) S S1 :-
+  std.appendR Hd Args L1,
+  unif (uv N L) (app Hd) S S1.
+
+
 unif (app L1) (app L2) S S1 :- fold2 unif L1 L2 S S1.
 unif (lam F1) (lam F2) S S1 :- pi x\ (pi S\ unif x x S S) => unif (F1 x) (F2 x) S S1.
 unif (c X) (c X) S S.
@@ -173,14 +177,36 @@ namespace comp {
 kind link type.
 type link nat -> nat -> nat -> link.
 
+% type not-in list A -> A -> o.
+% not-in [] _.
+% not-in [X | TL] _ :- not (X = T), not-in TL _.
+
+type not-in A -> list A -> o.
+not-in _ [].
+not-in T [X | TL] :- not (X = T), not-in T TL.
+
+type split-pf list A -> list A -> list A -> list A -> o.
+split-pf [] _ [] [].
+split-pf [X | L] ACC [X | PF] NPF :- name X, not-in X ACC, !, 
+  split-pf L [X | ACC] PF NPF.
+split-pf L _ [] L.
+
 type comp fo.tm -> ho.tm -> list link -> list link -> ho.subst -> ho.subst -> o.
 comp (fo.c X)   (ho.c X) L L S S.
-comp (fo.app [fo.uv N|Args]) (ho.uv M Args1) L L2 S S2 :-
-  pattern-fragment Args,
-  fold4 comp Args Args1 L L1 S S1,
-  ho.new S1 M S2,
-  len Args Len,
-  L2 = [link N M Len| L1].
+comp (fo.app [fo.uv N|Argsss]) TT L L3 S S3 :- !,
+  % TODO: here split-pf to enter dist. names into N
+  split-pf Argsss [] PF NPF,
+  print "In PF" PF NPF, 
+  if (NPF = []) (TT = ho.uv M PF1) (TT = ho.app [ho.uv M PF1 | NPF1]),
+  % pattern-fragment Args,
+  fold4 comp PF PF1 L L1 S S1,
+  fold4 comp NPF NPF1 L1 L2 S1 S2,
+  ho.new S2 M S3,
+  % TODO: maybe len can be given by split-pf
+  len PF Len,
+  L3 = [link N M Len| L2].
+% TODO: if don't want to modify unif, we compile `fo.app [fo.c f, c0, c0, ho.c a]` into 
+% `ho.app [ho.app[f, c0, c0], ho.c a]
 comp (fo.app A) (ho.app A1) L L1 S S1 :- fold4 comp A A1 L L1 S S1.
 comp (fo.lam F) (ho.lam F1) L L1 S S1 :- 
   (pi x y\ (pi A S\ comp x y A A S S) => comp (F x) (F1 y) L L1 S S1).
@@ -377,7 +403,7 @@ macro @kol X :- declare-test xtest (test X ff).
 @ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@X, y, x]).
 
 @ok (@lam x\ @app [@X, x]) (@lam x\ @app [@f, x, x, @a]).
-% @ko (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, x, @a]). % think
+@ok (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, x, @a]). % think
 
 @okl [
   (pr (@lam x\ @app [@X, x]) (@lam x\ @app [@f, x])), 
