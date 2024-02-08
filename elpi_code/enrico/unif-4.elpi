@@ -76,6 +76,7 @@ type c string -> tm.
 
 % [unif T1 T2 SOld SNew] check if T1 and T2 unify looking into SOld. SNew is the final substution
 type unif tm -> tm -> subst -> subst ->  o.
+% TODO: QUESTION HERE WE MAY GENERATE KIND OF ETA EXPANSION IN HO.SUBST WITH BETA-ABS
 unif (uv N Args) T S S1 :- assigned? N S F, beta-abs F Args T1, unif T1 T S S1.
 unif T (uv N Args) S S1 :- assigned? N S F, beta-abs F Args T1, unif T T1 S S1.
 unif (uv N A) (uv N A) S S :- pattern-fragment A.
@@ -162,6 +163,8 @@ new [X|XS] (s N) [X|YS] :- new XS N YS.
 type unif-assignment assignment -> assignment -> subst -> subst -> o.
 unif-assignment (val T1) (val T2) H H1 :- unif T1 T2 H H1.
 unif-assignment (abs F1) (abs F2) H H1 :- pi x\ (pi S\ unif x x S S) => unif-assignment (F1 x) (F2 x) H H1.
+% unif-assignment (val T) (abs F) H H1 :- unif-assignment (abs x\ val {beta-abs (val T) [x]}) (abs F) H H1.
+% unif-assignment (abs F) (val T) H H1 :- print "HERE", std.spy-do![unif-assignment (abs F) (abs x\ val {beta-abs (val T) [x]}) H H1].
 
 }
 
@@ -206,11 +209,20 @@ type take-link list link -> link -> list link -> o.
 take-link [L|XS] L XS.
 take-link [L|XS] L' [L|YS] :- not(L = L'), take-link XS L' YS.
 
+type assign-equal fo.subst -> nat -> fo.subst -> fo.tm -> fo.subst -> o.
+assign-equal _ z (none :: L) Y (some Y :: L).
+assign-equal S z (some A :: L) B (some A :: L) :- fo.equal S A B. 
+assign-equal S (s N) (X :: L) Y (X :: L1) :- assign-equal S N L Y L1.
+
 type decompl list link -> list link -> ho.subst -> fo.subst -> fo.subst -> o.
-decompl [link N M _|L] LK HO FO FO1 :-
+decompl [link N M Arity|L] LK HO FO FO1 :-
   assigned? M HO T,
+  % HERE the assign-equal
   decomp-assign LK HO T T' FO FO',
-  assign N FO' T' FO2,
+  % TODO: QUESTION: here we are assigning a solution to fo.subst, maybe we 
+  %                 could authorize eta redexes between FO[N] and T'
+  print "Assigning" N "to" T' "with arity" Arity,
+  assign-equal FO' N FO' T' FO2,
   decompl L LK HO FO2 FO1.
 decompl [] _ _ X X.
 
@@ -274,72 +286,99 @@ macro @c :- try4.fo.c "c".
 macro @app L :- try4.fo.app L.
 macro @lam L :- try4.fo.lam L.
 
-type unfold-pair-comp 
-  pair try4.fo.tm try4.fo.tm -> 
-  pair try4.ho.tm try4.ho.tm -> 
-  list try4.comp.link ->
-  list try4.comp.link ->
-  try4.ho.subst -> try4.ho.subst -> o.
-unfold-pair-comp (pr L R) (pr LH RH) LLL Link S HO :-
-  std.assert! (try4.comp.comp L LH LLL Link0 S HO0) "b1",
-  std.assert! (try4.comp.comp R RH Link0 Link HO0 HO) "b2".
+% type unfold-pair-comp 
+%   pair try4.fo.tm try4.fo.tm -> 
+%   pair try4.ho.tm try4.ho.tm -> 
+%   list try4.comp.link ->
+%   list try4.comp.link ->
+%   try4.ho.subst -> try4.ho.subst -> o.
+% unfold-pair-comp (pr L R) (pr LH RH) LLL Link S HO :-
+%   std.assert! (try4.comp.comp L LH LLL Link0 S HO0) "b1",
+%   std.assert! (try4.comp.comp R RH Link0 Link HO0 HO) "b2".
   
-type unif-fold-pair 
-  list (pair try4.ho.tm try4.ho.tm) ->
-  try4.ho.subst -> try4.ho.subst -> o.
-unif-fold-pair [] S S.
-unif-fold-pair [pr T1 T2 | TL] S1 S3 :-
-  try4.ho.unif T1 T2 S1 S2,
-  unif-fold-pair TL S2 S3.
+% type unif-fold-pair 
+%   list (pair try4.ho.tm try4.ho.tm) ->
+%   try4.ho.subst -> try4.ho.subst -> o.
+% unif-fold-pair [] S S.
+% unif-fold-pair [pr T1 T2 | TL] S1 S3 :-
+%   try4.ho.unif T1 T2 S1 S2,
+%   unif-fold-pair TL S2 S3.
 
-type forall-pair (try4.fo.tm -> o) -> 
-  list (pair try4.fo.tm try4.fo.tm) -> o.
-forall-pair _ [].
-forall-pair F [pr A B | TL] :- F A, F B, forall-pair F TL.
+% type forall-pair (try4.fo.tm -> o) -> 
+%   list (pair try4.fo.tm try4.fo.tm) -> o.
+% forall-pair _ [].
+% forall-pair F [pr A B | TL] :- F A, F B, forall-pair F TL.
   
+
+% xtest (test LR tt) :- std.spy-do! [
+%   map-fold2 unfold-pair-comp LR [] [] LRH Link HO,
+%   unif-fold-pair LRH HO SOL,
+%   try4.comp.solve-link Link LinkU SOL SOL1,
+%   forall-pair (try4.fo.alloc-subst FOSol) LR,
+%   len FOSol _,
+%   std.assert! (try4.comp.decompl LinkU LinkU SOL1 FOSol FOSol1) "b3",
+%   std.forall LR (x\ sigma A B\ pr A B = x, try4.fo.equal FOSol1 A B),
+%   % try4.ho.unif LRH RH HO SOL, 
+%   % try4.comp.solve-link Link LinkU SOL SOL1,
+%   % try4.fo.alloc-subst FOSol L,
+%   % try4.fo.alloc-subst FOSol R,
+%   % len FOSol _, % close
+%   % std.assert! (try4.comp.decompl LinkU LinkU SOL1 FOSol FOSol1) "b3",
+%   % print "FO Subst" FOSol1,
+%   % try4.fo.equal FOSol1 L R,
+% ].
+
+type eval-unif 
+  list (pair try4.fo.tm try4.fo.tm) -> 
+  try4.ho.subst -> try4.ho.subst ->
+  list try4.comp.link ->
+  try4.fo.subst -> o.
+eval-unif [] S S [] _.
+eval-unif [pr L R | TL] HO_Subs1 HO_SubsNN LNN FOSol :- std.spy-do![
+  std.assert! (try4.comp.comp L LH [] L1 HO_Subs1 HO_Subs2) "b1",
+  std.assert! (try4.comp.comp R RH L1 L2 HO_Subs2 HO_Subs3) "b2",
+  try4.ho.unif LH RH HO_Subs3 HO_Subs4,
+  try4.comp.solve-link L2 L3 HO_Subs4 HO_Subs5,
+  try4.fo.alloc-subst FOSol L,
+  try4.fo.alloc-subst FOSol R,
+  eval-unif TL HO_Subs5 HO_SubsNN L4 FOSol,
+  std.append L3 L4 LNN].
 
 type xtest test try4.fo.tm -> o.
-xtest (test LR tt) :- std.spy-do! [
-  map-fold2 unfold-pair-comp LR [] [] LRH Link HO,
-  unif-fold-pair LRH HO SOL,
-  try4.comp.solve-link Link LinkU SOL SOL1,
-  forall-pair (try4.fo.alloc-subst FOSol) LR,
-  len FOSol _,
-  std.assert! (try4.comp.decompl LinkU LinkU SOL1 FOSol FOSol1) "b3",
-  std.forall LR (x\ sigma A B\ pr A B = x, try4.fo.equal FOSol1 A B),
-  % try4.ho.unif LRH RH HO SOL, 
-  % try4.comp.solve-link Link LinkU SOL SOL1,
-  % try4.fo.alloc-subst FOSol L,
-  % try4.fo.alloc-subst FOSol R,
-  % len FOSol _, % close
-  % std.assert! (try4.comp.decompl LinkU LinkU SOL1 FOSol FOSol1) "b3",
-  % print "FO Subst" FOSol1,
-  % try4.fo.equal FOSol1 L R,
+xtest (test LR tt) :- std.spy-do![
+  eval-unif LR [] SOL1 Links  FoSol,
+  len FoSol _,
+  std.assert! (try4.comp.decompl Links Links SOL1 FoSol FOSol1) "b3",
+  print "FO Subst" FOSol1,
+  std.forall LR (x\ sigma L R\ pr L R = x, try4.fo.equal FOSol1 L R),
 ].
-
-xtest (test LR ff) :- std.spy-do! [  
-  map-fold2 unfold-pair-comp LR [] [] LRH Link HO,
-  not(unif-fold-pair LRH HO SOL, try4.comp.solve-link Link _ SOL _)
+xtest (test LR ff) :- std.spy-do! [
+  not(eval-unif LR [] S_ L_  F_)
 ].
 
 macro @ok X Y :- declare-test xtest (test [pr X Y] tt).
 macro @ko X Y :- declare-test xtest (test [pr X Y] ff).
 
-macro @okl X Y :- declare-test xtest (test L tt).
-macro @kol X Y :- declare-test xtest (test L ff).
+macro @okl X :- declare-test xtest (test X tt).
+macro @kol X :- declare-test xtest (test X ff).
 
-% @ok (@app [@f, @X]) (@app [@f, @a]).
-% @ok (@app [@X, @a]) (@app [@f, @a]).
-% @ok (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, @a]).
+@ok (@app [@f, @X]) (@app [@f, @a]).
+@ok (@app [@X, @a]) (@app [@f, @a]).
+@ok (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, @a]).
 
-% @ko (@app [@f, @X]) @X.
-% @ko (@app [@f, @X, @X]) (@app [@f, @a, @b]).
-% @ok (@app [@f, @X, @Y, @X]) (@app [@f, (@app [@f, @Y]), @b, (@app [@f, @b])]).
-% @ok (@lam x\ (@app [@f, @X])) (@lam x\ (@app [@f, @a])).
+@ko (@app [@f, @X]) @X.
+@ko (@app [@f, @X, @X]) (@app [@f, @a, @b]).
+@ok (@app [@f, @X, @Y, @X]) (@app [@f, (@app [@f, @Y]), @b, (@app [@f, @b])]).
+@ok (@lam x\ (@app [@f, @X])) (@lam x\ (@app [@f, @a])).
 
-% @ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@X, x, y]).
+@ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@X, x, y]).
 
-% @ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@f, y]).
+@ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@f, y]).
 @ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@X, y, x]).
 
+@ok (@lam x\ @app [@X, x]) (@lam x\ @app [@f, x, x, @a]).
 % @ko (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, x, @a]). % think
+
+@okl [
+  (pr (@lam x\ @app [@X, x]) (@lam x\ @app [@f, x])), 
+  (pr @f @X)].
