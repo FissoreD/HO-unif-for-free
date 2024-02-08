@@ -89,7 +89,7 @@ unif (c X) (c X) S S.
 
 % eta
 unif T (lam F) S S1 :- not (T = lam _), 
-  pi x\ beta T [x] (F' x), unif (lam F') (lam F') S S1.
+  pi x\ beta T [x] (F' x), unif (lam F') (lam F) S S1.
 unif T (lam F) S S1 :- not (T = lam _), 
   pi x\ beta T [x] (F' x), unif (lam F') (lam F) S S1.
 
