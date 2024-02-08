@@ -274,28 +274,59 @@ macro @c :- try4.fo.c "c".
 macro @app L :- try4.fo.app L.
 macro @lam L :- try4.fo.lam L.
 
+type unfold-pair-comp 
+  pair try4.fo.tm try4.fo.tm -> 
+  pair try4.ho.tm try4.ho.tm -> 
+  list try4.comp.link ->
+  list try4.comp.link ->
+  try4.ho.subst -> try4.ho.subst -> o.
+unfold-pair-comp (pr L R) (pr LH RH) LLL Link S HO :-
+  std.assert! (try4.comp.comp L LH LLL Link0 S HO0) "b1",
+  std.assert! (try4.comp.comp R RH Link0 Link HO0 HO) "b2".
+  
+type unif-fold-pair 
+  list (pair try4.ho.tm try4.ho.tm) ->
+  try4.ho.subst -> try4.ho.subst -> o.
+unif-fold-pair [] S S.
+unif-fold-pair [pr T1 T2 | TL] S1 S3 :-
+  try4.ho.unif T1 T2 S1 S2,
+  unif-fold-pair TL S2 S3.
+
+type forall-pair (try4.fo.tm -> o) -> 
+  list (pair try4.fo.tm try4.fo.tm) -> o.
+forall-pair _ [].
+forall-pair F [pr A B | TL] :- F A, F B, forall-pair F TL.
+  
+
 type xtest test try4.fo.tm -> o.
-xtest (test L R tt) :- std.spy-do! [
-  std.assert! (try4.comp.comp L LH [] Link0 [] HO0) "b1",
-  std.assert! (try4.comp.comp R RH Link0 Link HO0 HO) "b2",
-  try4.ho.unif LH RH HO SOL,
+xtest (test LR tt) :- std.spy-do! [
+  map-fold2 unfold-pair-comp LR [] [] LRH Link HO,
+  unif-fold-pair LRH HO SOL,
   try4.comp.solve-link Link LinkU SOL SOL1,
-  try4.fo.alloc-subst FOSol L,
-  try4.fo.alloc-subst FOSol R,
-  len FOSol _, % close
+  forall-pair (try4.fo.alloc-subst FOSol) LR,
+  len FOSol _,
   std.assert! (try4.comp.decompl LinkU LinkU SOL1 FOSol FOSol1) "b3",
-  print "FO Subst" FOSol1,
-  try4.fo.equal FOSol1 L R,
+  std.forall LR (x\ sigma A B\ pr A B = x, try4.fo.equal FOSol1 A B),
+  % try4.ho.unif LRH RH HO SOL, 
+  % try4.comp.solve-link Link LinkU SOL SOL1,
+  % try4.fo.alloc-subst FOSol L,
+  % try4.fo.alloc-subst FOSol R,
+  % len FOSol _, % close
+  % std.assert! (try4.comp.decompl LinkU LinkU SOL1 FOSol FOSol1) "b3",
+  % print "FO Subst" FOSol1,
+  % try4.fo.equal FOSol1 L R,
 ].
 
-xtest (test L R ff) :- std.spy-do! [
-  std.assert! (try4.comp.comp L LH [] Link0 [] HO0) "b1",
-  std.assert! (try4.comp.comp R RH Link0 Link HO0 HO) "b2",
-  not(try4.ho.unif LH RH HO SOL, try4.comp.solve-link Link _LinkU SOL _SOL1),
+xtest (test LR ff) :- std.spy-do! [  
+  map-fold2 unfold-pair-comp LR [] [] LRH Link HO,
+  not(unif-fold-pair LRH HO SOL, try4.comp.solve-link Link _ SOL _)
 ].
 
-macro @ok X Y :- declare-test xtest (test X Y tt).
-macro @ko X Y :- declare-test xtest (test X Y ff).
+macro @ok X Y :- declare-test xtest (test [pr X Y] tt).
+macro @ko X Y :- declare-test xtest (test [pr X Y] ff).
+
+macro @okl X Y :- declare-test xtest (test L tt).
+macro @kol X Y :- declare-test xtest (test L ff).
 
 % @ok (@app [@f, @X]) (@app [@f, @a]).
 % @ok (@app [@X, @a]) (@app [@f, @a]).
