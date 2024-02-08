@@ -12,6 +12,8 @@ type c string -> tm.
 
 typeabbrev subst list (option tm).
 
+% [equal Subst T1 T2] check if two terms are equal for the OL
+% note: T1 and T2 are never flexible elpi variables
 type equal subst -> tm -> tm -> o.
 equal _ X Y :- (var X ; var Y), halt "flex".
 equal S (uv N) T1 :- assigned? N S T, equal S T T1.
@@ -22,9 +24,18 @@ equal S (app L1) (app L2) :- forall2 (equal S) L1 L2.
 equal S (lam F1) (lam F2) :- pi x\ equal S x x => equal S (F1 x) (F2 x).
 equal _ (c X) (c X).
 equal _ (uv N) (uv N).
-% add eta
-% add more beta
 
+% eta
+equal S (lam F) T :- not (T = lam _), 
+  pi x\ beta T [x] (T' x), equal S (lam F) (lam T').
+equal S T (lam F) :- not (T = lam _), 
+  pi x\ beta T [x] (T' x), equal S (lam T') (lam F).
+
+% beta
+equal S (app [lam X | TL]) T :- beta (lam X) TL T', equal S T' T.
+equal S T (app [lam X | TL]) :- beta (lam X) TL T', equal S T T'.
+
+% [alloc-subst S T] foraech var in T, alloc an uv N at place N in S
 type alloc-subst subst -> tm -> o.
 alloc-subst S (uv N) :- nth N S none.
 alloc-subst S (lam F) :- pi x\ alloc-subst S x => alloc-subst S (F x).
@@ -38,6 +49,7 @@ beta (app A) L (app X) :- std.append A L X.
 beta (uv N) L (app [uv N | L]).
 beta (c H) L (app [c H | L]).
 
+% [new S N S'] return S' which is S with none at pos N
 type new subst -> nat -> subst -> o.
 new [] z [none].
 new [X|XS] (s N) [X|YS] :- new XS N YS.
@@ -61,15 +73,29 @@ type lam (tm -> tm) -> tm.
 type uv  nat -> list tm -> tm.
 type c string -> tm.
 
+% [unif T1 T2 SOld SNew] check if T1 and T2 unify looking into SOld. SNew is the final substution
 type unif tm -> tm -> subst -> subst ->  o.
 unif (uv N Args) T S S1 :- assigned? N S F, beta-abs F Args T1, unif T1 T S S1.
 unif T (uv N Args) S S1 :- assigned? N S F, beta-abs F Args T1, unif T T1 S S1.
 unif (uv N Args1) (uv N Args2) S S1 :- pattern-fragment Args1, pattern-fragment Args2, std.spy(prunex N Args1 Args2 S S1).
 unif (uv N Args) T S S1 :- not (occ N S T), pattern-fragment Args, bind Args T T1, assign N S T1 S1.
-unif T (uv N Args) S S1 :- not (occ N S T), pattern-fragment Args, bind Args T T1, assign N S T1 S1.
+unif T (uv N Args) S S1 :- not (std.spy(occ N S T)), pattern-fragment Args, bind Args T T1, assign N S T1 S1.
 unif (app L1) (app L2) S S1 :- fold2 unif L1 L2 S S1.
 unif (lam F1) (lam F2) S S1 :- pi x\ (pi S\ unif x x S S) => unif (F1 x) (F2 x) S S1.
 unif (c X) (c X) S S.
+% add eta
+% unif (lam F) (c X) S S1 :- pi x\ (pi S\ unif x x S S) => unif (F x) (app [c X,x]) S S1. ?? Why
+% unif (c X) (lam F) S S1 :- pi x\ (pi S\ unif x x S S) => unif (app [c X,x]) (F x) S S1. ?? Why
+
+% eta
+unif T (lam F) S S1 :- not (T = lam _), 
+  pi x\ beta T [x] (F' x), unif (lam F') (lam F') S S1.
+unif T (lam F) S S1 :- not (T = lam _), 
+  pi x\ beta T [x] (F' x), unif (lam F') (lam F) S S1.
+
+% beta
+unif (app [lam F | TL]) T S S1 :- beta (lam F) TL T', unif T' T S S1.
+unif T (app [lam F | TL]) S S1 :- beta (lam F) TL T', unif T T' S S1.
 
 
 type prunex nat -> list tm -> list tm -> subst -> subst -> o.
@@ -91,7 +117,15 @@ beta-abs (val (app A))  L (app X) :- std.append A L X.
 beta-abs (val (uv N A)) L (uv N X) :- std.append A L X.
 beta-abs (val (c H))    L (app [c H | L]).
 
+type beta tm -> list tm -> tm -> o.
+beta A [] A.
+beta (lam Bo) [H | L] R :- beta (Bo H) L R.
+beta (app A) L (app X) :- std.append A L X.
+beta (uv N A) L (uv N A') :- std.append A L A'.
+beta (c H) L (app [c H | L]).
+
 type occ nat -> subst -> tm -> o.
+occ N S (uv N _).
 occ N S (uv M Args) :- assigned? M S F, beta-abs F Args T, occ N S T.
 occ N S (app L) :- exists (occ N S) L.
 occ N S (lam F) :- pi x\ occ N S (F x).
@@ -143,10 +177,10 @@ solve-link [L|LS] [L|LS'] HO HO1 :- solve-link LS LS' HO HO1.
 solve-link [] [] X X.
 
 type same-assign nat -> nat -> nat -> nat -> ho.subst -> ho.subst -> o.
-same-assign M M' _Len W HO HO2 :-
-  (assigned? M HO T, W = M /* ; eta (ho.uv M []) Len T*/), % FIXME args
-  (assigned? M' HO T', W = M' /*; eta (ho.uv M' []) Len T'*/),
-  ho.unif-assignment T T' HO HO2.
+same-assign M M' _Len W HO HO2 :- std.spy-do![
+  (if (assigned? M HO T, W = M) true (T = ho.val (ho.uv M []))), /* TODO: if not assigned should do something... ; eta (ho.uv M []) Len T*/ % FIXME args
+  (if (assigned? M' HO T', W = M') true (T' = ho.val (ho.uv M' []))), /*; eta (ho.uv M' []) Len T'*/
+  ho.unif-assignment T T' HO HO2].
 
 
 type take-link list link -> link -> list link -> o.
@@ -237,15 +271,15 @@ xtest (test L R ff) :- std.spy-do! [
 macro @ok X Y :- declare-test xtest (test X Y tt).
 macro @ko X Y :- declare-test xtest (test X Y ff).
 
-%@ok (@app [@f, @X]) (@app [@f, @a]).
-%@ok (@app [@X, @a]) (@app [@f, @a]).
-%@ok (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, @a]).
-%@ko (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, x, @a]). % think
+@ok (@app [@f, @X]) (@app [@f, @a]).
+@ok (@app [@X, @a]) (@app [@f, @a]).
+@ok (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, @a]).
+@ko (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, x, @a]). % think
 
-%@ko (@app [@f, @X]) @X.
-%@ko (@app [@f, @X, @X]) (@app [@f, @a, @b]).
+@ko (@app [@f, @X]) @X.
+@ko (@app [@f, @X, @X]) (@app [@f, @a, @b]).
 @ok (@app [@f, @X, @Y, @X]) (@app [@f, (@app [@f, @Y]), @b, (@app [@f, @b])]).
-%@ok (@lam x\ (@app [@f, @X])) (@lam x\ (@app [@f, @a])).
-%@ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@f, y]).
-%@ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@X, y, x]).
+@ok (@lam x\ (@app [@f, @X])) (@lam x\ (@app [@f, @a])).
+@ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@f, y]).
+% @ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@X, y, x]).
 %@ok (@lam x\ @lam y\ @app [@X, y, x]) (@lam x\ @lam y\ @app [@X, y, x]).
