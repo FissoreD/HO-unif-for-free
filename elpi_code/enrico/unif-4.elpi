@@ -49,7 +49,11 @@ new [X|XS] (s N) [X|YS] :- new XS N YS.
 
 namespace ho {
 
-typeabbrev subst list (option tm).
+typeabbrev subst list (option assignment).
+
+kind assignment type.
+type abs (tm -> assignment) -> assignment.
+type val tm -> assignment.
 
 kind tm type.
 type app list tm -> tm.
@@ -58,40 +62,37 @@ type uv  nat -> list tm -> tm.
 type c string -> tm.
 
 type unif tm -> tm -> subst -> subst ->  o.
-unif (uv N Args) T S S1 :- assigned? N S F, beta F Args T1, unif T1 T S S1.
-unif T (uv N Args) S S1 :- assigned? N S F, beta F Args T1, unif T T1 S S1.
+unif (uv N Args) T S S1 :- assigned? N S F, beta-abs F Args T1, unif T1 T S S1.
+unif T (uv N Args) S S1 :- assigned? N S F, beta-abs F Args T1, unif T T1 S S1.
 unif (uv N Args1) (uv N Args2) S S1 :- pattern-fragment Args1, pattern-fragment Args2, std.spy(prunex N Args1 Args2 S S1).
 unif (uv N Args) T S S1 :- not (occ N S T), pattern-fragment Args, bind Args T T1, assign N S T1 S1.
 unif T (uv N Args) S S1 :- not (occ N S T), pattern-fragment Args, bind Args T T1, assign N S T1 S1.
 unif (app L1) (app L2) S S1 :- fold2 unif L1 L2 S S1.
 unif (lam F1) (lam F2) S S1 :- pi x\ (pi S\ unif x x S S) => unif (F1 x) (F2 x) S S1.
 unif (c X) (c X) S S.
-% add eta
-unif (lam F) (c X) S S1 :- pi x\ (pi S\ unif x x S S) => unif (F x) (app [c X,x]) S S1.
-unif (c X) (lam F) S S1 :- pi x\ (pi S\ unif x x S S) => unif (app [c X,x]) (F x) S S1.
 
 
 type prunex nat -> list tm -> list tm -> subst -> subst -> o.
 prunex N A1 A2 S S2 :-
   new S M S1,
-  prune-aux (uv M []) A1 A2 F ff,
+  prune-aux M A1 A2 [] F ff,
   assign N S1 F S2.
 prunex _ _ _ S S.
 
-type prune-aux tm -> list tm -> list tm -> tm -> bool -> o.
-prune-aux N [] [] N tt.
-prune-aux N [X|XS] [X|YS] (lam F) O :- pi x\ prune-aux {beta N [x]} XS YS (F x) O.
-prune-aux N [_|XS] [_|YS] (lam F) _ :- pi x\ prune-aux N XS YS (F x) tt.
+type prune-aux nat -> list tm -> list tm -> list tm -> assignment -> bool -> o.
+prune-aux N [] [] ACC (val (uv N Args)) tt :- std.rev ACC Args.
+prune-aux N [X|XS] [X|YS] ACC (abs F) O :- pi x\ prune-aux N XS YS [x|ACC] (F x) O.
+prune-aux N [_|XS] [_|YS] ACC (abs F) _ :- pi x\ prune-aux N XS YS ACC (F x) tt.
 
-type beta tm -> list tm -> tm -> o.
-beta A [] A.
-beta (lam Bo) [H | L] R :- beta (Bo H) L R.
-beta (app A) L (app X) :- std.append A L X.
-beta (uv N A) L (uv N X) :- std.append A L X.
-beta (c H) L (app [c H | L]).
+type beta-abs assignment -> list tm -> tm -> o.
+beta-abs (abs Bo) [H | L] R :- beta-abs (Bo H) L R.
+beta-abs (val A)  [] A.
+beta-abs (val (app A))  L (app X) :- std.append A L X.
+beta-abs (val (uv N A)) L (uv N X) :- std.append A L X.
+beta-abs (val (c H))    L (app [c H | L]).
 
 type occ nat -> subst -> tm -> o.
-occ N S (uv M Args) :- assigned? M S F, beta F Args T, occ N S T.
+occ N S (uv M Args) :- assigned? M S F, beta-abs F Args T, occ N S T.
 occ N S (app L) :- exists (occ N S) L.
 occ N S (lam F) :- pi x\ occ N S (F x).
 
@@ -101,13 +102,17 @@ copy (lam T) (lam T') :- pi x\ copy x x => copy (T x) (T' x).
 copy (uv N L) (uv N L') :- forall2 copy L L'.
 copy (c C) (c C).
 
-type bind list tm -> tm -> tm -> o.
-bind [] T T' :- copy T T'.
-bind [X | TL] T (lam T') :- pi x\ copy X x => bind TL T (T' x).
+type bind list tm -> tm -> assignment -> o.
+bind [] T (val T') :- copy T T'.
+bind [X | TL] T (abs T') :- pi x\ copy X x => bind TL T (T' x).
 
 type new subst -> nat -> subst -> o.
 new [] z [none].
 new [X|XS] (s N) [X|YS] :- new XS N YS.
+
+type unif-assignment assignment -> assignment -> subst -> subst -> o.
+unif-assignment (val T1) (val T2) H H1 :- unif T1 T2 H H1.
+unif-assignment (abs F1) (abs F2) H H1 :- pi x\ (pi S\ unif x x S S) => unif-assignment (F1 x) (F2 x) H H1.
 
 }
 
@@ -138,16 +143,11 @@ solve-link [L|LS] [L|LS'] HO HO1 :- solve-link LS LS' HO HO1.
 solve-link [] [] X X.
 
 type same-assign nat -> nat -> nat -> nat -> ho.subst -> ho.subst -> o.
-same-assign M M' Len W HO HO2 :-
-  (assigned? M HO T, W = M ; eta (ho.uv M []) Len T), % FIXME args
-  (assigned? M' HO T', W = M' ; eta (ho.uv M' []) Len T'),
-  std.spy(ho.unif T T' HO HO2).
-%same-assign M _ M S S :- assigned? M S _.
-%same-assign _ M M S S :- assigned? M S _.
+same-assign M M' _Len W HO HO2 :-
+  (assigned? M HO T, W = M /* ; eta (ho.uv M []) Len T*/), % FIXME args
+  (assigned? M' HO T', W = M' /*; eta (ho.uv M' []) Len T'*/),
+  ho.unif-assignment T T' HO HO2.
 
-type eta ho.tm -> nat -> ho.tm -> o.
-eta X z X.
-eta X (s N) (ho.lam F) :- pi x\ eta {ho.beta X [x]} N (F x).
 
 type take-link list link -> link -> list link -> o.
 take-link [L|XS] L XS.
@@ -156,10 +156,16 @@ take-link [L|XS] L' [L|YS] :- not(L = L'), take-link XS L' YS.
 type decompl list link -> list link -> ho.subst -> fo.subst -> fo.subst -> o.
 decompl [link N M _|L] LK HO FO FO1 :-
   assigned? M HO T,
-  decomp LK HO T T' FO FO',
+  decomp-assign LK HO T T' FO FO',
   assign N FO' T' FO2,
   decompl L LK HO FO2 FO1.
 decompl [] _ _ X X.
+
+% we use links just to know if the variables are new
+type decomp-assign list link -> ho.subst -> ho.assignment -> fo.tm -> fo.subst -> fo.subst -> o.
+decomp-assign LK HO (ho.abs F) (fo.lam F1) S S1 :-
+  pi x y\ (pi S\ decomp LK HO x y S S) => decomp-assign LK HO (F x) (F1 y) S S1.
+decomp-assign LK HO (ho.val T) T1 S S1 :- decomp LK HO T T1 S S1.
 
 type decomp list link -> ho.subst -> ho.tm -> fo.tm -> fo.subst -> fo.subst -> o.
 decomp _ _ (ho.c X)   (fo.c X) S S.
@@ -170,8 +176,9 @@ decomp LK HO (ho.uv N Args) (fo.app [fo.uv X|Args1]) S S1 :-
   fold2 (decomp LK HO) Args Args1 S S2,
   if (take-link LK (link X N _) _) (S1 = S2)
      (fo.new S2 X S1',
-      if (assigned? N HO T) (decomp LK HO T T' S1' S1'', assign X S1'' T' S1)
-        (S1 = S1')).
+      if (assigned? N HO T)
+         (decomp-assign LK HO T T' S1' S1'', assign X S1'' T' S1)
+         (S1 = S1')).
 
 /*
 type eta-contract tm -> tm -> o.
@@ -217,6 +224,7 @@ xtest (test L R tt) :- std.spy-do! [
   try4.fo.alloc-subst FOSol R,
   len FOSol _, % close
   std.assert! (try4.comp.decompl LinkU LinkU SOL1 FOSol FOSol1) "b3",
+  print "FO Subst" FOSol1,
   try4.fo.equal FOSol1 L R,
 ].
 
@@ -231,10 +239,13 @@ macro @ko X Y :- declare-test xtest (test X Y ff).
 
 %@ok (@app [@f, @X]) (@app [@f, @a]).
 %@ok (@app [@X, @a]) (@app [@f, @a]).
+%@ok (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, @a]).
+%@ko (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, x, @a]). % think
+
 %@ko (@app [@f, @X]) @X.
 %@ko (@app [@f, @X, @X]) (@app [@f, @a, @b]).
-%@ok (@app [@f, @X, @Y, @X]) (@app [@f, (@app [@f, @Y]), @b, (@app [@f, @b])]).
+@ok (@app [@f, @X, @Y, @X]) (@app [@f, (@app [@f, @Y]), @b, (@app [@f, @b])]).
 %@ok (@lam x\ (@app [@f, @X])) (@lam x\ (@app [@f, @a])).
 %@ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@f, y]).
-@ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@X, y, x]).
-@ok (@lam x\ @lam y\ @app [@X, y, x]) (@lam x\ @lam y\ @app [@X, y, x]).
+%@ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@X, y, x]).
+%@ok (@lam x\ @lam y\ @app [@X, y, x]) (@lam x\ @lam y\ @app [@X, y, x]).
