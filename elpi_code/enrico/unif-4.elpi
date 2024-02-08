@@ -54,7 +54,8 @@ type new subst -> nat -> subst -> o.
 new [] z [none].
 new [X|XS] (s N) [X|YS] :- new XS N YS.
 
-
+type mk-app tm -> list tm -> tm -> o.
+mk-app T L S :- beta T L S.
 }
 
 %%%%%%%%%%%%%%%%%%% the ML %%%%%%%%%%%%%%%%%%%%%
@@ -215,22 +216,29 @@ decompl [] _ _ X X.
 
 % we use links just to know if the variables are new
 type decomp-assign list link -> ho.subst -> ho.assignment -> fo.tm -> fo.subst -> fo.subst -> o.
+% decomp-assign LK HO (ho.abs F) F1 S S1 :-
+%   pi x y\ (pi S\ decomp LK HO x y S S) => decomp-assign LK HO (F x) F1 S S1.
+
 decomp-assign LK HO (ho.abs F) (fo.lam F1) S S1 :-
   pi x y\ (pi S\ decomp LK HO x y S S) => decomp-assign LK HO (F x) (F1 y) S S1.
+
 decomp-assign LK HO (ho.val T) T1 S S1 :- decomp LK HO T T1 S S1.
 
 type decomp list link -> ho.subst -> ho.tm -> fo.tm -> fo.subst -> fo.subst -> o.
 decomp _ _ (ho.c X)   (fo.c X) S S.
-decomp LK HO (ho.app L) (fo.app L1) S S1 :- fold2 (decomp LK HO) L L1 S S1.
+decomp LK HO (ho.app L) SolOL S S1 :- 
+  fold2 (decomp LK HO) L [HD|TL] S S1,
+  fo.mk-app HD TL SolOL.
 decomp LK HO (ho.lam F) (fo.lam F1) S S1 :-
   pi x y\ (pi S\ decomp LK HO x y S S) => decomp LK HO (F x) (F1 y) S S1.
-decomp LK HO (ho.uv N Args) (fo.app [fo.uv X|Args1]) S S1 :-
+decomp LK HO (ho.uv N Args) SolOL S S1 :-
   fold2 (decomp LK HO) Args Args1 S S2,
   if (take-link LK (link X N _) _) (S1 = S2)
      (fo.new S2 X S1',
       if (assigned? N HO T)
          (decomp-assign LK HO T T' S1' S1'', assign X S1'' T' S1)
-         (S1 = S1')).
+         (S1 = S1')),
+  fo.mk-app (fo.uv X) Args1 SolOL.
 
 /*
 type eta-contract tm -> tm -> o.
@@ -289,16 +297,18 @@ xtest (test L R ff) :- std.spy-do! [
 macro @ok X Y :- declare-test xtest (test X Y tt).
 macro @ko X Y :- declare-test xtest (test X Y ff).
 
-@ok (@app [@f, @X]) (@app [@f, @a]).
-@ok (@app [@X, @a]) (@app [@f, @a]).
-@ok (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, @a]).
-@ko (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, x, @a]). % think
+% @ok (@app [@f, @X]) (@app [@f, @a]).
+% @ok (@app [@X, @a]) (@app [@f, @a]).
+% @ok (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, @a]).
 
-@ko (@app [@f, @X]) @X.
-@ko (@app [@f, @X, @X]) (@app [@f, @a, @b]).
-@ok (@app [@f, @X, @Y, @X]) (@app [@f, (@app [@f, @Y]), @b, (@app [@f, @b])]).
-@ok (@lam x\ (@app [@f, @X])) (@lam x\ (@app [@f, @a])).
-% % @ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@f, y]).
-% % @ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@X, y, x]).
-@ok (@lam x\ @lam y\ @app [@X, y, x]) (@lam x\ @lam y\ @app [@X, x, y]).
-@ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@X, x, y]).
+% @ko (@app [@f, @X]) @X.
+% @ko (@app [@f, @X, @X]) (@app [@f, @a, @b]).
+% @ok (@app [@f, @X, @Y, @X]) (@app [@f, (@app [@f, @Y]), @b, (@app [@f, @b])]).
+% @ok (@lam x\ (@app [@f, @X])) (@lam x\ (@app [@f, @a])).
+
+% @ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@X, x, y]).
+
+% @ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@f, y]).
+@ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@X, y, x]).
+
+% @ko (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, x, @a]). % think
