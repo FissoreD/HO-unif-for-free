@@ -194,7 +194,7 @@ split-pf L _ [] L.
 
 type comp fo.tm -> ho.tm -> list link -> list link -> ho.subst -> ho.subst -> o.
 comp (fo.c X)   (ho.c X) L L S S.
-comp (fo.app [fo.uv N|Argsss]) TT L L3 S S3 :- !,
+comp (fo.app [fo.uv N|Argsss]) TT L L3 S S3 :- %!,
   % TODO: here split-pf to enter dist. names into N
   % split-pf Argsss [] PF NPF,
   split-pf Argsss [] PF [], NPF = [], % TODO: compile to (uv N L) + link-fo-app
