@@ -372,39 +372,39 @@ eval-unif [pr L R | TL] HO_Subs1 HO_SubsNN LNN FOSol FOSol3 :- std.spy-do![
   std.append L3 L4 LNN].
 
 type xtest test try4.fo.tm -> o.
-xtest (test LR tt) :- std.spy-do![
+xtest (test N LR tt) :- std.spy-do![
   eval-unif LR [] SOL1 Links [] FOSol,
   std.assert! (try4.comp.decompl Links Links SOL1 FOSol FOSol1) "b3",
-  print "FO Subst" FOSol1,
+  print "FO Subst" N "=" FOSol1,
   std.forall LR (x\ sigma L R\ pr L R = x, try4.fo.equal FOSol1 L R),
 ].
-xtest (test LR ff) :- std.spy-do! [
+xtest (test _ LR ff) :- std.spy-do! [
   not(eval-unif LR [] _S _L [] _FO)
 ].
 
-macro @ok X Y :- declare-test xtest (test [pr X Y] tt).
-macro @ko X Y :- declare-test xtest (test [pr X Y] ff).
+macro @ok N X Y :- declare-test xtest (test N [pr X Y] tt).
+macro @ko N X Y :- declare-test xtest (test N [pr X Y] ff).
 
-macro @okl X :- declare-test xtest (test X tt).
-macro @kol X :- declare-test xtest (test X ff).
+macro @okl N X :- declare-test xtest (test N X tt).
+macro @kol N X :- declare-test xtest (test N X ff).
 
-@ok (@app [@f, @X]) (@app [@f, @a]).
-@ok (@app [@X, @a]) (@app [@f, @a]).
-@ok (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, @a]).
+@ok 1 (@app [@f, @X]) (@app [@f, @a]).
+@ok 2 (@app [@X, @a]) (@app [@f, @a]).
+@ok 3 (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, @a]).
 
-@ko (@app [@f, @X]) @X.
-@ko (@app [@f, @X, @X]) (@app [@f, @a, @b]).
-@ok (@app [@f, @X, @Y, @X]) (@app [@f, (@app [@f, @Y]), @b, (@app [@f, @b])]).
-@ok (@lam x\ (@app [@f, @X])) (@lam x\ (@app [@f, @a])).
+@ko 4 (@app [@f, @X]) @X.
+@ko 5 (@app [@f, @X, @X]) (@app [@f, @a, @b]).
+@ok 6 (@app [@f, @X, @Y, @X]) (@app [@f, (@app [@f, @Y]), @b, (@app [@f, @b])]).
+@ok 7 (@lam x\ (@app [@f, @X])) (@lam x\ (@app [@f, @a])).
 
-@ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@X, x, y]).
+@ok 8 (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@X, x, y]).
 
-@ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@f, y]).
-@ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@X, y, x]).
+@ok 9  (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@f, y]).
+@ok 10 (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@X, y, x]).
 
-@ok (@lam x\ @app [@X, x]) (@lam x\ @app [@f, x, x, @a]).
-@ok (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, x, @a]). % think
+@ok 11 (@lam x\ @app [@X, x]) (@lam x\ @app [@f, x, x, @a]).
+%@ok 12 (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, x, @a]). % think
 
-@okl [
+@okl 13 [
   (pr (@lam x\ @app [@X, x]) (@lam x\ @app [@f, x])), 
   (pr @f @X)].

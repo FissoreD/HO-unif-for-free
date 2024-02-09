@@ -73,13 +73,13 @@ pred pattern-fragment i:list A.
 pattern-fragment L :- distinct_names L.
 
 kind test type -> type.
-type test list (pair A A) -> bool -> test A.
+type test int -> list (pair A A) -> bool -> test A.
 type declare-test (test A -> o) -> test A -> o.
 
-type runtests list o -> bool -> o.
-runtests [] B :- var B, print "ALL GOOD!".
-runtests [] _ :- print "SOME TEST FAIL!", fail.
-runtests [declare-test F (test LR B as T)|TS] ERR :- print "\n------------\n\n\n",
+type runtests list o -> list int -> o.
+runtests [] [] :- print "ALL GOOD!".
+runtests [] F :- print "SOME TEST FAIL:" F, fail.
+runtests [declare-test F (test N LR B as T)|TS] ERR :- print "\n------------\n\n\n",
   if (B = tt) (Rel = "===") (Rel = "=/="),
   if (F T) (print "ok" Rel LR, runtests TS ERR)
-           (print "\n<<<<<\nko" Rel LR "\n>>>>>\n", ERR = tt, runtests TS ERR).
+           (print "\n<<<<<\nko" Rel LR "\n>>>>>\n", runtests TS [N|ERR]).

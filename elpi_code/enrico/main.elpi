@@ -8,6 +8,10 @@ accumulate common.
 accumulate unif-4.
 
 
-main :-
+main [] :-
   std.findall (declare-test _ _) L,
-  runtests L _.
+  runtests L [].
+main [NS] :-
+  N is string_to_int NS, 
+  std.findall (declare-test _ (test N _ _)) L,
+  runtests L [].
