@@ -388,22 +388,22 @@ macro @ko X Y :- declare-test xtest (test [pr X Y] ff).
 macro @okl X :- declare-test xtest (test X tt).
 macro @kol X :- declare-test xtest (test X ff).
 
-% @ok (@app [@f, @X]) (@app [@f, @a]).
-% @ok (@app [@X, @a]) (@app [@f, @a]).
-% @ok (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, @a]).
+@ok (@app [@f, @X]) (@app [@f, @a]).
+@ok (@app [@X, @a]) (@app [@f, @a]).
+@ok (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, @a]).
 
-% @ko (@app [@f, @X]) @X.
-% @ko (@app [@f, @X, @X]) (@app [@f, @a, @b]).
-% @ok (@app [@f, @X, @Y, @X]) (@app [@f, (@app [@f, @Y]), @b, (@app [@f, @b])]).
-% @ok (@lam x\ (@app [@f, @X])) (@lam x\ (@app [@f, @a])).
+@ko (@app [@f, @X]) @X.
+@ko (@app [@f, @X, @X]) (@app [@f, @a, @b]).
+@ok (@app [@f, @X, @Y, @X]) (@app [@f, (@app [@f, @Y]), @b, (@app [@f, @b])]).
+@ok (@lam x\ (@app [@f, @X])) (@lam x\ (@app [@f, @a])).
 
-% @ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@X, x, y]).
+@ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@X, x, y]).
 
-% @ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@f, y]).
-% @ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@X, y, x]).
+@ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@f, y]).
+@ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@X, y, x]).
 
-% @ok (@lam x\ @app [@X, x]) (@lam x\ @app [@f, x, x, @a]).
-%@ok (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, x, @a]). % think
+@ok (@lam x\ @app [@X, x]) (@lam x\ @app [@f, x, x, @a]).
+@ok (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, x, @a]). % think
 
 @okl [
   (pr (@lam x\ @app [@X, x]) (@lam x\ @app [@f, x])), 
