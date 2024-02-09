@@ -230,18 +230,44 @@ comp (fo.lam F) (ho.lam F1) L L1 S S1 :-
 comp (fo.uv N) (ho.uv M []) L [link N M z|L] S S1 :- ho.new S M S1.
 
 type solve-link list link -> list link -> ho.subst -> ho.subst -> o.
-solve-link [link N M Len|L] LR HO HO1 :- take-link L (link N M' _) L1, !, std.spy-do! [
-  same-assign M M' Len W HO HO2,
-  solve-link [link N W Len|L1] LR HO2 HO1,
+solve-link [link N M LenM|L] LR HO HO1 :- take-link L (link N M' LenM') L1, !, std.spy-do! [
+  same-assign M M' LenM LenM' W HO HO2,
+  solve-link [link N W LenM|L1] LR HO2 HO1,
 ].
 solve-link [L|LS] [L|LS'] HO HO1 :- solve-link LS LS' HO HO1.
 solve-link [] [] X X.
 
-type same-assign nat -> nat -> nat -> nat -> ho.subst -> ho.subst -> o.
-same-assign M M' Len W HO HO2 :- std.spy-do![
-  if (assigned? M HO T, W = M) true (eta Len M [] T),
-  if (assigned? M' HO T', W = M') true (eta Len M' [] T'),
-  ho.unif-assignment T T' HO HO2].
+type same-assign nat -> nat -> nat -> nat -> nat -> ho.subst -> ho.subst -> o.
+same-assign M M' LenM LenM' W HO HO2 :- std.spy-do![
+  if (assigned? M HO T, W = M) true (eta LenM M [] T),
+  if (assigned? M' HO T', W = M') true (eta LenM' M' [] T'),
+  if (LenM = LenM')
+     (ho.unif-assignment T T' HO HO2)
+     (hope-for-eta T T' HO HO2)
+  ].
+
+type hope-for-eta ho.assignment -> ho.assignment -> ho.subst -> ho.subst -> o.
+hope-for-eta F G H H1 :- hope-contract H [] F F1, hope-for-eta F1 G H H1.
+hope-for-eta F G H H1 :- hope-contract H [] G G1, hope-for-eta F G1 H H1.
+hope-for-eta (ho.abs F) (ho.abs G) H H1 :-
+  pi x\ deref H x x => (pi S\ ho.unif x x S S) => hope-for-eta (F x) (G x) H H1.
+hope-for-eta (ho.val T1) (ho.val T2) H H1 :- ho.unif T1 T2 H H1.
+
+type hope-contract ho.subst -> list ho.tm -> ho.assignment -> ho.assignment -> o.
+hope-contract H L (ho.abs F) T :- 
+  pi x\ deref H x x => hope-contract H [x|L] (F x) T.
+hope-contract H L (ho.val V) (ho.val T) :- std.spy-do! [
+  deref H V (ho.app[Hd|Args]),
+  std.rev L LRev, std.appendR Prefix LRev Args,
+  if (Prefix = []) (T = Hd) (T = ho.app [Hd|Prefix]),
+].
+
+type deref ho.subst -> ho.tm -> ho.tm -> o.
+deref H (ho.uv N L) X :- assigned? N H T, ho.beta-abs T L X', deref H X' X.
+deref H (ho.app L) (ho.app L1) :- forall2 (deref H) L L1.
+deref _ (ho.c X) (ho.c X).
+deref H (ho.uv X L) (ho.uv X L1) :- forall2 (deref H) L L1.
+deref H (ho.lam F) (ho.lam G) :- pi x\ deref H x x => deref H (F x) (G x).
 
 % [eta Arity VarName Acc Ass]
 type eta nat -> nat -> list ho.tm -> ho.assignment -> o.
@@ -373,38 +399,51 @@ macro @lam L :- try4.fo.lam L.
 % ].
 
 type eval-unif 
-  list (pair try4.fo.tm try4.fo.tm) -> 
+  list (triple diagnostic try4.fo.tm try4.fo.tm) -> 
   try4.ho.subst -> try4.ho.subst ->
   list try4.comp.link ->
+  list try4.comp.link ->
   try4.fo.subst -> try4.fo.subst -> o.
-eval-unif [] S S [] FO FO.
-eval-unif [pr L R | TL] HO_Subs1 HO_SubsNN LNN FOSol FOSol4 :- std.spy-do![
-  std.assert! (try4.comp.comp L LH [] L1 HO_Subs1 HO_Subs2) "b1",
+eval-unif [] S S L L FO FO.
+
+eval-unif [triple (error _) L R | _] HO_Subs1 HO_Subs3 L0 L3 FOSol FOSol :- std.do![
+  std.assert! (try4.comp.comp L LH L0 L1 HO_Subs1 HO_Subs2) "b1",
   std.assert! (try4.comp.comp R RH L1 L2 HO_Subs2 HO_Subs3) "b2",
-  try4.ho.unif LH RH HO_Subs3 HO_Subs4,
-  try4.comp.solve-link L2 L3 HO_Subs4 HO_Subs5,
+
+  std.spy(try4.comp.solve-link L2 L3 HO_Subs3 HO_Subs4),
+  not(std.spy(try4.ho.unif LH RH HO_Subs4 HO_Subs4_)),
+].
+
+eval-unif [triple ok L R | TL] HO_Subs1 HO_SubsNN L0 L4 FOSol FOSol4 :- std.do![
+  std.assert! (try4.comp.comp L LH L0 L1 HO_Subs1 HO_Subs2) "b1",
+  std.assert! (try4.comp.comp R RH L1 L2 HO_Subs2 HO_Subs3) "b2",
+
+  std.spy(try4.ho.unif LH RH HO_Subs3 HO_Subs4),
+  
+  std.spy(try4.comp.solve-link L2 L3 HO_Subs4 HO_Subs5),
+
   try4.fo.alloc-subst L FOSol FOSol1,
   try4.fo.alloc-subst R FOSol1 FOSol2,
+  std.spy(try4.comp.decompl L3 L3 HO_Subs5 FOSol2 FOSol3),
 
-  std.assert! (try4.comp.decompl L3 L3 HO_Subs5 FOSol2 FOSol3) "b3",
   print "FO Subst" L "==" R ":=" FOSol3,
 
-  eval-unif TL HO_Subs5 HO_SubsNN L4 FOSol3 FOSol4,
-  std.append L3 L4 LNN].
+  eval-unif TL HO_Subs5 HO_SubsNN L3 L4 FOSol3 FOSol4,
+].
 
 type xtest test try4.fo.tm -> o.
 xtest (test N LR tt) :- std.spy-do![
-  eval-unif LR [] SOL1 _Links [] FOSol,
+  eval-unif LR [] _SOL1 [] _Links [] FOSol,
   %std.assert! (try4.comp.decompl Links Links SOL1 FOSol FOSol1) "b3",
   print "FO Subst" N "=" FOSol,
-  std.forall LR (x\ sigma L R\ pr L R = x, try4.fo.equal FOSol L R),
+  std.forall LR (x\ sigma L R D\ triple D L R = x, (D = error _ ; try4.fo.equal FOSol L R)),
 ].
 xtest (test _ LR ff) :- std.spy-do! [
-  not(eval-unif LR [] _S _L [] _FO)
+  not(eval-unif LR [] _S [] _L [] _FO)
 ].
 
-macro @ok N X Y :- declare-test xtest (test N [pr X Y] tt).
-macro @ko N X Y :- declare-test xtest (test N [pr X Y] ff).
+macro @ok N X Y :- declare-test xtest (test N [triple ok X Y] tt).
+macro @ko N X Y :- declare-test xtest (test N [triple ok X Y] ff).
 
 macro @okl N X :- declare-test xtest (test N X tt).
 macro @kol N X :- declare-test xtest (test N X ff).
@@ -427,5 +466,9 @@ macro @kol N X :- declare-test xtest (test N X ff).
 %@ok 12 (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, x, @a]). % think
 
 @okl 13 [
-  (pr (@lam x\ @app [@X, x]) (@lam x\ @app [@f, x])), 
-  (pr @f @X)].
+  (triple ok (@lam x\ @app [@X, x]) (@lam x\ @app [@f, x])), 
+  (triple ok @f @X)].
+
+@okl 14 [
+  (triple ok (@lam x\ @app [@X, x]) (@lam x\ @app [@f, x])), 
+  (triple (error _) @g @X)]. % we fail early
