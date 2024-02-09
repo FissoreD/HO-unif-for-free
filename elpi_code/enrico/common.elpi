@@ -86,3 +86,14 @@ runtests [declare-test F (test N LR B as T)|TS] ERR :- print "\n-----" N "------
   if (B = tt) (Rel = "===") (Rel = "=/="),
   if (F T) (print "ok" Rel LR, runtests TS ERR)
            (print "\n<<<<<\nko" Rel LR "\n>>>>>\n", runtests TS [N|ERR]).
+
+type internal-tests o.
+type internal-test o -> o.
+
+internal-tests :-
+  std.findall (internal-test _) L,
+  forall runinternal L.
+
+type runinternal o -> o.
+runinternal (internal-test P) :- print "######" P, P, !.
+runinternal (internal-test P) :- halt "fail internal test" P.

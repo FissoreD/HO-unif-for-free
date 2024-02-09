@@ -1,3 +1,5 @@
+internal-test try4.comp.test-hope-eta-1.
+internal-test try4.comp.test-hope-eta-2.
 
 namespace try4 {
 
@@ -243,24 +245,41 @@ same-assign M M' LenM LenM' W HO HO2 :- std.spy-do![
   if (assigned? M' HO T', W = M') true (eta LenM' M' [] T'),
   if (LenM = LenM')
      (ho.unif-assignment T T' HO HO2)
-     (hope-for-eta T T' HO HO2)
+     (hope-for-eta HO T Te,
+      hope-for-eta HO T' Te',
+      ho.unif-assignment Te Te' HO HO2)
   ].
 
-type hope-for-eta ho.assignment -> ho.assignment -> ho.subst -> ho.subst -> o.
-hope-for-eta F G H H1 :- hope-contract H [] F F1, hope-for-eta F1 G H H1.
-hope-for-eta F G H H1 :- hope-contract H [] G G1, hope-for-eta F G1 H H1.
-hope-for-eta (ho.abs F) (ho.abs G) H H1 :-
-  pi x\ deref H x x => (pi S\ ho.unif x x S S) => hope-for-eta (F x) (G x) H H1.
-hope-for-eta (ho.val T1) (ho.val T2) H H1 :- ho.unif T1 T2 H H1.
+% tries to eta contract at each "depth", not just at the top
+type hope-for-eta ho.subst -> ho.assignment -> ho.assignment -> o.
+hope-for-eta H (ho.abs _ as F) G :- hope-contract H [] F G.
+hope-for-eta H (ho.abs F) (ho.abs G) :-
+  pi x\ deref H x x => hope-for-eta H (F x) (G x).
+hope-for-eta _ (ho.val T) (ho.val T).
 
+% given x\y\z\... it tries to contract against xyz, then xy, then x
 type hope-contract ho.subst -> list ho.tm -> ho.assignment -> ho.assignment -> o.
 hope-contract H L (ho.abs F) T :- 
   pi x\ deref H x x => hope-contract H [x|L] (F x) T.
-hope-contract H L (ho.val V) (ho.val T) :- std.spy-do! [
+hope-contract H L (ho.abs F) T :- 
+  pi x\ deref H x x => hope-contract.aux H [x|L] (F x) T.
+
+% checks if the term is xxx\ yyy\ app[...|xxx] -> yyy\ app[...]
+type hope-contract.aux ho.subst -> list ho.tm -> ho.assignment -> ho.assignment -> o.
+hope-contract.aux H L (ho.abs F) (ho.abs G) :- pi x\ deref H x x => hope-contract.aux H L (F x) (G x).
+hope-contract.aux H L (ho.val V) (ho.val T) :- std.spy-do! [
   deref H V (ho.app[Hd|Args]),
-  std.rev L LRev, std.appendR Prefix LRev Args,
+  std.rev L LRev,
+  std.appendR Prefix LRev Args,
   if (Prefix = []) (T = Hd) (T = ho.app [Hd|Prefix]),
 ].
+
+type test-hope-eta-1 o.
+type test-hope-eta-2 o.
+test-hope-eta-1 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.app[ho.c"f",ho.app[ho.c"g",x],y]))
+                                   (ho.abs x\           ho.val (ho.app[ho.c"f",ho.app[ho.c"g",x]  ])).
+test-hope-eta-2 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.app[ho.c"f",ho.app[ho.c"g",y],x]))
+                                   (          ho.abs y\ ho.val (ho.app[ho.c"f",ho.app[ho.c"g",y]  ])).
 
 type deref ho.subst -> ho.tm -> ho.tm -> o.
 deref H (ho.uv N L) X :- assigned? N H T, ho.beta-abs T L X', deref H X' X.

@@ -9,9 +9,11 @@ accumulate unif-4.
 
 
 main [] :-
+  internal-tests,
   std.findall (declare-test _ _) L,
   runtests L [].
 main [NS] :-
+  internal-tests,
   N is string_to_int NS, 
   std.findall (declare-test _ (test N _ _)) L,
   runtests L [].
