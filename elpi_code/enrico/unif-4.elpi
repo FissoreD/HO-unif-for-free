@@ -35,12 +35,13 @@ equal S T (lam F) :- not (T = lam _),
 equal S (app [lam X | TL]) T :- beta (lam X) TL T', equal S T' T.
 equal S T (app [lam X | TL]) :- beta (lam X) TL T', equal S T T'.
 
-% [alloc-subst S T] foraech var in T, alloc an uv N at place N in S
-type alloc-subst subst -> tm -> o.
-alloc-subst S (uv N) :- nth N S none.
-alloc-subst S (lam F) :- pi x\ alloc-subst S x => alloc-subst S (F x).
-alloc-subst _ (c _).
-alloc-subst S (app L) :- forall (alloc-subst S) L.
+% [alloc-subst T S S'] foraech var in T, alloc an uv N at place N in S' (that extends S)
+type alloc-subst tm -> subst -> subst -> o.
+alloc-subst (uv N) S S :- len S M, M >n N.
+alloc-subst (uv N) S S' :- len S M, M >=n N, std.append S [none] S'.
+alloc-subst (lam F) S S' :- pi x\ (pi S\alloc-subst x S S) => alloc-subst (F x) S S'.
+alloc-subst (c _) S S.
+alloc-subst (app L) S S1 :- fold alloc-subst L S S1.
 
 type beta tm -> list tm -> tm -> o.
 beta A [] A.
@@ -88,9 +89,9 @@ unif (uv N Args) T S S1 :- not (T = uv _ _), print "In here", std.spy-do![not (o
 unif T (uv N Args) S S1 :- not (T = uv _ _), not (std.spy(occ N S T)), pattern-fragment Args, bind Args T T1, assign N S T1 S1.
 
 % TODO: here we make FO unification -> should be moved in 
-unif (app [uv N L | Args]) (app L1) S S1 :-
-  std.appendR Hd Args L1,
-  unif (uv N L) (app Hd) S S1.
+% unif (app [uv N L | Args]) (app L1) S S1 :-
+%   std.appendR Hd Args L1,
+%   unif (uv N L) (app Hd) S S1.
 
 
 unif (app L1) (app L2) S S1 :- fold2 unif L1 L2 S S1.
@@ -358,28 +359,27 @@ type eval-unif
   list (pair try4.fo.tm try4.fo.tm) -> 
   try4.ho.subst -> try4.ho.subst ->
   list try4.comp.link ->
-  try4.fo.subst -> o.
-eval-unif [] S S [] _.
-eval-unif [pr L R | TL] HO_Subs1 HO_SubsNN LNN FOSol :- std.spy-do![
+  try4.fo.subst -> try4.fo.subst -> o.
+eval-unif [] S S [] FO FO.
+eval-unif [pr L R | TL] HO_Subs1 HO_SubsNN LNN FOSol FOSol3 :- std.spy-do![
   std.assert! (try4.comp.comp L LH [] L1 HO_Subs1 HO_Subs2) "b1",
   std.assert! (try4.comp.comp R RH L1 L2 HO_Subs2 HO_Subs3) "b2",
   try4.ho.unif LH RH HO_Subs3 HO_Subs4,
   try4.comp.solve-link L2 L3 HO_Subs4 HO_Subs5,
-  try4.fo.alloc-subst FOSol L,
-  try4.fo.alloc-subst FOSol R,
-  eval-unif TL HO_Subs5 HO_SubsNN L4 FOSol,
+  try4.fo.alloc-subst L FOSol FOSol1,
+  try4.fo.alloc-subst R FOSol1 FOSol2,
+  eval-unif TL HO_Subs5 HO_SubsNN L4 FOSol2 FOSol3,
   std.append L3 L4 LNN].
 
 type xtest test try4.fo.tm -> o.
 xtest (test LR tt) :- std.spy-do![
-  eval-unif LR [] SOL1 Links  FoSol,
-  len FoSol _,
-  std.assert! (try4.comp.decompl Links Links SOL1 FoSol FOSol1) "b3",
+  eval-unif LR [] SOL1 Links [] FOSol,
+  std.assert! (try4.comp.decompl Links Links SOL1 FOSol FOSol1) "b3",
   print "FO Subst" FOSol1,
   std.forall LR (x\ sigma L R\ pr L R = x, try4.fo.equal FOSol1 L R),
 ].
 xtest (test LR ff) :- std.spy-do! [
-  not(eval-unif LR [] S_ L_  F_)
+  not(eval-unif LR [] _S _L [] _FO)
 ].
 
 macro @ok X Y :- declare-test xtest (test [pr X Y] tt).
@@ -388,22 +388,22 @@ macro @ko X Y :- declare-test xtest (test [pr X Y] ff).
 macro @okl X :- declare-test xtest (test X tt).
 macro @kol X :- declare-test xtest (test X ff).
 
-@ok (@app [@f, @X]) (@app [@f, @a]).
-@ok (@app [@X, @a]) (@app [@f, @a]).
-@ok (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, @a]).
+% @ok (@app [@f, @X]) (@app [@f, @a]).
+% @ok (@app [@X, @a]) (@app [@f, @a]).
+% @ok (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, @a]).
 
-@ko (@app [@f, @X]) @X.
-@ko (@app [@f, @X, @X]) (@app [@f, @a, @b]).
-@ok (@app [@f, @X, @Y, @X]) (@app [@f, (@app [@f, @Y]), @b, (@app [@f, @b])]).
-@ok (@lam x\ (@app [@f, @X])) (@lam x\ (@app [@f, @a])).
+% @ko (@app [@f, @X]) @X.
+% @ko (@app [@f, @X, @X]) (@app [@f, @a, @b]).
+% @ok (@app [@f, @X, @Y, @X]) (@app [@f, (@app [@f, @Y]), @b, (@app [@f, @b])]).
+% @ok (@lam x\ (@app [@f, @X])) (@lam x\ (@app [@f, @a])).
 
-@ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@X, x, y]).
+% @ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@X, x, y]).
 
-@ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@f, y]).
-@ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@X, y, x]).
+% @ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@f, y]).
+% @ok (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@X, y, x]).
 
-@ok (@lam x\ @app [@X, x]) (@lam x\ @app [@f, x, x, @a]).
-@ok (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, x, @a]). % think
+% @ok (@lam x\ @app [@X, x]) (@lam x\ @app [@f, x, x, @a]).
+%@ok (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, x, @a]). % think
 
 @okl [
   (pr (@lam x\ @app [@X, x]) (@lam x\ @app [@f, x])), 

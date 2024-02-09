@@ -33,6 +33,18 @@ type fold2 (A -> A1 -> B -> B -> o) -> list A -> list A1 -> B -> B -> o.
 fold2 _ [] [] A A.
 fold2 F [X|XS] [Y|YS] A A1 :- F X Y A A0, fold2 F XS YS A0 A1.
 
+type fold (A -> B -> B -> o) -> list A -> B -> B -> o.
+fold _ [] A A.
+fold F [X|XS] A A1 :- F X A A0, fold F XS A0 A1.
+
+type (>n) nat -> nat -> o.
+s _ >n z.
+s N >n s M :- N >n M.
+
+type (>=n) nat -> nat -> o.
+_ >=n z.
+s N >=n s M :- N >=n M.
+
 type map-fold2 (A -> A1 -> B -> B -> C -> C -> o) -> list A -> B -> C -> list A1 -> B -> C -> o.
 map-fold2 _F [] B C [] B C.
 map-fold2 F [X | XS] B C [Y | YS] B2 C2 :-
