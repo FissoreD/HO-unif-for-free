@@ -102,7 +102,7 @@ unif (uv N A) (uv N A) S S :- pattern-fragment A.
 unif (uv N Args1) (uv M Args2) S S3 :- pattern-fragment Args1, pattern-fragment Args2, 
   std.spy(new S W S1, prunexx W Args1 Args2 Ass, assign N S1 Ass S2, assign M S2 Ass S3).
 
-unif (uv N Args) T S S1 :- not (T = uv _ _), print "In here", std.spy-do![not (occ N S T), pattern-fragment Args, bind Args T T1, assign N S T1 S1].
+unif (uv N Args) T S S1 :- not (T = uv _ _), print "In here", std.do![not (occ N S T), pattern-fragment Args, bind Args T T1, assign N S T1 S1].
 unif T (uv N Args) S S1 :- not (T = uv _ _), not (std.spy(occ N S T)), pattern-fragment Args, bind Args T T1, assign N S T1 S1.
 
 % TODO: here we make FO unification -> should be moved in 
@@ -186,7 +186,7 @@ type unif-assignment assignment -> assignment -> subst -> subst -> o.
 unif-assignment (val T1) (val T2) H H1 :- unif T1 T2 H H1.
 unif-assignment (abs F1) (abs F2) H H1 :- pi x\ (pi S\ unif x x S S) => unif-assignment (F1 x) (F2 x) H H1.
 % unif-assignment (val T) (abs F) H H1 :- unif-assignment (abs x\ val {beta-abs (val T) [x]}) (abs F) H H1.
-% unif-assignment (abs F) (val T) H H1 :- print "HERE", std.spy-do![unif-assignment (abs F) (abs x\ val {beta-abs (val T) [x]}) H H1].
+% unif-assignment (abs F) (val T) H H1 :- print "HERE", std.do![unif-assignment (abs F) (abs x\ val {beta-abs (val T) [x]}) H H1].
 
 }
 
@@ -232,7 +232,7 @@ comp (fo.lam F) (ho.lam F1) L L1 S S1 :-
 comp (fo.uv N) (ho.uv M []) L [link N M z|L] S S1 :- ho.new S M S1.
 
 type solve-link list link -> list link -> ho.subst -> ho.subst -> o.
-solve-link [link N M LenM|L] LR HO HO1 :- take-link L (link N M' LenM') L1, !, std.spy-do! [
+solve-link [link N M LenM|L] LR HO HO1 :- take-link L (link N M' LenM') L1, !, std.do! [
   same-assign M M' LenM LenM' W HO HO2,
   solve-link [link N W LenM|L1] LR HO2 HO1,
 ].
@@ -240,15 +240,59 @@ solve-link [L|LS] [L|LS'] HO HO1 :- solve-link LS LS' HO HO1.
 solve-link [] [] X X.
 
 type same-assign nat -> nat -> nat -> nat -> nat -> ho.subst -> ho.subst -> o.
-same-assign M M' LenM LenM' W HO HO2 :- std.spy-do![
+same-assign M M' LenM LenM' W HO HO2 :- std.do![
   if (assigned? M HO T, W = M) true (eta LenM M [] T),
   if (assigned? M' HO T', W = M') true (eta LenM' M' [] T'),
   if (LenM = LenM')
-     (ho.unif-assignment T T' HO HO2)
+     (std.spy(ho.unif-assignment T T' HO HO2))
      (hope-for-eta HO T Te,
       hope-for-eta HO T' Te',
-      ho.unif-assignment Te Te' HO HO2)
+      std.spy(not(LenM = LenM'),my-unif-assignment Te Te' HO HO2))
   ].
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%
+%%% nel test 15 abbiamo
+%%%   Len=1  x\ app[f,Y x]
+%%%   Len=0  X
+%%%
+%%% il codice sotto (my-unif-assignment) fa X = a\ app[f,Y a]
+%%% e cambia arietà a X che non va bene
+%%%
+%%% T = x\ app[f,Y x] deve essere di arità zero
+%%% allora o il T coq è (lam x\ app[f,Y x]) oppure f
+%%%
+%%% sempre nel test 15, dopo c'è g = X
+%%% ora falliamo perche g != (lam x\ app[f,Y x])
+%%% penso che dire Y x = x non sia "il più generale"
+%%%
+%%% ora mi sa che fallisce perchè g != lam
+%%% che è "sbagliato" (forse) perchè potrebbe anche avere
+%%% successo assegnado Y (in quel momento, ma non lo possiamo
+%%% fare prima, nelle varie link...)
+%%%
+%%% in pratica mi pare che o perdiamo generalità (e assegnamo Y presto)
+%%% o ritardiamo, restiamo corretti, ma sequenza di successi/fallimenti
+%%% non è fedele.
+%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+type my-unif-assignment ho.assignment -> ho.assignment -> ho.subst -> ho.subst -> o.
+my-unif-assignment A B _ _ :- print A "===" B, fail.
+my-unif-assignment (ho.val T1) (ho.val T2) H H1 :- ho.unif T1 T2 H H1.
+my-unif-assignment (ho.abs F1) (ho.abs F2) H H1 :- pi x\ (pi S\ ho.unif x x S S) => my-unif-assignment (F1 x) (F2 x) H H1.
+my-unif-assignment (ho.val V)  (ho.abs F2) H H1 :-
+    deref H V (ho.uv N L),
+    pi x\ (pi S\ ho.unif x x S S) =>
+      sigma L1\ std.append L [x] L1,
+       my-unif-assignment (ho.val (ho.uv N L1)) (F2 x) H H1.
+my-unif-assignment (ho.val V)  (ho.abs F2) H H1 :-
+    deref H V (ho.app L),
+    pi x\ (pi S\ ho.unif x x S S) =>
+      sigma L1\ std.append L [x] L1,
+       my-unif-assignment (ho.val (ho.app L1)) (F2 x) H H1.
+my-unif-assignment (ho.val V)  (ho.abs F2) H H1 :-
+    deref H V (ho.c C),
+    pi x\ (pi S\ ho.unif x x S S) =>
+       my-unif-assignment (ho.val (ho.app [ho.c C,x])) (F2 x) H H1.
 
 % tries to eta contract at each "depth", not just at the top
 type hope-for-eta ho.subst -> ho.assignment -> ho.assignment -> o.
@@ -267,7 +311,7 @@ hope-contract H L (ho.abs F) T :-
 % checks if the term is xxx\ yyy\ app[...|xxx] -> yyy\ app[...]
 type hope-contract.aux ho.subst -> list ho.tm -> ho.assignment -> ho.assignment -> o.
 hope-contract.aux H L (ho.abs F) (ho.abs G) :- pi x\ deref H x x => hope-contract.aux H L (F x) (G x).
-hope-contract.aux H L (ho.val V) (ho.val T) :- std.spy-do! [
+hope-contract.aux H L (ho.val V) (ho.val T) :- std.do! [
   deref H V (ho.app[Hd|Args]),
   std.rev L LRev,
   std.appendR Prefix LRev Args,
@@ -302,18 +346,38 @@ assign-equal _ z (none :: L) Y (some Y :: L).
 assign-equal S z (some A :: L) B (some A :: L) :- fo.equal S A B. 
 assign-equal S (s N) (X :: L) Y (X :: L1) :- assign-equal S N L Y L1.
 
-type decompl list link -> list link -> ho.subst -> fo.subst -> fo.subst -> o.
-decompl [link N M Arity|L] LK HO FO FO1 :-
-  assigned? M HO T,
+type assign-replace nat -> fo.subst -> fo.tm -> fo.subst -> o.
+assign-replace z [_|S] X [some X |S].
+assign-replace (s N) [A|S] X [A |S1] :- assign-replace N S X S1.
+
+type decompl.aux list link -> list link -> ho.subst -> fo.subst -> fo.subst -> o.
+decompl.aux [link N M Arity|L] LK HO FO FO1 :- assigned? M HO T, !, std.do! [
   % HERE the assign-equal
   decomp-assign LK HO T T0 FO FO',
   fo.eta-contract T0 T',
   % TODO: QUESTION: here we are assigning a solution to fo.subst, maybe we 
   %                 could authorize eta redexes between FO[N] and T'
   print "Assigning" N "to" T' "with arity" Arity,
-  assign-equal FO' N FO' T' FO2,
-  decompl L LK HO FO2 FO1.
-decompl [] _ _ X X.
+  %assign-equal FO' N FO' T' FO2,
+  assign-replace N FO' T' FO2,
+  decompl.aux L LK HO FO2 FO1,
+].
+decompl.aux [_|L] LK HO FO FO1 :- decompl.aux L LK HO FO FO1.
+decompl.aux [] _ _ X X.
+
+type decompl list link -> list link -> ho.subst -> fo.subst -> fo.subst -> o.
+decompl L LK HO FO FO1 :- std.do! [
+  decompl.aux L LK HO FO NewFO,
+  merge-fo NewFO NewFO FO FO1,
+].
+
+type merge-fo fo.subst -> fo.subst -> fo.subst -> fo.subst -> o.
+merge-fo _ [] [] [].
+merge-fo _ X [] X.
+merge-fo S [some X|XS] [some Y|YS] [some Y|R] :- std.spy(fo.equal S X Y), merge-fo S XS YS R. % we keep the old
+merge-fo S [none|XS] [some X|YS] [some X|R] :- merge-fo S XS YS R.
+merge-fo S [some X|XS] [none|YS] [some X|R] :- merge-fo S XS YS R.
+merge-fo S [none|XS] [none|YS] [none|R] :- merge-fo S XS YS R.
 
 % we use links just to know if the variables are new
 type decomp-assign list link -> ho.subst -> ho.assignment -> fo.tm -> fo.subst -> fo.subst -> o.
@@ -332,6 +396,9 @@ decomp LK HO (ho.app L) SolOL S S1 :-
   fo.mk-app HD TL SolOL.
 decomp LK HO (ho.lam F) (fo.lam F1) S S1 :-
   pi x y\ (pi S\ decomp LK HO x y S S) => decomp LK HO (F x) (F1 y) S S1.
+decomp LK HO (ho.uv N Args) SolOL S S1 :- assigned? N HO T, !,
+  ho.beta-abs T Args T1,
+  decomp LK HO T1 SolOL S S1.
 decomp LK HO (ho.uv N Args) SolOL S S1 :-
   fold2 (decomp LK HO) Args Args1 S S2,
   if (take-link LK (link X N _) _) (S1 = S2)
@@ -399,7 +466,7 @@ macro @lam L :- try4.fo.lam L.
 % forall-pair F [pr A B | TL] :- F A, F B, forall-pair F TL.
   
 
-% xtest (test LR tt) :- std.spy-do! [
+% xtest (test LR tt) :- std.do! [
 %   map-fold2 unfold-pair-comp LR [] [] LRH Link HO,
 %   unif-fold-pair LRH HO SOL,
 %   try4.comp.solve-link Link LinkU SOL SOL1,
@@ -430,6 +497,7 @@ eval-unif [triple (error _) L R | _] HO_Subs1 HO_Subs3 L0 L3 FOSol FOSol :- std.
   std.assert! (try4.comp.comp R RH L1 L2 HO_Subs2 HO_Subs3) "b2",
 
   std.spy(try4.comp.solve-link L2 L3 HO_Subs3 HO_Subs4),
+  print "## unif" LH "with" RH "in" HO_Subs4,
   not(std.spy(try4.ho.unif LH RH HO_Subs4 HO_Subs4_)),
 ].
 
@@ -437,7 +505,9 @@ eval-unif [triple ok L R | TL] HO_Subs1 HO_SubsNN L0 L4 FOSol FOSol4 :- std.do![
   std.assert! (try4.comp.comp L LH L0 L1 HO_Subs1 HO_Subs2) "b1",
   std.assert! (try4.comp.comp R RH L1 L2 HO_Subs2 HO_Subs3) "b2",
 
+  print "## unif" LH "with" RH "in" HO_Subs3,
   std.spy(try4.ho.unif LH RH HO_Subs3 HO_Subs4),
+  
   
   std.spy(try4.comp.solve-link L2 L3 HO_Subs4 HO_Subs5),
 
@@ -451,13 +521,13 @@ eval-unif [triple ok L R | TL] HO_Subs1 HO_SubsNN L0 L4 FOSol FOSol4 :- std.do![
 ].
 
 type xtest test try4.fo.tm -> o.
-xtest (test N LR tt) :- std.spy-do![
+xtest (test N LR tt) :- std.do![
   eval-unif LR [] _SOL1 [] _Links [] FOSol,
   %std.assert! (try4.comp.decompl Links Links SOL1 FOSol FOSol1) "b3",
   print "FO Subst" N "=" FOSol,
   std.forall LR (x\ sigma L R D\ triple D L R = x, (D = error _ ; try4.fo.equal FOSol L R)),
 ].
-xtest (test _ LR ff) :- std.spy-do! [
+xtest (test _ LR ff) :- std.do! [
   not(eval-unif LR [] _S [] _L [] _FO)
 ].
 
@@ -491,3 +561,11 @@ macro @kol N X :- declare-test xtest (test N X ff).
 @okl 14 [
   (triple ok (@lam x\ @app [@X, x]) (@lam x\ @app [@f, x])), 
   (triple (error _) @g @X)]. % we fail early
+
+@okl 15 [
+  (triple ok (@lam x\ @app [@X, x]) (@lam x\ @app [@f, @app[@Y,x]])), 
+  (triple (error _) @g @X)]. % we fail early for the wrong reason
+
+@okl 16 [
+  (triple ok (@lam x\ @app [@X, x]) (@lam x\ @app [@f, @app[@Y,x]])), 
+  (triple ok @f @X)].
