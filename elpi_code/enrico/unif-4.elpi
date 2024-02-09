@@ -57,6 +57,21 @@ new [X|XS] (s N) [X|YS] :- new XS N YS.
 
 type mk-app tm -> list tm -> tm -> o.
 mk-app T L S :- beta T L S.
+
+type eta-contract tm -> tm -> o.
+eta-contract (c X) (c X).
+eta-contract (app L) (app L1) :- forall2 eta-contract L L1.
+eta-contract (lam F) T :- contract [] (lam F) T.
+eta-contract (lam F) (lam F1) :- pi x\ eta-contract x x => eta-contract (F x) (F1 x).
+eta-contract (uv X) (uv X).
+
+type contract list tm -> tm -> tm -> o.
+contract L (lam F) T :- 
+  pi x\ contract [x|L] (F x) T. % also checks H Prefix does not see x
+contract L (app [H|Args]) T :- 
+  std.rev L LRev, std.appendR Prefix LRev Args,
+  if (Prefix = []) (T = H) (T = app [H|Prefix]).
+
 }
 
 %%%%%%%%%%%%%%%%%%% the ML %%%%%%%%%%%%%%%%%%%%%
@@ -246,7 +261,8 @@ type decompl list link -> list link -> ho.subst -> fo.subst -> fo.subst -> o.
 decompl [link N M Arity|L] LK HO FO FO1 :-
   assigned? M HO T,
   % HERE the assign-equal
-  decomp-assign LK HO T T' FO FO',
+  decomp-assign LK HO T T0 FO FO',
+  fo.eta-contract T0 T',
   % TODO: QUESTION: here we are assigning a solution to fo.subst, maybe we 
   %                 could authorize eta redexes between FO[N] and T'
   print "Assigning" N "to" T' "with arity" Arity,
@@ -362,22 +378,26 @@ type eval-unif
   list try4.comp.link ->
   try4.fo.subst -> try4.fo.subst -> o.
 eval-unif [] S S [] FO FO.
-eval-unif [pr L R | TL] HO_Subs1 HO_SubsNN LNN FOSol FOSol3 :- std.spy-do![
+eval-unif [pr L R | TL] HO_Subs1 HO_SubsNN LNN FOSol FOSol4 :- std.spy-do![
   std.assert! (try4.comp.comp L LH [] L1 HO_Subs1 HO_Subs2) "b1",
   std.assert! (try4.comp.comp R RH L1 L2 HO_Subs2 HO_Subs3) "b2",
   try4.ho.unif LH RH HO_Subs3 HO_Subs4,
   try4.comp.solve-link L2 L3 HO_Subs4 HO_Subs5,
   try4.fo.alloc-subst L FOSol FOSol1,
   try4.fo.alloc-subst R FOSol1 FOSol2,
-  eval-unif TL HO_Subs5 HO_SubsNN L4 FOSol2 FOSol3,
+
+  std.assert! (try4.comp.decompl L3 L3 HO_Subs5 FOSol2 FOSol3) "b3",
+  print "FO Subst" L "==" R ":=" FOSol3,
+
+  eval-unif TL HO_Subs5 HO_SubsNN L4 FOSol3 FOSol4,
   std.append L3 L4 LNN].
 
 type xtest test try4.fo.tm -> o.
 xtest (test N LR tt) :- std.spy-do![
-  eval-unif LR [] SOL1 Links [] FOSol,
-  std.assert! (try4.comp.decompl Links Links SOL1 FOSol FOSol1) "b3",
-  print "FO Subst" N "=" FOSol1,
-  std.forall LR (x\ sigma L R\ pr L R = x, try4.fo.equal FOSol1 L R),
+  eval-unif LR [] SOL1 _Links [] FOSol,
+  %std.assert! (try4.comp.decompl Links Links SOL1 FOSol FOSol1) "b3",
+  print "FO Subst" N "=" FOSol,
+  std.forall LR (x\ sigma L R\ pr L R = x, try4.fo.equal FOSol L R),
 ].
 xtest (test _ LR ff) :- std.spy-do! [
   not(eval-unif LR [] _S _L [] _FO)
