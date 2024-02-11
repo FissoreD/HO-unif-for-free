@@ -5,9 +5,9 @@ MYDIR = .
 list: $(MYDIR)/*.tex
 	for file in $^ ; do \
 		${BUILD_TEX} $${file} ; \
-		${BUILD_TEX} $${file} ; \
-		cd .aux/; cp ../bib.bib .; bibtex $${file%.tex}; \
+		cd .aux/; cp ../bib.bib .; bibtex $${file}; \
 		cd - ; \
+		${BUILD_TEX} $${file} ; \
 		${BUILD_TEX} $${file} ; \
 	done
 

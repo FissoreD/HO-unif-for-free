@@ -3,7 +3,7 @@
 \usepackage{myTools}
 
 \usepackage{macros}
-
+ 
 \author{Enrico Tassi, Davide Fissore}
 \title{HO unification from object language to meta language} 
 \date{Month XX, 202Y}
@@ -18,8 +18,13 @@
 \def\coqelpi{\proglang{coq-elpi}}
 \def\lambdaprolog{\proglang{$\lambda$-prolog}}
 \def\coq{\proglang{coq}}
-\newcommand*{\eqtau}{\ensuremath{\mathrel{\overset{\mathrm{\tau}}{=}}}}
 
+\newcommand*{\acronym}[1]{\texttt{#1}\xspace}
+
+\def\ol{\acronym{ol}}
+\def\ml{\acronym{ml}}
+
+\newcommand*{\eqtau}{\ensuremath{\mathrel{\overset{\mathrm{\tau}}{=}}}}
 
 \begin{abstract}
 
@@ -38,77 +43,26 @@ want to give a framework to reason about unification in meta-programming.
 
 Meta programming \cite{hill1994} is a programming technique in which a program
 can treat an other program as its data. This latter program is called object
-language, while the former is called meta language. At the heart of meta
-programming lays the necessity of representing terms of the object language in
-the meta language so that a wide set of program manipulation ranging from
-interpretation to compilation. Furthermore, since a logic program is a set of
-clauses, the behavior of the object language can be modified by simply adding
-new rules inside the database of the meta program.
+language (\ol for short), while the former is called meta language (\ml for
+short). At the heart of meta programming lays the necessity of representing
+terms of the \ol in the \ml so that a wide set of program
+manipulations ranging from interpretation to compilation. Furthermore, since a
+logic program is a set of clauses, the behavior of the \ol can be
+modified \texttt{in corsa}\todo{translate in english} by simply adding new rules inside the database of the meta program.
 
-The motivation pushing us to reason about unification of terms of the object
-language represented as terms of the meta language is to implement a type class
-solver for the \coq proof assistant into the \elpi logic programming language. A
-type class \cite{wadler89, sozeau08} is a typing structure allowing to introduce
-ad hoc polymorphism in functional languages and instances are implementations of
-type classes. From the point of view of logic programming, type class represent
-predicates parametrized by their argument and instances rules for those
-predicates. For instance, if \texttt{XXX} is the type class representing the
-AAA, then ZZZ and WWW are instances for XXX. In the code snippet below, we give
-such implementation in \coq.
+Meta programming has various application such as ... where thanks to meta
+programming it is possible to represent the logic of a language into a formal
+and formally verify the wanted properties. On the other hand, it is possible to
+embed a logic programming language into another so that some tasks can be
+delegated to \ml.
 
-
-\begin{mintedTcolorbox}[escapeinside=&&]{coq}
-  Inductive sig (A : Type) (P : A -> Prop) : Type := ...
-
-  Class Decision (P : Prop) := decide : {P} + {not P}.
-  Class RelDecision {A B: Type} (R : A -> B -> Prop).
-  Class ProofIrrel (A : Type) : Prop := proof_irrel (x y : A) : x = y.
-
-  Instance decide_rel: forall (A B : Type) (R : A -> B -> Prop),
-    RelDecision R -> forall (x : A) (y : B), Decision (R x y). Admitted.
-  Instance True_pi : ProofIrrel True. Admitted.
-  Instance sig_eq_dec: forall (A : Type) (P : A -> Prop),
-    (forall x, ProofIrrel (P x)) -> RelDecision (@eq A) ->
-    RelDecision (@eq (sig A P)). Admitted.
-\end{mintedTcolorbox}
-
-This small set of instances after a first phase of\todo{explain compilation of pred and inst?}
-compilation is translated into the following \elpi rules:
-
-\begin{mintedTcolorbox}{elpi}
-  type tc-Decision term -> term -> o.
-  type tc-RelDecision term -> term -> term -> term -> o.
-  type tc-ProofIrrel term -> term -> o.
-
-  tc-ProofIrrel (`True`) (`True_pi`).
-  tc-Decision (app [R, X, Y]) 
-    (app [`decide_rel`, A, B, R, P, X, Y]) :-
-    tc-RelDecision A B R P.
-  tc-RelDecision (app [`sig`, A, P]) 
-    (app [`sig`, A, P]) 
-    (app [`eq`, app [`sig`, A, P]]) 
-    (app [`sig_eq_dec`, A, P, P1, P2]) :-
-    pi-decl c0 `x` A =>
-      tc-ProofIrrel (app [P, c0]) (app [P1, c0]), 
-    tc-RelDecision A A (app [`eq`, A]) P2.
-\end{mintedTcolorbox}
-
-Type-class resolution starts from a query, that is a class applied to some
-argument. This \coq term is translated into a term of the meta language and the
-search for a solution in the database is started. However, since unification is
-performed on the head of the clause, it may happen that the term representation
-in the meta language may hide some unification properties that are true in the
-object language. In the example below, the goal \texttt{Decision (@eq T a b)}
-for some \texttt{a} and \texttt{b} unifies with \texttt{Decision (R x y)} in the
-object language but not in its meta representation. Similarly, the goal
-\texttt{RelDecision (@eq (sig T ?P))} where \texttt{?P}, under the hypothesis
-\texttt{RelDecision (@eq nat)}, will trying to apply the rule for
-\texttt{sig\_eq\_dec}, we fall into an higher order unification problem, where
-\texttt{P} is applied to the local name \texttt{x}. However, the corresponding
-rule in the meta language exploit a first order variable \texttt{P}. Therefore,
-after the refinement of the goal to \texttt{sig\_eq\_dec}, the resolution
-immediately fail to solve the premise \texttt{tc-ProofIrrel (app [P, c0]) (app
-[P1, c0])}.
+The latter situation motivates our works, since we are implementing a type-class
+solver for the \ol \coq in the \ml \elpi (a variant \lambdaprolog). A type class
+\cite{wadler89, sozeau08} is a typing structure allowing to introduce ad hoc
+polymorphism in functional languages. We call <<instance>> an implementation of
+a type class. The resolution of a type-class problem can be viewed as a logic
+program where type classes represent predicates parametrized by their arguments
+and where instances are rules for those predicates. 
 
 
 % \section{Higher-order unification in \texorpdfstring{$L_\lambda$}{L\_lambda}}
@@ -126,44 +80,134 @@ immediately fail to solve the premise \texttt{tc-ProofIrrel (app [P, c0]) (app
 
 \section{From the object to the meta language}
 
-In \coq, terms unify up to $\eta\beta\delta\iota\zeta$-equivalence and
-unification is also possible when dealing with higher order variables. Whereas
-\elpi allows higher order unification up to $\eta\beta$-equivalence, and the
-representation of \coq terms is more syntactical than one would expect, making 
-two terms that unify in \coq not unifiable in \elpi.
+Even though type-class resolution is the motivating example of this paper, we
+provide a general framework allowing to solve reproduce the same unification
+properties of the \ol into the \ml. In other word, if two terms unify in the
+\ol, then they still unify in the \ml. 
 
-Without any loss of generality, in \cref{table:coq2elpi} we present a subset of
-the terms in the object language and for each term we give its representation in
-the meta language. This encoding is enough to fall into unification problems.
-For example, rules like 
+In the following, we consider the \ol being able to quantify over higher-order
+variables and accepts $\eta-\beta$-reductions. The same unification properties
+are considered valid for the \ml.
 
-\begin{center}
-  \elpiIn{p (lam x\ (app F x)) :- ... F ...}
-\end{center}
+There exist two different ways to encode the \ol in the \ml, we can either deep
+embed the \ol such that any term of the \ol is represented with a corresponding
+predicate. For example, if \texttt{f} is a function of type \coqIn{A -> B} in
+the \ol, then the \ml has the predicate \texttt{p} defined as \elpiIn{type p A'
+-> B' -> o}, where \elpiIn{A'} and \elpiIn{B'} are types corresponding
+respectively to \coqIn{A} and \coqIn{B} in the \ol. In a theorem prover like
+\coq, we can translate theorems like the following statement
 
-cannot unify with goals like 
+\begin{equation}
+  \texttt{\coqIn{forall F X, p (f X) (fun x => g x (F x)).}}
+  \label{eq:coq1}
+\end{equation}
 
-\begin{center}
-  \elpiIn{p (lam x\ app (app (const "f") x) x).}
-\end{center}
+where \texttt{p, f} and \texttt{g} are defined constants of the language, into
 
-Since \elpiIn{F} does not see \elpiIn{x} even though it is applied to \elpiIn{x}
-in the object language.
+\begin{equation}
+  \texttt{\elpiIn{p (f X) (x\ g x (F x)).}}
+\end{equation}
+
+\noindent However, even if this encoding is quite appealing since it allows to
+mirror enough straightforwardly the terms of the \ol, we loose the possibility
+the manipulate the terms of the \ol into the \ml. In other words, we have no
+syntax allowing to know if the current term is a constant, an application, a
+lambda abstraction and so on. This is mainly due to the absence of a syntax in
+the encoding of the \ol terms. Moreover, another motivation for using syntax to
+represent terms of the \ol is that  the typing system of the \ol could
+potentially be more expressive than the typing system of the \ml\footnote{This
+is the case for \coq wrt \elpi, since in we have no immediate way to encode
+the dependent types of \coq into \elpi}.
+
+To simplify the understanding of our encoding, in the following code snippet
+we give the typing schema of the \ol terms represented into terms of the \ml. 
+
+\begin{mintedTcolorbox}{elpi}
+  kind tm type.
+  type app list tm -> tm.
+  type lam (tm -> tm) -> tm.
+  type c string -> tm.
+  type uv  nat -> tm.
+\end{mintedTcolorbox}
+
+In particular, the type \elpiIn{tm} is the type of the terms of the \ol. The
+function applications of the \ol are represented as a list of \elpiIn{tm}
+prefixed by the constructor \elpiIn{app}. The \elpiIn{lam} constructor,
+represent lambda abstractions of the \ol binding a \elpiIn{tm} into an other
+\elpiIn{tm}. Constants as strings inside the constructor \elpiIn{c}. Lastly,
+unification variables are integers inside the constructor \elpiIn{uv}, where the
+integer is the index of the current variable wrt a list of optional \elpiIn{tm},
+standing for the substitution mapping of the \ol.
+
+This second encoding of the \ol into our \ml translate \cref{eq:coq1} into
+the term:
+
+\begin{equation}
+  \texttt{\elpiIn{app[c "p", app[c "f", uv 0], lam x\ app[c "g", x, app[uv 1, x]]].}}
+  \label{eq:elpi1}
+\end{equation}
+
+This second encoding of the \ol terms is now structured and as a drawback we are
+restricting the unification of the \ol, that is, terms that originally unify
+at the \ol level, do not unify in the \ml.
+
+For example, let \coqIn{a} and \coqIn{b} two defined constants and let's try to
+unify the \ol term
+
+\begin{equation}
+  \texttt{\coqIn{p (f a) (fun x => g x b)}}
+\end{equation}
+
+\noindent corresponding to 
+
+\begin{equation}
+  \texttt{\elpiIn{app[c "p", app[c "f", c "a"], lam x\ app[c "g", x, c "b"]].}}
+\end{equation}
+
+\noindent with \cref{eq:coq1} (corresponding to \cref{eq:elpi1}). The
+unification of the \ml is able to instantiate \elpiIn{uv 0} (cf \coqIn{X}) to
+\elpiIn{c "a"}, but we are no longer capable to unify the sub-term
+\elpiIn{app[uv 1, x]} (cf \coqIn{F}) with \elpiIn{c "b"}. 
+
+The result of this translation of terms inside the \ml causes a certain lack of
+powerfulness while symbolizing higher-order variables. Recall that we are
+considering a \ml capable to deal with higher-order variables, however, the
+sub-term \elpiIn{app[uv 1, x]} is not expressed into the canonical form where a
+higher-order variable of the \ml is in the pattern fragment \cite{miller1991},
+i.e. a variable applied to distinct names. Therefore, we need to preprocess the
+received unification problem $t_1 = t_2$ by 
+\begin{inlinelist}
+  \item compiling the terms into a terms $t_1'$ and $t_2'$ understandable by the
+  \ml
+  \item finding a valid substitution for $t_1'$ and $t_2'$ 
+  \item giving back a valid substitution $\theta$ for the \ol, such that $\theta$
+  is the most general unifier for $T_1$ and $t_2$ in the logic of the \ol
+\end{inlinelist}.
+
+% Let upper-case letter unification variables and lower case variables defined
+% constants of the object language. We take as example the following two
+% unification problems in our \ol:
+
+% \begin{center}
+%   \coqIn{(fun x => P x) = P}
+% \end{center}
+
+% The first problem, if 
+
+% \begin{center}
+%   \elpiIn{p (lam x\ (app F x)) :- ... F ...}
+% \end{center}
+
+% cannot unify with goals like 
+
+% \begin{center}
+%   \elpiIn{p (lam x\ app (app (const "f") x) x).}
+% \end{center}
+
+% Since \elpiIn{F} does not see \elpiIn{x} even though it is applied to \elpiIn{x}
+% in the object language.
   
-\begin{table}
-  \centering
-  \begin{tabular}{c||c|c}
-  Term        & Obj. lang.                    & Meta lang.                                   \\
-  \hline\hline
-  Constant    & a                             & `a'                                     \\
-  Application & f a\_1 a\_2 ... a\_n          & app{[}`f', `a\_1', `a\_2', ..., `a\_n'{]}     \\
-  Abstraction & fun (x : T) $\Rightarrow$ f x & fun `x' T (x\textbackslash app{[}`f', `x'{]}) \\
-  Variable    & X                             & X                                             \\
-  \end{tabular}
-  \caption{Obj. lang. terms to meta lang. terms representation}
-  \label{table:coq2elpi}
-\end{table}
-
+----------------------------- END -----------------------------
 \subsection{First-order unification}
 
 Just as an introduction, we briefly show some small example of unification
@@ -335,5 +379,84 @@ keeping higher order unification
 \subsection{Dealing with HO unification}
 
 \printbibliography
+
+\appendix
+
+\begin{table}
+  \centering
+  \begin{tabular}{c||c|c}
+  Term        & \ol                    & \ml                                   \\
+  \hline\hline
+  Constant    & a                             & `a'                                     \\
+  Application & f a\_1 a\_2 ... a\_n          & app{[}`f', `a\_1', `a\_2', ..., `a\_n'{]}     \\
+  Abstraction & fun (x : T) $\Rightarrow$ f x & fun `x' T (x\textbackslash app{[}`f', `x'{]}) \\
+  Variable    & X                             & X                                             \\
+  \end{tabular}
+  \caption{\ol terms to \ml terms representation}
+  \label{table:coq2elpi}
+\end{table}
+
+\section{TC in \coq}
+For instance, if
+\texttt{XXX} is the type class representing the AAA, then ZZZ and WWW are
+instances for XXX. In the code snippet below, we give such implementation in
+\coq. 
+
+\begin{mintedTcolorbox}[escapeinside=&&]{coq}
+  Inductive sig (A : Type) (P : A -> Prop) : Type := ...
+
+  Class Decision (P : Prop) := decide : {P} + {not P}.
+  Class RelDecision {A B: Type} (R : A -> B -> Prop).
+  Class ProofIrrel (A : Type) : Prop := proof_irrel (x y : A) : x = y.
+
+  Instance decide_rel: forall (A B : Type) (R : A -> B -> Prop),
+    RelDecision R -> forall (x : A) (y : B), Decision (R x y). Admitted.
+  Instance True_pi : ProofIrrel True. Admitted.
+  Instance sig_eq_dec: forall (A : Type) (P : A -> Prop),
+    (forall x, ProofIrrel (P x)) -> RelDecision (@eq A) ->
+    RelDecision (@eq (sig A P)). Admitted.
+\end{mintedTcolorbox}
+
+This small set of instances after a first phase of\todo{explain compilation of
+pred and inst?} compilation is translated into the following \elpi rules:
+
+\begin{mintedTcolorbox}{elpi}
+  type tc-Decision term -> term -> o.
+  type tc-RelDecision term -> term -> term -> term -> o.
+  type tc-ProofIrrel term -> term -> o.
+
+  tc-ProofIrrel (`True`) (`True_pi`).
+  tc-Decision (app [R, X, Y]) 
+    (app [`decide_rel`, A, B, R, P, X, Y]) :-
+    tc-RelDecision A B R P.
+  tc-RelDecision (app [`sig`, A, P]) 
+    (app [`sig`, A, P]) 
+    (app [`eq`, app [`sig`, A, P]]) 
+    (app [`sig_eq_dec`, A, P, P1, P2]) :-
+    pi-decl c0 `x` A =>
+      tc-ProofIrrel (app [P, c0]) (app [P1, c0]), 
+    tc-RelDecision A A (app [`eq`, A]) P2.
+\end{mintedTcolorbox}
+
+In this paper we do not really want to explain how the translation of the
+class/instances is performed in our \ml, we prefer to focus our attention on
+unification of terms of the \ol in our \ml. Although, in \cref{table:coq2elpi},
+we provide a simple subset of the typing system used to represent the term of
+the \ol in the \ml.
+
+Type-class resolution starts from a query, that is a class applied to some
+arguments. This \coq term is translated into a term of the \ml and the search
+for a solution in the database is started. However, it may happen that the term
+representation in the \ml may hide some unification properties that are true in
+the \ol. In the example above, the goal \texttt{Decision (@eq T a b)} for some
+\texttt{a} and \texttt{b} unifies with \texttt{Decision (R x y)} in the \ol but
+not in its meta representation. Similarly, the goal \texttt{RelDecision (@eq
+(sig T ?P))} where \texttt{?P}, under the hypothesis \texttt{RelDecision (@eq
+nat)}, will trying to apply the rule for \texttt{sig\_eq\_dec}, we fall into an
+higher order unification problem, where \texttt{P} is applied to the local name
+\texttt{x}. However, the corresponding rule in the \ml exploit a first order
+variable \texttt{P}. Therefore, after the refinement of the goal to
+\texttt{sig\_eq\_dec}, the resolution immediately fail to solve the premise
+\texttt{tc-ProofIrrel (app [P, c0]) (app [P1, c0])}.
 
 \end{document}

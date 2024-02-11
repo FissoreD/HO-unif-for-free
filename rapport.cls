@@ -34,7 +34,7 @@
   backend=biber,
   sorting=ynt
 ]{biblatex}
-\addbibresource{../bib.bib}
+\addbibresource{./bib.bib}
 
 \def\whitepage{
   \newpage
