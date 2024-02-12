@@ -4,7 +4,7 @@ src_equal S (src_uv N) T1 :- src_assigned? N S T, src_equal S T T1.
 src_equal S T1 (src_uv N) :- src_assigned? N S T, src_equal S T1 T.
 src_equal S (src_app (src_uv N :: Args)) T1 :- src_assigned? N S F, src_beta F Args T, src_equal S T T1.
 src_equal S T1 (src_app (src_uv N :: Args)) :- src_assigned? N S F, src_beta F Args T, src_equal S T1 T.
-src_equal S (src_app L1) (src_app L2) :- forall2 (src_equal S) L1 L2.
+src_equal S (src_app L1) (src_app L2) :- forall2_src_equal S L1 L2.
 src_equal S (src_lam F1) (src_lam F2) :- pi x\ src_equal S x x => src_equal S (F1 x) (F2 x).
 src_equal _ (src_c X) (src_c X).
 src_equal _ (src_uv N) (src_uv N).
@@ -14,6 +14,10 @@ src_equal S T (src_lam F) :- % not (T = src_lam _),
   pi x\ src_beta T (x :: nil) (T' x), src_equal S (src_lam T') (src_lam F).
 src_equal S (src_app (src_lam X :: TL)) T :- src_beta (src_lam X) TL T', src_equal S T' T.
 src_equal S T (src_app (src_lam X :: TL)) :- src_beta (src_lam X) TL T', src_equal S T T'.
+
+forall2_src_equal S nil nil.
+forall2_src_equal S (X :: XS) (Y :: YS) :- src_equal S X Y, forall2_src_equal S XS YS.
+
 
 src_beta A nil A.
 src_beta (src_lam Bo) (H :: L) R :- src_beta (Bo H) L R.

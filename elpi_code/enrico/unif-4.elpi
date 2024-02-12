@@ -205,6 +205,14 @@ unif-assignment (abs F1) (abs F2) H H1 :- pi x\ (pi S\ unif x x S S) => unif-ass
 % unif-assignment (val T) (abs F) H H1 :- unif-assignment (abs x\ val {beta-abs (val T) [x]}) (abs F) H H1.
 % unif-assignment (abs F) (val T) H H1 :- print "HERE", std.do![unif-assignment (abs F) (abs x\ val {beta-abs (val T) [x]}) H H1].
 
+type equal subst -> tm -> tm -> o.
+equal S (uv N Args) T1 :- assigned? N S F, beta-abs F Args T, equal S T T1.
+equal S T1 (uv N Args) :- assigned? N S F, beta-abs F Args T, equal S T1 T.
+equal S (app L1) (app L2) :- forall2 (equal S) L1 L2.
+equal S (lam F1) (lam F2) :- pi x\ equal S x x => equal S (F1 x) (F2 x).
+equal _ (c X) (c X).
+equal _ (uv N A) (uv N A).
+
 }
 
 namespace comp {

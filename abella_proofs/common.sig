@@ -14,9 +14,9 @@ kind bool type.
 type tt bool.
 type ff bool.
 
-type fold2 (A -> A1 -> B -> B -> o) -> list A -> list A1 -> B -> B -> o.
-type exists1 (A -> o) -> list A -> o.
-type forall1 (A -> o) -> list A -> o.
-type forall2 (A -> A -> o) -> list A -> list A -> o.
+% type fold2 (A -> A1 -> B -> B -> o) -> list A -> list A1 -> B -> B -> o.
+% type exists1 (A -> o) -> list A -> o.
+% type forall1 (A -> o) -> list A -> o.
+% type forall2 (A -> A -> o) -> list A -> list A -> o.
 type append list A -> list A -> list A -> o.
 type rev list A -> list A -> o.
