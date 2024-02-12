@@ -200,12 +200,21 @@ in the code snippet below.
 \end{mintedTcolorbox}
 
 \noindent In particular a \elpiIn{ml.uv} term is meant as a unification variable
-of the meta-language. Therefore, the unification between \elpiIn{ml.lam x\
-ml.lam y\ ml.uv 1 [x, y]} and \elpiIn{ml.lam x\ ml.lam y\ ml.uv 0 [x]} is
-supposed to be unified by the internal unification procedure of the \ml (for
-this example, the substitution for \elpiIn{uv 0} is \elpiIn{ml.lam x\ ml.lam y\
-ml.uv 2 [x]} whereas the substitution for \elpiIn{uv 1} is \elpiIn{ml.lam x\
-ml.uv 2 [x]}).
+of the meta-language. Therefore, the unification between 
+
+\begin{equation*}
+  \texttt{\elpiIn{ml.lam x\ ml.lam y\ ml.uv 1 [x, y]}}
+\end{equation*}
+
+and
+
+\begin{equation*}
+  \texttt{\elpiIn{ml.lam x\ ml.lam y\ ml.uv 0 [x]}}
+\end{equation*}
+
+is supposed to procedure of the substitution \elpiIn{ml.lam x\ ml.lam y\ ml.uv 2
+[x]} for \elpiIn{uv 0} and the substitution \elpiIn{ml.lam x\ ml.uv 2 [x]}) for
+\elpiIn{uv 1}.
 
 Moreover, if \elpiIn{ml.uv} stands for meta-variables, the \elpiIn{app} and the
 \elpiIn{lam} constructors are the nodes for the terms of the \ol. Therefore, we
