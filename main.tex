@@ -184,29 +184,47 @@ received unification problem $t_1 = t_2$ by
   is the most general unifier for $T_1$ and $t_2$ in the logic of the \ol
 \end{inlinelist}.
 
-% Let upper-case letter unification variables and lower case variables defined
-% constants of the object language. We take as example the following two
-% unification problems in our \ol:
+\section{Term compilation}
 
-% \begin{center}
-%   \coqIn{(fun x => P x) = P}
-% \end{center}
+In order to present the the compilation of the \ol terms so that higher order
+unification can be performed, we need a second and mor powerful representation
+of the \ol terms so that variables have a scope. This specification is shown
+in the code snippet below.  
 
-% The first problem, if 
+\begin{mintedTcolorbox}{elpi}
+  kind ml.tm type.
+  type ml.app list ml.tm -> ml.tm.
+  type ml.lam (ml.tm -> ml.tm) -> ml.tm.
+  type ml.c string -> ml.tm.
+  type ml.uv  nat -> list ml.tm -> ml.tm.
+\end{mintedTcolorbox}
 
-% \begin{center}
-%   \elpiIn{p (lam x\ (app F x)) :- ... F ...}
-% \end{center}
+\noindent In particular a \elpiIn{ml.uv} term is meant as a unification variable
+of the meta-language. Therefore, the unification between \elpiIn{ml.lam x\
+ml.lam y\ ml.uv 1 [x, y]} and \elpiIn{ml.lam x\ ml.lam y\ ml.uv 0 [x]} is
+supposed to be unified by the internal unification procedure of the \ml (for
+this example, the substitution for \elpiIn{uv 0} is \elpiIn{ml.lam x\ ml.lam y\
+ml.uv 2 [x]} whereas the substitution for \elpiIn{uv 1} is \elpiIn{ml.lam x\
+ml.uv 2 [x]}).
 
-% cannot unify with goals like 
+Moreover, if \elpiIn{ml.uv} stands for meta-variables, the \elpiIn{app} and the
+\elpiIn{lam} constructors are the nodes for the terms of the \ol. Therefore, we
+cannot claim that \elpiIn{ml.lam x\ ml.app [ml.c "f", x]} and \elpiIn{ml.c "f"}
+unify, since, even though the first is the $\eta$-expansion of the second, the
+\ml does not know how to $\eta\beta$-reduce the terms of the \ol.
 
-% \begin{center}
-%   \elpiIn{p (lam x\ app (app (const "f") x) x).}
-% \end{center}
+The compilation phase is quite straightforward, each constructor of type
+\elpiIn{tm} is mapped to its corresponding version of type \elpiIn{ml.tm}. A
+slight different approach is taken in the case of terms of the form \elpiIn{app
+[uv N | L]}, where the term is translated into \elpiIn{tm.un M L}, that is, a
+new meta-variable \elpiIn{M} with scope \elpiIn{L}.
 
-% Since \elpiIn{F} does not see \elpiIn{x} even though it is applied to \elpiIn{x}
-% in the object language.
-  
+This latter term transformation is untying the original variable \elpiIn{N} of
+the \ol from the compiled term in the \ml. This means that when \elpiIn{M} is
+instantiated into the \ml, we need to transfer the substitution to the \ol. In
+order to bridge instantiation of meta-variables with the \ol variables, an ad
+hoc \texttt{link} is crafted between the two variables.
+
 ----------------------------- END -----------------------------
 \subsection{First-order unification}
 
