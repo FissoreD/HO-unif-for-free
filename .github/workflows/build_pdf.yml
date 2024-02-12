@@ -1,29 +1,31 @@
-# name: Build LaTeX document
-# on: push
-
-# concurrency:
-#   group: ${{ github.workflow }}-${{ github.ref }}
-#   cancel-in-progress: true
-
-# jobs:
-#   build_latex:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Set up Git repository
-#         uses: actions/checkout@v3
-
-#       - run: sed -i "s#=tmp#=pdf#" Makefile
-
-#       - run: sudo apt-get update
-
-#       # Install latex, pdf2svg and pandoc
-#       - run: sudo apt-get install texlive texlive-publishers texlive-science latexmk cm-super pdf2svg pandoc
-
-#       - run: pip install pandocfilters
-#       - run: make
-
-#       - run: git config --local user.name actions-user
-#       - run: git config --local user.email "actions@github.com"
-#       - run: git add -A pdf/*;
-#       - run: git commit -m "add generated pdf $(date)";
-#       - run: git push -f origin ${GITHUB_REF##*/}
+name: Build LaTeX document
+on:
+  push:
+    paths:
+      - '**.tex'
+      - '**.bib'
+      - '**.sty'
+jobs:
+  build_latex:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Git repository
+        uses: actions/checkout@v3
+      - name: Compile LaTeX document
+        uses: xu-cheng/latex-action@v2
+        with:
+          root_file: main.tex
+          latexmk_shell_escape: true
+          args: -output-directory=.aux -pdf -file-line-error -halt-on-error -interaction=nonstopmode
+      - name: Commit files  
+        run:
+          git config --local user.name actions-user
+          
+          git config --local user.email "actions@github.com"
+          
+          cp .aux/main.pdf .
+          
+          git add -f main.pdf;
+          git commit -m "add generated pdf $(date)";
+          git push -f origin ${GITHUB_REF##*/}
+          
