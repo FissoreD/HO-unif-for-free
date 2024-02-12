@@ -102,8 +102,8 @@ unif (uv N A) (uv N A) S S :- pattern-fragment A.
 unif (uv N Args1) (uv M Args2) S S3 :- pattern-fragment Args1, pattern-fragment Args2, 
   std.spy(new S W S1, prunexx W Args1 Args2 Ass, assign N S1 Ass S2, assign M S2 Ass S3).
 
-unif (uv N Args) T S S1 :- not (T = uv _ _), print "In here", std.do![not (occ N S T), pattern-fragment Args, bind Args T T1, assign N S T1 S1].
-unif T (uv N Args) S S1 :- not (T = uv _ _), not (std.spy(occ N S T)), pattern-fragment Args, bind Args T T1, assign N S T1 S1.
+unif (uv N Args) T S S1 :- not (T = uv _ _), print "In here", std.do![not_occ N S T, pattern-fragment Args, bind Args T T1, assign N S T1 S1].
+unif T (uv N Args) S S1 :- not (T = uv _ _), std.spy(not_occ N S T), pattern-fragment Args, bind Args T T1, assign N S T1 S1.
 
 % TODO: here we make FO unification -> should be moved in 
 % unif (app [uv N L | Args]) (app L1) S S1 :-
@@ -157,16 +157,33 @@ beta (app A) L (app X) :- std.append A L X.
 beta (uv N A) L (uv N A') :- std.append A L A'.
 beta (c H) L (app [c H | L]).
 
-type occ.aux nat -> subst -> tm -> o.
-occ.aux N _S (uv N _).
-occ.aux N S (uv M Args) :- assigned? M S F, beta-abs F Args T, occ.aux N S T.
-occ.aux N S (app L) :- exists (occ.aux N S) L.
-occ.aux N S (lam F) :- pi x\ occ.aux N S (F x).
+% type occ_aux nat -> subst -> tm -> o.
+% occ_aux N _S (uv N _).
+% occ_aux N S (uv M Args) :- assigned? M S F, beta-abs F Args T, occ_aux N S T.
+% occ_aux N S (app L) :- exists (occ_aux N S) L.
+% occ_aux N S (lam F) :- pi x\ occ_aux N S (F x).
+% 
+% type occ  nat -> subst -> tm -> o.
+% occ N _S (uv N _) :- !, fail.
+% occ N S (uv M Args) :- assigned? M S F, !, beta-abs F Args T, occ N S T.
+% occ N S T :- occ_aux N S T.
 
-type occ  nat -> subst -> tm -> o.
-occ N _S (uv N _) :- !, fail.
-occ N S (uv M Args) :- assigned? M S F, !, beta-abs F Args T, occ N S T.
-occ N S T :- occ.aux N S T.
+type not_occ_aux nat -> subst -> tm -> o.
+not_occ_aux N _ (uv M _) :- diff N M.
+not_occ_aux N S (uv M Args) :- assigned? M S F, beta-abs F Args T, not_occ_aux N S T.
+not_occ_aux N S (app L) :- forall1 (not_occ_aux N S) L.
+not_occ_aux N S (lam F) :- pi x\ /*not_occ_aux N S x =>*/ not_occ_aux N S (F x).
+not_occ_aux _ _ (c _).
+not_occ_aux _ _ X :- name X.
+ 
+type not_occ  nat -> subst -> tm -> o.
+not_occ N S T :- print "not occ" N S T, fail.
+not_occ N _ (uv N _).
+not_occ N S (uv M Args) :- assigned? M S F, beta-abs F Args T, not_occ N S T.
+not_occ _ _ (c _).
+not_occ N S (app L) :- not_occ_aux N S (app L).
+not_occ N S (lam L) :- not_occ_aux N S (lam L).
+not_occ _ _ X :- name X.
 
 type copy tm -> tm -> o.
 copy (app L) (app L') :- forall2 copy L L'.

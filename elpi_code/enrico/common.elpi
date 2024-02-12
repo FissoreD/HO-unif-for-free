@@ -45,6 +45,9 @@ type (>=n) nat -> nat -> o.
 _ >=n z.
 s N >=n s M :- N >=n M.
 
+type diff nat -> nat -> o.
+diff N M :- N >n M ; M >n N.
+
 type map-fold2 (A -> A1 -> B -> B -> C -> C -> o) -> list A -> B -> C -> list A1 -> B -> C -> o.
 map-fold2 _F [] B C [] B C.
 map-fold2 F [X | XS] B C [Y | YS] B2 C2 :-
@@ -60,10 +63,10 @@ type all list o -> o.
 all [].
 all [P|PS] :- P, all PS.
 
-type forall (X -> o) -> list X -> o.
-forall _ L :- var L, !.
-forall P [X|XS] :- P X, forall P XS.
-forall _ [].
+type forall1 (X -> o) -> list X -> o.
+forall1 _ L :- var L, !.
+forall1 P [X|XS] :- P X, forall1 P XS.
+forall1 _ [].
 
 type len list A -> nat -> o.
 len [] z.
@@ -92,7 +95,7 @@ type internal-test o -> o.
 
 internal-tests :-
   std.findall (internal-test _) L,
-  forall runinternal L.
+  forall1 runinternal L.
 
 type runinternal o -> o.
 runinternal (internal-test P) :- print "######" P, P, !.
