@@ -1,0 +1,102 @@
+kind nat type.
+type z nat.
+type s nat -> nat.
+
+kind bool type.
+type tt bool.
+type ff bool.
+
+kind option type -> type.
+type some A -> option A.
+type none option A.
+
+type assigned? nat -> list (option A) -> A -> o.
+assigned? z (some Y :: _) Y.
+assigned? (s N) (_ :: L) X :- assigned? N L X.
+
+type assign nat -> list (option A) -> A -> list (option A) -> o.
+assign z (none :: L) Y (some Y :: L).
+assign (s N) (X :: L) Y (X :: L1) :- assign N L Y L1.
+
+type nth nat -> list A -> A -> o.
+nth z (X :: _) Y  :- X = Y.
+nth (s N) (_ :: L) X :- nth N L X.
+
+type exists (A -> o) -> list A -> o.
+exists F [X|XS] :- F X ; exists F XS.
+
+type forall2 (A -> A -> o) -> list A -> list A -> o.
+forall2 _ [] [].
+forall2 F [X|XS] [Y|YS] :- F X Y, forall2 F XS YS.
+
+type fold2 (A -> A1 -> B -> B -> o) -> list A -> list A1 -> B -> B -> o.
+fold2 _ [] [] A A.
+fold2 F [X|XS] [Y|YS] A A1 :- F X Y A A0, fold2 F XS YS A0 A1.
+
+type fold (A -> B -> B -> o) -> list A -> B -> B -> o.
+fold _ [] A A.
+fold F [X|XS] A A1 :- F X A A0, fold F XS A0 A1.
+
+type (>n) nat -> nat -> o.
+s _ >n z.
+s N >n s M :- N >n M.
+
+type (>=n) nat -> nat -> o.
+_ >=n z.
+s N >=n s M :- N >=n M.
+
+type diff nat -> nat -> o.
+diff N M :- N >n M ; M >n N.
+
+type map-fold2 (A -> A1 -> B -> B -> C -> C -> o) -> list A -> B -> C -> list A1 -> B -> C -> o.
+map-fold2 _F [] B C [] B C.
+map-fold2 F [X | XS] B C [Y | YS] B2 C2 :-
+  F X Y B B1 C C1,
+  map-fold2 F XS B1 C1 YS B2 C2.
+
+
+type fold4 (A -> A1 -> B -> B -> C -> C -> o) -> list A -> list A1 -> B -> B -> C -> C -> o.
+fold4 _ [] [] A A B B.
+fold4 F [X|XS] [Y|YS] A A1 B B1 :- F X Y A A0 B B0, fold4 F XS YS A0 A1 B0 B1.
+
+type all list o -> o.
+all [].
+all [P|PS] :- P, all PS.
+
+type forall1 (X -> o) -> list X -> o.
+forall1 _ L :- var L, !.
+forall1 P [X|XS] :- P X, forall1 P XS.
+forall1 _ [].
+
+type len list A -> nat -> o.
+len [] z.
+len [_|L] (s X) :- len L X.
+
+pred pattern-fragment i:list A.
+pattern-fragment L :- distinct_names L.
+
+kind test type -> type.
+type test int -> list (triple diagnostic A A) -> bool -> test A.
+type declare-test (test A -> o) -> test A -> o.
+
+kind triple type -> type -> type -> type.
+type triple A -> B -> C -> triple A B C.
+
+type runtests list o -> list int -> o.
+runtests [] [] :- print "ALL GOOD!".
+runtests [] F :- print "SOME TEST FAIL:" F, fail.
+runtests [declare-test F (test N LR B as T)|TS] ERR :- print "\n-----" N "-------\n\n\n",
+  if (B = tt) (Rel = "===") (Rel = "=/="),
+  if (F T) (print "ok" Rel LR, runtests TS ERR)
+           (print "\n<<<<<\nko" Rel LR "\n>>>>>\n", runtests TS [N|ERR]).
+
+type internal-tests o.
+type internal-test o -> o.
+
+internal-tests :-
+  std.findall (internal-test _) L,
+  forall1 runinternal L.
+
+type runinternal o -> o.
+runinternal (internal-test P) :- print "######" P, P, !.
+runinternal (internal-test P) :- halt "fail internal test" P.

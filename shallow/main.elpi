@@ -6,6 +6,6 @@ accumulate unif-2-ho-naive-test.
 accumulate unif-3-ho.
 accumulate unif-3-ho-test.
 
-main :-
+main _ :-
   std.findall (declare-test-shallow _ _) L,
   runtests L _.

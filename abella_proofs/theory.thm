@@ -1,0 +1,45 @@
+Specification "comp".
+
+Theorem unif_correct :
+  forall x1 x2 s s1, {unif x1 x2 s s1} -> {equal s1 x1 x2}.
+skip.
+
+Theorem correct :
+  forall t1 t2 x1 x2 s l1 l2 l3 h1 h2 h3,
+    {comp t1 x1 nil l1 nil h1} -> {comp t2 x2 l1 l2 h1 h2} ->
+    {unif x1 x2 h2 h3} ->
+    {decomp l2 l3 h3 nil s} ->
+     {src_equal s t1 t2}.
+skip.
+
+Theorem correct1 :
+  forall t1 t2 x1 x2 s l1 l2 l3 h1 h2,
+    {comp t1 x1 nil l1 nil h1} -> {comp t2 x2 l1 l2 h1 h2} ->
+    {equal h2 x1 x2} ->
+    {decomp l2 l3 h2 nil s} ->
+     {src_equal s t1 t2}.
+induction on 3. intros. case H3.
+      skip.
+      skip.    
+
+      case H5. skip.
+      
+      skip.
+      
+
+Theorem complete :
+  forall t1 t2 x1 x2 s0 s l1 l2 l3 h1 h2 h3,
+    {src_equal s0 t1 t2} ->
+    {comp t1 x1 nil l1 nil h1} /\ {comp t2 x2 l1 l2 h1 h2} /\
+    {unif x1 x2 h2 h3} /\
+    {decomp l2 l3 h3 nil s} /\
+    {src_equal s t1 t2}.
+skip.
+
+Theorem simulation :
+  forall t1 t2 x1 x2 s l1 l2 l3 h1 h2 h3,
+    {comp t1 x1 nil l1 nil h1} -> {comp t2 x2 l1 l2 h1 h2} ->
+    (forall s0, {src_equal s0 t1 t2} -> false) ->
+    ({unif x1 x2 h2 h3} -> false) \/
+    ({unif x1 x2 h2 h3} -> {decomp l2 l3 h3 nil s} -> false).
+skip.

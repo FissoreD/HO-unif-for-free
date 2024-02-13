@@ -11,5 +11,9 @@ list: $(MYDIR)/*.tex
 		${BUILD_TEX} $${file} ; \
 	done
 
-test:
-	cd elpi_code/enrico ; elpi -test main.elpi
+test-shallow:
+	cd shallow && elpi main.elpi -exec "main" -- $(ONLY)
+test-deep:
+	cd deep && elpi main.elpi -exec "main" -- $(ONLY)
+test: test-deep
+test-all: test-deep test-shallow 
