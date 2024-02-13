@@ -142,10 +142,7 @@ standing for the substitution mapping of the \ol.
 This second encoding of the \ol into our \ml translate \cref{eq:coq1} into
 the term:
 
-\begin{equation}
-  \texttt{\elpiIn{app[c "p", app[c "f", uv 0], lam x\ app[c "g", x, app[uv 1, x]]].}}
-  \label{eq:elpi1}
-\end{equation}
+\elpiInEq[eq:elpi1]{app[c "p", app[c "f", uv 0], lam x\ app[c "g", x, app[uv 1, x]]].}
 
 This second encoding of the \ol terms is now structured and as a drawback we are
 restricting the unification of the \ol, that is, terms that originally unify
@@ -162,6 +159,7 @@ unify the \ol term
 
 \begin{equation}
   \texttt{\elpiIn{app[c "p", app[c "f", c "a"], lam x\ app[c "g", x, c "b"]].}}
+  \label{eq:elpi2}
 \end{equation}
 
 \noindent with \cref{eq:coq1} (corresponding to \cref{eq:elpi1}). The
@@ -186,8 +184,8 @@ received unification problem $t_1 = t_2$ by
 
 \section{Term compilation}
 
-In order to present the the compilation of the \ol terms so that higher order
-unification can be performed, we need a second and mor powerful representation
+In order to present the the compilation of the \ol terms, so that higher order
+unification can be performed, we need a second and more powerful representation
 of the \ol terms so that variables have a scope. This specification is shown
 in the code snippet below.  
 
@@ -196,21 +194,17 @@ in the code snippet below.
   type ml.app list ml.tm -> ml.tm.
   type ml.lam (ml.tm -> ml.tm) -> ml.tm.
   type ml.c string -> ml.tm.
-  type ml.uv  nat -> list ml.tm -> ml.tm.
+  type ml.uv nat -> list ml.tm -> ml.tm.
 \end{mintedTcolorbox}
 
 \noindent In particular a \elpiIn{ml.uv} term is meant as a unification variable
 of the meta-language. Therefore, the unification between 
 
-\begin{equation*}
-  \texttt{\elpiIn{ml.lam x\ ml.lam y\ ml.uv 1 [x, y]}}
-\end{equation*}
+\elpiInEqq{ml.lam x\ ml.lam y\ ml.uv 1 [x, y]}
 
 and
 
-\begin{equation*}
-  \texttt{\elpiIn{ml.lam x\ ml.lam y\ ml.uv 0 [x]}}
-\end{equation*}
+\elpiInEqq{ml.lam x\ ml.lam y\ ml.uv 0 [x]}
 
 is supposed to procedure of the substitution \elpiIn{ml.lam x\ ml.lam y\ ml.uv 2
 [x]} for \elpiIn{uv 0} and the substitution \elpiIn{ml.lam x\ ml.uv 2 [x]}) for
@@ -220,7 +214,16 @@ Moreover, if \elpiIn{ml.uv} stands for meta-variables, the \elpiIn{app} and the
 \elpiIn{lam} constructors are the nodes for the terms of the \ol. Therefore, we
 cannot claim that \elpiIn{ml.lam x\ ml.app [ml.c "f", x]} and \elpiIn{ml.c "f"}
 unify, since, even though the first is the $\eta$-expansion of the second, the
-\ml does not know how to $\eta\beta$-reduce the terms of the \ol.
+\ml does not know how to $\eta\beta$-reduce terms of the \ol.
+
+In our encoding, we explicitly encode the meta-variables with the \elpiIn{ml.uv}
+constructor. This is because we prefer to have the full control of the \ml,
+including the meta-variables instantiation. This way we are able to concretely
+touch the substitution performed by the \ml. In a further section, we show that
+there is no difference between our custom \ml language and any other \ml. Of
+course, a full control on the unification behind meta-variable assignment ask to
+drag the substitution mapping of the \ml and update it each time a variable is
+refined.
 
 The compilation phase is quite straightforward, each constructor of type
 \elpiIn{tm} is mapped to its corresponding version of type \elpiIn{ml.tm}. A
@@ -233,6 +236,17 @@ the \ol from the compiled term in the \ml. This means that when \elpiIn{M} is
 instantiated into the \ml, we need to transfer the substitution to the \ol. In
 order to bridge instantiation of meta-variables with the \ol variables, an ad
 hoc \texttt{link} is crafted between the two variables.
+
+A link, \elpiIn{type link nat -> nat -> link}, takes two integers: the first 
+stands for the index of variables in the \ol and the second is the index of 
+the meta-variables.
+
+For example, if we take back the example in \cref{eq:elpi2}, and want to compile
+it, we obtain the new term:
+
+\elpiInEq{app[c "p", app[c "f", c "a"], lam x\ app[c "g", x, c "b"]].}
+
+
 
 ----------------------------- END -----------------------------
 \subsection{First-order unification}

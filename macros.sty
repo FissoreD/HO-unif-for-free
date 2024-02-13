@@ -18,6 +18,20 @@
 \newcommand{\coqIn}[1]{\mintinline[escapeinside=||]{coq}{#1}}
 \newcommand{\textIn}[1]{\mintinline[escapeinside=||]{text}{#1}}
 
+\newcommand{\elpiInEq}[2][]{
+  \begin{equation}
+    \texttt{\elpiIn{#2}}
+    \label{#1}
+  \end{equation}
+}
+
+\newcommand{\elpiInEqq}[2][]{
+  \begin{equation*}
+    \texttt{\elpiIn{#2}}
+    \label{#1}
+  \end{equation*}
+}
+
 \newtcolorbox[auto counter,number within=subsection, 
   crefname={Listing}{Listings},Crefname={Listing}{Listings}]{tcolorboxSimpleLabel}[2][]{%
   colframe=black, colback=white, sharp corners=uphill,
