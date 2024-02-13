@@ -133,7 +133,189 @@ and where instances are rules for those predicates.
 % $\eqtau$) for higher-order variable when they are in the so-called pattern
 % fragment. 
 
-\section{From the object to the meta language}
+esempietto in cui l'HO di elpi non risolve un problem HO del linguaggio
+oggetto FO. Equazione XX
+
+
+\begin{coqcode}
+(* HO unif *)
+Instance forall_dec A (P: A |$\to$| Prop) `{Finite A} `{|$\forall$|x, Decision (P x)} :
+  Decision (|$\forall$|x, P x).
+Instance and_dec P `{Decision P} Q `{Decision Q}:  Decision (P ∧ Q).
+
+
+
+(* FO approx *)
+Instance decide_rel A B (R: A |$\to$| B |$\to$| Prop) `{RelDecision R} :
+  forall x y, Decision (R x y).
+Instance decide_eq_nat : RelDecision (@eq nat).
+Check _ : Decision (@eq nat 2 3)
+
+
+Instance _ : Inj add.
+             Inj F -> Inj (fun x => F (G x))
+
+             (fun x => add x)
+
+
+  Decision (|$\forall$|x, P x).
+
+\end{coqcode}
+
+\subsection{Related work and alternative approaches}
+
+LF e PL with binders (sempre HOAS).
+
+citare FO logic et similia fatti in LP, twelf. qui l'unification dell'OL
+e' facile. cercare se in twelf hanno fatto un po' di ordine superiore.
+
+isabelle fa la stessa cosa, OL e HOL, che matcha il sistema di tipi.
+qui l'unificazione e' la stessa, e fanno un ecoding shallow (senza app).
+
+Noi abbiamo un OL piu complicato, i tipi non matchano, serve un nodo app
+per due ragioni: meta programmazione e arieta variabile
+
+(equazioni XX senza app e lam) XXX IDEA XXX
+
+\section{main idea: FO encoding - HO encoding}
+
+
+
+\begin{elpicode}
+  kind fo_tm type.
+  type fo_app list fo_tm -> fo_tm.
+  type fo_lam (tm -> fo_tm) -> fo_tm.
+  type fo_uv  nat -> fo_tm.
+  type fo_c string -> fo_tm.
+\end{elpicode}
+  
+\begin{elpicode}
+  kind tm type.
+type app list tm -> tm.
+type lam (tm -> tm) -> tm.
+type uv  nat -> list tm -> tm.
+type c string -> tm.
+\end{elpicode}
+
+
+le due sintassi, XX tradotto, unif passa, bisogna riportare la soluzione
+nel mondo fo
+
+segnatura di decomp e unif, equalfo (fa beta, eta, deref)
+
+proprieta desiderate, serve equalho (fa deref)
+
+\subsection{implementation}
+
+l'HO encoding e' esattamente lambda Prolog/elpi, il compilatore
+in pratica potrebbe essere scritto in un meta language, qui lo si presenta in
+elpi stesso. HO e FO in questo paper sono deep embedded in elpi per parlarne,
+ma in pratica il nostro solever, prendere XX, scrivere la clausola compilata.
+
+\begin{minted}{elpi}
+prove (app[c "decidable", all x\ P x]) Proof :- ho-link P P', prove (... P' ...).
+\end{minted}
+
+qui P nel paper diventa uv N [x] per un certo N.
+
+\section{recovering HO}
+
+\begin{elpicode}
+  p (all x\ app[F,x]) = p (all x\ app[f,x,x])
+\end{elpicode}
+
+fallisce perche le liste non hanno la stessa lunghezza.
+
+
+compile
+
+\begin{elpicode}
+  p (all x\ F' x) = p (all x\ app[f,x,x]) , link F F'.
+  F' = x\ app[f,x,x]
+  F = lam a\ app[f,a,a].
+\end{elpicode}
+
+\begin{elpicode}
+  type comp fo.tm -> ho.tm -> list link -> list link -> ho.subst -> ho.subst -> o.
+  comp (fo.c X)   (ho.c X) L L S S.
+  comp (fo.app [fo.uv N|Argsss]) TT L L3 S S3 :- %!,
+    % TODO: here split-pf to enter dist. names into N
+    % split-pf Argsss [] PF NPF,
+    split-pf Argsss [] PF [], NPF = [], % TODO: compile to (uv N L) + link-fo-app
+    print "In PF" PF NPF, 
+    if (NPF = []) (TT = ho.uv M PF1) (TT = ho.app [ho.uv M PF1 | NPF1]),
+    % pattern-fragment Args,
+    fold4 comp PF PF1 L L1 S S1,
+    fold4 comp NPF NPF1 L1 L2 S1 S2,
+    ho.new S2 M S3,
+    % TODO: maybe len can be given by split-pf
+    len PF Len,
+    L3 = [link N M Len| L2].
+  % TODO: if don't want to modify unif, we compile `fo.app [fo.c f, c0, c0, ho.c a]` into 
+  % `ho.app [ho.app[f, c0, c0], ho.c a]
+  comp (fo.app A) (ho.app A1) L L1 S S1 :- fold4 comp A A1 L L1 S S1.
+  comp (fo.lam F) (ho.lam F1) L L1 S S1 :- 
+    (pi x y\ (pi A S\ comp x y A A S S) => comp (F x) (F1 y) L L1 S S1).
+  comp (fo.uv N) (ho.uv M []) L [link N M z|L] S S1 :- ho.new S M S1.
+
+  decmop...
+\end{elpicode}
+
+
+\section{recovering eta}
+
+\begin{elpicode}
+q (all x\ F x) = q (all x\ app[f,x]) /\ p f = p F
+F = fun a => app [f,a] ----> F = f
+\end{elpicode}
+
+l'utene da p su f, mentre l'istanza pe q forza F a fun .. 
+
+\section{recovering beta}
+
+\begin{elpicode}
+  q (all x\ F x) = q (all x\ app[f,x,x]) /\ p1 (app[f,a,a]) = p1 (app[F,a])
+  F = fun y => app [f,y,y] ----> (app[F,a]) ~> app[f, a, a].
+\end{elpicode}
+  
+qui la sintesi di F puo generare un beta redex, quindi ci mettiamo
+p1 F1, e decomp beta F [a] F1.
+
+\section{recovering eta-beta within unification (non linear variables)}
+
+se i problemi di cui sopra avvengono nello stesso termine
+
+\begin{elpicode}
+  q2 (all x\ F x) (app[F,a]) = q2 (all x\ app[f,x,x]) (app[f,a,a])
+\end{elpicode}
+
+bisogna slegare le due F e poi unificare le soluzioni tra di loro
+
+\section{recoving binary app}
+
+fo approx / sub pattern fragment
+
+\begin{elpicode}
+  p (all x\app[F,x,a]) (app[F,b]) = p (all x\app[f,x,x,a]) (app[f,b,b])
+  p (all x\G x) F' = 
+  G = x\ f x x a
+  F = lam x\f x x
+  F' = (app[f,b,b])
+  link (F a) F'
+  link G F
+\end{elpicode}
+
+
+questo esempio recupera l'app binaria perche
+
+\begin{elpicode}
+  (app (app F x) a) = (app (f x x) a)
+\end{elpicode}
+
+
+
+
+\section{XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX}
 
 Even though type-class resolution is the motivating example of this paper, we
 provide a general framework allowing to solve reproduce the same unification
