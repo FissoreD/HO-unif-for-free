@@ -169,7 +169,7 @@ beta (c H) L (app [c H | L]).
 % occ N S T :- occ_aux N S T.
 
 type not_occ_aux nat -> subst -> tm -> o.
-not_occ_aux N _ (uv M _) :- diff N M.
+not_occ_aux N S (uv M _) :- not(assigned? M S _), diff N M.
 not_occ_aux N S (uv M Args) :- assigned? M S F, beta-abs F Args T, not_occ_aux N S T.
 not_occ_aux N S (app L) :- forall1 (not_occ_aux N S) L.
 not_occ_aux N S (lam F) :- pi x\ /*not_occ_aux N S x =>*/ not_occ_aux N S (F x).

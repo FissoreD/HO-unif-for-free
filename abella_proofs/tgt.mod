@@ -22,7 +22,8 @@ beta-abs (val (app A))  L (app X) :- append A L X.
 beta-abs (val (uv N A)) L (uv N X) :- append A L X.
 beta-abs (val (c H))    L (app (c H :: L)).
 
-not_occ_aux N S (uv M _) :- diff N M.
+not_occ_aux N S (uv M _) :- % not(assigned? M S _), 
+  assign M S _ _, diff N M.
 not_occ_aux N S (uv M Args) :- assigned? M S F, beta-abs F Args T, not_occ_aux N S T.
 not_occ_aux N S (app L) :- forall1_not_occ_aux N S L.
 not_occ_aux N S (lam F) :- pi x\ not_occ_aux N S x => not_occ_aux N S (F x).
