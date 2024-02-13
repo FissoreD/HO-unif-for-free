@@ -48,14 +48,14 @@ len [_|L] (s X) :- len L X.
 pred pattern-fragment i:list A.
 pattern-fragment L :- distinct_names L.
 
-kind test type -> type.
-type test A -> A -> bool -> test A.
-type declare-test (test A -> o) -> test A -> o.
+kind test-shallow type -> type.
+type test-shallow A -> A -> bool -> test-shallow A.
+type declare-test-shallow (test-shallow A -> o) -> test-shallow A -> o.
 
 type runtests list o -> bool -> o.
 runtests [] B :- var B, print "ALL GOOD!".
 runtests [] _ :- print "SOME TEST FAIL!", fail.
-runtests [declare-test F (test L R B as T)|TS] ERR :- print "\n------------\n\n\n",
+runtests [declare-test-shallow F (test-shallow L R B as T)|TS] ERR :- print "\n------------\n\n\n",
   if (B = tt) (Rel = "===") (Rel = "=/="),
   if (F T) (print "ok" L Rel R, runtests TS ERR)
            (print "\n<<<<<\nko" L Rel R "\n>>>>>\n", ERR = tt, runtests TS ERR).

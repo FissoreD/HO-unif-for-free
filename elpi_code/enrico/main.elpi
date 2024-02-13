@@ -1,4 +1,4 @@
-accumulate common.
+accumulate common-shallow.
 accumulate unif-1-fo.
 accumulate unif-1-fo-test.
 accumulate unif-2-ho-naive.
@@ -7,5 +7,5 @@ accumulate unif-3-ho.
 accumulate unif-3-ho-test.
 
 main :-
-  std.findall (declare-test _ _) L,
+  std.findall (declare-test-shallow _ _) L,
   runtests L _.

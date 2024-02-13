@@ -9,25 +9,25 @@ macro @b :- ho3.c "b".
 macro @c :- ho3.c "c".
 shorten ho3.{ app , lam }.
 
-type ho3.test test ho3.tm -> o.
-ho3.test (test L R tt) :- ho3.unif L R S, std.assert! (ho3.equal L R S) "bug". %, print "Sigma=" S.
-ho3.test (test L R ff) :- not(ho3.unif L R _).
+type ho3.test-shallow test-shallow ho3.tm -> o.
+ho3.test-shallow (test-shallow L R tt) :- ho3.unif L R S, std.assert! (ho3.equal L R S) "bug". %, print "Sigma=" S.
+ho3.test-shallow (test-shallow L R ff) :- not(ho3.unif L R _).
 
-type ho3c1.test test ho3.tm -> o.
-ho3c1.test (test L R tt) :- std.do! [
+type ho3c1.test-shallow test-shallow ho3.tm -> o.
+ho3c1.test-shallow (test-shallow L R tt) :- std.do! [
   comp1.comp L L1 SO SE,
   comp1.comp R R1 SO SE,
   L1 = R1,
   std.assert! (ho3.validSO SO) "invalid SO",
   std.assert! (ho3.equal L R SO) "bug",
 ].
-ho3c1.test (test L R ff) :-
+ho3c1.test-shallow (test-shallow L R ff) :-
   comp1.comp L L1 SO SE,
   comp1.comp R R1 SO SE,
   not(L1 = R1).
 
-type ho3c2.test test ho3.tm -> o.
-ho3c2.test (test L R tt) :- std.do! [
+type ho3c2.test-shallow test-shallow ho3.tm -> o.
+ho3c2.test-shallow (test-shallow L R tt) :- std.do! [
   comp2.comp L L1 SO [] Links',
   comp2.comp R R1 SO Links' Links,
   L1 = R1,
@@ -36,19 +36,19 @@ ho3c2.test (test L R tt) :- std.do! [
   std.assert! (ho3.validSO SO) "invalid SO",
   std.assert! (ho3.equal L R SO) "bug",
 ].
-ho3c2.test (test L R ff) :- std.spy-do![
+ho3c2.test-shallow (test-shallow L R ff) :- std.spy-do![
   comp2.comp L L1 SO [] Links',
   comp2.comp R R1 SO Links' Links,
   not(std.spy(print "A", L1 = R1, print "B", std.spy(all Links), print "BB"))].
 
-macro @ok X Y :- declare-test ho3.test (test X Y tt).
-macro @ko X Y :- declare-test ho3.test (test X Y ff).
+macro @ok X Y :- declare-test-shallow ho3.test-shallow (test-shallow X Y tt).
+macro @ko X Y :- declare-test-shallow ho3.test-shallow (test-shallow X Y ff).
 
-macro @okc1 X Y :- declare-test ho3c1.test (test X Y tt).
-macro @koc1 X Y :- declare-test ho3c1.test (test X Y ff).
+macro @okc1 X Y :- declare-test-shallow ho3c1.test-shallow (test-shallow X Y tt).
+macro @koc1 X Y :- declare-test-shallow ho3c1.test-shallow (test-shallow X Y ff).
 
-macro @okc2 X Y :- declare-test ho3c2.test (test X Y tt).
-macro @koc2 X Y :- declare-test ho3c2.test (test X Y ff).
+macro @okc2 X Y :- declare-test-shallow ho3c2.test-shallow (test-shallow X Y tt).
+macro @koc2 X Y :- declare-test-shallow ho3c2.test-shallow (test-shallow X Y ff).
 
 @ok (app [@f, @X []]) (app [@f, @a]).
 @ok (app [@X [], @a]) (app [@f, @a]).
@@ -100,11 +100,11 @@ macro @koc2 X Y :- declare-test ho3c2.test (test X Y ff).
 @koc2 (app [@X [], @a]) (app[@f, @b]). % Note this not pass since we are not in PF
 @koc2 (app [@X [], @a]) @f.            % Same here
 
-% Here no compilation is done, only test for equal function
+% Here no compilation is done, only test-shallow for equal function
 % @okc2 (app [lam (x\ app[@f, x]), @a]) (app [@f, @a]).
 % @okc2 (lam (x\ app[@f, x])) @f.
 
-% It is a weird test (not possible in elpi?) but it works, since by definition
+% It is a weird test-shallow (not possible in elpi?) but it works, since by definition
 % app[@X [], x, y] === @X [y, x]
 @okc2 (lam x\ lam y\ app[@X [], x, y]) (lam x\ lam y\ @X [y, x]).
 

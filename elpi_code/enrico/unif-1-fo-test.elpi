@@ -9,12 +9,12 @@ macro @b :- fo.c "b".
 macro @c :- fo.c "c".
 macro @app X Y :- fo.app X Y.
 
-type fo.test test fo.tm -> o.
-fo.test (test L R tt) :- fo.unif L R S, std.assert! (fo.validSO S) "invalid SO", std.assert! (fo.equal L R S) "bug".
-fo.test (test L R ff) :- not(fo.unif L R _).
+type fo.test-shallow test-shallow fo.tm -> o.
+fo.test-shallow (test-shallow L R tt) :- fo.unif L R S, std.assert! (fo.validSO S) "invalid SO", std.assert! (fo.equal L R S) "bug".
+fo.test-shallow (test-shallow L R ff) :- not(fo.unif L R _).
 
-macro @ok X Y :- declare-test fo.test (test X Y tt).
-macro @ko X Y :- declare-test fo.test (test X Y ff).
+macro @ok X Y :- declare-test-shallow fo.test-shallow (test-shallow X Y tt).
+macro @ko X Y :- declare-test-shallow fo.test-shallow (test-shallow X Y ff).
 
 @ok (@app @f @X) (@app @f @a).
 @ok (@app @X @a) (@app @f @a).
