@@ -6,6 +6,7 @@ accumulate common.
 % accumulate unif-3-ho.
 % accumulate unif-3-ho-test.
 accumulate unif-4.
+accumulate unif-4-test.
 
 
 main [] :-
