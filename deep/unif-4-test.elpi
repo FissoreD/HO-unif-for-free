@@ -18,7 +18,11 @@ type eval-unif
   try4.fo.subst -> try4.fo.subst -> o.
 eval-unif [] S S L L FO FO.
 
-eval-unif [triple (error _) L R | _] HO_Subs1 HO_Subs3 L0 L3 FOSol FOSol :- std.do![
+eval-unif [triple (error "comp1") L _ | _] HO_Subs1 _ L0 _ _ _ :- std.do![
+  not (try4.comp.comp L _ L0 _ HO_Subs1 _)
+].
+
+eval-unif [triple (error "unif") L R | _] HO_Subs1 HO_Subs3 L0 L3 FOSol FOSol :- std.do![
   std.assert! (try4.comp.comp L LH L0 L1 HO_Subs1 HO_Subs2) "b1",
   std.assert! (try4.comp.comp R RH L1 L2 HO_Subs2 HO_Subs3) "b2",
   print "# comp Left:" LH,
@@ -89,11 +93,11 @@ macro @kol N X :- declare-test xtest (test N X ff).
 
 @okl 14 [
   (triple ok (@lam x\ @app [@X, x]) (@lam x\ @app [@f, x])), 
-  (triple (error _) @g @X)]. % we fail early
+  (triple (error "unif") @g @X)]. % we fail early
 
 @okl 15 [
   (triple ok (@lam x\ @app [@X, x]) (@lam x\ @app [@f, @app[@Y,x]])), 
-  (triple (error _) @g @X)]. % we fail early for the wrong reason
+  (triple (error "unif") @g @X)]. % we fail early for the wrong reason
 
 @okl 16 [
   (triple ok (@lam x\ @app [@X, x]) (@lam x\ @app [@f, @app[@Y,x]])), 
@@ -112,7 +116,6 @@ macro @kol N X :- declare-test xtest (test N X ff).
   (triple ok (@lam x\ @app[@X, x, @a]) (@lam x\ @app[@f, @a]))
 ].
 
-% TODO: not yet treated... the second x, which is not in the PF should
-% @okl 20 [
-%   (triple ok (@lam x\ @app[@X, x, x, @a]) (@lam x\ @app[@f, x, @a]))
-% ].
+@okl 20 [
+  (triple (error "comp1") (@lam x\ @app[@X, x, x, @a]) (@lam x\ @app[@f, x, @a]))
+]. % we are not in PF, X have two solutions: fun x _ => f x | fun _ x => f x
