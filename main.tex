@@ -69,7 +69,7 @@ would fail since \mint{elpi}|F != app g x|.
 
 of course one wants to avoid
 \begin{minted}{elpi}
-prove P S S'' :- ol-unif P S (forall x\ app "F" x) S', ... assignment "F" S' F, bla F S' ...
+prove P S S'' :- ol-unif P S (forall x\ app "F" x) S', ... assmt "F" S' F, bla F S' ...
 \end{minted}
 
 Now, ML has HO variables
@@ -180,30 +180,102 @@ per due ragioni: meta programmazione e arieta variabile
 \section{main idea: FO encoding - HO encoding}
 
 
+\begin{tabular}{c|c}
+\begin{minipage}{.5\textwidth}
+\begin{minted}{elpi}
+kind fo_tm type.
+type fo_app list fo_tm -> fo_tm.
+type fo_lam (tm -> fo_tm) -> fo_tm.
+type fo_uv  nat -> fo_tm.
+type fo_c string -> fo_tm.
 
-\begin{minted}{elpi}
-  kind fo_tm type.
-  type fo_app list fo_tm -> fo_tm.
-  type fo_lam (tm -> fo_tm) -> fo_tm.
-  type fo_uv  nat -> fo_tm.
-  type fo_c string -> fo_tm.
+
+
+
+
+typeabbrev subst list (option tm).
+type equal subst -> tm -> tm -> o.
 \end{minted}
-  
+\end{minipage}
+&
+\begin{minipage}{.5\textwidth}
 \begin{minted}{elpi}
-  kind tm type.
+kind tm type.
 type app list tm -> tm.
 type lam (tm -> tm) -> tm.
 type uv  nat -> list tm -> tm.
 type c string -> tm.
-\end{minted}
 
+kind assmt type.
+type abs (tm -> assmt) -> assmt.
+type val tm -> assmt.
+
+typeabbrev subst list (option assmt).
+type equal subst -> tm -> tm -> o.
+\end{minted}
+\end{minipage}
+\end{tabular}
 
 le due sintassi, XX tradotto, unif passa, bisogna riportare la soluzione
 nel mondo fo
 
+this should hold in both encoding
+%abella
+\begin{minted}{elpi}
+forall t1 t2 s, unif t1 t2 nil s -> equal s t1 t2
+\end{minted}
+we have unif only in the HO one, where equal is
+weaker (but unif is stronger)
+
 segnatura di decomp e unif, equalfo (fa beta, eta, deref)
 
-proprieta desiderate, serve equalho (fa deref)
+\begin{tabular}{c}
+\begin{minipage}{.99\textwidth}
+\begin{minted}{elpi}
+% deref
+equal S (uv N) T1 :- assigned? N S T, equal S T T1.
+equal S T1 (uv N) :- assigned? N S T, equal S T1 T.
+equal S (app [uv N|Args]) T1 :- assigned? N S F, beta F Args T, equal S T T1.
+equal S T1 (app [uv N|Args]) :- assigned? N S F, beta F Args T, equal S T1 T.
+% congruence
+equal S (app L1) (app L2) :- forall2 (equal S) L1 L2.
+equal S (lam F1) (lam F2) :- pi x\ equal S x x => equal S (F1 x) (F2 x).
+equal _ (c X) (c X).
+equal _ (uv N) (uv N).
+% beta
+equal S (app [lam X | TL]) T :- beta (lam X) TL T', equal S T' T.
+equal S T (app [lam X | TL]) :- beta (lam X) TL T', equal S T T'.
+% eta
+equal S (lam F) T :- not (T = lam _),
+  pi x\ beta T [x] (T' x), equal S (lam F) (lam T').
+equal S T (lam F) :- not (T = lam _),
+  pi x\ beta T [x] (T' x), equal S (lam T') (lam F).
+\end{minted}
+\end{minipage}
+\\\hline
+\begin{minipage}{.99\textwidth}
+\begin{minted}{elpi}
+% deref
+equal S (uv N Args) T1 :- assigned? N S F, beta-abs F Args T, equal S T T1.
+equal S T1 (uv N Args) :- assigned? N S F, beta-abs F Args T, equal S T1 T.
+% congruence
+equal S (app L1) (app L2) :- forall2 (equal S) L1 L2.
+equal S (lam F1) (lam F2) :- pi x\ equal S x x => equal S (F1 x) (F2 x).
+equal _ (c X) (c X).
+equal _ (uv N A1) (uv N A2) :- forall2 (equal S) A1 A2. %fixme in the code
+\end{minted}
+\end{minipage}
+
+\end{tabular}
+
+equal fo is congruence, deref, beta, eta (for the OL).
+equal ho is congruence, deref (for the OL).
+unif (fo or ho) should cover pattern fragment, i.e. well behaved unif.
+
+ho, and unif ho, is the LF/ML language/unif. here we describe fo and ho
+with a deeply embedded syntax, but the idea is that uv can be mapped to
+an actual unif variable.
+
 
 \subsection{implementation}
 
@@ -458,7 +530,7 @@ constructor. This is because we prefer to have the full control of the \ml,
 including the meta-variables instantiation. This way we are able to concretely
 touch the substitution performed by the \ml. In a further section, we show that
 there is no difference between our custom \ml language and any other \ml. Of
-course, a full control on the unification behind meta-variable assignment ask to
+course, a full control on the unification behind meta-variable assmt ask to
 drag the substitution mapping of the \ml and update it each time a variable is
 refined.
 
