@@ -229,14 +229,15 @@ weaker (but unif is stronger)
 
 segnatura di decomp e unif, equalfo (fa beta, eta, deref)
 
+\noindent
 \begin{tabular}{c}
-\begin{minipage}{.9\textwidth}
+\begin{minipage}{.95\textwidth}
 \begin{minted}{elpi}
 % deref
 equal S (uv N) T1 :- assigned? N S T, equal S T T1.
 equal S T1 (uv N) :- assigned? N S T, equal S T1 T.
-equal S (app [uv N|Args]) T1 :- assigned? N S F, beta F Args T, equal S T T1.
-equal S T1 (app [uv N|Args]) :- assigned? N S F, beta F Args T, equal S T1 T.
+equal S (app [uv N|A]) T1 :- assigned? N S F, beta F A T, equal S T T1.
+equal S T1 (app [uv N|A]) :- assigned? N S F, beta F A T, equal S T1 T.
 % congruence
 equal S (app L1) (app L2) :- forall2 (equal S) L1 L2.
 equal S (lam F1) (lam F2) :- pi x\ equal S x x => equal S (F1 x) (F2 x).
@@ -253,11 +254,11 @@ equal S T (lam F) :- not (T = lam _),
 \end{minted}
 \end{minipage}
 \\\hline
-\begin{minipage}{.9\textwidth}
+\begin{minipage}{.95\textwidth}
 \begin{minted}{elpi}
 % deref
-equal S (uv N Args) T1 :- assigned? N S F, beta-abs F Args T, equal S T T1.
-equal S T1 (uv N Args) :- assigned? N S F, beta-abs F Args T, equal S T1 T.
+equal S (uv N A) T1 :- assigned? N S F, beta-abs F A T, equal S T T1.
+equal S T1 (uv N A) :- assigned? N S F, beta-abs F A T, equal S T1 T.
 % congruence
 equal S (app L1) (app L2) :- forall2 (equal S) L1 L2.
 equal S (lam F1) (lam F2) :- pi x\ equal S x x => equal S (F1 x) (F2 x).
