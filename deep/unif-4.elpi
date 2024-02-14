@@ -105,7 +105,6 @@ unif (uv N Args1) (uv M Args2) S S3 :- pattern-fragment Args1, pattern-fragment 
 unif (uv N Args) T S S1 :- not (T = uv _ _), print "In here", std.do![not_occ N S T, pattern-fragment Args, bind Args T T1, assign N S T1 S1].
 unif T (uv N Args) S S1 :- not (T = uv _ _), std.spy(not_occ N S T), pattern-fragment Args, bind Args T T1, assign N S T1 S1.
 
-% TODO: here we make FO unification -> should be moved in 
 % unif (app [uv N L | Args]) (app L1) S S1 :-
 %   std.appendR Hd Args L1,
 %   unif (uv N L) (app Hd) S S1.
@@ -219,6 +218,7 @@ namespace comp {
 
 kind link type.
 type link nat -> nat -> nat -> link.
+type link-fo-align list ho.tm -> nat -> nat -> nat -> link.
 
 % type not-in list A -> A -> o.
 % not-in [] _.
@@ -236,21 +236,17 @@ split-pf L _ [] L.
 
 type comp fo.tm -> ho.tm -> list link -> list link -> ho.subst -> ho.subst -> o.
 comp (fo.c X)   (ho.c X) L L S S.
-comp (fo.app [fo.uv N|Argsss]) TT L L3 S S3 :- %!,
-  % TODO: here split-pf to enter dist. names into N
-  % split-pf Argsss [] PF NPF,
-  split-pf Argsss [] PF [], NPF = [], % TODO: compile to (uv N L) + link-fo-app
-  print "In PF" PF NPF, 
-  if (NPF = []) (TT = ho.uv M PF1) (TT = ho.app [ho.uv M PF1 | NPF1]),
-  % pattern-fragment Args,
-  fold4 comp PF PF1 L L1 S S1,
-  fold4 comp NPF NPF1 L1 L2 S1 S2,
+comp (fo.app [fo.uv N|Argsss]) TT L L3 S S3 :- !,
+  split-pf Argsss [] PF NPF,
+  TT = ho.uv M PF1,
+  fold4 comp PF PF1 L L S S1,
+  fold4 comp NPF NPF1 L L1 S1 S2,
   ho.new S2 M S3,
-  % TODO: maybe len can be given by split-pf
+  print "After comp in app uvar",
   len PF Len,
-  L3 = [link N M Len| L2].
-% TODO: if don't want to modify unif, we compile `fo.app [fo.c f, c0, c0, ho.c a]` into 
-% `ho.app [ho.app[f, c0, c0], ho.c a]
+  % TODO: NYI NPF1 can contain non-closed terms (i.e. local vars...)
+  if (NPF = []) (LinkType = link) (LinkType = link-fo-align NPF1),
+  L3 = [LinkType N M Len | L1].
 comp (fo.app A) (ho.app A1) L L1 S S1 :- fold4 comp A A1 L L1 S S1.
 comp (fo.lam F) (ho.lam F1) L L1 S S1 :- 
   (pi x y\ (pi A S\ comp x y A A S S) => comp (F x) (F1 y) L L1 S S1).
@@ -376,15 +372,41 @@ assign-replace z [_|S] X [some X |S].
 assign-replace (s N) [A|S] X [A |S1] :- assign-replace N S X S1.
 
 type decompl.aux list link -> list link -> ho.subst -> fo.subst -> fo.subst -> o.
-decompl.aux [link N M Arity|L] LK HO FO FO1 :- assigned? M HO T, !, std.do! [
+decompl.aux [link N M _Arity|L] LK HO FO FO1 :- assigned? M HO T, !, std.do! [
   % HERE the assign-equal
   decomp-assign LK HO T T0 FO FO',
   fo.eta-contract T0 T',
-  % TODO: QUESTION: here we are assigning a solution to fo.subst, maybe we 
-  %                 could authorize eta redexes between FO[N] and T'
-  print "Assigning" N "to" T' "with arity" Arity,
-  %assign-equal FO' N FO' T' FO2,
   assign-replace N FO' T' FO2,
+  decompl.aux L LK HO FO2 FO1,
+].
+
+type get-head fo.tm -> nat -> list fo.tm -> fo.tm -> o.
+get-head (fo.app L) z Args T :-
+  % print "### In base case with" L Args T,
+  appendR [Hd|Tl] Args L,
+  fo.mk-app Hd Tl T.
+get-head Const z [Const] Const :- Const = fo.c _.
+get-head (fo.lam B) (s N) Args T :-
+  pi x\ get-head (B x) N Args (R x),
+  fo.eta-contract (fo.lam R) T.
+
+% Invariante: len(Args) > 0
+decompl.aux [link-fo-align Args N M Arity|L] LK HO FO FO1 :- assigned? M HO T, !, std.do! [
+  decomp-assign LK HO T T0 FO FO'',
+  print "Done A",
+  fold2 (decomp LK HO) Args Args1 FO'' FO',
+  print "Done B with T0 = " T0,
+
+  % Invariant : The eta contract of T0 should always return an app of something
+  % whose length is > (len Args)
+  std.map Args1 fo.eta-contract Args1',
+  print "Done C",
+  std.spy-do![
+    get-head T0 Arity Args1' Head, 
+  ],
+  print "Done D",
+  assign-replace N FO' Head FO2,
+  % print "FO-align of" T "to" Args "gives" Head,
   decompl.aux L LK HO FO2 FO1,
 ].
 decompl.aux [_|L] LK HO FO FO1 :- decompl.aux L LK HO FO FO1.

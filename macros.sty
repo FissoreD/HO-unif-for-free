@@ -62,6 +62,25 @@
 % \newminted{coq}{escapeinside=||}
 % \newminted{elpi}{escapeinside=||}
 
+\newenvironment{elpicode}{%
+  \VerbatimEnvironment
+  \begin{tcolorboxSimple}
+    \begin{minted}[escapeinside=&&,mathescape=true]{elpi}%
+}{%
+  \end{minted}%
+  \end{tcolorboxSimple}
+}
+
+\newenvironment{coqcode}{%
+  \VerbatimEnvironment
+  \begin{tcolorboxSimple}
+    \begin{minted}[escapeinside=~~,mathescape=true]{coq}%
+}{%
+  \end{minted}%
+  \end{tcolorboxSimple}
+}
+
+
 % \def\checkmark{\tikz\fill[scale=0.4](0,.35) -- (.25,0) -- (1,.7) -- (.25,.15) -- cycle;}
 
 % from amsmath and pifont

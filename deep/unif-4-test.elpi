@@ -21,6 +21,8 @@ eval-unif [] S S L L FO FO.
 eval-unif [triple (error _) L R | _] HO_Subs1 HO_Subs3 L0 L3 FOSol FOSol :- std.do![
   std.assert! (try4.comp.comp L LH L0 L1 HO_Subs1 HO_Subs2) "b1",
   std.assert! (try4.comp.comp R RH L1 L2 HO_Subs2 HO_Subs3) "b2",
+  print "# comp Left:" LH,
+  print "# comp Right:" RH,
 
   std.spy(try4.comp.solve-link L2 L3 HO_Subs3 HO_Subs4),
   print "## unif" LH "with" RH "in" HO_Subs4,
@@ -30,6 +32,8 @@ eval-unif [triple (error _) L R | _] HO_Subs1 HO_Subs3 L0 L3 FOSol FOSol :- std.
 eval-unif [triple ok L R | TL] HO_Subs1 HO_SubsNN L0 L4 FOSol FOSol4 :- std.do![
   std.assert! (try4.comp.comp L LH L0 L1 HO_Subs1 HO_Subs2) "b1",
   std.assert! (try4.comp.comp R RH L1 L2 HO_Subs2 HO_Subs3) "b2",
+  print "# comp Left:" LH,
+  print "# comp Right:" RH,
 
   print "## unif" LH "with" RH "in" HO_Subs3,
   std.spy(try4.ho.unif LH RH HO_Subs3 HO_Subs4),
@@ -94,3 +98,21 @@ macro @kol N X :- declare-test xtest (test N X ff).
 @okl 16 [
   (triple ok (@lam x\ @app [@X, x]) (@lam x\ @app [@f, @app[@Y,x]])), 
   (triple ok @f @X)].
+
+@okl 17 [
+  (triple ok @X (@lam x\ x)),
+  (triple ok (@app [@X, @a]) (@a))
+].
+
+@okl 18 [
+  (triple ok (@lam x\ @app[@X, x, @a]) (@lam x\ @app[@f, x, @a]))
+].
+
+@okl 19 [
+  (triple ok (@lam x\ @app[@X, x, @a]) (@lam x\ @app[@f, @a]))
+].
+
+% TODO: not yet treated... the second x, which is not in the PF should
+% @okl 20 [
+%   (triple ok (@lam x\ @app[@X, x, x, @a]) (@lam x\ @app[@f, x, @a]))
+% ].
