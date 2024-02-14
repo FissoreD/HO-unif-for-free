@@ -71,7 +71,7 @@ macro @okl N X :- declare-test xtest (test N X tt).
 macro @kol N X :- declare-test xtest (test N X ff).
 
 @ok 1 (@app [@f, @X]) (@app [@f, @a]).
-@ok 2 (@app [@X, @a]) (@app [@f, @a]).
+@ok 2 (@app [@X, @a]) (@app [@f, @a]).                                           % here two solutions for X: fun _ => a, fun x => x
 @ok 3 (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, @a]).
 
 @ko 4 (@app [@f, @X]) @X.
@@ -85,7 +85,7 @@ macro @kol N X :- declare-test xtest (test N X ff).
 @ok 10 (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@X, y, x]).
 
 @ok 11 (@lam x\ @app [@X, x]) (@lam x\ @app [@f, x, x, @a]).
-%@ok 12 (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, x, @a]). % think
+@ok 12 (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, x, @a]).                 % here two solutions for X: fun x _ => f x x a, fun x y => f x x y
 
 @okl 13 [
   (triple ok (@lam x\ @app [@X, x]) (@lam x\ @app [@f, x])), 
@@ -106,15 +106,15 @@ macro @kol N X :- declare-test xtest (test N X ff).
 @okl 17 [
   (triple ok @X (@lam x\ x)),
   (triple ok (@app [@X, @a]) (@a))
-].
+]. % beta redex
 
 @okl 18 [
   (triple ok (@lam x\ @app[@X, x, @a]) (@lam x\ @app[@f, x, @a]))
-].
+].                                                                               % here two solutions for X: fun x _ => f x a, fun x y => f x y
 
 @okl 19 [
   (triple ok (@lam x\ @app[@X, x, @a]) (@lam x\ @app[@f, @a]))
-].
+].                                                                               % here two solutions for X: fun _ _ => f a, fun _ x => f x
 
 @okl 20 [
   (triple (error "comp1") (@lam x\ @app[@X, x, x, @a]) (@lam x\ @app[@f, x, @a]))
