@@ -30,6 +30,7 @@
 \def\ml{\acronym{ml}} % meta language
 \def\lf{\acronym{lf}} % logical framework
 \def\ho{\acronym{ho}} % higher order
+\def\Forall{$\forall$}
 
 \newcommand*{\eqtau}{\ensuremath{\mathrel{\overset{\mathrm{\tau}}{=}}}}
 \begin{abstract}
@@ -91,7 +92,7 @@ challenges arise whe attempting to solve type-class goals represented into their
 corresponding \elpi representation.
 
 % syntax of coq terms in elpi
-In particular, \coq terms are encoded following the following (very simplified)
+In particular, \coq terms are encoded with the following (very simplified)
 data type
 
 % \begin{elpicode}
@@ -102,29 +103,28 @@ data type
 %   type prod (term -> term) -> term.
 % \end{elpicode}
 
-\begin{tcolorboxSimple}
-  \begin{tabular}{c|c}
-    \begin{minipage}[c]{0.50\linewidth}
-      \begin{elpicode}
-        kind term type.
-        type const gref -> term.
-        type app list term -> term.
-        type fun (term -> term) -> term.
-        type prod (term -> term) -> term.
-      \end{elpicode}
-    \end{minipage}
-    &
-    \begin{minipage}[c]{0.48\linewidth}
-      \begin{textcode}
-        Example:
-        a       ==> const 0
-        f a     ==> app[const `f, const `a]
-        ~$\lambda$~x => x ==> fun x\ x
-        ~$\forall$x, F x~ ==> prod x\ app[F, x]
-      \end{textcode}
-    \end{minipage}
-  \end{tabular}
-\end{tcolorboxSimple}
+\noindent %
+\begin{tabular}{c|c}
+  \begin{minipage}[c]{0.50\linewidth}
+    \begin{elpicode}
+      kind term type.
+      type const gref -> term.
+      type app list term -> term.
+      type fun (term -> term) -> term.
+      type prod (term -> term) -> term.
+    \end{elpicode}
+  \end{minipage}
+  &
+  \begin{minipage}[c]{0.48\linewidth}
+    \begin{textcode}
+      Example:
+      a       ==> const `a
+      f a     ==> app[const `f, const `a]
+      ~$\lambda$~x => x ==> fun x\ x
+      ~$\forall$x, F x~ ==> prod x\ app[F, x]
+    \end{textcode}
+  \end{minipage}
+\end{tabular}
 
 
 \noindent where a \coq constant is a gref\footnote{a gref is the opaque type for \coq
@@ -132,56 +132,104 @@ identifier in \elpi} inside the \elpiIn{const} constructor, the \coq application
 is embedded in the \elpiIn{app} node, having the head and the arguments of the
 application expressed as a list of terms. Lambda abstractions are translated
 into the node \elpiIn{fun} binding a term to another term. Finally forall
-quantification on the for \coqIn{~$\forall$~x,F} into \elpiIn{forall x\ F}.
+quantification on the for \coqIn{~$\forall$~x,F} into \elpiIn{prod x\ F}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Examples
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Let's take the following example\footnote{taken from the \stdpp library}:
-\begin{tcolorboxSimple}
-  \begin{tabular}{c|c}
-    \begin{minipage}[c]{0.50\linewidth}
-      \begin{coqcode}
-        Instance forall_dec A (P: A ~$\to$~ Prop):
-          Finite A ~$\to$~ 
-          ~$\forall$~x, Decision (P x) ~$\to$~
-          Decision (~$\forall$~x, P x).
-      \end{coqcode}
-    \end{minipage}
-    &
-    \begin{minipage}[c]{0.46\linewidth}
-      \begin{elpicode}
-        tc-Decision (prod x\ app[P, x]) :- 
-          % premise for Finite A
-          % premise for $\forall$x, Decision (P x)
-      \end{elpicode}
-    \end{minipage}
-  \end{tabular}
-\end{tcolorboxSimple}
+Let's take the following example from the \stdpp library:
 
-The \coq instance on the left is compiled in the \elpi rule on the right. If the 
-query to solve (already in the \elpi syntax) is
+\noindent %
+\begin{tabular}{c|c}
+  \begin{minipage}[c]{0.50\linewidth}
+    \begin{coqcode}
+      Instance forall_dec A (P: A ~$\to$~ Prop):
+        Finite A ~$\to$~ 
+        ~$\forall$~x, Decision (P x) ~$\to$~
+        Decision (~$\forall$~x, P x).
+    \end{coqcode}
+  \end{minipage}
+  &
+  \begin{minipage}[c]{0.46\linewidth}
+    \begin{elpicode}
+      tc-Decision (prod x\ app[P, x]) :- 
+        % premise for Finite A
+        % premise for $\forall$x, Decision (P x)
+    \end{elpicode}
+  \end{minipage}
+\end{tabular}
 
-\elpiInEq{tc-Decision (prod x\ const `nat)}
+\noindent In our type-class solver, we compile the \coqIn{forall_dec} instance
+of \coq (on the left) into the \elpi rule on the right. This compilation, which
+is blindly built from the type of \coqIn{forall_dec}, hides some unification
+properties accepted by the unification algorithm of the \ol but that are
+rejected by the unification algorithm of the \ml. The main problem of this
+compilation is how the subterm \coqIn{~$\forall$~x, P x} is translated in
+the \ml rule; \coqIn{P} is a higher order variable, in the former subterm, it
+does see the binder \coqIn{x}. However, the rule in the \ml, consider a first
+order variable \elpiIn{P}, not seeing \elpiIn{x}. Furthermore, this subterm is
+lodged within the \elpiIn{app} constructor making unification very structural.
 
-\noindent it is clear that the \elpi rule above will not unify with the query,
-Since the rigid node \elpiIn{app} is different from the rigid node
-\elpiIn{const}. The problem come form the lost of the fact that \coqIn{P} is an
-higher-order variable in \coq, and in \elpi it is translated into a first order
-variable (the variable \elpiIn{P} in \elpi does not see the binder \elpiIn{x}).
-
-Another unification problem we can da notare che il problema dopo, is the FO
-approx. Coq applica la regola forall\_dec sul goal (prod x\ app[f, y, x]), ma forse 
-bisognerebbe vedere se altri solver accettano questa euristica. Così facciamo 
-vedere che non siamo i soli a farlo. Nel caso contrario bisogna dire come funziona
-l'algo di unif di coq in questo caso specifico
-
+% Esempio HO in PF
+\elpiInEq{tc-Decision (prod x\ const `nat)}%
+% Esempio FO align
 \elpiInEq{tc-Decision (prod x\ app[const `f, const `y, x])}
 
-Specificare anche che non riusciamo a fare ne eta ne beta riduzione. 
+\noindent The two example of queries above, already in the syntax of the \ml,
+represent two terms that would unify in the \ol, but fail in the \ml. In
+particular, the first fails since the \ml is not able to unify \elpiIn{const
+`nat} with the term \elpiIn{app[P, x]}: they have different rigid heads. 
 
-Dire che elpi unifica in HO e con eta-beta
+The second goal refers to an approximation of the unification\todo{maybe there's
+something to cite} algorithm of the \ol. Spiegare l'approssimazione. E che
+attraverso il nostro framework è possibile "spiegare" l'algorithm di unification
+usato da ogni \ol nel ml desiderato. \todo{something to do here...}
+
+Following the definition give just before, the terms \elpiIn{app[const `f, const
+`y, x]} and \elpiIn{app[P, x]} should unify with substitution $\theta := \{P
+\mapsto \texttt{\elpiIn{app [const `f, const `y]}} \}$. However this unification
+is not possible in the \ml since, this time we have two terms with the same head
+(the \elpiIn{app} node), but the corresponding lists have different lengths.
+
+An immediate solution to solve these unification problems\todo{mettere da qualche parte anche eta e beta}
+would be to be lazy and build very general rule for each instance in the database.
+This would build a rule with the following shape:
+
+\begin{center}
+  \begin{minipage}[c]{0.46\linewidth}
+    \begin{elpicode}
+      tc-Decision X :- 
+        ol.unify X (prod x\ app[P, x]),
+        % premise for Finite A
+        % premise for $\forall$x, Decision (P x)
+    \end{elpicode}
+  \end{minipage}
+\end{center}
+
+\noindent In this second implementation, any call to the \elpiIn{tc-Decision}
+will unify with the head of the rule for \coqIn{forall_dec}. The the first
+premise will ensure that the arguments unify with the what we expect from the
+instance definition. Notice that, this time, the very unification algorithm of
+the \ol is exploited, overcoming the unification problems listed just before.
+This approach is quite appealing but it has two main disadvantages: the first
+lays on the fact that the communication between the \ol and the \ml can
+potentially be slow, this is due to the transformation of terms from one language
+to the other. \todo{here i refer to constr->elpi e elpi->constr}
+The other drawback of this latter encoding is that clause discrimination cannot
+be done on the head of the clause, for instance, any indexing 
+algorithm allowing to filter rules become suddenly useless. 
+
+% Contribution
+Finally 
+
+
+
+% da notare che il problema dopo, is the FO
+% approx. Coq applica la regola forall\_dec sul goal (prod x\ app[f, y, x]), ma forse 
+% bisognerebbe vedere se altri solver accettano questa euristica. Così facciamo 
+% vedere che non siamo i soli a farlo. Nel caso contrario bisogna dire come funziona
+% l'algo di unif di coq in questo caso specifico
 
 
 % where \coqIn{f : A -> B -> Type} and \coqIn{y: A}, we can notice that the \elpi
