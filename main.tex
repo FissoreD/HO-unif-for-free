@@ -226,24 +226,18 @@ algorithm designed to filter rules becomes ineffective in this scenario.
 % Contribution
 Finally 
 
+% TODO: parlare non so ancora dove dell'encoding shallow
+% dei terming ol in ml. Invece di usare i nodi app, prod etc... riusiamo
+% la stessa sintassi del linguaggio oggetto. Questo potrebbe funzionare 
+% bene nel caso di un ol con logica equazionale piu debole del ml, ma nel nostro
+% caso non si può applicare. inoltre vogliamo tenere un encoding più strutturato
+% per meglio analizzare i termini che ci arrivano nel ml.
 
+% TODO: related work: chiedere a enrico
 
-% da notare che il problema dopo, is the FO
-% approx. Coq applica la regola forall\_dec sul goal (prod x\ app[f, y, x]), ma forse 
-% bisognerebbe vedere se altri solver accettano questa euristica. Così facciamo 
-% vedere che non siamo i soli a farlo. Nel caso contrario bisogna dire come funziona
-% l'algo di unif di coq in questo caso specifico
+% nuova section dove si da la spec dei due linguaggi
 
-
-% where \coqIn{f : A -> B -> Type} and \coqIn{y: A}, we can notice that the \elpi
-% rule above cannot be applied; the terms \elpiIn{prod x\ app[P, x]} and
-% \elpiIn{prod x\ app[f, y, x]} cannot unify since the lists under the
-% \elpiIn{app} constructors are of different length.\todo{NOTE: the goal unify
-% with forall\_dec in coq xké fa unif FO approx}
-
-% Another example of unification failure is given by the the following instance
-
-
+% TODO: spiegare le proprietà di unification
   
 \section{intro}
 
