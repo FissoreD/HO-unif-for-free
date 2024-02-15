@@ -14,9 +14,9 @@
 \newcommand{\guillemot}[1]{\gl #1 \gr}
 
 % after usepackage{minted}
-\newcommand{\elpiIn}[1]{\mintinline[escapeinside=&&]{elpi}{#1}}
-\newcommand{\coqIn}[1]{\mintinline[escapeinside=||]{coq}{#1}}
-\newcommand{\textIn}[1]{\mintinline[escapeinside=||]{text}{#1}}
+\newcommand{\elpiIn}[1]{\mintinline[escapeinside=~~]{elpi}{#1}}
+\newcommand{\coqIn}[1]{\mintinline[escapeinside=~~]{coq}{#1}}
+\newcommand{\textIn}[1]{\mintinline[escapeinside=~~]{text}{#1}}
 
 \newcommand{\elpiInEq}[2][]{
   \begin{equation}
@@ -30,6 +30,13 @@
     \texttt{\elpiIn{#2}}
     \label{#1}
   \end{equation*}
+}
+
+\newcommand{\coqInEq}[2][]{
+  \begin{equation}
+    \texttt{\coqIn{#2}}
+    \label{#1}
+  \end{equation}
 }
 
 \newtcolorbox[auto counter,number within=subsection, 
@@ -64,20 +71,20 @@
 
 \newenvironment{elpicode}{%
   \VerbatimEnvironment
-  \begin{tcolorboxSimple}
-    \begin{minted}[escapeinside=&&,mathescape=true]{elpi}%
+  % \begin{tcolorboxSimple}
+    \begin{minted}[escapeinside=~~,mathescape=true]{elpi}%
 }{%
   \end{minted}%
-  \end{tcolorboxSimple}
+  % \end{tcolorboxSimple}
 }
 
 \newenvironment{coqcode}{%
   \VerbatimEnvironment
-  \begin{tcolorboxSimple}
+  % \begin{tcolorboxSimple}
     \begin{minted}[escapeinside=~~,mathescape=true]{coq}%
 }{%
   \end{minted}%
-  \end{tcolorboxSimple}
+  % \end{tcolorboxSimple}
 }
 
 

@@ -22,7 +22,7 @@
 \newcommand{\library}[1]{\textit{#1}\xspace}
 \def\stdpp{\library{stdpp}}
 \def\iris{\library{iris}}
-\tableofcontents
+% \tableofcontents
 
 \newcommand*{\acronym}[1]{\texttt{#1}\xspace}
 
@@ -60,10 +60,6 @@
 
 \section{Introduction}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Context
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 % meta programming
 Meta programming is a powerful programming style that enable the incorporation
 of an object language (\ol) into a meta language (\ml). This control over the
@@ -86,21 +82,68 @@ In \coq, the use of type class has increasingly become a programming
 style. Numerous libraries, such as \stdpp and
 \iris are built upon this machinery.
 
-% embed tc in ml
+% tc motivates this paper
 The motivating example for this article is our investigation for an alternative
 type-class solver for \coq in \elpi\todo{citation to elpi} through the \coqelpi
 plugin. This plugin gives a deep embedding of \coq terms into \elpi syntax, but
 challenges arise whe attempting to solve type-class goals represented into their
 corresponding \elpi representation.
 
-\begin{itemize}
-  \item about meta programming (what it is, when to use it)
-  \item theorem provers (proof automation)
-\end{itemize}
+% syntax of coq terms in elpi
+In particular, \coq terms are encoded following the following (very simplified)
+data type:
+
+\begin{elpicode}
+  kind term type.
+  type const gref -> term.
+  type app list term -> term.
+  type fun (term -> term) -> term.
+  type prod (term -> term) -> term.
+\end{elpicode}
+
+Where a \coq constant is a gref\footnote{a gref is the opaque type for \coq
+identifier in \elpi} inside the \elpiIn{const} constructor, the \coq application
+is embedded in the \elpiIn{app} node, having the head and the arguments of the
+application expressed as a list of terms. Lambda abstractions are translated
+into the node \elpiIn{fun} binding a term to another term. Finally forall
+quantification on the for \coqIn{~$\forall$~x,F} into \elpiIn{forall x\ F}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Example
+% Examples
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Let's take the following example:
+\begin{tcolorboxSimple}
+  \begin{tabular}{c|c}
+    \begin{minipage}[c]{0.50\linewidth}
+      \begin{coqcode}
+        Instance forall_dec A (P: A ~$\to$~ Prop):
+          Finite A ~$\to$~ 
+          ~$\forall$~x, Decision (P x) ~$\to$~
+          Decision (~$\forall$~x, P x).
+      \end{coqcode}
+    \end{minipage}
+    &
+    \begin{minipage}[c]{0.46\linewidth}
+      \begin{elpicode}
+        tc-Decision (prod x\ app[P, x]) :- 
+          % premise for Finite A
+          % premise for $\forall$x, Decision (P x)
+      \end{elpicode}
+    \end{minipage}
+  \end{tabular}
+\end{tcolorboxSimple}
+
+The \coq instance on the left is compiled in the \elpi rule on the right. If 
+we try to solve the following query (already in the \elpi syntax)
+
+\elpiIn{tc-Decision (prod x\ app[f, y, x])}
+
+where \coqIn{f : A -> B -> Type} and \coqIn{y: A}, we can notice that the \elpi
+rule above cannot be applied; the terms \elpiIn{prod x\ app[P, x]} and
+\elpiIn{prod x\ app[f, y, x]} cannot unify since the lists under the
+\elpiIn{app} constructors are of different length.\todo{NOTE: the goal unify
+with forall\_dec in coq xké fa unif FO approx}
 
 
 
