@@ -19,26 +19,92 @@
 \def\lambdaprolog{\proglang{$\lambda$-prolog}}
 \def\coq{\proglang{coq}}
 
+\newcommand{\library}[1]{\textit{#1}\xspace}
+\def\stdpp{\library{stdpp}}
+\def\iris{\library{iris}}
+\tableofcontents
+
 \newcommand*{\acronym}[1]{\texttt{#1}\xspace}
 
-\def\ol{\acronym{ol}}
-\def\ml{\acronym{ml}}
+\def\ol{\acronym{ol}} % object language
+\def\ml{\acronym{ml}} % meta language
+\def\lf{\acronym{lf}} % logical framework
 
 \newcommand*{\eqtau}{\ensuremath{\mathrel{\overset{\mathrm{\tau}}{=}}}}
 \begin{abstract}
 
 
-  Unification is a fundamental process behind goal resolution in logic
-  programming. Two terms $t_1$ and $t_2$ unify up to $\eta\beta$-reduction if it
-  exist a substitution $\theta$ such that $\theta t_1 = \theta t_2$. A
-  substitution is a mapping from unification variables to terms and it is the most
-  general, if forall substitution $\theta'$, such that $\theta' t_1 = \theta'
-  t_2$, it exists a substitution $\theta''$ such that $\theta' = \theta \theta''$.
-  Unification has been widely studied in the 90s [here the refs]. In this paper we
-  want to give a framework to reason about unification in meta-programming.
-  
-  \end{abstract}
-  
+  % Unification is a fundamental process behind goal resolution in logic
+  % programming. Two terms $t_1$ and $t_2$ unify up to $\eta\beta$-reduction if it
+  % exist a substitution $\theta$ such that $\theta t_1 = \theta t_2$. A
+  % substitution is a mapping from unification variables to terms and it is the most
+  % general, if forall substitution $\theta'$, such that $\theta' t_1 = \theta'
+  % t_2$, it exists a substitution $\theta''$ such that $\theta' = \theta \theta''$.
+  % Unification has been widely studied in the 90s [here the refs]. In this paper we
+  % want to give a framework to reason about unification in meta-programming.
+  Meta-programming \cite{hill1994} is a programming technique in which a
+  program, referred to as meta language (\ml), can treat an other program, knwon
+  as the object language (\ol) as its data. This programming approach is used in
+  various works \cite{cite1, cite2...} to construct logical frameworks (\lf)
+  capable of automating proof resolution. In many of the previously the
+  previously mentioned works, the equational theory expressed by the \ol is
+  weaker than the \ml one. Consequently, no effort is required to adjust the
+  unification algorithm of the \ml since it encompass the \ml one. In our
+  specific scenario, however, we work with an \ol with a richer equational
+  theory than our \ml. This paper introduces a framework that enable the \ml to
+  comprehend the unification of the \ol and provides some practical applications
+  of these findings. Additionally, we extend our work to unification in the case
+  of higher-order variable quantification.
+
+\end{abstract}
+
+\section{Introduction}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Context
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% meta programming
+Meta programming is a powerful programming style that enable the incorporation
+of an object language (\ol) into a meta language (\ml). This control over the
+\ol lies at the core of meta-programming, facilitating a spectrum of operations
+on the object language. Some of the principal program manipulations range
+from interpretation to compilation.
+
+% theorem prover and tc
+Thanks to meta programming, it is feasible to express the equational theory of a
+theorem prover, as noted in \cite{citeX, Y Z}, with the \ml serving as the
+foundational infrastructure for this ecosystem. Proving a theorem, that is
+solving a query using the jargon of logic programming consist in verifying if a
+proposition is a logical consequence of a given set of assumption. The benefit
+of of using a prologish verification style is that the proof resolution can be
+automatized thanks to different search strategies, such as a depth first search
+with backtracking. One of the main expression of this proof automation is
+type-class resolution\cite{wadler89, sozeau08}. Type classes are a typing
+structure to introduce ad-hoc polymorphism in functional programming languages.
+In \coq, the use of type class has become a more and more used programming
+style. Several are the libraries based on this machinery, we can site \stdpp and
+\iris.
+
+% embed tc in ml
+One of the 
+
+\begin{itemize}
+  \item about meta programming (what it is, when to use it)
+  \item theorem provers (proof automation)
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Example
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+\begin{itemize}
+  \item TODO: context
+  \item TODO: example
+  \item TODO: riassunto delle next sections
+\end{itemize}
   
 \section{intro}
 
@@ -101,9 +167,10 @@ can treat an other program as its data. This latter program is called object
 language (\ol for short), while the former is called meta language (\ml for
 short). At the heart of meta programming lays the necessity of representing
 terms of the \ol in the \ml so that a wide set of program
-manipulations ranging from interpretation to compilation. Furthermore, since a
-logic program is a set of clauses, the behavior of the \ol can be
-modified \texttt{in corsa}\todo{translate in english} by simply adding new rules inside the database of the meta program.
+manipulations ranging from interpretation to compilation. 
+% Furthermore, since a
+% logic program is a set of clauses, the behavior of the \ol can be
+% modified \texttt{in corsa}\todo{translate in english} by simply adding new rules inside the database of the meta program.
 
 Meta programming has various application such as ... where thanks to meta
 programming it is possible to represent the logic of a language into a formal
