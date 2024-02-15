@@ -232,7 +232,7 @@ type split-pf list A -> list A -> list A -> list A -> o.
 split-pf [] _ [] [].
 split-pf [X | L] ACC [X | PF] NPF :- name X, not-in X ACC, !, 
   split-pf L [X | ACC] PF NPF.
-split-pf L _ [] L.
+split-pf L _ [] L :- std.forall L (x\ not (name x)).
 
 type comp fo.tm -> ho.tm -> list link -> list link -> ho.subst -> ho.subst -> o.
 comp (fo.c X)   (ho.c X) L L S S.
