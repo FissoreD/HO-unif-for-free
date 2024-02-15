@@ -91,17 +91,42 @@ corresponding \elpi representation.
 
 % syntax of coq terms in elpi
 In particular, \coq terms are encoded following the following (very simplified)
-data type:
+data type
 
-\begin{elpicode}
-  kind term type.
-  type const gref -> term.
-  type app list term -> term.
-  type fun (term -> term) -> term.
-  type prod (term -> term) -> term.
-\end{elpicode}
+% \begin{elpicode}
+%   kind term type.
+%   type const gref -> term.
+%   type app list term -> term.
+%   type fun (term -> term) -> term.
+%   type prod (term -> term) -> term.
+% \end{elpicode}
 
-Where a \coq constant is a gref\footnote{a gref is the opaque type for \coq
+\begin{tcolorboxSimple}
+  \begin{tabular}{c|c}
+    \begin{minipage}[c]{0.50\linewidth}
+      \begin{elpicode}
+        kind term type.
+        type const gref -> term.
+        type app list term -> term.
+        type fun (term -> term) -> term.
+        type prod (term -> term) -> term.
+      \end{elpicode}
+    \end{minipage}
+    &
+    \begin{minipage}[c]{0.46\linewidth}
+      \begin{textcode}
+        Example:
+        a        ==> const 0
+        f a      ==> app[const f, const a]
+        ~$\lambda$~x => x  ==> fun x\ x
+        ~$\forall$x, F x~  ==> prod x\ app[F, x]
+      \end{textcode}
+    \end{minipage}
+  \end{tabular}
+\end{tcolorboxSimple}
+
+
+\noindent where a \coq constant is a gref\footnote{a gref is the opaque type for \coq
 identifier in \elpi} inside the \elpiIn{const} constructor, the \coq application
 is embedded in the \elpiIn{app} node, having the head and the arguments of the
 application expressed as a list of terms. Lambda abstractions are translated
@@ -112,7 +137,7 @@ quantification on the for \coqIn{~$\forall$~x,F} into \elpiIn{forall x\ F}.
 % Examples
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Let's take the following example:
+Let's take the following example\footnote{taken from the \stdpp library}:
 \begin{tcolorboxSimple}
   \begin{tabular}{c|c}
     \begin{minipage}[c]{0.50\linewidth}
@@ -144,6 +169,8 @@ rule above cannot be applied; the terms \elpiIn{prod x\ app[P, x]} and
 \elpiIn{prod x\ app[f, y, x]} cannot unify since the lists under the
 \elpiIn{app} constructors are of different length.\todo{NOTE: the goal unify
 with forall\_dec in coq xké fa unif FO approx}
+
+An other example of unification failure in the 
 
 
 

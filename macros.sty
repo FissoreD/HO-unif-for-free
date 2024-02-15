@@ -78,6 +78,15 @@
   % \end{tcolorboxSimple}
 }
 
+\newenvironment{textcode}{%
+  \VerbatimEnvironment
+  % \begin{tcolorboxSimple}
+    \begin{minted}[escapeinside=~~,mathescape=true]{text}%
+}{%
+  \end{minted}%
+  % \end{tcolorboxSimple}
+}
+
 \newenvironment{coqcode}{%
   \VerbatimEnvironment
   % \begin{tcolorboxSimple}
