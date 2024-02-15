@@ -29,6 +29,7 @@
 \def\ol{\acronym{ol}} % object language
 \def\ml{\acronym{ml}} % meta language
 \def\lf{\acronym{lf}} % logical framework
+\def\ho{\acronym{ho}} % higher order
 
 \newcommand*{\eqtau}{\ensuremath{\mathrel{\overset{\mathrm{\tau}}{=}}}}
 \begin{abstract}
@@ -113,13 +114,13 @@ data type
       \end{elpicode}
     \end{minipage}
     &
-    \begin{minipage}[c]{0.46\linewidth}
+    \begin{minipage}[c]{0.48\linewidth}
       \begin{textcode}
         Example:
-        a        ==> const 0
-        f a      ==> app[const f, const a]
-        ~$\lambda$~x => x  ==> fun x\ x
-        ~$\forall$x, F x~  ==> prod x\ app[F, x]
+        a       ==> const 0
+        f a     ==> app[const `f, const `a]
+        ~$\lambda$~x => x ==> fun x\ x
+        ~$\forall$x, F x~ ==> prod x\ app[F, x]
       \end{textcode}
     \end{minipage}
   \end{tabular}
@@ -159,26 +160,39 @@ Let's take the following example\footnote{taken from the \stdpp library}:
   \end{tabular}
 \end{tcolorboxSimple}
 
-The \coq instance on the left is compiled in the \elpi rule on the right. If 
-we try to solve the following query (already in the \elpi syntax)
+The \coq instance on the left is compiled in the \elpi rule on the right. If the 
+query to solve (already in the \elpi syntax) is
 
-\elpiIn{tc-Decision (prod x\ app[f, y, x])}
+\elpiInEq{tc-Decision (prod x\ const `nat)}
 
-where \coqIn{f : A -> B -> Type} and \coqIn{y: A}, we can notice that the \elpi
-rule above cannot be applied; the terms \elpiIn{prod x\ app[P, x]} and
-\elpiIn{prod x\ app[f, y, x]} cannot unify since the lists under the
-\elpiIn{app} constructors are of different length.\todo{NOTE: the goal unify
-with forall\_dec in coq xké fa unif FO approx}
+\noindent it is clear that the \elpi rule above will not unify with the query,
+Since the rigid node \elpiIn{app} is different from the rigid node
+\elpiIn{const}. The problem come form the lost of the fact that \coqIn{P} is an
+higher-order variable in \coq, and in \elpi it is translated into a first order
+variable (the variable \elpiIn{P} in \elpi does not see the binder \elpiIn{x}).
 
-An other example of unification failure in the 
+Another unification problem we can da notare che il problema dopo, is the FO
+approx. Coq applica la regola forall\_dec sul goal (prod x\ app[f, y, x]), ma forse 
+bisognerebbe vedere se altri solver accettano questa euristica. Così facciamo 
+vedere che non siamo i soli a farlo. Nel caso contrario bisogna dire come funziona
+l'algo di unif di coq in questo caso specifico
+
+\elpiInEq{tc-Decision (prod x\ app[const `f, const `y, x])}
+
+Specificare anche che non riusciamo a fare ne eta ne beta riduzione. 
+
+Dire che elpi unifica in HO e con eta-beta
 
 
+% where \coqIn{f : A -> B -> Type} and \coqIn{y: A}, we can notice that the \elpi
+% rule above cannot be applied; the terms \elpiIn{prod x\ app[P, x]} and
+% \elpiIn{prod x\ app[f, y, x]} cannot unify since the lists under the
+% \elpiIn{app} constructors are of different length.\todo{NOTE: the goal unify
+% with forall\_dec in coq xké fa unif FO approx}
 
-\begin{itemize}
-  \item TODO: context
-  \item TODO: example
-  \item TODO: riassunto delle next sections
-\end{itemize}
+% Another example of unification failure is given by the the following instance
+
+
   
 \section{intro}
 
