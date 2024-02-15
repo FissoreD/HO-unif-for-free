@@ -160,41 +160,44 @@ Let's take the following example from the \stdpp library:
   \end{minipage}
 \end{tabular}
 
-\noindent In our type-class solver, we compile the \coqIn{forall_dec} instance
-of \coq (on the left) into the \elpi rule on the right. This compilation, which
-is blindly built from the type of \coqIn{forall_dec}, hides some unification
-properties accepted by the unification algorithm of the \ol but that are
-rejected by the unification algorithm of the \ml. The main problem of this
-compilation is how the subterm \coqIn{~$\forall$~x, P x} is translated in
-the \ml rule; \coqIn{P} is a higher order variable, in the former subterm, it
-does see the binder \coqIn{x}. However, the rule in the \ml, consider a first
-order variable \elpiIn{P}, not seeing \elpiIn{x}. Furthermore, this subterm is
-lodged within the \elpiIn{app} constructor making unification very structural.
+\noindent In our type-class solver, we translate the \coqIn{forall_dec} instance
+of \coq (on the left) into the \elpi rule (on the right). This translation, derived
+directly from the type of \coqIn{forall_dec}, conceals certain unification
+properties that are accepted by the unification algorithm of the \ol but 
+rejected by the unification algorithm of the \ml. The primary issue of this
+translation lies in how the subterm \coqIn{~$\forall$~x, P x} is rendered in
+the \ml rule; \coqIn{P} is a higher-order variable, and in the original subterm, it
+sees the binder \coqIn{x}. However, the rule in the \ml interprets \elpiIn{P} as a 
+first-order variable, not seeing \elpiIn{x}. Additionally, this subterm is
+nested within the \elpiIn{app} constructor, introducing a structural challenge 
+to the unification process.
 
 % Esempio HO in PF
 \elpiInEq{tc-Decision (prod x\ const `nat)}%
 % Esempio FO align
 \elpiInEq{tc-Decision (prod x\ app[const `f, const `y, x])}
 
-\noindent The two example of queries above, already in the syntax of the \ml,
-represent two terms that would unify in the \ol, but fail in the \ml. In
-particular, the first fails since the \ml is not able to unify \elpiIn{const
-`nat} with the term \elpiIn{app[P, x]}: they have different rigid heads. 
+\noindent The two examples above, already expressed in the syntax of the \ml,
+depict two terms that would successfully unify in the \ol, but encounter failure
+in the \ml. Specifically, the first query fails because the \ml is not able to unify \elpiIn{const
+`nat} with the term \elpiIn{app[P, x]} due to their distinct rigid heads. 
 
 The second goal refers to an approximation of the unification\todo{maybe there's
 something to cite} algorithm of the \ol. Spiegare l'approssimazione. E che
 attraverso il nostro framework è possibile "spiegare" l'algorithm di unification
 usato da ogni \ol nel ml desiderato. \todo{something to do here...}
 
-Following the definition give just before, the terms \elpiIn{app[const `f, const
-`y, x]} and \elpiIn{app[P, x]} should unify with substitution $\theta := \{P
+Based on the definition provided earlier, the terms \elpiIn{app[const `f, const
+`y, x]} and \elpiIn{app[P, x]} are expected to unify with substitution $\theta := \{P
 \mapsto \texttt{\elpiIn{app [const `f, const `y]}} \}$. However this unification
-is not possible in the \ml since, this time we have two terms with the same head
-(the \elpiIn{app} node), but the corresponding lists have different lengths.
+is not possible in the \ml. This difficulty arises because, in this instance,
+we have two terms with the same head
+(the \elpiIn{app} node), but their corresponding lists have different lengths.
 
-An immediate solution to solve these unification problems\todo{mettere da qualche parte anche eta e beta}
-would be to be lazy and build very general rule for each instance in the database.
-This would build a rule with the following shape:
+% Implementation using ol unification on each argument
+An immediate approach to address these unification problems\todo{mettere da qualche parte anche eta e beta}
+would be to adopt a lazy strategy and construct highly general rules for each instance in the database.
+This approach would result in a rule with the following structure:
 
 \begin{center}
   \begin{minipage}[c]{0.46\linewidth}
@@ -208,17 +211,17 @@ This would build a rule with the following shape:
 \end{center}
 
 \noindent In this second implementation, any call to the \elpiIn{tc-Decision}
-will unify with the head of the rule for \coqIn{forall_dec}. The the first
-premise will ensure that the arguments unify with the what we expect from the
-instance definition. Notice that, this time, the very unification algorithm of
-the \ol is exploited, overcoming the unification problems listed just before.
-This approach is quite appealing but it has two main disadvantages: the first
-lays on the fact that the communication between the \ol and the \ml can
-potentially be slow, this is due to the transformation of terms from one language
-to the other. \todo{here i refer to constr->elpi e elpi->constr}
-The other drawback of this latter encoding is that clause discrimination cannot
-be done on the head of the clause, for instance, any indexing 
-algorithm allowing to filter rules become suddenly useless. 
+will unify with the head of the rule for \coqIn{forall_dec}. The first
+premise ensures that the arguments unify with what we expect from the
+instance definition. Notably, in this case, the unification algorithm of
+the \ol is leveraged, , successfully addressing the previously mentioned unification problems.
+
+However, this approach has two main drawbacks. Firstly, the communication
+between the \ol and the \ml may potentially be slow due to the transformation of
+terms from one language to the other \todo{here I refer to constr->elpi and
+elpi->constr}. Secondly, the alternative encoding lacks the ability to
+discriminate clauses based on the head of the clause. For example, any indexing
+algorithm designed to filter rules becomes ineffective in this scenario.
 
 % Contribution
 Finally 
