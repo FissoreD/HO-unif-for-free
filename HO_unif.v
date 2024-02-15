@@ -41,3 +41,26 @@ Goal exists P, RelDecision (@eq (sig nat P)).
   apply True_pi.
   apply _.
 Qed.
+
+Definition T1 := Type -> Type.
+Definition T2 := Type -> Type -> Type.
+
+Axiom (F : T1).
+Axiom (G : T2).
+
+Goal exists (F' : T1), (forall x, F x) = (forall x, F' x).
+  eexists.
+  reflexivity.
+Qed.
+
+Goal exists (F' : T1), (forall x, G nat x) = (forall x, F' x).
+  eexists.
+  reflexivity.
+  Show Proof.
+Qed.
+
+Goal exists (F' : T1), (forall (x: Type), G nat nat) = (forall x, F' x).
+  eexists.
+  reflexivity.
+  Show Proof.
+Qed.
