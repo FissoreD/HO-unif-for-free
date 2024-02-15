@@ -73,21 +73,25 @@ from interpretation to compilation.
 
 % theorem prover and tc
 Thanks to meta programming, it is feasible to express the equational theory of a
-theorem prover, as noted in \cite{citeX, Y Z}, with the \ml serving as the
-foundational infrastructure for this ecosystem. Proving a theorem, that is
+theorem prover, as indicated in \cite{citeX, Y Z}, with the \ml serving as the
+foundational infrastructure for this ecosystem. The process of proving a theorem, that is
 solving a query using the jargon of logic programming consist in verifying if a
 proposition is a logical consequence of a given set of assumption. The benefit
 of of using a prologish verification style is that the proof resolution can be
 automatized thanks to different search strategies, such as a depth first search
-with backtracking. One of the main expression of this proof automation is
-type-class resolution\cite{wadler89, sozeau08}. Type classes are a typing
-structure to introduce ad-hoc polymorphism in functional programming languages.
-In \coq, the use of type class has become a more and more used programming
-style. Several are the libraries based on this machinery, we can site \stdpp and
-\iris.
+with backtracking. One prominent manifestation of this automated proof process is
+type-class resolution\cite{wadler89, sozeau08}. Type classes serve as a typing
+structure to introduce ad-hoc polymorphism in functional languages.
+In \coq, the use of type class has increasingly become a programming
+style. Numerous libraries, such as \stdpp and
+\iris are built upon this machinery.
 
 % embed tc in ml
-One of the 
+The motivating example for this article is our investigation for an alternative
+type-class solver for \coq in \elpi\todo{citation to elpi} through the \coqelpi
+plugin. This plugin gives a deep embedding of \coq terms into \elpi syntax, but
+challenges arise whe attempting to solve type-class goals represented into their
+corresponding \elpi representation.
 
 \begin{itemize}
   \item about meta programming (what it is, when to use it)
