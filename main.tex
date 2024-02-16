@@ -33,6 +33,8 @@
 \def\Forall{$\forall$}
 
 \newcommand*{\eqtau}{\ensuremath{\mathrel{\overset{\mathrm{\tau}}{=}}}}
+
+\begin{comment}
 \begin{abstract}
 
 
@@ -59,8 +61,47 @@
   unification. Practical applications of these findings will be provided.
 
 \end{abstract}
+\end{comment}
+
+\begin{abstract}
+Specifying and implementing a logic from scratch requires a
+considerable effort. Logical frameworks and Higher Order Logic Programming
+Languages provide a reusable
+Higher Order Meta Languages (ML) to make that easier:
+the specification and implementation of binding and substitution comes for free 
+if one reuses the the ML binders for the Object Logic (OL);
+similarly proof construction (and even proof search) is greatly simplified
+by leveraging the unification of the ML.
+Notable examples of ML are Elf~\cite{elf}, Twelf~\cite{twelf},
+$\lambda$Prolog~\cite{miller_nadathur_2012} and Isabelle~\cite{10.1007/978-3-540-71067-7_7}
+that were used to implement various OLs such as
+First Order Logic~\cite{felty88cade},
+Set Theory~\cite{10.1007/BF00881873} and
+even Higher Order Logic~\cite{books/sp/NipkowPW02}.
+
+We are interested in using a ML to describe Dependent Type Theory (TT) and
+implement a proof search procedure based on the unification (U) of the ML.
+U is typically able to solve higher order problems in the pattern
+fragment~\cite{miller92jsc} and identify ML terms up to $\eta\beta$.
+The problem we face is that a natural encoding of the OL (FOOL) force on
+U a ``first order''.
+To overcome the problem we provide an alternative encoding of TT (HOOL) where
+higher order unification problems can be faithfully delegated to U.
+We show how to map FOOL to HOOL and how to map back the
+unifiers found by U, effectively implementing an higher order unification
+algorithm for FOOL.
+
+We apply this technique to the implementation of a type-class solver for Coq,
+which is a proof search procedure based on back-chaining designated lemmas.
+Type-class solvers provide essential automation to widely used 
+Coq libraries such as Stdpp/Iris~\cite{JUNG_KREBBERS_JOURDAN_BIZJAK_BIRKEDAL_DREYER_2018}
+and TLC~\cite{10.1007/978-3-642-14052-5_15} that constitute our test bed.
+\end{abstract}
+
 
 \section{Introduction}
+
+related~\cite{felty93lics}
 
 % meta programming
 Meta programming is a powerful programming style that enable the incorporation
