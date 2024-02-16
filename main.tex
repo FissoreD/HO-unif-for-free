@@ -74,18 +74,18 @@ considerable effort. Logical Frameworks and Higher Order Logic Programming
 Languages provide dedicated, high level, Meta Languages (ML) to ease the
 task in two ways: 1)
 variable binding and substitution comes for free when ML binders
-are used to represent object logic ones; 2)
+are used to represent the object logic ones; 2)
 proof construction, and even proof search, is greatly simplified
 by leveraging the unification procedure provided by the ML.
 Notable examples of ML are Elf~\cite{elf}, Twelf~\cite{twelf},
 $\lambda$Prolog~\cite{miller_nadathur_2012} and Isabelle~\cite{10.1007/978-3-540-71067-7_7}
-that were used to implement various logics such as
+that were used to implement various formal systems such as
 First Order Logic~\cite{felty88cade},
 Set Theory~\cite{10.1007/BF00881873} and
 even Higher Order Logic~\cite{books/sp/NipkowPW02}.
 
 The object logic we are interested in is Dependent Type Theory (DTT) for which
-want to implement a unification procedure \U{} using
+want to implement a unification procedure \U{} using the ML
 Elpi~\cite{dunchev15lpar}, a dialect of $\lambda$Prolog.
 Elpi comes equipped with the equational theory \Ue{} that comprises $\eta\beta$ equivalence
 and higher order unification restricted to the pattern
