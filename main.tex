@@ -63,15 +63,19 @@
 \end{abstract}
 \end{comment}
 
+\newcommand{\U}{\ensuremath{\mathcal{U}}}
+\newcommand{\Fo}{\ensuremath{\mathcal{F}}}
+\newcommand{\Ho}{\ensuremath{\mathcal{H}}}
+
 \begin{abstract}
 Specifying and implementing a logic from scratch requires a
 considerable effort. Logical frameworks and Higher Order Logic Programming
-Languages provide a reusable
-Higher Order Meta Languages (ML) to make that easier:
-the specification and implementation of binding and substitution comes for free 
-if one reuses the the ML binders for the Object Logic (OL);
-similarly proof construction (and even proof search) is greatly simplified
-by leveraging the unification of the ML.
+Languages provide dedicated, high level, Meta Languages (ML) to ease the
+task in two ways: 1)
+variable binding and substitution comes for free when ML binders
+are use to represent the Object Logic (OL) ones; 2)
+proof construction, and even proof search, is greatly simplified
+by leveraging the unification procedure provided by the ML.
 Notable examples of ML are Elf~\cite{elf}, Twelf~\cite{twelf},
 $\lambda$Prolog~\cite{miller_nadathur_2012} and Isabelle~\cite{10.1007/978-3-540-71067-7_7}
 that were used to implement various OLs such as
@@ -79,25 +83,23 @@ First Order Logic~\cite{felty88cade},
 Set Theory~\cite{10.1007/BF00881873} and
 even Higher Order Logic~\cite{books/sp/NipkowPW02}.
 
-We are interested in using a ML to describe Dependent Type Theory (TT) and
-implement a proof search procedure based on the unification (U) of the ML.
-U is typically able to solve higher order problems in the pattern
-fragment~\cite{miller92jsc} and identify ML terms up to $\eta\beta$.
-The problem we face is that a natural encoding of the OL (FOOL) force on
-U a ``first order''.
-To overcome the problem we provide an alternative encoding of TT (HOOL) where
-higher order unification problems can be faithfully delegated to U.
-We show how to map FOOL to HOOL and how to map back the
-unifiers found by U, effectively implementing an higher order unification
-algorithm for FOOL.
+We are interested in using a ML to describe Dependent Type Theory (DTT) and
+implement a proof search procedure based on unification.
+The unification \U{} of our ML of choice Elpi~\cite{dunchev15lpar},
+a dialect of $\lambda$Prolog, is able to solve higher order problems in
+the pattern fragment~\cite{miller92jsc} and identifies terms up to $\eta\beta$.
+Our objective is to lift \U{} to the OL retaining the same equational theory.
+The problem we face is that a natural encoding of DTT (\Fo{}) makes
+\U{} essentially first order. To overcome the problem we provide a better
+behaved encoding \Ho{}, we show how to map \Fo{} terms to \Ho{} terms and
+how to map back the unifiers found by \U, effectively implementing an higher
+order unification algorithm for \Fo{}.
 
 We apply this technique to the implementation of a type-class solver for Coq
-in Elpi~\cite{dunchev15lpar} (a dialect of $\lambda$Prolog).
-Type-class solvers
-are proof search procedures based on back-chaining designated lemmas and
-provide essential automation to widely used 
+Type-class solvers are proof search procedures based on back-chaining designated
+lemmas and provide essential automation to widely used 
 Coq libraries such as Stdpp/Iris~\cite{JUNG_KREBBERS_JOURDAN_BIZJAK_BIRKEDAL_DREYER_2018}
-and TLC~\cite{10.1007/978-3-642-14052-5_15} that constitute our test bed.
+and TLC~\cite{10.1007/978-3-642-14052-5_15}. These two constitute our test bed.
 \end{abstract}
 
 
