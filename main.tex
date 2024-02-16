@@ -48,15 +48,15 @@
   program, referred to as meta language (\ml), can treat an other program, knwon
   as the object language (\ol) as its data. This programming approach is used in
   various works \cite{cite1, cite2...} to construct logical frameworks (\lf)
-  capable of automating proof resolution. In many of the previously the
+  capable of automating proof resolution. In many of the
   previously mentioned works, the equational theory expressed by the \ol is
   weaker than the \ml one. Consequently, no effort is required to adjust the
-  unification algorithm of the \ml since it encompass the \ml one. In our
+  unification algorithm of the \ml to represent the unification process of 
+  the \ol: the former algorithm encompassing the second one. In our
   specific scenario, however, we work with an \ol with a richer equational
-  theory than our \ml. This paper introduces a framework that enable the \ml to
-  comprehend the unification of the \ol and provides some practical applications
-  of these findings. Additionally, we extend our work to unification in the case
-  of higher-order variable quantification.
+  theory than our \ml. This paper introduces a framework that enables the \ml to
+  comprehend the unification of the \ol in the context of higher-order 
+  unification. Practical applications of these findings will be provided.
 
 \end{abstract}
 
@@ -71,16 +71,16 @@ from interpretation to compilation.
 
 % theorem prover and tc
 Thanks to meta programming, it is feasible to express the equational theory of a
-theorem prover, as indicated in \cite{citeX, Y Z}, with the \ml serving as the
+theorem prover, as indicated in \cite{X, Y, Z}, with the \ml serving as the
 foundational infrastructure for this ecosystem. The process of proving a theorem, that is
-solving a query using the jargon of logic programming consist in verifying if a
+solving a query using the jargon of logic programming, consist in verifying if a
 proposition is a logical consequence of a given set of assumption. The benefit
-of of using a prologish verification style is that the proof resolution can be
+of using a prologish verification style is that the proof resolution can be
 automatized thanks to different search strategies, such as a depth first search
 with backtracking. One prominent manifestation of this automated proof process is
 type-class resolution\cite{wadler89, sozeau08}. Type classes serve as a typing
 structure to introduce ad-hoc polymorphism in functional languages.
-In \coq, the use of type class has increasingly become a programming
+In \coq, the use of type classes has increasingly become a programming
 style. Numerous libraries, such as \stdpp and
 \iris are built upon this machinery.
 
@@ -131,8 +131,9 @@ data type
 identifier in \elpi} inside the \elpiIn{const} constructor, the \coq application
 is embedded in the \elpiIn{app} node, having the head and the arguments of the
 application expressed as a list of terms. Lambda abstractions are translated
-into the node \elpiIn{fun} binding a term to another term. Finally forall
-quantification on the for \coqIn{~$\forall$~x,F} into \elpiIn{prod x\ F}.
+into the node \elpiIn{fun}, binding a term to another term. Finally forall
+quantification on the form \coqIn{~$\forall$~x,F} in the \ol are translated
+into \elpiIn{prod x\ F} within the \ml.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Examples
@@ -160,13 +161,14 @@ Let's take the following example from the \stdpp library:
   \end{minipage}
 \end{tabular}
 
-\noindent In our type-class solver, we translate the \coqIn{forall_dec} instance
-of \coq (on the left) into the \elpi rule (on the right). This translation, derived
+\noindent In our type-class solver, the \coqIn{forall_dec} instance 
+of \coq (on the left) is compiled into the \elpi rule (on the right). This 
+compilation, derived
 directly from the type of \coqIn{forall_dec}, conceals certain unification
 properties that are accepted by the unification algorithm of the \ol but 
 rejected by the unification algorithm of the \ml. The primary issue of this
-translation lies in how the subterm \coqIn{~$\forall$~x, P x} is rendered in
-the \ml rule; \coqIn{P} is a higher-order variable, and in the original subterm, it
+compilation lies in how the subterm \coqIn{~$\forall$~x, P x} is rendered in
+the \ml rule: \coqIn{P} is a higher-order variable and it
 sees the binder \coqIn{x}. However, the rule in the \ml interprets \elpiIn{P} as a 
 first-order variable, not seeing \elpiIn{x}. Additionally, this subterm is
 nested within the \elpiIn{app} constructor, introducing a structural challenge 
@@ -190,9 +192,9 @@ usato da ogni \ol nel ml desiderato. \todo{something to do here...}
 Based on the definition provided earlier, the terms \elpiIn{app[const `f, const
 `y, x]} and \elpiIn{app[P, x]} are expected to unify with substitution $\theta := \{P
 \mapsto \texttt{\elpiIn{app [const `f, const `y]}} \}$. However this unification
-is not possible in the \ml. This difficulty arises because, in this instance,
-we have two terms with the same head
-(the \elpiIn{app} node), but their corresponding lists have different lengths.
+is not possible in the \ml. This difficulty arises because, even though 
+the two terms share the same same head
+(the \elpiIn{app} node), their corresponding lists have different lengths.
 
 % Implementation using ol unification on each argument
 An immediate approach to address these unification problems\todo{mettere da qualche parte anche eta e beta}
@@ -210,17 +212,18 @@ This approach would result in a rule with the following structure:
   \end{minipage}
 \end{center}
 
-\noindent In this second implementation, any call to the \elpiIn{tc-Decision}
-will unify with the head of the rule for \coqIn{forall_dec}. The first
+\noindent In this second implementation, any query to \elpiIn{tc-Decision}
+will unify with the head of the rule above. The first
 premise ensures that the arguments unify with what we expect from the
 instance definition. Notably, in this case, the unification algorithm of
-the \ol is leveraged, , successfully addressing the previously mentioned unification problems.
+the \ol is leveraged successfully addressing the previously mentioned unification problems.
 
 However, this approach has two main drawbacks. Firstly, the communication
 between the \ol and the \ml may potentially be slow due to the transformation of
 terms from one language to the other \todo{here I refer to constr->elpi and
-elpi->constr}. Secondly, the alternative encoding lacks the ability to
-discriminate clauses based on the head of the clause. For example, any indexing
+elpi->constr}. Secondly, a lack of % the ability to
+clauses discrimination based on the head of the clause is no longer
+possible. For example, any indexing
 algorithm designed to filter rules becomes ineffective in this scenario.
 
 % Contribution
