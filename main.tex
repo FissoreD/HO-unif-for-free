@@ -63,45 +63,49 @@
 \end{abstract}
 \end{comment}
 
-\newcommand{\U}{\ensuremath{\mathcal{U}}}
-\newcommand{\Fo}{\ensuremath{\mathcal{F}}}
-\newcommand{\Ho}{\ensuremath{\mathcal{H}}}
+\newcommand{\U}{\ensuremath{=_o}}
+\newcommand{\Ue}{\ensuremath{=_\lambda}}
+\newcommand{\Fo}{\ensuremath{\mathcal{F}_{\!o}}}
+\newcommand{\Ho}{\ensuremath{\mathcal{H}_o}}
 
 \begin{abstract}
 Specifying and implementing a logic from scratch requires a
-considerable effort. Logical frameworks and Higher Order Logic Programming
+considerable effort. Logical Frameworks and Higher Order Logic Programming
 Languages provide dedicated, high level, Meta Languages (ML) to ease the
 task in two ways: 1)
 variable binding and substitution comes for free when ML binders
-are use to represent the object logic ones; 2)
+are used to represent object logic ones; 2)
 proof construction, and even proof search, is greatly simplified
 by leveraging the unification procedure provided by the ML.
 Notable examples of ML are Elf~\cite{elf}, Twelf~\cite{twelf},
 $\lambda$Prolog~\cite{miller_nadathur_2012} and Isabelle~\cite{10.1007/978-3-540-71067-7_7}
-that were used to implement various object logics such as
+that were used to implement various logics such as
 First Order Logic~\cite{felty88cade},
 Set Theory~\cite{10.1007/BF00881873} and
 even Higher Order Logic~\cite{books/sp/NipkowPW02}.
 
 The object logic we are interested in is Dependent Type Theory (DTT) for which
-want to implement a unification procedure using
+want to implement a unification procedure \U{} using
 Elpi~\cite{dunchev15lpar}, a dialect of $\lambda$Prolog.
-The unification procedure \U{} provided by Elpi solves problems in the pattern
-fragment~\cite{miller92jsc} and identifies terms up to $\eta\beta$:
-the equational theory that we want to lift to DTT.
-The problem we face is that the natural encoding of DTT, that we call \Fo{},
-makes \U{} essentially first order. To overcome the problem we provide a better
-behaved encoding \Ho{}, we show how to map unification problems in \Fo{}
+Elpi comes equipped with and equational theory \Ue{} that comprises $\eta\beta$ equivalence
+and higher order unification restricted to the pattern
+fragment~\cite{miller92jsc}.
+We want \U{} to feature the same equational theory of \Ue{}, but on the
+object logic DTT. Unfortunately the natural encoding of DTT in Elpi, that we call \Fo{},
+``underuses'' \Ue{} by making it applicable to first order unification problems only.
+To overcome the problem we provide a better
+behaved encoding \Ho{}, we show how to map a unification problems in \Fo{}
 to related problems in \Ho{} and
-how to map back the unifiers found by \U{}, effectively implementing
-an higher order unification algorithm for \Fo{}.
-
+how to map back the unifiers found by \Ue{}, effectively implementing
+ \U{} on top of \Ue{} for the natural encoding \Fo{}.
+ 
 We apply this technique to the implementation of a type-class~\cite{wadler89}
 solver for Coq~\cite{Coq-refman}.
 Type-class solvers are proof search procedures based on back-chaining designated
 lemmas and provide essential automation to widely used 
 Coq libraries such as Stdpp/Iris~\cite{JUNG_KREBBERS_JOURDAN_BIZJAK_BIRKEDAL_DREYER_2018}
-and TLC~\cite{10.1007/978-3-642-14052-5_15}. These two constitute our test bed.
+and TLC~\cite{10.1007/978-3-642-14052-5_15}. These two libraries
+constitute our test bed.
 \end{abstract}
 
 
