@@ -91,9 +91,11 @@ We show how to map FOOL to HOOL and how to map back the
 unifiers found by U, effectively implementing an higher order unification
 algorithm for FOOL.
 
-We apply this technique to the implementation of a type-class solver for Coq,
-which is a proof search procedure based on back-chaining designated lemmas.
-Type-class solvers provide essential automation to widely used 
+We apply this technique to the implementation of a type-class solver for Coq
+in Elpi~\cite{dunchev15lpar} (a dialect of $\lambda$Prolog).
+Type-class solvers
+are proof search procedures based on back-chaining designated lemmas and
+provide essential automation to widely used 
 Coq libraries such as Stdpp/Iris~\cite{JUNG_KREBBERS_JOURDAN_BIZJAK_BIRKEDAL_DREYER_2018}
 and TLC~\cite{10.1007/978-3-642-14052-5_15} that constitute our test bed.
 \end{abstract}
