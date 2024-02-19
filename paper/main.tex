@@ -170,42 +170,45 @@ automatically proved by Coq using the designated instances.
 \begin{coqcode}
 Instance fin_fin n : Finite (fin n).
 Instance nfact_dec n nf : Decision (nfact n nf).
-Instance forall_dec A P : Finite A ~$\to$~ ~$\forall$~x:A, Decision (P x) ~$\to$~ Decision (~$\forall$~x, P x).
+Instance forall_dec A P : Finite A ~$\to$~ 
+  ~$\forall$~x:A, Decision (P x) ~$\to$~ Decision (~$\forall$~x, P x).
 \end{coqcode}
 
-for example here
+\noindent For example here
 
 \begin{coqcode}
   Check _ : Decision (forall y: fin 7, nfact y 3).
 \end{coqcode}
 
-A natural encoding (others are discussed section xx)
+A natural encoding (others are discussed in section xx)
 uses c for constants, all for forall, and then app and lam
 for the lambda calculus part.
 
 \begin{elpicode}
 finite (app[c"fin", N]).
 decision (app [c"nfact",N,NF]).
-decision (all A x\ app[P, x]) :- (pi x\ decision (app[P, x])), finite A.
+decision (all A x\ app[P, x]) :- 
+  (pi x\ decision (app[P, x])), finite A.
 \end{elpicode}
 
-unfortunately this does not work since the last rule cannt
+Unfortunately this does not work since the last rule cannt
 backchain on the encoded goal
   
 \begin{elpicode}
-decision (all (app[c"fin",c"7"]) y\ app[c"nfact", y, c"3"])
+decision (all (app[c"fin",c"7"]) y\ app[c"nfact", y, c"3"]).
 \end{elpicode}
 
 indeed this unif problem has no solution
 
 \begin{elpicode}
-app[c"nfact", y, c"3"] = app[P, y]
+app[c"nfact", y, c"3"] = app[P, y].
 \end{elpicode}
 
-in this paper we study a more sophisticated encoding
+In this paper we study a more sophisticated encoding
 
 \begin{elpicode}
-decision (all A x\ Pm x) :- link Pm A P, (pi x\ decision (app[P, x])), finite A.
+decision (all A x\ Pm x) :- link Pm A P, 
+  (pi x\ decision (app[P, x])), finite A.
 \end{elpicode}
 
 This time Pm is HO for elpi, an the extra link is there to explain how to
@@ -223,7 +226,7 @@ we have now a beta redex.
 
 \subsection{Alternative encodings} %%%%%%%%%%%%%%%%%%%%%%
 
-our choice of encoding of DTT may look weird to the reader familiar with
+Our choice of encoding of DTT may look weird to the reader familiar with
 LF, since used a shallow encoding of classes and binders, but not of the
 ``lambda calculus'' part of DTT. Here a more lightweight encoding
 that unfortunately does not fit our use case
@@ -231,14 +234,16 @@ that unfortunately does not fit our use case
 \begin{elpicode}
 finite (fin N).
 decision (nfact N NF).
-decision (all A x\ P x) :- (pi x\ decision (P x)), finite A.
+decision (all A x\ P x) :- 
+  (pi x\ decision (P x)), finite A.
 \end{elpicode}
 
 but in DTT this is not always possible and not handy in our use case,
 since the arity of constants is not fixed.
 
 \begin{coqcode}
-Fixpoint narr T n := if n is S m then T -> narr T m else T.
+Fixpoint narr T n := 
+  if n is S m then T -> narr T m else T.
 Definition nsum n : narr nat (n+1).
 Check nsum 2   8 9 : nat.
 Check nsum 3 7 8 9 : nat.
@@ -247,18 +252,19 @@ Check nsum 3 7 8 9 : nat.
 moreover we use the same encoding for meta programming, or even just to provide
 hand written rules. We want to access the syntax of OL, so our embedding cannot
 be that shallow. We want to keep it shallow for the binders, but we need
-a c, app and lam nodes.
+the c, app and lam nodes. % all ?
 
-another alternative
+Another alternative
 
 \begin{elpicode}
-decision X :- unif X (all A x\ app[P, x]), (pi x\ decision (app[P, x])), finite A.
+decision X :- unif X (all A x\ app[P, x]), 
+  (pi x\ decision (app[P, x])), finite A.
 \end{elpicode}
-    
-gives up all half of what the ML gives us. moreover even if unif here embodies
-he eq theory of DTT which is much stringer than the on of ML, we don't need 
-it. according to our experience eta beta suffice, but HO is needed.
-  
+
+gives up all half of what the ML gives us. Moreover even if unif here embodies
+the eq theory of DTT which is much stronger than the one of the ML, we don't need 
+it. According to our experience eta beta suffice, but HO is needed.
+
 
 
 Note that this~\cite{felty93lics} is related and make the
