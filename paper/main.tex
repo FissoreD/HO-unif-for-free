@@ -1,7 +1,12 @@
-\documentclass[sigconf]{acmart}
+\documentclass[sigconf,natbib=false]{acmart}
+\usepackage[]{biblatex}
+
+\AtBeginDocument{%
+  \providecommand\BibTeX{{%
+    Bib\TeX}}}
+\addbibresource{bib.bib}
 
 \usepackage{myTools}
-% \addbibresource{bib.bib}
 \usepackage{macros}
 
 % TODO: set this fields
@@ -10,7 +15,7 @@
 \copyrightyear{2024}
 \acmYear{XXXX 2024}
 \acmBooktitle{YYY}
-\acmDOI{ZZZZZZZZZZZZ}
+\acmDOI{ZZZZZZZZZZZZ}    
 
 
 % \xspaceaddexceptions{]\}}
@@ -96,7 +101,7 @@
   Coq libraries such as Stdpp/Iris~\cite{JUNG_KREBBERS_JOURDAN_BIZJAK_BIRKEDAL_DREYER_2018}
   and TLC~\cite{10.1007/978-3-642-14052-5_15}. These two libraries
   constitute our test bed.
-\end{abstract}
+\end{abstract} 
 
 \keywords{Logic Programming, Meta-Programming, Higher-Order Unification, Proof Automation}
 
@@ -311,27 +316,30 @@ data type
 % % \end{elpicode}
 
 \noindent %
-\begin{tabular}{c|c}
-  \begin{minipage}[c]{0.50\linewidth}
-    \begin{elpicode}
-      kind term type.
-      type const gref -> term.
-      type app list term -> term.
-      type fun (term -> term) -> term.
-      type prod (term -> term) -> term.
-    \end{elpicode}
-  \end{minipage}
-  &
-  \begin{minipage}[c]{0.48\linewidth}
-    \begin{textcode}
-      Example:
-      a       ==> const `a
-      f a     ==> app[const `f, const `a]
-      ~$\lambda$~x => x ==> fun x\ x
-      ~$\forall$x, F x~ ==> prod x\ app[F, x]
-    \end{textcode}
-  \end{minipage}
-\end{tabular}
+% \begin{tabular}{c|c}
+  \begin{center}
+    \begin{minipage}[c]{0.8\linewidth}
+      \begin{elpicode}
+        kind term type.
+        type const gref -> term.
+        type app list term -> term.
+        type fun (term -> term) -> term.
+        type prod (term -> term) -> term.
+      \end{elpicode}
+    \end{minipage}
+  \end{center}
+
+  % &
+  % \begin{minipage}[c]{0.48\linewidth}
+  %   \begin{textcode}
+  %     Example:
+  %     a       ==> const `a
+  %     f a     ==> app[const `f, const `a]
+  %     ~$\lambda$~x => x ==> fun x\ x
+  %     ~$\forall$x, F x~ ==> prod x\ app[F, x]
+  %   \end{textcode}
+  % \end{minipage}
+% \end{tabular}
  
    
 \noindent where a \coq constant is a gref\footnote{a gref is the opaque type for \coq
@@ -1222,7 +1230,6 @@ variable \texttt{P}. Therefore, after the refinement of the goal to
 \texttt{sig\_eq\_dec}, the resolution immediately fail to solve the premise
 \texttt{tc-ProofIrrel (app [P, c0]) (app [P1, c0])}.
 
-\bibliographystyle{ACM-Reference-Format}
-\bibliography{bib}
+\printbibliography
 
 \end{document}
