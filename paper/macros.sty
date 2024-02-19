@@ -1,0 +1,72 @@
+\newcommand{\hoareTriple}[3]{
+  \{#1\}\ #2\ \{#3\}
+}
+
+\newcommand\sepimp{\mathrel{-\mkern-6mu*}}
+
+\newcommand*{\eqdef}{\ensuremath{\mathrel{\overset{\mathrm{def}}{=}}}}
+
+\def\prop{\texttt{Prop}}
+
+% Guillemots for maths
+\def\gl{\text{``}}
+\def\gr{\text{''}}
+\newcommand{\guillemot}[1]{\gl #1 \gr}
+
+% after usepackage{minted}
+\newcommand{\elpiIn}[1]{\mintinline[escapeinside=~~]{elpi}{#1}}
+\newcommand{\coqIn}[1]{\mintinline[escapeinside=~~]{coq}{#1}}
+\newcommand{\textIn}[1]{\mintinline[escapeinside=~~]{text}{#1}}
+
+\newcommand{\elpiInEq}[2][]{
+  \begin{equation}
+    \texttt{\elpiIn{#2}}
+    \label{#1}
+  \end{equation}
+}
+
+\newcommand{\elpiInEqq}[2][]{
+  \begin{equation*}
+    \texttt{\elpiIn{#2}}
+    \label{#1}
+  \end{equation*}
+}
+
+\newcommand{\coqInEq}[2][]{
+  \begin{equation}
+    \texttt{\coqIn{#2}}
+    \label{#1}
+  \end{equation}
+}
+
+% \newminted{coq}{escapeinside=||}
+% \newminted{elpi}{escapeinside=||}
+
+\newenvironment{elpicode}{%
+  \VerbatimEnvironment
+    \begin{minted}[escapeinside=~~,mathescape=true]{elpi}%
+}{%
+  \end{minted}%
+}
+
+\newenvironment{textcode}{%
+  \VerbatimEnvironment
+    \begin{minted}[escapeinside=~~,mathescape=true]{text}%
+}{%
+  \end{minted}%
+}
+
+\newenvironment{coqcode}{%
+  \VerbatimEnvironment
+    \begin{minted}[escapeinside=~~,mathescape=true]{coq}%
+}{%
+  \end{minted}%
+}
+
+
+% from amsmath and pifont
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%
+
+\newcommand{\proglang}[1]{\texttt{#1}\xspace}
+\newcommand{\pl}[1]{\proglang{#1}}
