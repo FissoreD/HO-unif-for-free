@@ -327,64 +327,74 @@ This other paper~\cite{10.1007/978-3-031-38499-8_25} should also be cited.
 
 % Description of languages (OL and ML)
 
+\def\eqfo{eq\_fo\xspace}
+
 In order to reason about unification of the terms of an objet language within a
-meta lanauge, we start by formally describing the two languages. We use
+meta language, we start by formally describing the two languages. We use
 meta-programming to accomplish this result. In \cref{code:lang-descr}, we
-provide on the left the term representation of the object language. %
-% Variables in the OL and ML are represented with integers
-In this encoding, the fo\_tm type stands for first order representation of the
-object language terms. We model unification variables as integers corresponding
-to memory adresses. This memory is represented witht the subst type which is 
-list of optional terms. If the cell $i$ is none, then the variable $i$ is not
-assigned. 
+provide on the left the typing structure of the terms of the object language
+together with the signature of the \eqfo function.
+
+In this encoding, the fo\_tm type stands for the first order representation of
+the object language terms. We model unification variables as integers
+corresponding to memory addresses. This memory is represented with the subst
+type abbreviation which is list of optional terms. If the cell $i$ is none, then
+the variable $i$ is not assigned. 
 
 % Why the fo prefix for fo_tm && Uvar in OL have no scope
-This encoding is called first order, since variables have no scope. To better
-understand this definition, let's take the subterm \coqIn{P x} from the instance
-forall\_dec. \coqIn{P} has type \coqIn{A ~$\to$~ Prop} and \coqIn{x} is a name
-bound to \coqIn{P}. The application of \coqIn{P} to \coqIn{x} at the OL level,
-put this name in the scope of the variable \coqIn{P}. However, at the meta
-level, the translation of \coqIn{P x} become \elpiIn{app[uv 1, x]}; \elpiIn{x}
-is not in the scope of \elpiIn{uv 1}.
+Because of our translation of the terms of the object language into the meta
+language we have sketched in section one, a object language term has no scope.
+An example of this claim can be given by analyzing deeply the subterm \coqIn{P x} from
+the instance forall\_dec. \coqIn{P} is an higher order variables
+with type \coqIn{A ~$\to$~ Prop} and
+\coqIn{x} is a name bound to \coqIn{P}.
+However, at the meta level, the translation of \coqIn{P x} become \elpiIn{app[uv
+1, x]}, that is, \elpiIn{uv 1} cannot see \elpiIn{x}.
 
-% Uvar in ML have scope
-To solve this problem, we give more expressiveness to the OL variables, by
-giving an alternative term encoding, where unification variables are the
-variables of the meta language. These variables have a scope and therefore
-can be of higher order.
-per la equal, 
-% The subst mappings
-In order to represent variable assignation, we declare the two types subst\_fo
-and subst coressponding to the substitution mapping of unification variable
-for both the OL and the ML.
+Since our goal is to work with higher order variables, we need to compile the
+term received in entry into a more expressive version. This is possible by using
+a second type structure for the terms of the OL. This term definition is given
+in the second column of the \cref{code:lang-descr}. The main different here is
+that a unification variable (always identified with by an integer) has now a
+list of terms representing the scope of the variable. We symbolize the
+abstractions of the ML using the constructor \elpiIn{abs} of the type
+\elpiIn{assmt}. The constructor \elpiIn{val} is is used to contain terms of the
+object language. In this context we do not need to have an application node for
+the ML. 
 
 \def\eqfo{equal\_fo\xspace}
 \def\eqho{equal\_ho\xspace}
 \def\etabeta{$\eta\beta$\xspace}
 
 % We have two different equal functions
-Unification over terms is possible thanks to the equal predicate. There exist
+The equality relation over terms under a given substitution mapping is possible 
+thanks to the equal predicate. There exist
 two version of this predicate: \eqfo and \eqho. Their implementation is given in
-\cref{code:term-equal}. The first tests if two terms are equal in the object
-langauge, that is, given a substitution $\theta$, is it true that the two terms
-are equal? Note that no variable instanciation is done: unification is not
-performed by the \elpiIn{equal} predicate. Therefore, a unification variabile
-$i$ equal to another term $t$ if $t$ is a variable with same index $i$, or if
-$i$ is assigend to $t'$ in $\theta$ and \elpiIn{equal ~$t'$~ ~$t$~}. Moreover
-\eqfo, is able to verify if two terms are equal up to \etabeta. This equality
-relation is in fact the equality relation of the object langauge and therefore,
-since it accepts \etabeta equality, then \eqfo should take into account these
-reductions.
+\cref{code:term-equal}. 
 
-The \eqho predicate test if two terms are equal in the world of the meta
-languages. This eaquality function is not capable to understand the \etabeta
-reductions of the OL. This is mainly due to the fact that the meta language 
-understand \etabeta, but, since the nodes \elpiIn{app} and \elpiIn{lam} do
-not respectively represent the internal application and lambda abstraction
-of the language, the \etabeta reducation is not possible.
+The first tests if two terms are equal in the object language, that is, given a
+substitution $\theta$, is it true that the two terms are equal? Note that no
+variable instantiation is done: unification is not performed by the
+\elpiIn{equal} predicate. Therefore, a unification variable $i$ equals to
+another term $t$ if $t$ is a variable with same index $i$, or if $i$ is assigned
+to $t'$ in $\theta$ and \elpiIn{equal ~$t'$~ ~$t$~}. Moreover, since \eqfo 
+represents the equality of the OL, and since the OL accept term equality up to
+\etabeta, then \eqfo also quotient over these reductions.
 
-As we can
+The \eqho predicate tests if two terms are equal in the world of the meta
+languages. This equality function is not capable to understand the \etabeta
+reductions over terms of the object language. The ML sees a term of the type
+\elpiIn{tm} as atom on which only structural equality can be performed. It is
+only possible to dereference a variable if assigned.
 
+\subsection[Compilation: fo\_tm to tm]{Compilation: \elpiIn{fo_tm} $\to$ \elpiIn{tm}}
+
+- how we transform an fo\_tm in tm
+- the role of links
+
+\subsection{Unification in ML}
+
+\subsection{Term de-compilation}
 % Compile FO to HO
 
 % Assignement in HO should be decompiled
