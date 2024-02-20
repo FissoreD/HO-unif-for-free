@@ -421,7 +421,9 @@ decompl L LK HO FO FO1 :- std.do! [
 type merge-fo fo.subst -> fo.subst -> fo.subst -> fo.subst -> o.
 merge-fo _ [] [] [].
 merge-fo _ X [] X.
-merge-fo S [some X|XS] [some Y|YS] [some Y|R] :- std.spy(fo.equal S X Y), merge-fo S XS YS R. % we keep the old
+% TODO: returning [some Y|R] is incorrect, we should return [some Z|R] where
+%       Z is the unification of X and Y in the OL
+merge-fo S [some X|XS] [some Y|YS] [some Y|R] :- std.spy(fo.equal S X Y), merge-fo S XS YS R. 
 merge-fo S [none|XS] [some X|YS] [some X|R] :- merge-fo S XS YS R.
 merge-fo S [some X|XS] [none|YS] [some X|R] :- merge-fo S XS YS R.
 merge-fo S [none|XS] [none|YS] [none|R] :- merge-fo S XS YS R.
