@@ -2,7 +2,7 @@ OUTPUTDIR = .aux
 LATEX = pdflatex --shell-escape -output-directory=$(OUTPUTDIR) -synctex=1 -file-line-error -recorder 
 BIBER = biber --output-directory=$(OUTPUTDIR)
 
-main:
+main: clean
 	mkdir -p $(OUTPUTDIR) && \
 	${LATEX} main.tex -interaction=nonstopmode && \
 	echo "---------------- 1 --------------------" && \
@@ -14,3 +14,8 @@ main:
 	echo "---------------- 3 --------------------" && \
 	# read a && \
 	${LATEX} main.tex
+
+clean:
+	rm -rf $(OUTPUTDIR)
+
+.PHONY: main
