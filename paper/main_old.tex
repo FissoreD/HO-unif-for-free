@@ -321,9 +321,335 @@ akin to the unif we rule out.
 
 This other paper~\cite{10.1007/978-3-031-38499-8_25} should also be cited.
 
-\section{Lanuages description}
 
-\input{lang_descr.tex}
+\section{Introduction}
+
+related~\cite{felty93lics}
+
+% meta programming
+Meta programming is a powerful programming style that enable the incorporation
+of an object language (\ol) into a meta language (\ml). This control over the
+\ol lies at the core of meta-programming, facilitating a spectrum of operations
+on the object language. Some of the principal program manipulations range
+from interpretation to compilation.
+
+% theorem prover and tc
+Thanks to meta programming, it is feasible to express the equational theory of a
+theorem prover, as indicated in \cite{X, Y, Z}, with the \ml serving as the
+foundational infrastructure for this ecosystem. The process of proving a theorem, that is
+solving a query using the jargon of logic programming, consist in verifying if a
+proposition is a logical consequence of a given set of assumption. The benefit
+of using a prologish verification style is that the proof resolution can be
+automatized thanks to different search strategies, such as a depth first search
+with backtracking. One prominent manifestation of this automated proof process is
+type-class resolution\cite{wadler89, sozeau08}. Type classes serve as a typing
+structure to introduce ad-hoc polymorphism in functional languages.
+In \coq, the use of type classes has increasingly become a programming
+style. Numerous libraries, such as \stdpp and
+\iris are built upon this machinery.
+
+% tc motivates this paper
+The motivating example for this article is our investigation for an alternative
+type-class solver for \coq in \elpi\todo{citation to elpi} through the \coqelpi
+plugin. This plugin gives a deep embedding of \coq terms into \elpi syntax, but
+challenges arise whe attempting to solve type-class goals represented into their
+corresponding \elpi representation.
+
+% syntax of coq terms in elpi
+In particular, \coq terms are encoded with the following (very simplified)
+data type 
+
+% % \begin{elpicode}
+% %   kind term type.
+% %   type const gref -> term.
+% %   type app list term -> term.
+% %   type fun (term -> term) -> term.
+% %   type prod (term -> term) -> term.
+% % \end{elpicode}
+
+\noindent %
+% \begin{tabular}{c|c}
+  \begin{center}
+    \begin{minipage}[c]{0.8\linewidth}
+      \begin{elpicode}
+        kind term type.
+        type const gref -> term.
+        type app list term -> term.
+        type fun (term -> term) -> term.
+        type prod (term -> term) -> term.
+      \end{elpicode}
+    \end{minipage}
+  \end{center}
+
+  % &
+  % \begin{minipage}[c]{0.48\linewidth}
+  %   \begin{textcode}
+  %     Example:
+  %     a       ==> const `a
+  %     f a     ==> app[const `f, const `a]
+  %     ~$\lambda$~x => x ==> fun x\ x
+  %     ~$\forall$x, F x~ ==> prod x\ app[F, x]
+  %   \end{textcode}
+  % \end{minipage}
+% \end{tabular}
+ 
+   
+\noindent where a \coq constant is a gref\footnote{a gref is the opaque type for \coq
+identifier in \elpi} inside the \elpiIn{const} constructor, the \coq application
+is embedded in the \elpiIn{app} node, having the head and the arguments of the
+application expressed as a list of terms. Lambda abstractions are translated
+into the node \elpiIn{fun}, binding a term to another term. Finally forall
+quantification on the form \coqIn{~$\forall$~x,F} in the \ol are translated
+into \elpiIn{prod x\ F} within the \ml.
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% % Examples
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Let's take the following example from the \stdpp library:
+
+\noindent %
+\begin{tabular}{c|c}
+  \begin{minipage}[c]{0.50\linewidth}
+    \begin{coqcode}
+      Instance forall_dec A (P: A ~$\to$~ Prop):
+        Finite A ~$\to$~ 
+        ~$\forall$~x, Decision (P x) ~$\to$~
+        Decision (~$\forall$~x, P x).
+    \end{coqcode}
+  \end{minipage}
+  &
+  \begin{minipage}[c]{0.46\linewidth}
+    \begin{elpicode}
+      tc-Decision (prod x\ app[P, x]) :- 
+        % premise for Finite A
+        % premise for $\forall$x, Decision (P x)
+    \end{elpicode}
+  \end{minipage}
+\end{tabular}
+
+\noindent In our type-class solver, the \coqIn{forall_dec} instance 
+of \coq (on the left) is compiled into the \elpi rule (on the right). This 
+compilation, derived
+directly from the type of \coqIn{forall_dec}, conceals certain unification
+properties that are accepted by the unification algorithm of the \ol but 
+rejected by the unification algorithm of the \ml. The primary issue of this
+compilation lies in how the subterm \coqIn{~$\forall$~x, P x} is rendered in
+the \ml rule: \coqIn{P} is a higher-order variable and it
+sees the binder \coqIn{x}. However, the rule in the \ml interprets \elpiIn{P} as a 
+first-order variable, not seeing \elpiIn{x}. Additionally, this subterm is
+nested within the \elpiIn{app} constructor, introducing a structural challenge 
+to the unification process.
+
+% Esempio HO in PF
+\elpiInEq{tc-Decision (prod x\ const `nat)}%
+% Esempio FO align
+\elpiInEq{tc-Decision (prod x\ app[const `f, const `y, x])}
+
+\noindent The two examples above, already expressed in the syntax of the \ml,
+depict two terms that would successfully unify in the \ol, but encounter failure
+in the \ml. Specifically, the first query fails because the \ml is not able to unify \elpiIn{const
+`nat} with the term \elpiIn{app[P, x]} due to their distinct rigid heads. 
+
+The second goal refers to an approximation of the unification\todo{maybe there's
+something to cite} algorithm of the \ol. Spiegare l'approssimazione. E che
+attraverso il nostro framework è possibile "spiegare" l'algorithm di unification
+usato da ogni \ol nel ml desiderato. \todo{something to do here...}
+
+Based on the definition provided earlier, the terms \elpiIn{app[const `f, const
+`y, x]} and \elpiIn{app[P, x]} are expected to unify with substitution $\theta := \{P
+\mapsto \texttt{\elpiIn{app [const `f, const `y]}} \}$. However this unification
+is not possible in the \ml. This difficulty arises because, even though 
+the two terms share the same same head
+(the \elpiIn{app} node), their corresponding lists have different lengths.
+
+% Implementation using ol unification on each argument
+An immediate approach to address these unification problems\todo{mettere da qualche parte anche eta e beta}
+would be to adopt a lazy strategy and construct highly general rules for each instance in the database.
+This approach would result in a rule with the following structure:
+
+\begin{center}
+  \begin{minipage}[c]{0.46\linewidth}
+    \begin{elpicode}
+      tc-Decision X :- 
+        ol.unify X (prod x\ app[P, x]),
+        % premise for Finite A
+        % premise for $\forall$x, Decision (P x)
+    \end{elpicode}
+  \end{minipage}
+\end{center}
+
+\noindent In this second implementation, any query to \elpiIn{tc-Decision}
+will unify with the head of the rule above. The first
+premise ensures that the arguments unify with what we expect from the
+instance definition. Notably, in this case, the unification algorithm of
+the \ol is leveraged successfully addressing the previously mentioned unification problems.
+
+However, this approach has two main drawbacks. Firstly, the communication
+between the \ol and the \ml may potentially be slow due to the transformation of
+terms from one language to the other \todo{here I refer to constr->elpi and
+elpi->constr}. Secondly, a lack of % the ability to
+clauses discrimination based on the head of the clause is no longer
+possible. For example, any indexing
+algorithm designed to filter rules becomes ineffective in this scenario.
+
+% Contribution
+Finally 
+
+% TODO: parlare non so ancora dove dell'encoding shallow
+% dei terming ol in ml. Invece di usare i nodi app, prod etc... riusiamo
+% la stessa sintassi del linguaggio oggetto. Questo potrebbe funzionare 
+% bene nel caso di un ol con logica equazionale piu debole del ml, ma nel nostro
+% caso non si può applicare. inoltre vogliamo tenere un encoding più strutturato
+% per meglio analizzare i termini che ci arrivano nel ml.
+
+% TODO: related work: chiedere a enrico
+
+% nuova section dove si da la spec dei due linguaggi
+
+% TODO: spiegare le proprietà di unification
+  
+\section{intro}
+
+we are interested in using a meta language in LF style to write
+automation, proof search. In various works... they achieve that
+for a OL which is simpler than the LF, the equational theory is included
+in the one of the ML. This is exploited to piggy back on the unif
+of the ML.
+the peculiarity of our setting is that the OL has a richer equational
+theory of the ML, eg beta eta zeta bla bla. Moreover is HO logic, so
+quantifies over functions, so unif variable range on that too.
+We want to piggy back on the ML unif whenever the problem fits
+in its domain, eg pattern fragment.
+this is important for practical purposes.
+
+\subsection{in a nutshell}
+example, a rule for theorem
+$$
+forall f : A -> B, .. bla f .. -> prove (\forall x, f x)
+bla g
+$$
+\begin{elpicode}
+type app ...
+prove (forall x\ app F x) :- ... bla F ...
+\end{elpicode}
+on goal \mint{elpi}|prove (forall x\ app (app g x) x))|
+would fail since \mint{elpi}|F != app g x|.
+
+of course one wants to avoid
+\begin{elpicode}
+prove P S S'' :- ol-unif P S (forall x\ app "F" x) S', ... assignment "F" S' F, bla F S' ...
+\end{elpicode}
+
+Now, ML has HO variables
+\begin{elpicode}
+type lam ..
+prove (forall x\ F x) :- ... bla F ...
+\end{elpicode}
+this time  \mint{elpi}|F x != app (app g x) x| has solution
+\mint{elpi}|F = a\ app (app g x) x| but F is not a term so
+bla needs to be adapted,
+\begin{elpicode}
+prove (forall x\ F x) :- ... bla (lam F) ...
+bla g.
+\end{elpicode}
+this is too simplistic since \mint{elpi}|g != lam x\ app g x|
+
+\subsection{contribution}
+\begin{itemize}
+\item prover for HO OL in ML that uses unif
+\item eta beta
+\item test on stdpp and TLC
+\end{itemize}
+
+
+\section{Introduction}
+
+Meta programming \cite{hill1994} is a programming technique in which a program
+can treat an other program as its data. This latter program is called object
+language (\ol for short), while the former is called meta language (\ml for
+short). At the heart of meta programming lays the necessity of representing
+terms of the \ol in the \ml so that a wide set of program
+manipulations ranging from interpretation to compilation. 
+% Furthermore, since a
+% logic program is a set of clauses, the behavior of the \ol can be
+% modified \texttt{in corsa}\todo{translate in english} by simply adding new rules inside the database of the meta program.
+
+Meta programming has various application such as ... where thanks to meta
+programming it is possible to represent the logic of a language into a formal
+and formally verify the wanted properties. On the other hand, it is possible to
+embed a logic programming language into another so that some tasks can be
+delegated to \ml.
+
+The latter situation motivates our works, since we are implementing a type-class
+solver for the \ol \coq in the \ml \elpi (a variant \lambdaprolog). A type class
+\cite{wadler89, sozeau08} is a typing structure allowing to introduce ad hoc
+polymorphism in functional languages. We call <<instance>> an implementation of
+a type class. The resolution of a type-class problem can be viewed as a logic
+program where type classes represent predicates parametrized by their arguments
+and where instances are rules for those predicates. 
+
+
+% \section{Higher-order unification in \texorpdfstring{$L_\lambda$}{L\_lambda}}
+
+% Higher-order unification is a unification problem known to be undecidable. The
+% goal is to determine a most general unifier between two lambda terms, where at
+% least one of contain a sub-term $F$ applied to a non empty list of arguments
+% $a_1,\dots,a_n$ and $F$ is a variable. Some researches have been done in order to
+% identify some easy patterns where it is possible to solve this kind of
+% unification.
+
+% In \cite{miller1991}, D. Miller provides a unification algorithm (the function
+% $\eqtau$) for higher-order variable when they are in the so-called pattern
+% fragment. 
+
+esempietto in cui l'HO di elpi non risolve un problem HO del linguaggio
+oggetto FO. Equazione XX
+
+
+\begin{coqcode}
+(* HO unif *)
+Instance forall_dec A (P: A ~$\to$~ Prop) `{Finite A} `{~$\forall$~x, Decision (P x)} :
+  Decision (~$\forall$~x, P x).
+Instance and_dec P `{Decision P} Q `{Decision Q}:  Decision (P /\ Q).
+
+
+
+(* FO approx *)
+Instance decide_rel A B (R: A ~$\to$~ B ~$\to$~ Prop) `{RelDecision R} :
+  forall x y, Decision (R x y).
+Instance decide_eq_nat : RelDecision (@eq nat).
+Check _ : Decision (@eq nat 2 3)
+
+
+Instance _ : Inj add.
+             Inj F -> Inj (fun x => F (G x))
+
+             (fun x => add x)
+
+
+  Decision (~$\forall$~x, P x).
+
+\end{coqcode}
+
+\subsection{Related work and alternative approaches}
+
+LF e PL with binders (sempre HOAS).
+
+citare FO logic et similia fatti in LP, twelf. qui l'unification dell'OL
+e' facile. cercare se in twelf hanno fatto un po' di ordine superiore.
+
+isabelle fa la stessa cosa, OL e HOL, che matcha il sistema di tipi.
+qui l'unificazione e' la stessa, e fanno un ecoding shallow (senza app).
+
+Noi abbiamo un OL piu complicato, i tipi non matchano, serve un nodo app
+per due ragioni: meta programmazione e arieta variabile
+
+(equazioni XX senza app e lam) XXX IDEA XXX
+
+% \section{main idea: FO encoding - HO encoding}
+
+\section{Lanuages description}
 
 % Description of languages (OL and ML)
 
@@ -339,20 +665,18 @@ list of optional terms. If the cell $i$ is none, then the variable $i$ is not
 assigned. 
 
 % Why the fo prefix for fo_tm && Uvar in OL have no scope
-This encoding is called first order, since variables have no scope. To better
-understand this definition, let's take the subterm \coqIn{P x} from the instance
-forall\_dec. \coqIn{P} has type \coqIn{A ~$\to$~ Prop} and \coqIn{x} is a name
-bound to \coqIn{P}. The application of \coqIn{P} to \coqIn{x} at the OL level,
-put this name in the scope of the variable \coqIn{P}. However, at the meta
-level, the translation of \coqIn{P x} become \elpiIn{app[uv 1, x]}; \elpiIn{x}
-is not in the scope of \elpiIn{uv 1}.
+This encoding is called first order, since variables have no scope. If we take
+back the subterm \coqIn{~$\forall$~x,P x} from the forall\_dec instance, we have
+\coqIn{P: A ~$\to$~ Prop} and in that subterm, \coqIn{P} has in scope the
+variable \coqIn{x}. The translation of this term in the ML is 
+\elpiIn{all x\app[uv 1, x]}; \elpiIn{x} is not in the scope of \elpiIn{uv 1}.
 
 % Uvar in ML have scope
 To solve this problem, we give more expressiveness to the OL variables, by
 giving an alternative term encoding, where unification variables are the
 variables of the meta language. These variables have a scope and therefore
 can be of higher order.
-per la equal, 
+
 % The subst mappings
 In order to represent variable assignation, we declare the two types subst\_fo
 and subst coressponding to the substitution mapping of unification variable
@@ -360,7 +684,6 @@ for both the OL and the ML.
 
 \def\eqfo{equal\_fo\xspace}
 \def\eqho{equal\_ho\xspace}
-\def\etabeta{$\eta\beta$\xspace}
 
 % We have two different equal functions
 Unification over terms is possible thanks to the equal predicate. There exist
@@ -371,19 +694,9 @@ are equal? Note that no variable instanciation is done: unification is not
 performed by the \elpiIn{equal} predicate. Therefore, a unification variabile
 $i$ equal to another term $t$ if $t$ is a variable with same index $i$, or if
 $i$ is assigend to $t'$ in $\theta$ and \elpiIn{equal ~$t'$~ ~$t$~}. Moreover
-\eqfo, is able to verify if two terms are equal up to \etabeta. This equality
-relation is in fact the equality relation of the object langauge and therefore,
-since it accepts \etabeta equality, then \eqfo should take into account these
-reductions.
+\eqfo, is able to verify if two terms are equal up to $\eta\beta$.
 
-The \eqho predicate test if two terms are equal in the world of the meta
-languages. This eaquality function is not capable to understand the \etabeta
-reductions of the OL. This is mainly due to the fact that the meta language 
-understand \etabeta, but, since the nodes \elpiIn{app} and \elpiIn{lam} do
-not respectively represent the internal application and lambda abstraction
-of the language, the \etabeta reducation is not possible.
-
-As we can
+The \eqho predicate to test if two terms of the 
 
 % Compile FO to HO
 
@@ -394,6 +707,96 @@ As we can
 
 -------------------------------------------------------------------
 
+\begin{figure*}
+  \begin{tabular}{c}
+    \begin{minipage}{.35\textwidth}
+
+      \begin{elpicode}
+        kind fo_tm type.
+        type fo_app list fo_tm -> fo_tm.
+        type fo_lam (fo_tm -> fo_tm) -> fo_tm.
+        type fo_uv  nat -> fo_tm.
+        type fo_c string -> fo_tm.
+
+
+
+        
+        
+        typeabbrev subst list (option fo_tm).
+        type eq subst -> fo_tm -> fo_tm -> o.
+      \end{elpicode}
+    \end{minipage}
+    \begin{minipage}{.35\textwidth}
+      
+      \begin{elpicode}
+        kind tm type.
+        type app list tm -> tm.
+        type lam (tm -> tm) -> tm.
+        type uv  nat -> list tm -> tm.
+        type c string -> tm.
+        
+        kind assmt type.
+        type abs (tm -> assmt) -> assmt.
+        type val tm -> assmt.
+        
+        typeabbrev subst list (option assmt).
+        type eq subst -> tm -> tm -> o.
+      \end{elpicode}
+    \end{minipage}
+  \end{tabular}
+  
+  \caption{Language description}
+  \label{code:lang-descr}
+  \Description[lang-spec]{Language description}
+\end{figure*}
+
+% The two equals: equal of OL and ML
+% In ML we don't have eta beta -> only unification is allowed on variables
+
+
+\begin{figure*}
+  \begin{tabular}{c}
+    \begin{minipage}{.95\textwidth}
+      \begin{minted}{elpi}
+        % deref
+        equal S (uv N) T1 :- assigned? N S T, equal S T T1.
+        equal S T1 (uv N) :- assigned? N S T, equal S T1 T.
+        equal S (app [uv N|A]) T1 :- assigned? N S F, beta F A T, equal S T T1.
+        equal S T1 (app [uv N|A]) :- assigned? N S F, beta F A T, equal S T1 T.
+        % congruence
+        equal S (app L1) (app L2) :- forall2 (equal S) L1 L2.
+        equal S (lam F1) (lam F2) :- pi x\ equal S x x => equal S (F1 x) (F2 x).
+        equal _ (c X) (c X).
+        equal _ (uv N) (uv N).
+        % beta
+        equal S (app [lam X | TL]) T :- beta (lam X) TL T', equal S T' T.
+        equal S T (app [lam X | TL]) :- beta (lam X) TL T', equal S T T'.
+        % eta
+        equal S (lam F) T :- not (T = lam _),
+          pi x\ beta T [x] (T' x), equal S (lam F) (lam T').
+        equal S T (lam F) :- not (T = lam _),
+          pi x\ beta T [x] (T' x), equal S (lam T') (lam F).
+      \end{minted}
+    \end{minipage}
+    \\ \hline
+    \begin{minipage}{.95\textwidth}
+      \begin{minted}{elpi}
+        % deref
+        equal S (uv N A) T1 :- assigned? N S F, beta-abs F A T, equal S T T1.
+        equal S T1 (uv N A) :- assigned? N S F, beta-abs F A T, equal S T1 T.
+        % congruence
+        equal S (app L1) (app L2) :- forall2 (equal S) L1 L2.
+        equal S (lam F1) (lam F2) :- pi x\ equal S x x => equal S (F1 x) (F2 x).
+        equal _ (c X) (c X).
+        equal _ (uv N A1) (uv N A2) :- forall2 (equal S) A1 A2. %fixme in the code
+      \end{minted}
+    \end{minipage}
+  \end{tabular}
+  \caption{Term equality}
+  \label{code:term-equal}
+  \Description[term-equal]{Term equality}
+\end{figure*}
+
 
 
 
@@ -402,9 +805,9 @@ nel mondo fo
 
 this should hold in both encoding
 %abella
-\begin{elpicode}
+\begin{minted}{elpi}
 forall t1 t2 s, unif t1 t2 nil s -> equal s t1 t2
-\end{elpicode}
+\end{minted}
 we have unif only in the HO one, where equal is
 weaker (but unif is stronger)
 
@@ -439,8 +842,7 @@ qui P nel paper diventa uv N [x] per un certo N.
 \section{recovering HO}
 
 \begin{elpicode}
-  :index (1)
-  p (all x\ app[F,x]).
+  p (all x\ app[F,x]) = p (all x\ app[f,x,x])
 \end{elpicode}
 
 fallisce perche le liste non hanno la stessa lunghezza.
@@ -578,13 +980,13 @@ the dependent types of \coq into \elpi}.
 To simplify the understanding of our encoding, in the following code snippet
 we give the typing schema of the \ol terms represented into terms of the \ml. 
 
-\begin{elpicode}
+\begin{minted}{elpi}
   kind tm type.
   type app list tm -> tm.
   type lam (tm -> tm) -> tm.
   type c string -> tm.
   type uv  nat -> tm.
-\end{elpicode}
+\end{minted}
 
 In particular, the type \elpiIn{tm} is the type of the terms of the \ol. The
 function applications of the \ol are represented as a list of \elpiIn{tm}
@@ -645,13 +1047,13 @@ unification can be performed, we need a second and more powerful representation
 of the \ol terms so that variables have a scope. This specification is shown
 in the code snippet below.  
 
-\begin{elpicode}
+\begin{minted}{elpi}
   kind ml.tm type.
   type ml.app list ml.tm -> ml.tm.
   type ml.lam (ml.tm -> ml.tm) -> ml.tm.
   type ml.c string -> ml.tm.
   type ml.uv nat -> list ml.tm -> ml.tm.
-\end{elpicode}
+\end{minted}
 
 \noindent In particular a \elpiIn{ml.uv} term is meant as a unification variable
 of the meta-language. Therefore, the unification between 
@@ -899,7 +1301,7 @@ For instance, if
 instances for XXX. In the code snippet below, we give such implementation in
 \coq. 
 
-\begin{coqcode}
+\begin{minted}[escapeinside=&&]{coq}
   Inductive sig (A : Type) (P : A -> Prop) : Type := ...
 
   Class Decision (P : Prop) := decide : {P} + {not P}.
@@ -912,12 +1314,12 @@ instances for XXX. In the code snippet below, we give such implementation in
   Instance sig_eq_dec: forall (A : Type) (P : A -> Prop),
     (forall x, ProofIrrel (P x)) -> RelDecision (@eq A) ->
     RelDecision (@eq (sig A P)). Admitted.
-\end{coqcode}
+\end{minted}
 
 This small set of instances after a first phase of\todo{explain compilation of
 pred and inst?} compilation is translated into the following \elpi rules:
 
-\begin{elpicode}
+\begin{minted}{elpi}
   type tc-Decision term -> term -> o.
   type tc-RelDecision term -> term -> term -> term -> o.
   type tc-ProofIrrel term -> term -> o.
@@ -933,7 +1335,7 @@ pred and inst?} compilation is translated into the following \elpi rules:
     pi-decl c0 `x` A =>
       tc-ProofIrrel (app [P, c0]) (app [P1, c0]), 
     tc-RelDecision A A (app [`eq`, A]) P2.
-\end{elpicode}
+\end{minted}
 
 In this paper we do not really want to explain how the translation of the
 class/instances is performed in our \ml, we prefer to focus our attention on
