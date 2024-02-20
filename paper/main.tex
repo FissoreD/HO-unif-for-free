@@ -74,10 +74,12 @@
   Isabelle~\cite{10.1007/978-3-540-71067-7_7}
   which have been utilized to implement various formal systems such as
   First Order Logic~\cite{felty88cade},
-  Set Theory~\cite{10.1007/BF00881873} and
-  even Higher Order Logic~\cite{books/sp/NipkowPW02}.
+  Set Theory~\cite{10.1007/BF00881873},
+  Higher Order Logic~\cite{books/sp/NipkowPW02}, and even the Calculus of
+  Constuctions~\cite{felty93lics}.
   
-  The object logic we are interested in is Dependent Type Theory (DTT),
+  The object logic we are interested in is Coq's~\cite{Coq-refman}
+  Dependent Type Theory (DTT),
   for which we aim to implement a unification procedure \U{} using the ML
   Elpi~\cite{dunchev15lpar}, a dialect of $\lambda$Prolog.
   Elpi comes equipped with the equational theory \Ue{}, comprising
@@ -85,19 +87,21 @@
   and higher order unification restricted to the pattern
   fragment~\cite{miller92jsc}.
   We want \U{} to feature the same equational theory as \Ue{} but on the
-  object logic DTT.
-  Unfortunately the natural encoding of DTT in Elpi, which we refer to as \Fo{},
+  object logic DTT. Elpi also comes with an encoding for DTT that works well
+  for meta-programming~\cite{tassi:hal-01637063,tassi:hal-01897468,gregoire:hal-03800154,newtc}.
+  Unfortunately this encoding, which we refer to as \Fo{},
   ``underuses'' \Ue{} by restricting it to first-order unification problems only. 
   To address this issue, we propose a better-behaved encoding, \Ho{},
   demonstrate how to map unification problems in \Fo{}
   to related problems in \Ho{}, and illustrate
   how to map back the unifiers found by \Ue{}, effectively implementing
-   \U{} on top of \Ue{} for the natural encoding \Fo{}.
+   \U{} on top of \Ue{} for the encoding \Fo{}.
    
   We apply this technique to the implementation of a type-class~\cite{wadler89}
   solver for Coq~\cite{Coq-refman}.
-  Type-class solvers are proof search procedures based on back-chaining designated
-  lemmas, providing essential automation to widely used 
+  Type-class solvers are proof search procedures based on
+  unification that back-chain designated lemmas, providing essential
+  automation to widely used 
   Coq libraries such as Stdpp/Iris~\cite{JUNG_KREBBERS_JOURDAN_BIZJAK_BIRKEDAL_DREYER_2018}
   and TLC~\cite{10.1007/978-3-642-14052-5_15}. These two libraries
   constitute our test bed.
@@ -106,35 +110,6 @@
 \keywords{Logic Programming, Meta-Programming, Higher-Order Unification, Proof Automation}
 
 \maketitle
-
-% \begin{comment}
-% \begin{abstract}
-
-
-%   % Unification is a fundamental process behind goal resolution in logic
-%   % programming. Two terms $t_1$ and $t_2$ unify up to $\eta\beta$-reduction if it
-%   % exist a substitution $\theta$ such that $\theta t_1 = \theta t_2$. A
-%   % substitution is a mapping from unification variables to terms and it is the most
-%   % general, if forall substitution $\theta'$, such that $\theta' t_1 = \theta'
-%   % t_2$, it exists a substitution $\theta''$ such that $\theta' = \theta \theta''$.
-%   % Unification has been widely studied in the 90s [here the refs]. In this paper we
-%   % want to give a framework to reason about unification in meta-programming.
-%   Meta-programming \cite{hill1994} is a programming technique in which a
-%   program, referred to as meta language (\ml), can treat an other program, knwon
-%   as the object language (\ol) as its data. This programming approach is used in
-%   various works \cite{cite1, cite2...} to construct logical frameworks (\lf)
-%   capable of automating proof resolution. In many of the
-%   previously mentioned works, the equational theory expressed by the \ol is
-%   weaker than the \ml one. Consequently, no effort is required to adjust the
-%   unification algorithm of the \ml to represent the unification process of 
-%   the \ol: the former algorithm encompassing the second one. In our
-%   specific scenario, however, we work with an \ol with a richer equational
-%   theory than our \ml. This paper introduces a framework that enables the \ml to
-%   comprehend the unification of the \ol in the context of higher-order 
-%   unification. Practical applications of these findings will be provided.
-
-% \end{abstract}
-% \end{comment}
 
 \section{Introduction}
 
@@ -149,23 +124,27 @@ $\lambda$Prolog~\cite{miller_nadathur_2012} and
 Isabelle~\cite{10.1007/978-3-540-71067-7_7}
 which have been utilized to implement various formal systems such as
 First Order Logic~\cite{felty88cade},
-Set Theory~\cite{10.1007/BF00881873} and
-even Higher Order Logic~\cite{books/sp/NipkowPW02}.
+Set Theory~\cite{10.1007/BF00881873},
+Higher Order Logic~\cite{books/sp/NipkowPW02}, and even the Calculus of
+Constuctions~\cite{felty93lics}.
 
-The object logic we are interested in is Dependent Type Theory (DTT),
-and we want to code a type-class~\cite{wadler89}
-solver for Coq~\cite{Coq-refman}.
-Type-class solvers are proof search procedures based on back-chaining designated
-lemmas, providing essential automation to widely used 
-Coq libraries such as Stdpp/Iris~\cite{JUNG_KREBBERS_JOURDAN_BIZJAK_BIRKEDAL_DREYER_2018}
-and TLC~\cite{10.1007/978-3-642-14052-5_15}. These two libraries
-constitute our test bed.
+The object logic we are interested in is Coq's~\cite{Coq-refman}
+Dependent Type Theory (DTT), and we want to code a type-class~\cite{wadler89}
+solver for Coq~\cite{Coq-refman} using the Coq-Elpi~\cite{tassi:hal-01637063}
+meta programming framework.
+Type-class solvers are unification based proof search procedures
+that combine a set of designated lemmas in order to providing essential
+automation to widely used Coq libraries.
 
-For example, these 3 designated lemmas (Instances in the TC slang)
-are supposed to be animated, backward chained, by the TC solver.
-fin n is the type of numbers smaller than n, nfact the number of prime
-factors and Finite/Decision properties designated as classes what are
-automatically proved by Coq using the designated instances.
+As the running example we take the \coqIn{Decide} type class,
+from the Stdpp~\cite{JUNG_KREBBERS_JOURDAN_BIZJAK_BIRKEDAL_DREYER_2018}
+library. The class identifies predicates equipped with a decision procedure.
+The following three designated lemmas (called \coqIn{Instances} in the
+type-class jargon) state that: 1) the type \coqIn{fin n}, of natural numbers
+smaller than \coqIn{n} is finite; 2) the predicate \coqIn{nfact n nf},
+linking a natural number \coqIn{n} to its prime factors \coqIn{nf}, is decidable;
+3) the universal closure of a predicate has a decision procedure if the
+predicate has and if its domain is finite.
 
 \begin{coqcode}
 Instance fin_fin n : Finite (fin n).
@@ -174,57 +153,124 @@ Instance forall_dec A P : Finite A ~$\to$~
   ~$\forall$~x:A, Decision (P x) ~$\to$~ Decision (~$\forall$~x, P x).
 \end{coqcode}
 
-\noindent For example here
+\noindent Under this context the type-class solver is able to prove
+the the following statement automatically by back-chaining
+the three instances.
 
 \begin{coqcode}
   Check _ : Decision (forall y: fin 7, nfact y 3).
 \end{coqcode}
 
-A natural encoding (others are discussed in section xx)
-uses c for constants, all for forall, and then app and lam
-for the lambda calculus part.
+\noindent
+The encoding of DTT provided by Elpi, that we will discuss at length later in
+section~\ref{sec:encodings} and ~\ref{} features the following term constructors:
+
+\begin{elpicode}
+kind tm type.
+type lam tm -> (tm -> tm) -> tm. % lambda abstraction
+type app list tm -> tm.          % n-ary application
+type all tm -> (tm -> tm) -> tm. % forall quantifier
+type c string -> tm.             % constants
+\end{elpicode}
+
+\noindent
+\marginpar{TODO: explain HOAS}
+Following this term encoding the three instances are represented by the
+following rules:
 
 \begin{elpicode}
 finite (app[c"fin", N]).
-decision (app [c"nfact",N,NF]).
-decision (all A x\ app[P, x]) :- 
-  (pi x\ decision (app[P, x])), finite A.
+decision (app [c"nfact", N, NF]).
+decision (all A x\ app[P, x]) :- finite A,
+  pi x\ decision (app[P, x]).
 \end{elpicode}
 
-Unfortunately this does not work since the last rule cannt
-backchain on the encoded goal
+\noindent
+\marginpar{TODO: explain pi, cons}
+Unfortunately this direct translation of the instances considers the
+predicate \coqIn{P} as a first order term. If we try to backchain the
+third rule on the encoding of the goal above:
   
 \begin{elpicode}
-decision (all (app[c"fin",c"7"]) y\ app[c"nfact", y, c"3"]).
+decision (all (app[c"fin", c"7"]) y\
+  app[c"nfact", y, c"3"]).
 \end{elpicode}
 
-indeed this unif problem has no solution
+\noindent
+we fail because of this ``higher order'' unification problem (in DTT)
+is phrased as a first order unification problem in the meta language.
 
 \begin{elpicode}
-app[c"nfact", y, c"3"] = app[P, y].
+app[c"nfact", y, c"3"] = app[P, y]
 \end{elpicode}
 
-In this paper we study a more sophisticated encoding
+\noindent
+In this paper we study a more sophisticated encoding of Coq terms allowing
+us to rephrase the problematic rule as follows:
 
 \begin{elpicode}
-decision (all A x\ Pm x) :- link Pm A P, 
-  (pi x\ decision (app[P, x])), finite A.
+decision (all A x\ Pm x) :- link Pm A P, finite A,
+  pi x\ decision (app[P, x]).
 \end{elpicode}
 
-This time Pm is HO for elpi, an the extra link is there to explain how to
-get P out of it.
+\noindent
+This time \elpiIn{Pm} is an higher order unification variable (of type
+\elpiIn{tm -> tm}). The resulting unification problem is now:
 
 \begin{elpicode}
 app[c"nfact", y, c"3"] = Pm y
-Pm = y\app[c"nfact", y, c"3"]
-P = lam (app[c"fin",c"7"]) a\ app[c"nfact", a, c"3"]
 \end{elpicode}
 
-We also see that this is not trivial, because in the rec call
-we have now a beta redex.
+\noindent
+That admits one solution:
 
+\begin{elpicode}
+Pm = y\ app[c"nfact", y, c"3"]
+A = app[c"fin",c"7"]
+\end{elpicode}
+  
+\noindent
+Elpi succeeds in the application of the new rule and then runs
+the premise \elpiIn{link Pm A P} that is in charge of bringing the
+assignment back to the domain of Coq terms (the type \elpiIn{tm}):
 
-\subsection{Alternative encodings} %%%%%%%%%%%%%%%%%%%%%%
+\begin{elpicode}
+P = lam A a\ app[c"nfact", a, c"3"]
+\end{elpicode}
+
+\noindent
+This simple example is sufficient to show that the encoding we seek
+is not trivial. Indeed the solution for \elpiIn{P} generates a
+(Coq) $\beta$-redex in the second premise (under the \elpiIn{pi x}):
+
+\begin{elpicode}
+decision (app[lam A (a\ app[c"nfact", a, c"3"]), x])
+\end{elpicode}
+
+\noindent
+In turn the redex prevents the second rule to backchain properly since
+the following unification problem has no solution:
+
+\begin{elpicode}
+app[lam A (a\ app[c"nfact", a, c"3"]), x] =
+app[c"nfact", N, NF]
+\end{elpicode}
+
+\noindent
+This time the root cause is that the unification procedure of \Ue{} of the
+meta language is not aware of the equational theory of the object logic \U{},
+even if both theories include $\eta\beta$-conversion and admit most general
+unifiers for problems in the pattern fragment~\cite{miller92jsc}.
+
+In this paper we discuss alternative encodings of Coq in
+Elpi~\ref{sec:encodings}, then we identify a minimal language \Fo{}
+in which the problems sketched here can be fully described.
+We then detail an encoding \elpiIn{comp} from \Fo{} to \Ho{} (the language of
+the meta language) and a decoding \elpiIn{decomp} to relate the unifiers
+bla bla..
+
+\section{Alternative encodings} %%%%%%%%%%%%%%%%%%%%%%
+\label{sec:encodings}
 
 Our choice of encoding of DTT may look weird to the reader familiar with
 LF, since used a shallow encoding of classes and binders, but not of the
