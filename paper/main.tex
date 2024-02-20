@@ -37,10 +37,10 @@
 \def\ho{\acronym{ho}} % higher order
 \def\Forall{$\forall$}
 
-\newcommand{\U}{\ensuremath{=_o}}
-\newcommand{\Ue}{\ensuremath{=_\lambda}}
-\newcommand{\Fo}{\ensuremath{\mathcal{F}_{\!o}}}
-\newcommand{\Ho}{\ensuremath{\mathcal{H}_o}}
+\newcommand{\U}{\ensuremath{=_o}\xspace}
+\newcommand{\Ue}{\ensuremath{=_\lambda}\xspace}
+\newcommand{\Fo}{\ensuremath{\mathcal{F}_{\!o}\xspace}}
+\newcommand{\Ho}{\ensuremath{\mathcal{H}_o}\xspace}
 
 \newcommand*{\eqtau}{\ensuremath{\mathrel{\overset{\mathrm{\tau}}{=}}}}
 
@@ -80,22 +80,22 @@
   
   The object logic we are interested in is Coq's~\cite{Coq-refman}
   Dependent Type Theory (DTT),
-  for which we aim to implement a unification procedure \U{} using the ML
+  for which we aim to implement a unification procedure \U using the ML
   Elpi~\cite{dunchev15lpar}, a dialect of $\lambda$Prolog.
-  Elpi comes equipped with the equational theory \Ue{}, comprising
+  Elpi comes equipped with the equational theory \Ue, comprising
   $\eta\beta$ equivalence
   and higher order unification restricted to the pattern
   fragment~\cite{miller92jsc}.
-  We want \U{} to feature the same equational theory as \Ue{} but on the
+  We want \U to feature the same equational theory as \Ue but on the
   object logic DTT. Elpi also comes with an encoding for DTT that works well
   for meta-programming~\cite{tassi:hal-01637063,tassi:hal-01897468,gregoire:hal-03800154,newtc}.
-  Unfortunately this encoding, which we refer to as \Fo{},
-  ``underuses'' \Ue{} by restricting it to first-order unification problems only. 
-  To address this issue, we propose a better-behaved encoding, \Ho{},
-  demonstrate how to map unification problems in \Fo{}
-  to related problems in \Ho{}, and illustrate
-  how to map back the unifiers found by \Ue{}, effectively implementing
-   \U{} on top of \Ue{} for the encoding \Fo{}.
+  Unfortunately this encoding, which we refer to as \Fo,
+  ``underuses'' \Ue by restricting it to first-order unification problems only. 
+  To address this issue, we propose a better-behaved encoding, \Ho,
+  demonstrate how to map unification problems in \Fo
+  to related problems in \Ho, and illustrate
+  how to map back the unifiers found by \Ue, effectively implementing
+   \U on top of \Ue for the encoding \Fo.
    
   We apply this technique to the implementation of a type-class~\cite{wadler89}
   solver for Coq~\cite{Coq-refman}.
@@ -163,7 +163,7 @@ the three instances.
 
 \noindent
 The encoding of DTT provided by Elpi, that we will discuss at length later in
-section~\ref{sec:encodings} and ~\ref{} features the following term constructors:
+\cref{sec:encodings, ...} features the following term constructors:
 
 \begin{elpicode}
 kind tm type.
@@ -257,15 +257,15 @@ app[c"nfact", N, NF]
 \end{elpicode}
 
 \noindent
-This time the root cause is that the unification procedure of \Ue{} of the
-meta language is not aware of the equational theory of the object logic \U{},
+This time the root cause is that the unification procedure of \Ue of the
+meta language is not aware of the equational theory of the object logic \U,
 even if both theories include $\eta\beta$-conversion and admit most general
 unifiers for problems in the pattern fragment~\cite{miller92jsc}.
 
 In this paper we discuss alternative encodings of Coq in
-Elpi~\ref{sec:encodings}, then we identify a minimal language \Fo{}
+Elpi~\ref{sec:encodings}, then we identify a minimal language \Fo
 in which the problems sketched here can be fully described.
-We then detail an encoding \elpiIn{comp} from \Fo{} to \Ho{} (the language of
+We then detail an encoding \elpiIn{comp} from \Fo to \Ho (the language of
 the meta language) and a decoding \elpiIn{decomp} to relate the unifiers
 bla bla..
 
@@ -343,7 +343,7 @@ the variable $i$ is not assigned.
 
 % Why the fo prefix for fo_tm && Uvar in OL have no scope
 Because of our translation of the terms of the object language into the meta
-language we have sketched in section one, a object language term has no scope.
+language we have sketched in section 1, a object language term has no scope.
 An example of this claim can be given by analyzing deeply the subterm \coqIn{P x} from
 the instance forall\_dec. \coqIn{P} is an higher order variables
 with type \coqIn{A ~$\to$~ Prop} and
@@ -386,6 +386,7 @@ languages. This equality function is not capable to understand the \etabeta
 reductions over terms of the object language. The ML sees a term of the type
 \elpiIn{tm} as atom on which only structural equality can be performed. It is
 only possible to dereference a variable if assigned.
+\marginpar{TODO: say HO is same as ML}
 
 \subsection[Compilation: fo\_tm to tm]{Compilation: \elpiIn{fo_tm} $\to$ \elpiIn{tm}}
 
@@ -393,6 +394,8 @@ only possible to dereference a variable if assigned.
 - the role of links
 
 \subsection{Unification in ML}
+
+- we accept HO unif with PF
 
 \subsection{Term de-compilation}
 % Compile FO to HO
@@ -404,34 +407,8 @@ only possible to dereference a variable if assigned.
 
 -------------------------------------------------------------------
 
-
-
-
-le due sintassi, XX tradotto, unif passa, bisogna riportare la soluzione
-nel mondo fo
-
-this should hold in both encoding
-%abella
-\begin{elpicode}
-forall t1 t2 s, unif t1 t2 nil s -> equal s t1 t2
-\end{elpicode}
-we have unif only in the HO one, where equal is
-weaker (but unif is stronger)
-
-segnatura di decomp e unif, equalfo (fa beta, eta, deref)
-
 \noindent
 
-equal fo is congruence, deref, beta, eta (for the OL).
-equal ho is congruence, deref (for the OL).
-unif (fo or ho) should cover pattern fragment, i.e. well behaved unif.
-
-ho, and unif ho, is the LF/ML language/unif. here we describe fo and ho
-with a deeply embedded syntax, but the idea is that uv can be mapped to
-an actual unif variable.
-
-of course we could write a unif for the ho that had beta and eta,
-but if we use the one of the LF it can't have eta beta of the OL baked in.
 
 \subsection{implementation}
 
@@ -439,56 +416,6 @@ l'HO encoding e' esattamente lambda Prolog/elpi, il compilatore
 in pratica potrebbe essere scritto in un meta language, qui lo si presenta in
 elpi stesso. HO e FO in questo paper sono deep embedded in elpi per parlarne,
 ma in pratica il nostro solever, prendere XX, scrivere la clausola compilata.
-
-\begin{elpicode}
-prove (app[c "decidable", all x\ P x]) Proof :- ho-link P P', prove (... P' ...).
-\end{elpicode}
-
-qui P nel paper diventa uv N [x] per un certo N.
-
-\section{recovering HO}
-
-\begin{elpicode}
-  :index (1)
-  p (all x\ app[F,x]).
-\end{elpicode}
-
-fallisce perche le liste non hanno la stessa lunghezza.
-
-
-compile
-
-\begin{elpicode}
-  p (all x\ F' x) = p (all x\ app[f,x,x]) , link F F'.
-  F' = x\ app[f,x,x]
-  F = lam a\ app[f,a,a].
-\end{elpicode}
-
-\begin{elpicode}
-  type comp fo.tm -> ho.tm -> list link -> list link -> ho.subst -> ho.subst -> o.
-  comp (fo.c X)   (ho.c X) L L S S.
-  comp (fo.app [fo.uv N|Argsss]) TT L L3 S S3 :- %!,
-    % TODO: here split-pf to enter dist. names into N
-    % split-pf Argsss [] PF NPF,
-    split-pf Argsss [] PF [], NPF = [], % TODO: compile to (uv N L) + link-fo-app
-    print "In PF" PF NPF, 
-    if (NPF = []) (TT = ho.uv M PF1) (TT = ho.app [ho.uv M PF1 | NPF1]),
-    % pattern-fragment Args,
-    fold4 comp PF PF1 L L1 S S1,
-    fold4 comp NPF NPF1 L1 L2 S1 S2,
-    ho.new S2 M S3,
-    % TODO: maybe len can be given by split-pf
-    len PF Len,
-    L3 = [link N M Len| L2].
-  % TODO: if don't want to modify unif, we compile `fo.app [fo.c f, c0, c0, ho.c a]` into 
-  % `ho.app [ho.app[f, c0, c0], ho.c a]
-  comp (fo.app A) (ho.app A1) L L1 S S1 :- fold4 comp A A1 L L1 S S1.
-  comp (fo.lam F) (ho.lam F1) L L1 S S1 :- 
-    (pi x y\ (pi A S\ comp x y A A S S) => comp (F x) (F1 y) L L1 S S1).
-  comp (fo.uv N) (ho.uv M []) L [link N M z|L] S S1 :- ho.new S M S1.
-
-  decmop...
-\end{elpicode}
 
 
 \section{recovering eta}
