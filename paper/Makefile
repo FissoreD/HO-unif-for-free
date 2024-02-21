@@ -1,5 +1,5 @@
 OUTPUTDIR = .aux
-LATEX = pdflatex --shell-escape -output-directory=$(OUTPUTDIR) -synctex=1 -file-line-error -recorder -interaction=nonstopmode
+LATEX = pdflatex --shell-escape -output-directory=$(OUTPUTDIR) -synctex=1 -file-line-error -recorder
 BIBER = biber --output-directory=$(OUTPUTDIR)
 
 main: clean

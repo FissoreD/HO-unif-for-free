@@ -38,7 +38,9 @@
 \def\Forall{$\forall$}
 
 \newcommand{\U}{\ensuremath{=_o}\xspace}
+\newcommand{\nU}{\ensuremath{\neq_o}\xspace}
 \newcommand{\Ue}{\ensuremath{=_\lambda}\xspace}
+\newcommand{\nUe}{\ensuremath{\neq_\lambda}\xspace}
 \newcommand{\Fo}{\ensuremath{\mathcal{F}_{\!o}\xspace}}
 \newcommand{\Ho}{\ensuremath{\mathcal{H}_o}\xspace}
 
@@ -148,92 +150,102 @@ linking a natural number \coqIn{n} to its prime factors \coqIn{nf}, is decidable
 predicate has and if its domain is finite.
 
 \begin{coqcode}
-Instance fin_fin n : Finite (fin n).
-Instance nfact_dec n nf : Decision (nfact n nf).
-Instance forall_dec A P : Finite A ~$\to$~ 
-  ~$\forall$~x:A, Decision (P x) ~$\to$~ Decision (~$\forall$~x, P x).
+Instance fin_fin n : Finite (fin n).             (* r1 *)
+Instance nfact_dec n nf : Decision (nfact n nf). (* r2 *)
+Instance forall_dec A P : Finite A ~$\to$~            (* r3 *)
+  ~$\forall$~x:A, Decision (P x) ~$\to$~ Decision (~$\forall$~x:A, P x).
 \end{coqcode}
 
-\noindent Under this context the type-class solver is able to prove
-the the following statement automatically by back-chaining
-the three instances.
+\noindent Under this context of instances a type-class solver is able to prove
+the the following statement automatically by back-chaining.
 
 \begin{coqcode}
-  Check _ : Decision (forall y: fin 7, nfact y 3).
+  Check _ : Decision (forall y: fin 7, nfact y 3).  (* g *)
 \end{coqcode}
 
 \noindent
 The encoding of DTT provided by Elpi, that we will discuss at length later in
-\cref{sec:encodings,sec:lang-spec}, features the following term constructors:
+section~\ref{sec:encodings,sec:lang-spec} and ~\ref{}, is an Higher Order Abstract
+Syntax (HOAS) datatype \elpiIn{tm} featuring (among others) the following
+constructors:
 
 \begin{elpicode}
-kind tm type.
-type lam tm -> (tm -> tm) -> tm. % lambda abstraction
-type app list tm -> tm.          % n-ary application
-type all tm -> (tm -> tm) -> tm. % forall quantifier
-type c string -> tm.             % constants
+type lam  tm -> (tm -> tm) -> tm.     % lambda abstraction
+type app  list tm -> tm.              % n-ary application
+type all  tm -> (tm -> tm) -> tm.     % forall quantifier
+type c    string -> tm.               % constants
 \end{elpicode}
 
 \noindent
-\marginpar{TODO: explain HOAS}
-Following this term encoding the three instances are represented by the
-following rules:
+Following standard $\lambda$Prolog~\cite{miller_nadathur_2012}
+the concrete syntax to abstract, at the meta level, an expression
+\elpiIn{e} over a variable \elpiIn{x}
+is \elpiIn{x\ e}, and square brackets denote a list of
+terms separated by comma. As an example we show the encoding of the Coq term
+``$\forall y:\mathrm{t}.\mathrm{nfact}~ y~ 3$'':
 
 \begin{elpicode}
-finite (app[c"fin", N]).
-decision (app [c"nfact", N, NF]).
-decision (all A x\ app[P, x]) :- finite A,
-  pi x\ decision (app[P, x]).
+all (c"t") y\ app[c"nfact", y, c"3"]
 \end{elpicode}
 
 \noindent
-\marginpar{TODO: explain pi, cons}
-Unfortunately this direct translation of the instances considers the
-predicate \coqIn{P} as a first order term. If we try to backchain the
-third rule on the encoding of the goal above:
+We now illustrate the encoding of the three instances above as higher order
+logic programming rules: capital letters denote rule
+parameters; \elpiIn{:-} separates the rule's head from the premises;
+\elpiIn{pi w\ p} introduces a fresh nominal constant \elpiIn{w}
+for the premise \elpiIn{p}.
+
+\begin{elpicode}
+finite (app[c"fin", N]).                             % r1
+decision (app [c"nfact", N, NF]).                    % r2
+decision (all A x\ app[P, x]) :- finite A,           % r3
+  pi w\ decision (app[P, w]).
+\end{elpicode}
+
+\noindent
+Unfortunately this direct translation of rule (r3) uses the
+predicate \coqIn{P} essentially as a first order term for the meta
+language (its type is \elpiIn{tm}).
+If we try to backchain the rule (r3) on the encoding of the goal (g) above:
   
 \begin{elpicode}
-decision (all (app[c"fin", c"7"]) y\
+decision (all (app[c"fin", c"7"]) y\                 % g
   app[c"nfact", y, c"3"]).
 \end{elpicode}
 
 \noindent
-we fail because of this ``higher order'' unification problem (in DTT)
-is phrased as a first order unification problem in the meta language.
+we fail because of this ``higher order'' unification problem (for DTT)
+is phrased as a first order unification problem in the meta language:
+the two lists of terms have different lengths!
 
 \begin{elpicode}
-app[c"nfact", y, c"3"] = app[P, y]
+app[c"nfact", y, c"3"] = app[P, y]                   % p
 \end{elpicode}
 
 \noindent
 In this paper we study a more sophisticated encoding of Coq terms allowing
-us to rephrase the problematic rule as follows:
+us to rephrase the problematic rule (r3) as follows:
 
 \begin{elpicode}
-decision (all A x\ Pm x) :- link Pm A P, finite A,
+decision (all A x\ Pm x) :- link Pm A P, finite A,   % r3a
   pi x\ decision (app[P, x]).
 \end{elpicode}
 
 \noindent
-This time \elpiIn{Pm} is an higher order unification variable (of type
-\elpiIn{tm -> tm}). The resulting unification problem is now:
+Since \elpiIn{Pm} is an higher order unification variable with \elpiIn{x}
+in its scope, the unification problem (pa) admits one solution:
 
 \begin{elpicode}
-app[c"nfact", y, c"3"] = Pm y
-\end{elpicode}
-
-\noindent
-That admits one solution:
-
-\begin{elpicode}
-Pm = y\ app[c"nfact", y, c"3"]
-A = app[c"fin",c"7"]
+app[c"nfact", y, c"3"] = Pm y                       % pa
+Pm = x\ app[c"nfact", x, c"3"]       % assignment for Pm
+A = app[c"fin", c"7"]                % assignment for A
 \end{elpicode}
   
 \noindent
-Elpi succeeds in the application of the new rule and then runs
+After unifying the head of rule (r3a) with the goal Elpi runs
 the premise \elpiIn{link Pm A P} that is in charge of bringing the
-assignment back to the domain of Coq terms (the type \elpiIn{tm}):
+assignment for \elpiIn{Pm} (that has type \elpiIn{tm -> tm})
+back to the domain of Coq terms (the type \elpiIn{tm}):
 
 \begin{elpicode}
 P = lam A a\ app[c"nfact", a, c"3"]
@@ -241,15 +253,16 @@ P = lam A a\ app[c"nfact", a, c"3"]
 
 \noindent
 This simple example is sufficient to show that the encoding we seek
-is not trivial. Indeed the solution for \elpiIn{P} generates a
-(Coq) $\beta$-redex in the second premise (under the \elpiIn{pi x}):
+is not trivial, since the solution for \elpiIn{P} above generates a
+(Coq) $\beta$-redex in the second premise (the predicate
+under the \elpiIn{pi w\ }\hspace{-0.8em}):
 
 \begin{elpicode}
-decision (app[lam A (a\ app[c"nfact", a, c"3"]), x])
+decision (app[lam A (a\ app[c"nfact", a, c"3"]), w])
 \end{elpicode}
 
 \noindent
-In turn the redex prevents the second rule to backchain properly since
+In turn this redex prevents the rule (r2) to backchain properly since
 the following unification problem has no solution:
 
 \begin{elpicode}
@@ -258,20 +271,93 @@ app[c"nfact", N, NF]
 \end{elpicode}
 
 \noindent
-This time the root cause is that the unification procedure of \Ue of the
-meta language is not aware of the equational theory of the object logic \U,
-even if both theories include $\eta\beta$-conversion and admit most general
+The root cause of the problems we face is that the unification procedure
+\Ue of the meta language is not aware of the equational theory of the object
+logic \U, even if both theories include $\eta\beta$-conversion and admit most general
 unifiers for problems in the pattern fragment~\cite{miller92jsc}.
 
+\paragraph{Contributions}
 In this paper we discuss alternative encodings of Coq in
 Elpi~\ref{sec:encodings}, then we identify a minimal language \Fo
 in which the problems sketched here can be fully described.
 We then detail an encoding \elpiIn{comp} from \Fo to \Ho (the language of
 the meta language) and a decoding \elpiIn{decomp} to relate the unifiers
-bla bla..
+bla bla.. TODO citare Teyjus.
 
-\section{Alternative encodings} %%%%%%%%%%%%%%%%%%%%%%
+\section{Problem statement and alternative encodings} %%%%%%%%%%%%%%%%%%%%%%
 \label{sec:encodings}
+
+The equational theory of Coq's Dependent Type Theory is very rich. In
+addition to the usual $\eta\beta$-equivalence for functions, terms (hence types)
+are compared up to definition unfolding and fixpoint unrolling. Still,
+for efficiency and predictability reasons, most form of automatic proof search
+employ a unification procedure that captures a simpler one,
+just $\eta\beta$, and that solves higher order problems
+restricted to the pattern fragment $\mathcal{L}_\lambda$~\cite{miller92jsc}.
+We call this unification procedure \U{}.
+
+The equational theory of the meta language Elpi that we want to use to
+implement a form of proof automation is strikingly similar, since it
+it comprises $\eta\beta$ (for the meta language functions), and the
+unification procedure \Ue{} solves higher order problems in
+$\mathcal{L}_\lambda$.
+
+In spite of the similarity the link between \Ue{} and \U{} is not trivial,
+since the abstraction and application term constructors
+the two unification procedure deal with are different. For example
+
+\begin{tabular}{lcl}
+\elpiIn{x\ f x} & \Ue{} & \elpiIn{f}\\
+\elpiIn{lam A x\ app[c"f", x]} & \U{} & \elpiIn{c"f"}\\
+\elpiIn{lam A x\ app[c"f", x]} & \nUe{} & \elpiIn{c"f"} \\
+\elpiIn{P x} & \Ue{} & \elpiIn{x}\\
+\elpiIn{app[P, x]} & \U{} & \elpiIn{x}\\
+\elpiIn{app[P, x]} & \nUe{} & \elpiIn{x}\\
+\end{tabular}
+
+\noindent
+One could ignore this similarity, and ``just'' describe the object language
+unification procedure in the meta language, that is crafting a \elpiIn{unif}
+predicate to be used as follows in rule (r3):
+
+\begin{elpicode}
+decision X :- unif X (all A x\ app[P, x]), finite A,
+  pi x\ decision (app[P, x]).
+\end{elpicode}
+
+\noindent
+This choice would underuse the logic programming engine provided by
+the metalanguage since by removing any datum from the head of rules
+indexing degenerates. Moreover the unification procedure built in the
+meta language is likely to be faster than one implemented in it,
+especially if the meta language is interpreted as Elpi is. 
+  
+To state precisely the problem we solve we need a \Fo{} representation
+of DTT terms, a \Ho{} one. Then for any problem $s_1 \U{} s_2$ for
+$s_i$ in \Fo{}, we get a  $t_1 \Ue{} t_2$ for $s_i$ in \Fo{} and
+a $L = \bigwedge_i \mathrm{link}~ s_i~ t_i $ such that:
+
+\begin{align*}
+s_1 \U{} s_2 & \Leftrightarrow  t_1 \Ue{} t_2 \land L \\
+s_1 \nU{} s_2 & \Rightarrow t_1 \nUe{} t_2 \lor \lnot L
+\end{align*}
+
+where $\mathrm{comp}~t_i = (s_i, \mathrm{link}~ s_i~ t_i)$ and 
+link is a predicate allowed to use \U{} on ground terms (hence equal, not unif)
+
+These properties allow us to simulate a unification based
+backward search on DTT by using \Ue{}. In particular
+any unification that would work in DTT will work,
+and whenever a unification in DTT would have failed
+either the corresponding \Ue{} or the link fails.
+
+This grants that the trace of the logic program
+performing the search not only gives the same result, but
+also takes the same paths, that is it fails as early as possible.
+
+
+\subsection{Alternative encodings and related work}
+
 
 Our choice of encoding of DTT may look weird to the reader familiar with
 LF, since used a shallow encoding of classes and binders, but not of the
@@ -300,18 +386,6 @@ moreover we use the same encoding for meta programming, or even just to provide
 hand written rules. We want to access the syntax of OL, so our embedding cannot
 be that shallow. We want to keep it shallow for the binders, but we need
 the c, app and lam nodes. % all ?
-
-Another alternative
-
-\begin{elpicode}
-decision X :- unif X (all A x\ app[P, x]), 
-  (pi x\ decision (app[P, x])), finite A.
-\end{elpicode}
-
-gives up all half of what the ML gives us. Moreover even if unif here embodies
-the eq theory of DTT which is much stronger than the one of the ML, we don't need 
-it. According to our experience eta beta suffice, but HO is needed.
-
 
 
 Note that this~\cite{felty93lics} is related and make the
