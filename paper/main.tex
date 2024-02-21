@@ -112,6 +112,7 @@
 \maketitle
 
 \section{Introduction}
+\label{sec:intro}
 
 Specifying and implementing a logic from scratch requires significant effort.
 Logical Frameworks and Higher Order Logic Programming Languages provide
@@ -331,37 +332,39 @@ This other paper~\cite{10.1007/978-3-031-38499-8_25} should also be cited.
 \def\eqfo{eq\_fo\xspace}
 
 In order to reason about unification of the terms of an objet language within a
-meta language, we start by formally describing the two languages. We use
-meta-programming to accomplish this result. In \cref{code:lang-descr}, we
-provide on the left the typing structure of the terms of the object language
-together with the signature of the \eqfo function.
+meta language, we start by formally describing the two languages. Employing
+meta-programming for this purpose, \cref{code:lang-descr} presents, on the left,
+the typing structure of object language terms along with the signature of the
+\eqfo function.
 
 In this encoding, the fo\_tm type stands for the first order representation of
 the object language terms. We model unification variables as integers
-corresponding to memory addresses. This memory is represented with the subst
-type abbreviation which is list of optional terms. If the cell $i$ is none, then
-the variable $i$ is not assigned. 
+corresponding to memory addresses. The memory is represented as list of optional
+terms (the subst\_fo type abbreviation). If the cell $i$ is none, then the
+variable $i$ is not instantiated, otherwise it has already been assigned to some
+value. 
 
 % Why the fo prefix for fo_tm && Uvar in OL have no scope
 Because of our translation of the terms of the object language into the meta
-language we have sketched in section 1, a object language term has no scope.
-An example of this claim can be given by analyzing deeply the subterm \coqIn{P x} from
-the instance forall\_dec. \coqIn{P} is an higher order variables
+language outlined in \cref{sec:intro}, the variables of the object language have 
+no scope.
+An illustration of this observation can be found by analyzing deeply the subterm \coqIn{P x} from
+the instance forall\_dec. Here, \coqIn{P} is an higher order variables
 with type \coqIn{A ~$\to$~ Prop} and
 \coqIn{x} is a name bound to \coqIn{P}.
-However, at the meta level, the translation of \coqIn{P x} become \elpiIn{app[uv
-1, x]}, that is, \elpiIn{uv 1} cannot see \elpiIn{x}.
+However, at the meta level, the translation of \coqIn{P x} becomes \elpiIn{app[uv
+1, x]}, that is, \elpiIn{uv 1} cannot reference \elpiIn{x}.
 
-Since our goal is to work with higher order variables, we need to compile the
-term received in entry into a more expressive version. This is possible by using
-a second type structure for the terms of the OL. This term definition is given
-in the second column of the \cref{code:lang-descr}. The main different here is
-that a unification variable (always identified with by an integer) has now a
-list of terms representing the scope of the variable. We symbolize the
-abstractions of the ML using the constructor \elpiIn{abs} of the type
-\elpiIn{assmt}. The constructor \elpiIn{val} is is used to contain terms of the
-object language. In this context we do not need to have an application node for
-the ML. 
+As our objective is to handle higher-order variables, a viable solution involves
+addressing this issue through the compilation of the term received as input into
+a more expressive version. This can be achieved by employing a second type
+structure for the terms of the OL, as outlined in the second column of
+\cref{code:lang-descr}. The primary difference lies in the fact that a
+unification variable (always identified by an integer) now takes a list of terms
+representing its scope. The abstractions of the ML are
+symbolized using the constructor \elpiIn{abs} of the type \elpiIn{assmt}. The
+constructor \elpiIn{val} is utilized to contain terms of the object language,
+and in this context, there is no need for an application node in the ML.
 
 \def\eqfo{equal\_fo\xspace}
 \def\eqho{equal\_ho\xspace}
