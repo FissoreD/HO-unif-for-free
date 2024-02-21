@@ -331,11 +331,44 @@ This other paper~\cite{10.1007/978-3-031-38499-8_25} should also be cited.
 
 \def\eqfo{eq\_fo\xspace}
 
-In order to reason about unification of the terms of an objet language within a
+In order to reason about unification of the terms of the objet language within the
 meta language, we start by formally describing the two languages. Employing
-meta-programming for this purpose, \cref{code:lang-descr} presents, on the left,
-the typing structure of object language terms along with the signature of the
-\eqfo function.
+meta-programming for this purpose, \cref{code:lang-descr} presents the type
+\elpiIn{tm} containing the constructors for term application, lambda abstraction
+and constants. Moreover, in order to represent unification variables, we need 
+to give two different constructors. 
+
+In the case of the OL, variables have no scope. For example, the subterm
+\coqIn{P x} from the instance forall\_dec. Here, \coqIn{P} is an higher order
+variables with type \coqIn{A ~$\to$~ Prop} and \coqIn{x} is a name bound to
+\coqIn{P}. However, at the meta level, the translation of \coqIn{P x} becomes
+\elpiIn{app[P, x]}, that is, \elpiIn{P} cannot reference \elpiIn{x}. In our
+encoding, unification variables are encoded as integer corresponding to memory
+addresses, and the constructor for unification variables in the OL is
+\elpiIn{fo_uv}. This constructor is prefixed with \elpiIn{fo} since the
+variable, having no scope, is a first-order variable.
+
+On the other hand, in the case of the ML, we want to use its unification
+algorithm to make variable assignment. Since the ML is an Higher Order
+Programming Language, we represent unification variables with the \elpiIn{uv}
+constructor, which, this time, can see a list of terms. Of course some attention
+should be payed when dealing with this constructor, since we have to certify
+each time that an \elpiIn{uv i} remain in the pattern fragment, that is, the
+list of term in the scope of \elpiIn{i} is a list of distinct names. Finally,
+the following code
+
+\begin{elpicode}
+  kind assmt type.
+  type abs (tm -> assmt) -> assmt.
+  type val tm -> assmt.
+\end{elpicode}
+
+\noindent
+illustrates the \elpiIn{assmt} representing variable assignment in the ML.
+
+Variable assignment 
+
+\vspace{30pt}
 
 In this encoding, the fo\_tm type stands for the first order representation of
 the object language terms. We model unification variables as integers
@@ -392,86 +425,98 @@ reductions over terms of the object language. The ML sees a term of the type
 only possible to dereference a variable if assigned.
 \marginpar{TODO: say HO is same as ML}
 
-\subsection[Compilation: fo\_tm to tm]{Compilation: \elpiIn{fo_tm} $\to$ \elpiIn{tm}}
+% \section[Compilation: fo\_tm to tm]{Compilation: \elpiIn{fo_tm} $\to$ \elpiIn{tm}}
 
-- how we transform an fo\_tm in tm
-- the role of links
+% - how we transform an fo\_tm in tm \\
+% - the role of links \\
+% - decomp
+% - esempio che va in questa semplice rappresentazione (from intro)
+% - esempio che non va, multi-var, eta, beta
+% % \section{Term de-compilation}
 
-\subsection{Unification in ML}
+% \section{Unification in ML}
 
-- we accept HO unif with PF
+% - we accept HO unif with PF \\
+% - need of multiple vars for a single OL var
 
-\subsection{Term de-compilation}
-% Compile FO to HO
+% % Compile FO to HO
 
-% Assignement in HO should be decompiled
-
-
-
-
--------------------------------------------------------------------
-
-\noindent
+% % Assignement in HO should be decompiled
 
 
-\subsection{implementation}
-
-l'HO encoding e' esattamente lambda Prolog/elpi, il compilatore
-in pratica potrebbe essere scritto in un meta language, qui lo si presenta in
-elpi stesso. HO e FO in questo paper sono deep embedded in elpi per parlarne,
-ma in pratica il nostro solever, prendere XX, scrivere la clausola compilata.
 
 
-\section{recovering eta}
+% -------------------------------------------------------------------
 
-\begin{elpicode}
-q (all x\ F x) = q (all x\ app[f,x]) /\ p f = p F
-F = fun a => app [f,a] ----> F = f
-\end{elpicode}
+% \noindent
 
-l'utene da p su f, mentre l'istanza pe q forza F a fun .. 
 
-\section{recovering beta}
+% \subsection{implementation}
 
-\begin{elpicode}
-  q (all x\ F x) = q (all x\ app[f,x,x]) /\ p1 (app[f,a,a]) = p1 (app[F,a])
-  F = fun y => app [f,y,y] ----> (app[F,a]) ~> app[f, a, a].
-\end{elpicode}
+% l'HO encoding e' esattamente lambda Prolog/elpi, il compilatore
+% in pratica potrebbe essere scritto in un meta language, qui lo si presenta in
+% elpi stesso. HO e FO in questo paper sono deep embedded in elpi per parlarne,
+% ma in pratica il nostro solever, prendere XX, scrivere la clausola compilata.
+
+
+% \section{recovering eta}
+
+% \begin{elpicode}
+% q (all x\ F x) = q (all x\ app[f,x]) /\ p f = p F
+% F = fun a => app [f,a] ----> F = f
+% \end{elpicode}
+
+% l'utene da p su f, mentre l'istanza pe q forza F a fun .. 
+
+% \section{recovering beta}
+
+% \begin{elpicode}
+%   q (all x\ F x) = q (all x\ app[f,x,x]) /\ p1 (app[f,a,a]) = p1 (app[F,a])
+%   F = fun y => app [f,y,y] ----> (app[F,a]) ~> app[f, a, a].
+% \end{elpicode}
   
-qui la sintesi di F puo generare un beta redex, quindi ci mettiamo
-p1 F1, e decomp beta F [a] F1.
+% qui la sintesi di F puo generare un beta redex, quindi ci mettiamo
+% p1 F1, e decomp beta F [a] F1.
 
-\section{recovering eta-beta within unification (non linear variables)}
+% \section{recovering eta-beta within unification (non linear variables)}
 
-se i problemi di cui sopra avvengono nello stesso termine
+% se i problemi di cui sopra avvengono nello stesso termine
 
-\begin{elpicode}
-  q2 (all x\ F x) (app[F,a]) = q2 (all x\ app[f,x,x]) (app[f,a,a])
-\end{elpicode}
+% \begin{elpicode}
+%   q2 (all x\ F x) (app[F,a]) = q2 (all x\ app[f,x,x]) (app[f,a,a])
+% \end{elpicode}
 
-bisogna slegare le due F e poi unificare le soluzioni tra di loro
+% bisogna slegare le due F e poi unificare le soluzioni tra di loro
 
-\section{heuristic / binary app}
+% \section{heuristic / binary app}
 
-fo approx / sub pattern fragment
+% fo approx / sub pattern fragment
 
-\begin{elpicode}
-  p (all x\app[F,x,a]) (app[F,b]) = p (all x\app[f,x,x,a]) (app[f,b,b])
-  p (all x\G x) F' = 
-  G = x\ f x x a
-  F = lam x\f x x
-  F' = (app[f,b,b])
-  link (F a) F'
-  link G F
-\end{elpicode}
+% \begin{elpicode}
+%   p (all x\app[F,x,a]) (app[F,b]) = p (all x\app[f,x,x,a]) (app[f,b,b])
+%   p (all x\G x) F' = 
+%   G = x\ f x x a
+%   F = lam x\f x x
+%   F' = (app[f,b,b])
+%   link (F a) F'
+%   link G F
+% \end{elpicode}
 
 
-% questo esempio recupera l'app binaria perche
+% % questo esempio recupera l'app binaria perche
 
-\begin{elpicode}
-  (app (app F x) a) = (app (f x x) a)
-\end{elpicode}
+% \begin{elpicode}
+%   (app (app F x) a) = (app (f x x) a)
+% \end{elpicode}
 
-\printbibliography
+% \section{Stats}
+
+% Concretamente:
+
+% - quante volte l'ordine superiore è necessario in stdpp/tlc
+
+% \section{Conclusion}
+
+% \printbibliography
 
 \end{document}
