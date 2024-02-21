@@ -5,6 +5,7 @@ on:
       - '**.tex'
       - '**.bib'
       - '**.sty'
+      - '**/build_pdf.yml'
 jobs:
   build_latex:
     runs-on: ubuntu-latest
