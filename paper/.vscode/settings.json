@@ -11,8 +11,8 @@
                 "-synctex=1",
                 "-file-line-error",
                 "-recorder",
-                "-aux-directory=%OUTDIR%",
                 "-output-directory=%OUTDIR%",
+                "-interaction=batchmode",
                 "%DOC%"
             ]
         },
