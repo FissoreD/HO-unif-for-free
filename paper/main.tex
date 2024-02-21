@@ -493,23 +493,52 @@ $$Math\ formula$$
 In the following section we explain how we deal with term (de)compilation and
 unification variable linking.
 
-\section[Compilation: fo\_tm to tm]{Compilation: \texttt{tm} $\to$ \texttt{tm}}
+\section[Compilation: fo\_tm to tm]{Compilation}
 
-% - how we transform an fo\_tm in tm \\
-% - the role of links \\
-% - decomp
-% - esempio che va in questa semplice rappresentazione (from intro)
-% - esempio che non va, multi-var, eta, beta
-% % \section{Term de-compilation}
+The compilation step is meant to recover the higher-order variables of the OL,
+expressed in a first order way, by replacing them with higher-order variables in
+the ML. In particular, every time a variable of the OL is encountered in the
+original term, it is replaced with a meta variable, and if the OL variable is
+applied to a list $L$ of terms, then this list becomes the scope of the variable
+if $L$ is a list of distinct names. For all the other constructors of
+\elpiIn{tm}, the same term constructor is returned and its arguments are
+recursively compiled. The predicate in charge for term compilation is:\\
+\elpiIn{type comp tm -> tm -> links -> links -> subst -> subst -> o}.
+Where, we take the term of the OL, produce the term of the ML, take a list
+of link and produce a list of new links, take a substitution and return a 
+new substitution.
 
-% \section{Unification in ML}
+In particular, due to programming constraints, we need to drag the old subst and
+return a new one extended, if needed, with the new declared meta-variables.
 
-% - we accept HO unif with PF \\
-% - need of multiple vars for a single OL var
+The following code
+\begin{elpicode}
+  kind link type.
+  type link nat -> nat -> nat -> subst.
+\end{elpicode}
 
-% % Compile FO to HO
+\noindent
+defines a link, which is a relation between to variables indexes, the first
+being the index of a OL variable and the second being the index of a ML
+variable. The third integer\todo{integer or nat?} is the number of term in the
+scope of the two variables, or equivalently, in a typed language, their arity. 
 
-% % Assignement in HO should be decompiled
+\noindent
+- how we transform an fo\_tm in tm \\
+- the role of links \\
+- decomp
+- esempio che va in questa semplice rappresentazione (from intro)
+- esempio che non va, multi-var, eta, beta
+% \section{Term de-compilation}
+
+\section{Unification in ML}
+
+- we accept HO unif with PF \\
+- need of multiple vars for a single OL var
+
+% Compile FO to HO
+
+% Assignement in HO should be decompiled
 
 
 
