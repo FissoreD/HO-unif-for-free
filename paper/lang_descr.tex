@@ -19,7 +19,7 @@
       \begin{elpicode}
         # OL code
         type fo_uv  nat -> tm.
-        typeabbrev subst list (option tm).
+        typeabbrev fo_subst list (option tm).
       \end{elpicode}
     \end{minipage}
     &
@@ -46,15 +46,15 @@
   \begin{tabular}{c}
     \begin{minipage}{.80\textwidth}
       \begin{elpicode}
-        type equal subst -> tm -> tm -> o.
+        type fo_equal subst -> tm -> tm -> o.
         % deref
-        equal S (uv N) T1 :- assigned? N S T, equal S T T1.
-        equal S T1 (uv N) :- assigned? N S T, equal S T1 T.
+        fo_equal S (uv N) T1 :- assigned? N S T, fo_equal S T T1.
+        fo_equal S T1 (uv N) :- assigned? N S T, fo_equal S T1 T.
         % congruence
-        equal S (app L1) (app L2) :- forall2 (equal S) L1 L2.
-        equal S (lam F1) (lam F2) :- pi x\ equal S x x => equal S (F1 x) (F2 x).
-        equal _ (c X) (c X).
-        equal _ (uv N) (uv N).
+        fo_equal S (app L1) (app L2) :- forall2 (fo_equal S) L1 L2.
+        fo_equal S (lam F1) (lam F2) :- pi x\ fo_equal S x x => fo_equal S (F1 x) (F2 x).
+        fo_equal _ (c X) (c X).
+        fo_equal _ (uv N) (uv N).
       \end{elpicode}
     \end{minipage}
   \end{tabular}
