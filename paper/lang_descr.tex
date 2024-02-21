@@ -1,37 +1,34 @@
 \begin{figure*}
-  \begin{tabular}{c}
-    \begin{minipage}{.35\textwidth}
+  \begin{minipage}{.40\textwidth}
+
+    \begin{elpicode}
+      # Common code
+      kind tm type.
+      type app list tm -> tm.
+      type lam (tm -> tm) -> tm.
+      type c string -> tm.
+    \end{elpicode}
+    
+  \end{minipage}
+
+  \vspace{3pt}
+
+  \begin{tabular}{lr}
+    \begin{minipage}{.40\textwidth}
 
       \begin{elpicode}
-        kind fo_tm type.
-        type fo_app list fo_tm -> fo_tm.
-        type fo_lam (fo_tm -> fo_tm) -> fo_tm.
-        type fo_uv  nat -> fo_tm.
-        type fo_c string -> fo_tm.
-
-
-
-        
-        
-        typeabbrev subst list (option fo_tm).
-        type eq_fo subst -> fo_tm -> fo_tm -> o.
+        # OL code
+        type fo_uv  nat -> tm.
+        typeabbrev subst list (option tm).
       \end{elpicode}
     \end{minipage}
-    \begin{minipage}{.35\textwidth}
+    &
+    \begin{minipage}{.40\textwidth}
       
       \begin{elpicode}
-        kind tm type.
-        type app list tm -> tm.
-        type lam (tm -> tm) -> tm.
+        # ML code
         type uv  nat -> list tm -> tm.
-        type c string -> tm.
-        
-        kind assmt type.
-        type abs (tm -> assmt) -> assmt.
-        type val tm -> assmt.
-        
         typeabbrev subst list (option assmt).
-        type eq subst -> tm -> tm -> o.
       \end{elpicode}
     \end{minipage}
   \end{tabular}
@@ -49,37 +46,15 @@
   \begin{tabular}{c}
     \begin{minipage}{.80\textwidth}
       \begin{elpicode}
+        type equal subst -> tm -> tm -> o.
         % deref
         equal S (uv N) T1 :- assigned? N S T, equal S T T1.
         equal S T1 (uv N) :- assigned? N S T, equal S T1 T.
-        equal S (app [uv N|A]) T1 :- assigned? N S F, beta F A T, equal S T T1.
-        equal S T1 (app [uv N|A]) :- assigned? N S F, beta F A T, equal S T1 T.
         % congruence
         equal S (app L1) (app L2) :- forall2 (equal S) L1 L2.
         equal S (lam F1) (lam F2) :- pi x\ equal S x x => equal S (F1 x) (F2 x).
         equal _ (c X) (c X).
         equal _ (uv N) (uv N).
-        % beta
-        equal S (app [lam X | TL]) T :- beta (lam X) TL T', equal S T' T.
-        equal S T (app [lam X | TL]) :- beta (lam X) TL T', equal S T T'.
-        % eta
-        equal S (lam F) T :- not (T = lam _),
-          pi x\ beta T [x] (T' x), equal S (lam F) (lam T').
-        equal S T (lam F) :- not (T = lam _),
-          pi x\ beta T [x] (T' x), equal S (lam T') (lam F).
-      \end{elpicode}
-    \end{minipage}
-    \\ \hline\hline
-    \begin{minipage}{.80\textwidth}
-      \begin{elpicode}
-        % deref
-        equal S (uv N A) T1 :- assigned? N S F, beta-abs F A T, equal S T T1.
-        equal S T1 (uv N A) :- assigned? N S F, beta-abs F A T, equal S T1 T.
-        % congruence
-        equal S (app L1) (app L2) :- forall2 (equal S) L1 L2.
-        equal S (lam F1) (lam F2) :- pi x\ equal S x x => equal S (F1 x) (F2 x).
-        equal _ (c X) (c X).
-        equal _ (uv N A1) (uv N A2) :- forall2 (equal S) A1 A2. %fixme in the code
       \end{elpicode}
     \end{minipage}
   \end{tabular}
@@ -87,3 +62,25 @@
   \label{code:term-equal}
   \Description[term-equal]{Term equality}
 \end{figure*}
+
+% \begin{figure*}
+%   \begin{tabular}{c}
+%     \begin{minipage}{.80\textwidth}
+%       \begin{elpicode}
+%         % beta
+%         equal S (app [uv N|A]) T1 :- assigned? N S F, beta F A T, equal S T T1.
+%         equal S T1 (app [uv N|A]) :- assigned? N S F, beta F A T, equal S T1 T.
+%         equal S (app [lam X | TL]) T :- beta (lam X) TL T', equal S T' T.
+%         equal S T (app [lam X | TL]) :- beta (lam X) TL T', equal S T T'.
+%         % eta
+%         equal S (lam F) T :- not (T = lam _),
+%           pi x\ beta T [x] (T' x), equal S (lam F) (lam T').
+%         equal S T (lam F) :- not (T = lam _),
+%           pi x\ beta T [x] (T' x), equal S (lam T') (lam F).
+%       \end{elpicode}
+%     \end{minipage}
+%   \end{tabular}
+%   \caption{$\eta\beta$ in the OL}
+%   \label{code:eta-beta}
+%   \Description[Eta-beta-OL]{Eta-beta in OL}
+% \end{figure*}
