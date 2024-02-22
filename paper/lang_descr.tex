@@ -1,43 +1,43 @@
 \setlength{\abovecaptionskip}{0pt plus 3pt minus 2pt}
-\begin{figure*}
-  \begin{minipage}{.40\textwidth}
+% \begin{figure*}
+%   \begin{minipage}{.40\textwidth}
 
-    \begin{elpicode}
-      # Common code
-      kind tm type.
-      type app list tm -> tm.
-      type lam (tm -> tm) -> tm.
-      type c string -> tm.
-    \end{elpicode}
+%     \begin{elpicode}
+%       # Common code
+%       kind tm type.
+%       type app list tm -> tm.
+%       type lam (tm -> tm) -> tm.
+%       type c string -> tm.
+%     \end{elpicode}
     
-  \end{minipage}
+%   \end{minipage}
 
-  \vspace{3pt}
+%   \vspace{3pt}
 
-  \begin{tabular}{lr}
-    \begin{minipage}{.40\textwidth}
+%   \begin{tabular}{lr}
+%     \begin{minipage}{.40\textwidth}
 
-      \begin{elpicode}
-        # OL code
-        type fo_uv  nat -> tm.
-        typeabbrev fo_subst list (option tm).
-      \end{elpicode}
-    \end{minipage}
-    &
-    \begin{minipage}{.40\textwidth}
+%       \begin{elpicode}
+%         # OL code
+%         type fo_uv  nat -> tm.
+%         typeabbrev fo_subst list (option tm).
+%       \end{elpicode}
+%     \end{minipage}
+%     &
+%     \begin{minipage}{.40\textwidth}
       
-      \begin{elpicode}
-        # ML code
-        type uv  nat -> list tm -> tm.
-        typeabbrev subst list (option assmt).
-      \end{elpicode}
-    \end{minipage}
-  \end{tabular}
+%       \begin{elpicode}
+%         # ML code
+%         type uv  nat -> list tm -> tm.
+%         typeabbrev subst list (option assmt).
+%       \end{elpicode}
+%     \end{minipage}
+%   \end{tabular}
   
-  \caption{Language description}
-  \label{code:lang-descr}
-  \Description[lang-spec]{Language description}
-\end{figure*}
+%   \caption{Language description}
+%   \label{code:lang-descr}
+%   \Description[lang-spec]{Language description}
+% \end{figure*}
 
 % The two equals: equal of OL and ML
 % In ML we don't have eta beta -> only unification is allowed on variables

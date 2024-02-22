@@ -456,31 +456,78 @@ This other paper~\cite{10.1007/978-3-031-38499-8_25} should also be cited.
 
 In order to reason about unification of the terms of the objet language within the
 meta language, we start by formally describing the two languages. Employing
-meta-programming for this purpose, \cref{code:lang-descr} presents the type
-\elpiIn{tm} containing the constructors for term application, lambda abstraction
-and constants. Moreover, in order to represent unification variables, we need 
-to give two different constructors. 
+meta-programming for this purpose, we present in \cref{code:common-terms} a new type for the terms of
+the OL.
+%
+\setlength{\abovecaptionskip}{0pt}
+\setlength{\belowcaptionskip}{-13pt}
 
-\
+\begin{figure}[H]
+  \begin{elpicode}
+    kind tm type.
+    type app list tm -> tm.
+    type lam (tm -> tm) -> tm.
+    type c   string -> tm.
+  \end{elpicode}
+  \caption{Common terms}
+  \label{code:common-terms}
+  \Description[code:common-terms]{code:common-terms}
+\end{figure}
+%
+\noindent
+This encoding is very similar to the one introduced in \cref{sec:intro},\todo{say we do not care about types} except
+for the \elpiIn{all} constructor. We explicitly neglect it since blabla.
+Moreover, since we are working with unification variables we need to introduce a
+new constructor. 
 
 In the case of the OL, variables have no scope. For example, the subterm
-\coqIn{P x} from the instance forall\_dec. Here, \coqIn{P} is an higher order
-variables with type \coqIn{A ~$\to$~ Prop} and \coqIn{x} is a name bound to
-\coqIn{P}. However, at the meta level, the translation of \coqIn{P x} becomes
+\coqIn{P x} from the instance forall\_dec has \coqIn{P} an higher order
+variables with type \coqIn{A ~$\to$~ Prop} and \coqIn{x} as bound variable. 
+However, at the meta level, the translation of \coqIn{P x} becomes
 \elpiIn{app[P, x]}, that is, \elpiIn{P} cannot reference \elpiIn{x}. In our
-encoding, unification variables are encoded as integer corresponding to memory
-addresses, and the constructor for unification variables in the OL is
-\elpiIn{fo_uv}. This constructor is prefixed with \elpiIn{fo} since the
-variable, having no scope, is a first-order variable.
+encoding, we represent the variables of the OL in the following way:
 
-On the other hand, in the case of the ML, we want to use its unification
-algorithm to make variable assignment. Since the ML is an Higher Order
-Programming Language, we represent unification variables with the \elpiIn{uv}
-constructor, which, this time, can see a list of terms. Of course some attention
-should be payed when dealing with this constructor, since we have to certify
-each time that an \elpiIn{uv i} remain in the pattern fragment, that is, the
-list of term in the scope of \elpiIn{i} is a list of distinct names. Finally,
-the following code
+\begin{elpicode}
+  type fo_uv nat -> tm.
+\end{elpicode}
+
+\noindent 
+In particular, a variable of the OL is identified by a integer
+refereeing a memory address. This constructor is prefixed with \elpiIn{fo} since
+the variable, having no scope, is a first-order variable. Finally, the memory of
+the OL is depicted by the following type abbreviation:
+
+\begin{elpicode}
+  typeabbrev fo_subst list (option tm).
+\end{elpicode}
+
+\noindent 
+which is a list of optional terms. If a cell is \elpiIn{none}, then the variable
+corresponding to this cell is not instantiated.
+
+On the other hand, the terms of the ML have exactly the same shape
+has the terms of \cref{code:common-terms}. However, since the ML is an Higher
+Order Programming Language, unification unification variables must have a scope.
+We represent them in the following way:
+
+\begin{elpicode}
+  type ho_uv nat -> list tm -> tm.
+\end{elpicode}
+
+Of course some attention
+should be payed when dealing with \elpiIn{ho_uv}, since we have to certify
+that an \elpiIn{uv i} remain in the pattern fragment, that is, the
+list of term in the scope of \elpiIn{i} is always a list of distinct names.
+
+Another important implementation should be provided in order to represent the
+lambda abstractions and the applications of the ML. As outlined in
+\cref{sec:encodings}, <<\elpiIn{x\ f x}>> has not the same semantic as 
+<<\elpiIn{lam x\ app[f, x]}>>, since, even though, the two terms represent the same
+concept, the former is the lambda abstraction of \elpiIn{f} applied to the 
+binder in ML, whereas the latter is the same term representation but wrt the OL.
+We already have defined the nodes \elpiIn{app} and \elpiIn{lam} for the OL,
+therefore, in the following code snippet, we give their representation in the
+ML.
 
 \begin{elpicode}
   kind assmt type.
@@ -489,15 +536,26 @@ the following code
 \end{elpicode}
 
 \noindent
-illustrates the \elpiIn{assmt} representing variable assignment in the ML. \marginpar{todo: explain better}
+In particular, the node \elpiIn{abs} stands for the lambda abstraction. The
+node \elpiIn{val} contains terms of the object language. The node for variable
+application is not really necessary, since, using the syntax of the ML, it is
+defined by putting two terms of the ML side by side. For example, the terms 
+<<\elpiIn{x\ f x}>> becomes <<\elpiIn{abs x\ f x}>>.
 
-The memory of the two languages are represented with lists of substitutions. In
-particular, the substitution of the OL, called \elpiIn{fo_subst}, is made by
-optional terms such that, if the substitution is \elpiIn{none}, then the
-variable is not instantiated. Note that the variables in the \elpiIn{fo_subst}
-have always the \elpiIn{fo_uv} constructor. On the other hand, the ML
-substitution is an optional assignment and in that assignment, variables are
-considered to have the \elpiIn{uv} constructor.
+The memory of the ML, is defined with the following type abbreviation:
+
+\begin{elpicode}
+  typeabbrev ho_subst list (option tm).
+\end{elpicode}
+
+\noindent
+with the invariant that the \elpiIn{tm} inside the cell never contains the node
+\elpiIn{fo_uv}. Note that, reciprocally, the \elpiIn{fo_subst} does not contain
+any node of the form \elpiIn{ho_uv}.
+
+\subsection{Term equality}
+
+\old
 
 A key property needed in unification is being able to verify if two terms are
 equal. This is kind of a structural equality verification between two terms,
