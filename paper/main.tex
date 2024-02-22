@@ -105,7 +105,7 @@
   Unfortunately this encoding, which we refer to as \Fo,
   ``underuses'' \Ue by restricting it to first-order unification problems only. 
   To address this issue, we propose a better-behaved encoding, \Ho,
-  demonstrate how to map unification problems in \Fo
+  demonstrate how to map unification problems in \Fo{}
   to related problems in \Ho, and illustrate
   how to map back the unifiers found by \Ue, effectively implementing
    \Uo on top of \Ue for the encoding \Fo.
@@ -217,7 +217,7 @@ decision (all A x\ app[P, x]) :- finite A,           % r3
 Unfortunately this direct translation of rule (r3) uses the
 predicate \coqIn{P} essentially as a first order term for the meta
 language (its type is \elpiIn{tm}).
-If we try to backchain the rule (r3) on the encoding of the goal (g) above:
+If we try to backchain the rule (r3) on the encoding of the goal (g) below:
   
 \begin{elpicode}
 decision (all (app[c"fin", c"7"]) y\                 % g
@@ -291,7 +291,7 @@ unifiers for problems in the pattern fragment~\cite{miller92jsc}.
 In this paper we discuss alternative encodings of Coq in
 Elpi~\ref{sec:encodings}, then we identify a minimal language \Fo
 in which the problems sketched here can be fully described.
-We then detail an encoding \elpiIn{comp} from \Fo to \Ho (the language of
+We then detail an encoding \elpiIn{comp} from \Fo{} to \Ho (the language of
 the meta language) and a decoding \elpiIn{decomp} to relate the unifiers
 bla bla.. TODO citare Teyjus.
 
@@ -343,7 +343,7 @@ indexing degenerates. Moreover the unification procedure built in the
 meta language is likely to be faster than one implemented in it,
 especially if the meta language is interpreted as Elpi is. 
   
-To state precisely the problem we solve we need a \Fo representation
+To state precisely the problem we solve we need a \Fo{} representation
 of DTT terms and a \Ho one.
 We call \Eo the equality over ground terms in \Fo,
 \Ee the equality over ground terms in \Ho,
@@ -363,9 +363,9 @@ $$
 \newcommand{\D}[3]{\ensuremath{\langle #1,#2 \rangle^{-1}\mapsto #3}}
 
 We illustrate a compilation $\C{s}{t}{l}$ that
-maps a term $s$ in \Fo to a term $t$ in \Ho and a list of links $l$.
+maps a term $s$ in \Fo{} to a term $t$ in \Ho and a list of links $l$.
 The links connect unification variables in \Ho with variables
-in \Fo and are used to decompile the assignment,
+in \Fo{} and are used to decompile the assignment,
 $\D{\sigma}{l}{\rho}$.
 
 Given 
@@ -461,6 +461,8 @@ meta-programming for this purpose, \cref{code:lang-descr} presents the type
 and constants. Moreover, in order to represent unification variables, we need 
 to give two different constructors. 
 
+\
+
 In the case of the OL, variables have no scope. For example, the subterm
 \coqIn{P x} from the instance forall\_dec. Here, \coqIn{P} is an higher order
 variables with type \coqIn{A ~$\to$~ Prop} and \coqIn{x} is a name bound to
@@ -534,7 +536,7 @@ Mathematically, we what to prove the following property:
          (t' u': term_ml) (s': subst_ml), 
     equal_ol t u s <->
       comp t t' /\ comp u u' /\ 
-      unif_ml t' u' s' /\ decomp s' s.
+      unif_ml t' u' s' /\ links ... /\ decomp s' s.
 \end{coqcode}
 
 $$Math\ formula$$
@@ -548,8 +550,8 @@ The compilation step is meant to recover the higher-order variables of the OL,
 expressed in a first order way, by replacing them with higher-order variables in
 the ML. In particular, every time a variable of the OL is encountered in the
 original term, it is replaced with a meta variable, and if the OL variable is
-applied to a list $L$ of terms, then this list becomes the scope of the variable
-if $L$ is a list of distinct names. For all the other constructors of
+applied to a list of distinct names $L$, then this list becomes the scope of the variable. 
+For all the other constructors of
 \elpiIn{tm}, the same term constructor is returned and its arguments are
 recursively compiled. The predicate in charge for term compilation is:\\
 \elpiIn{type comp tm -> tm -> links -> links -> subst -> subst -> o}.
@@ -561,16 +563,43 @@ In particular, due to programming constraints, we need to drag the old subst and
 return a new one extended, if needed, with the new declared meta-variables.
 
 The following code
+%
 \begin{elpicode}
   kind link type.
   type link nat -> nat -> nat -> subst.
 \end{elpicode}
-
+%
 \noindent
 defines a link, which is a relation between to variables indexes, the first
 being the index of a OL variable and the second being the index of a ML
 variable. The third integer\todo{integer or nat?} is the number of term in the
 scope of the two variables, or equivalently, in a typed language, their arity. 
+
+As an example, let's study the following unification problem (a slightly 
+modified version from \cref{sec:intro}):
+
+\begin{elpicode}
+  lam x\ app[c"decision", app[c"nfact", x, c"3"]] ~\Uo~
+    lam x\ app [c"decision", app[uv 0, x]]
+\end{elpicode}
+
+\noindent
+we have the main unification problem where the nested \elpiIn{app} nodes have
+lists of different lengths making the unification to fail. The compilation of 
+these terms produces a new unification problem with the following shape:
+
+\begin{elpicode}
+  lam x\ app[c"decision", app[c"nfact", x, c"3"]] ~\Ue~ 
+    lam x\ app [c"decision", uv 1 [x]]
+\end{elpicode}
+
+\noindent
+The main difference is the replacement of the subterm \elpiIn{app[uv 0, x]} of
+the OL with the subterm \elpiIn{uv 0 [x]}. Variable indexes are chosen by the
+ML, that is, the index \elpiIn{0} for that unification variable of the OL term
+has not the sam meaning of the index \elpiIn{0} in the ML. There exists two
+different substitution mapping, one for the OL and one for the ML and the indexes
+of variable point to the respective substitution.
 
 \noindent
 - how we transform an fo\_tm in tm \\
