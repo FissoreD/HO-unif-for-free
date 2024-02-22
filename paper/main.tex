@@ -37,11 +37,22 @@
 \def\ho{\acronym{ho}} % higher order
 \def\Forall{$\forall$}
 
-\newcommand{\U}{\ensuremath{=_o}\xspace}
-\newcommand{\nU}{\ensuremath{\neq_o}\xspace}
-\newcommand{\Ue}{\ensuremath{=_\lambda}\xspace}
-\newcommand{\nUe}{\ensuremath{\neq_\lambda}\xspace}
-\newcommand{\Fo}{\ensuremath{\mathcal{F}_{\!o}\xspace}}
+\newcommand{\EqualRel}{\ensuremath{=}}
+\newcommand{\nEqualRel}{\ensuremath{\new}}
+\newcommand{\UnifRel}{\ensuremath{\simeq}}
+\newcommand{\nUnifRel}{\ensuremath{\not\simeq}}
+
+\newcommand{\Uo}{\ensuremath{\UnifRel_o}\xspace}
+\newcommand{\nUo}{\ensuremath{\nUnifRel_o}\xspace}
+\newcommand{\Eo}{\ensuremath{\EqualRel_o}\xspace}
+\newcommand{\nEo}{\ensuremath{\nEqualRel_o}\xspace}
+
+\newcommand{\Ue}{\ensuremath{\UnifRel_\lambda}\xspace}
+\newcommand{\nUe}{\ensuremath{\nUnifRel_\lambda}\xspace}
+\newcommand{\Ee}{\ensuremath{\EqualRel_\lambda}\xspace}
+\newcommand{\nEe}{\ensuremath{\nEqualRel_\lambda}\xspace}
+
+\newcommand{\Fo}{\ensuremath{\mathcal{F}_{\!o}\xspace}} % space non va
 \newcommand{\Ho}{\ensuremath{\mathcal{H}_o}\xspace}
 
 \newcommand*{\eqtau}{\ensuremath{\mathrel{\overset{\mathrm{\tau}}{=}}}}
@@ -82,14 +93,14 @@
   
   The object logic we are interested in is Coq's~\cite{Coq-refman}
   Dependent Type Theory (DTT),
-  for which we aim to implement a unification procedure \U using the ML
+  for which we aim to implement a unification procedure \Uo using the ML
   Elpi~\cite{dunchev15lpar}, a dialect of $\lambda$Prolog.
-  Elpi comes equipped with the equational theory \Ue, comprising
-  $\eta\beta$ equivalence
-  and higher order unification restricted to the pattern
+  Elpi's equational theory comprises
+  $\eta\beta$ equivalence and comes equipped with a
+  higher order unification procedure \Ue restricted to the pattern
   fragment~\cite{miller92jsc}.
-  We want \U to feature the same equational theory as \Ue but on the
-  object logic DTT. Elpi also comes with an encoding for DTT that works well
+  We want \Uo to be as powerful as \Ue but on the object logic DTT.
+  Elpi also comes with an encoding for DTT that works well
   for meta-programming~\cite{tassi:hal-01637063,tassi:hal-01897468,gregoire:hal-03800154,newtc}.
   Unfortunately this encoding, which we refer to as \Fo,
   ``underuses'' \Ue by restricting it to first-order unification problems only. 
@@ -97,7 +108,7 @@
   demonstrate how to map unification problems in \Fo
   to related problems in \Ho, and illustrate
   how to map back the unifiers found by \Ue, effectively implementing
-   \U on top of \Ue for the encoding \Fo.
+   \Uo on top of \Ue for the encoding \Fo.
    
   We apply this technique to the implementation of a type-class~\cite{wadler89}
   solver for Coq~\cite{Coq-refman}.
@@ -273,7 +284,7 @@ app[c"nfact", N, NF]
 \noindent
 The root cause of the problems we face is that the unification procedure
 \Ue of the meta language is not aware of the equational theory of the object
-logic \U, even if both theories include $\eta\beta$-conversion and admit most general
+logic \Uo, even if both theories include $\eta\beta$-conversion and admit most general
 unifiers for problems in the pattern fragment~\cite{miller92jsc}.
 
 \paragraph{Contributions}
@@ -294,7 +305,7 @@ for efficiency and predictability reasons, most form of automatic proof search
 employ a unification procedure that captures a simpler one,
 just $\eta\beta$, and that solves higher order problems
 restricted to the pattern fragment $\mathcal{L}_\lambda$~\cite{miller92jsc}.
-We call this unification procedure \U{}.
+We call this unification procedure \Uo{}.
 
 The equational theory of the meta language Elpi that we want to use to
 implement a form of proof automation is strikingly similar, since it
@@ -302,16 +313,16 @@ it comprises $\eta\beta$ (for the meta language functions), and the
 unification procedure \Ue{} solves higher order problems in
 $\mathcal{L}_\lambda$.
 
-In spite of the similarity the link between \Ue{} and \U{} is not trivial,
+In spite of the similarity the link between \Ue{} and \Uo{} is not trivial,
 since the abstraction and application term constructors
 the two unification procedure deal with are different. For example
 
 \begin{tabular}{lcl}
 \elpiIn{x\ f x} & \Ue{} & \elpiIn{f}\\
-\elpiIn{lam A x\ app[c"f", x]} & \U{} & \elpiIn{c"f"}\\
+\elpiIn{lam A x\ app[c"f", x]} & \Uo{} & \elpiIn{c"f"}\\
 \elpiIn{lam A x\ app[c"f", x]} & \nUe{} & \elpiIn{c"f"} \\
 \elpiIn{P x} & \Ue{} & \elpiIn{x}\\
-\elpiIn{app[P, x]} & \U{} & \elpiIn{x}\\
+\elpiIn{app[P, x]} & \Uo{} & \elpiIn{x}\\
 \elpiIn{app[P, x]} & \nUe{} & \elpiIn{x}\\
 \end{tabular}
 
@@ -332,27 +343,64 @@ indexing degenerates. Moreover the unification procedure built in the
 meta language is likely to be faster than one implemented in it,
 especially if the meta language is interpreted as Elpi is. 
   
-To state precisely the problem we solve we need a \Fo{} representation
-of DTT terms, a \Ho{} one. Then for any problem $s_1 \U{} s_2$ for
-$s_i$ in \Fo{}, we get a  $t_1 \Ue{} t_2$ for $s_i$ in \Fo{} and
-a $L = \bigwedge_i \mathrm{link}~ s_i~ t_i $ such that:
-%
-%
-\begin{align*}
-s_1 \U{} s_2 & \Leftrightarrow  t_1 \Ue{} t_2 \land L \\
-s_1 \nU{} s_2 & \Rightarrow t_1 \nUe{} t_2 \lor \lnot L
-\end{align*}
+To state precisely the problem we solve we need a \Fo representation
+of DTT terms and a \Ho one.
+We call \Eo the equality over ground terms in \Fo,
+\Ee the equality over ground terms in \Ho,
+\Uo the unification procedure we want to implement and
+\Ue the one provided by the meta language.
+TODO extend \Eo and \Ee with reflexivity on uvars.
 
-where $\mathrm{comp}~t_i = (s_i, \mathrm{link}~ s_i~ t_i)$ and 
-link is a predicate allowed to use \U{} on ground terms (hence equal, not unif)
+We write $t_1 \Ue t_2 \mapsto \sigma$ when $t_1$ and $t_2$ unify with substitution
+$\sigma$, we write $\sigma t$ for the application of the substitution to
+$t$ and we assume that the unification of our meta language is correct:
+
+$$
+t_1 \Ue t_2 \mapsto \sigma \Rightarrow \sigma t_1 \Ee \sigma t_2
+$$
+
+\newcommand{\C}[3]{\ensuremath{\langle #1 \rangle}\mapsto(#2,#3)}
+\newcommand{\D}[3]{\ensuremath{\langle #1,#2 \rangle^{-1}\mapsto #3}}
+
+We illustrate a compilation $\C{s}{t}{l}$ that
+maps a term $s$ in \Fo to a term $t$ in \Ho and a list of links $l$.
+The links connect unification variables in \Ho with variables
+in \Fo and are used to decompile the assignment,
+$\D{\sigma}{l}{\rho}$.
+
+Given 
+$$
+\C{s_1}{t_1}{l_1} \land \C{s_2}{t_2}{l_2}
+$$
+we define
+$$
+s_1 \Uo s_2 \mapsto \rho \stackrel{def}{=}
+    t_1 \Ue t_2 \mapsto \sigma \land
+    \D{\sigma}{l_1 + l_2}{\rho}
+$$
+
+We write $s \in \mathcal{L}_\lambda$ if all unif variables in
+$s$ are applied to distinct bound variables.
+
+\begin{align}
+t_1 \Uo t_2 \mapsto \rho &\Rightarrow \rho t_1 \Eo \rho t_2\\
+s_i \in \mathcal{L}_\lambda \land \exists \rho, \rho s_1 \Eo \rho s_2 &\Leftrightarrow s_1 \Uo s_2 \mapsto \rho' \subseteq \rho \\
+\forall \rho, \rho s_1 \Eo \rho s_2 &\Rightarrow \rho t_1 \Uo \rho t_2
+\end{align}
+
+the first one is that we are correct
+
+the second one is that we are complete and mgu iff the problems are nice
+
+the third one is still broken since we did not define how
+to apply a fo subst to a ho term but it morally means
+that any valid substitution for s1 s2 cannot break
+the unification of terms t1 t2 obtained by compiling
+s1 and s2 before knowing the subst.
 
 These properties allow us to simulate a unification based
-backward search on DTT by using \Ue{}. In particular
-any unification that would work in DTT will work,
-and whenever a unification in DTT would have failed
-either the corresponding \Ue{} or the link fails.
-
-This grants that the trace of the logic program
+backward search on DTT by using \Ue, in a faithful way:
+the trace of the logic program
 performing the search not only gives the same result, but
 also takes the same paths, that is it fails as early as possible.
 
