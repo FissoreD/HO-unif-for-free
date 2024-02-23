@@ -25,23 +25,24 @@ deref _ (con X) (con X).
 deref _ (fov N) (fov N).
 
 % [equal T1 T2] check if two terms are equal for the OL
-type equal tm -> tm -> o.
+type (==o) tm -> tm -> o.
 
-equal X Y :- (var X ; var Y), halt "flex equal". % chekc to prevent implem errors
-equal (app L1) (app L2) :- forall2 equal L1 L2.
-equal (lam F1) (lam F2) :- pi x\ equal x x => equal (F1 x) (F2 x).
-equal (con X) (con X).
-equal (fov N) (fov N).
+X ==o Y :- (var X ; var Y), halt "flex equal". % chekc to prevent implem errors
+app L1 ==o app L2 :- forall2 (==o) L1 L2.
+lam F1 ==o lam F2 :- pi x\ x ==o x => F1 x ==o F2 x.
+con X ==o con X.
+fov N ==o fov N.
 
 % eta
-equal (lam F) T :- not (T = lam _), 
-  pi x\ beta T [x] (T' x), equal (lam F) (lam T').
-equal T (lam F) :- not (T = lam _), 
-  pi x\ beta T [x] (T' x), equal (lam T') (lam F).
+lam F ==o T :- not (T = lam _), 
+  pi x\ beta T [x] (T' x), lam F ==o lam T'.
+T ==o lam F :- not (T = lam _), 
+  % TODO: here we could call (T' x) ==o (F x) but it doesn't work?
+  pi x\ beta T [x] (T' x), lam T' ==o lam F.
 
 % beta
-equal (app [lam X | TL]) T :- beta (lam X) TL T', equal T' T.
-equal T (app [lam X | TL]) :- beta (lam X) TL T', equal T T'.
+app [lam X | TL] ==o T :- beta (lam X) TL T', T' ==o T.
+T ==o app [lam X | TL] :- beta (lam X) TL T', T ==o T'.
 
 % [alloc-subst T S S'] foraech var in T, alloc an fov N at place N in S' (that extends S)
 type alloc-subst tm -> subst -> subst -> o.
@@ -94,11 +95,7 @@ kind assignment type.
 type abs (A -> assignment) -> assignment.
 type val A -> assignment.
 
-% kind tm type.
-% type app list tm -> tm.
-% type lam (tm -> tm) -> tm.
 type hov  nat -> list tm -> tm.
-% type con string -> tm.
 
 % [unif T1 T2 SOld SNew] check if T1 and T2 unify looking into SOld. SNew is the final substution
 type unif tm -> tm -> subst -> subst ->  o.
@@ -112,25 +109,11 @@ unif (hov N Args1) (hov M Args2) S S3 :- pattern-fragment Args1, pattern-fragmen
 unif (hov N Args) T S S1 :- not (T = hov _ _), print "In here", std.do![not_occ N S T, pattern-fragment Args, bind Args T T1, assign N S T1 S1].
 unif T (hov N Args) S S1 :- not (T = hov _ _), std.spy(not_occ N S T), pattern-fragment Args, bind Args T T1, assign N S T1 S1.
 
-% unif (app [fov N L | Args]) (app L1) S S1 :-
-%   std.appendR Hd Args L1,
-%   unif (fov N L) (app Hd) S S1.
-
-
 unif (app L1) (app L2) S S1 :- fold2 unif L1 L2 S S1.
 unif (lam F1) (lam F2) S S1 :- pi x\ (pi S\ unif x x S S) => unif (F1 x) (F2 x) S S1.
 unif (con X) (con X) S S.
 
-% Vorremmo saperli unificare, ma non ci sono nella nostra specifica (CoqTerms non unificano eta-beta in Elpi)
-% % eta
-% unif T (lam F) S S1 :- not (T = lam _), 
-%   pi x\ beta T [x] (F' x), unif (lam F') (lam F) S S1.
-% unif T (lam F) S S1 :- not (T = lam _), 
-%   pi x\ beta T [x] (F' x), unif (lam F') (lam F) S S1.
-
-% % beta
-% unif (app [lam F | TL]) T S S1 :- beta (lam F) TL T', unif T' T S S1.
-% unif T (app [lam F | TL]) S S1 :- beta (lam F) TL T', unif T T' S S1.
+% Note: eta & beta for unification is not allowed in ML over terms of the OL
 
 type prunexx nat -> list tm -> list tm -> assignment -> o.
 prunexx N A1 A2 T :-
@@ -222,6 +205,8 @@ equal _ (hov N A) (hov N A).
 }
 
 namespace comp {
+
+shorten fo.{ (==o) }.
 
 kind link type.
 type link nat -> nat -> nat -> link.
@@ -415,8 +400,10 @@ decompl.aux [] _ _ X X.
 
 type decompl list link -> list link -> ho.subst -> fo.subst -> fo.subst -> o.
 decompl L LK HO FO FO1 :- std.do! [
-  decompl.aux L LK HO FO NewFO,
+  print "AAAA", decompl.aux L LK HO FO NewFO,
+  print "BBBB",
   merge-fo NewFO NewFO FO FO1,
+  print "CCCC"
 ].
 
 type merge-fo fo.subst -> fo.subst -> fo.subst -> fo.subst -> o.
@@ -425,7 +412,7 @@ merge-fo _ X [] X.
 % TODO: returning [some Y|R] is incorrect, we should return [some Z|R] where
 %       Z is the unification of X and Y in the OL
 % TODO: instead of deref-deref-equal, we need unif 
-merge-fo S [some X|XS] [some Y|YS] [some Y|R] :- std.spy(fo.deref S X X', fo.deref S Y Y', fo.equal X' Y'), merge-fo S XS YS R. 
+merge-fo S [some X|XS] [some Y|YS] [some Y|R] :- std.spy(fo.deref S X X', fo.deref S Y Y', std.spy-do![X' ==o Y']), merge-fo S XS YS R. 
 merge-fo S [none|XS] [some X|YS] [some X|R] :- merge-fo S XS YS R.
 merge-fo S [some X|XS] [none|YS] [some X|R] :- merge-fo S XS YS R.
 merge-fo S [none|XS] [none|YS] [none|R] :- merge-fo S XS YS R.

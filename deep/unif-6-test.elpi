@@ -10,6 +10,8 @@ macro @c :- try5.fo.con "c".
 macro @app L :- try5.fo.app L.
 macro @lam L :- try5.fo.lam L.
 
+shorten try5.fo.{(==o)}.
+
 type eval-unif 
   list (triple diagnostic try5.fo.tm try5.fo.tm) -> 
   try5.ho.subst -> try5.ho.subst ->
@@ -62,7 +64,7 @@ xtest (test N LR tt) :- std.do![
     try5.fo.deref FOSol L L',
     try5.fo.deref FOSol R R',
     print "Unifying" L' R',
-    try5.fo.equal L' R',
+    L' ==o R',
     print "Success")),
 ].
 xtest (test _ LR ff) :- std.do! [
