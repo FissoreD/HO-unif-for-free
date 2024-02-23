@@ -1,0 +1,492 @@
+internal-test try5.comp.test-hope-eta-1.
+internal-test try5.comp.test-hope-eta-2.
+
+namespace try5 {
+
+%%%%%%%%%%%%%%%%%%% the OL %%%%%%%%%%%%%%%%%%%%%
+namespace fo {
+
+% Common terms
+kind tm type.
+type app list tm -> tm.
+type lam (tm -> tm) -> tm.
+type con string -> tm.
+
+type fov  nat -> tm.
+typeabbrev subst list (option tm).
+
+type deref subst -> tm -> tm -> o.
+deref _ X Y :- (var X ; var Y), halt "flex".
+deref S (fov N) T1 :- assigned? N S T, deref S T T1.
+deref S (app [fov N|L]) R :- assigned? N S T, !, beta T L R.
+deref S (app L1) (app L2) :- forall2 (deref S) L1 L2.
+deref S (lam F1) (lam F2) :- pi x\ deref S x x => deref S (F1 x) (F2 x).
+deref _ (con X) (con X).
+deref _ (fov N) (fov N).
+
+% [equal Subst T1 T2] check if two terms are equal for the OL
+% note: T1 and T2 are never flexible elpi variables
+type equal subst -> tm -> tm -> o.
+equal _ X Y :- (var X ; var Y), halt "flex".
+equal S (fov N) T1 :- assigned? N S T, equal S T T1.
+equal S T1 (fov N) :- assigned? N S T, equal S T1 T.
+equal S (app L1) (app L2) :- forall2 (equal S) L1 L2.
+equal S (lam F1) (lam F2) :- pi x\ equal S x x => equal S (F1 x) (F2 x).
+equal _ (con X) (con X).
+equal _ (fov N) (fov N).
+
+% eta
+equal S (lam F) T :- not (T = lam _), 
+  pi x\ beta T [x] (T' x), equal S (lam F) (lam T').
+equal S T (lam F) :- not (T = lam _), 
+  pi x\ beta T [x] (T' x), equal S (lam T') (lam F).
+
+% beta
+equal S (app [fov N|Args]) T1 :- assigned? N S F, beta F Args T, equal S T T1.
+equal S T1 (app [fov N|Args]) :- assigned? N S F, beta F Args T, equal S T1 T.
+equal S (app [lam X | TL]) T :- beta (lam X) TL T', equal S T' T.
+equal S T (app [lam X | TL]) :- beta (lam X) TL T', equal S T T'.
+
+% [alloc-subst T S S'] foraech var in T, alloc an fov N at place N in S' (that extends S)
+type alloc-subst tm -> subst -> subst -> o.
+alloc-subst (fov N) S S :- len S M, M >n N.
+alloc-subst (fov N) S S' :- len S M, M >=n N, std.append S [none] S'.
+alloc-subst (lam F) S S' :- pi x\ (pi S\alloc-subst x S S) => alloc-subst (F x) S S'.
+alloc-subst (con _) S S.
+alloc-subst (app L) S S1 :- fold alloc-subst L S S1.
+
+type beta tm -> list tm -> tm -> o.
+beta A [] A.
+beta (lam Bo) [H | L] R :- beta (Bo H) L R.
+beta (app A) L (app X) :- std.append A L X.
+beta (fov N) L (app [fov N | L]).
+beta (con H) L (app [con H | L]).
+
+% [new S N S'] return S' which is S with none at pos N
+type new subst -> nat -> subst -> o.
+new [] z [none].
+new [X|XS] (s N) [X|YS] :- new XS N YS.
+
+type mk-app tm -> list tm -> tm -> o.
+mk-app T L S :- beta T L S.
+
+type eta-contract tm -> tm -> o.
+eta-contract (con X) (con X).
+eta-contract (app L) (app L1) :- forall2 eta-contract L L1.
+eta-contract (lam F) T :- contract [] (lam F) T.
+eta-contract (lam F) (lam F1) :- pi x\ eta-contract x x => eta-contract (F x) (F1 x).
+eta-contract (fov X) (fov X).
+
+type contract list tm -> tm -> tm -> o.
+contract L (lam F) T :- 
+  pi x\ contract [x|L] (F x) T. % also checks H Prefix does not see x
+contract L (app [H|Args]) T :- 
+  std.rev L LRev, std.appendR Prefix LRev Args,
+  if (Prefix = []) (T = H) (T = app [H|Prefix]).
+
+}
+
+%%%%%%%%%%%%%%%%%%% the ML %%%%%%%%%%%%%%%%%%%%%
+
+namespace ho {
+
+shorten fo.{tm, app, lam, fov, con}.
+
+typeabbrev subst list (option assignment).
+
+kind assignment type.
+type abs (A -> assignment) -> assignment.
+type val A -> assignment.
+
+% kind tm type.
+% type app list tm -> tm.
+% type lam (tm -> tm) -> tm.
+type hov  nat -> list tm -> tm.
+% type con string -> tm.
+
+% [unif T1 T2 SOld SNew] check if T1 and T2 unify looking into SOld. SNew is the final substution
+type unif tm -> tm -> subst -> subst ->  o.
+unif (hov N Args) T S S1 :- assigned? N S F, beta-abs F Args T1, unif T1 T S S1.
+unif T (hov N Args) S S1 :- assigned? N S F, beta-abs F Args T1, unif T T1 S S1.
+unif (hov N A) (hov N A) S S :- pattern-fragment A.
+
+unif (hov N Args1) (hov M Args2) S S3 :- pattern-fragment Args1, pattern-fragment Args2, 
+  std.spy(new S W S1, prunexx W Args1 Args2 Ass, assign N S1 Ass S2, assign M S2 Ass S3).
+
+unif (hov N Args) T S S1 :- not (T = hov _ _), print "In here", std.do![not_occ N S T, pattern-fragment Args, bind Args T T1, assign N S T1 S1].
+unif T (hov N Args) S S1 :- not (T = hov _ _), std.spy(not_occ N S T), pattern-fragment Args, bind Args T T1, assign N S T1 S1.
+
+% unif (app [fov N L | Args]) (app L1) S S1 :-
+%   std.appendR Hd Args L1,
+%   unif (fov N L) (app Hd) S S1.
+
+
+unif (app L1) (app L2) S S1 :- fold2 unif L1 L2 S S1.
+unif (lam F1) (lam F2) S S1 :- pi x\ (pi S\ unif x x S S) => unif (F1 x) (F2 x) S S1.
+unif (con X) (con X) S S.
+
+% Vorremmo saperli unificare, ma non ci sono nella nostra specifica (CoqTerms non unificano eta-beta in Elpi)
+% % eta
+% unif T (lam F) S S1 :- not (T = lam _), 
+%   pi x\ beta T [x] (F' x), unif (lam F') (lam F) S S1.
+% unif T (lam F) S S1 :- not (T = lam _), 
+%   pi x\ beta T [x] (F' x), unif (lam F') (lam F) S S1.
+
+% % beta
+% unif (app [lam F | TL]) T S S1 :- beta (lam F) TL T', unif T' T S S1.
+% unif T (app [lam F | TL]) S S1 :- beta (lam F) TL T', unif T T' S S1.
+
+type prunexx nat -> list tm -> list tm -> assignment -> o.
+prunexx N A1 A2 T :-
+  prune-aux N A1 A2 [] T _.
+
+
+type prunex nat -> list tm -> list tm -> subst -> subst -> o.
+prunex N A1 A2 S S2 :-
+  new S M S1,
+  prune-aux M A1 A2 [] F ff,
+  assign N S1 F S2.
+prunex _ _ _ S S.
+
+type prune-aux nat -> list tm -> list tm -> list tm -> assignment -> bool -> o.
+prune-aux N [] [] ACC (val (hov N Args)) tt :- std.rev ACC Args.
+prune-aux N [X|XS] [X|YS] ACC (abs F) O :- pi x\ prune-aux N XS YS [x|ACC] (F x) O.
+prune-aux N [_|XS] [_|YS] ACC (abs F) _ :- pi x\ prune-aux N XS YS ACC (F x) tt.
+
+type beta-abs assignment -> list tm -> tm -> o.
+beta-abs (abs Bo) [H | L] R :- beta-abs (Bo H) L R.
+beta-abs (val A)  [] A.
+beta-abs (val (app A))  L (app X) :- std.append A L X.
+beta-abs (val (hov N A)) L (hov N X) :- std.append A L X.
+beta-abs (val (con H))    L (app [con H | L]).
+
+type beta tm -> list tm -> tm -> o.
+beta A [] A.
+beta (lam Bo) [H | L] R :- beta (Bo H) L R.
+beta (app A) L (app X) :- std.append A L X.
+beta (hov N A) L (hov N A') :- std.append A L A'.
+beta (con H) L (app [con H | L]).
+
+% type occ_aux nat -> subst -> tm -> o.
+% occ_aux N _S (fov N _).
+% occ_aux N S (fov M Args) :- assigned? M S F, beta-abs F Args T, occ_aux N S T.
+% occ_aux N S (app L) :- exists (occ_aux N S) L.
+% occ_aux N S (lam F) :- pi x\ occ_aux N S (F x).
+% 
+% type occ  nat -> subst -> tm -> o.
+% occ N _S (fov N _) :- !, fail.
+% occ N S (fov M Args) :- assigned? M S F, !, beta-abs F Args T, occ N S T.
+% occ N S T :- occ_aux N S T.
+
+type not_occ_aux nat -> subst -> tm -> o.
+not_occ_aux N S (hov M _) :- not(assigned? M S _), diff N M.
+not_occ_aux N S (hov M Args) :- assigned? M S F, beta-abs F Args T, not_occ_aux N S T.
+not_occ_aux N S (app L) :- forall1 (not_occ_aux N S) L.
+not_occ_aux N S (lam F) :- pi x\ /*not_occ_aux N S x =>*/ not_occ_aux N S (F x).
+not_occ_aux _ _ (con _).
+not_occ_aux _ _ X :- name X.
+ 
+type not_occ  nat -> subst -> tm -> o.
+not_occ N S T :- print "not occ" N S T, fail.
+not_occ N _ (hov N _).
+not_occ N S (hov M Args) :- assigned? M S F, beta-abs F Args T, not_occ N S T.
+not_occ _ _ (con _).
+not_occ N S (app L) :- not_occ_aux N S (app L).
+not_occ N S (lam L) :- not_occ_aux N S (lam L).
+not_occ _ _ X :- name X.
+
+type copy tm -> tm -> o.
+copy (app L) (app L') :- forall2 copy L L'.
+copy (lam T) (lam T') :- pi x\ copy x x => copy (T x) (T' x).
+copy (hov N L) (hov N L') :- forall2 copy L L'.
+copy (con C) (con C).
+
+type bind list tm -> tm -> assignment -> o.
+bind [] T (val T') :- copy T T'.
+bind [X | TL] T (abs T') :- pi x\ copy X x => bind TL T (T' x).
+
+type new subst -> nat -> subst -> o.
+new [] z [none].
+new [X|XS] (s N) [X|YS] :- new XS N YS.
+
+type unif-assignment assignment -> assignment -> subst -> subst -> o.
+unif-assignment (val T1) (val T2) H H1 :- unif T1 T2 H H1.
+unif-assignment (abs F1) (abs F2) H H1 :- pi x\ (pi S\ unif x x S S) => unif-assignment (F1 x) (F2 x) H H1.
+% unif-assignment (val T) (abs F) H H1 :- unif-assignment (abs x\ val {beta-abs (val T) [x]}) (abs F) H H1.
+% unif-assignment (abs F) (val T) H H1 :- print "HERE", std.do![unif-assignment (abs F) (abs x\ val {beta-abs (val T) [x]}) H H1].
+
+type equal subst -> tm -> tm -> o.
+equal S (hov N Args) T1 :- assigned? N S F, beta-abs F Args T, equal S T T1.
+equal S T1 (hov N Args) :- assigned? N S F, beta-abs F Args T, equal S T1 T.
+equal S (app L1) (app L2) :- forall2 (equal S) L1 L2.
+equal S (lam F1) (lam F2) :- pi x\ equal S x x => equal S (F1 x) (F2 x).
+equal _ (con X) (con X).
+equal _ (hov N A) (hov N A).
+
+}
+
+namespace comp {
+
+kind link type.
+type link nat -> nat -> nat -> link.
+type link-fo-align list fo.tm -> nat -> nat -> nat -> link.
+
+% type not-in list A -> A -> o.
+% not-in [] _.
+% not-in [X | TL] _ :- not (X = T), not-in TL _.
+
+type not-in A -> list A -> o.
+not-in _ [].
+not-in T [X | TL] :- not (X = T), not-in T TL.
+
+type split-pf list A -> list A -> list A -> list A -> o.
+split-pf [] _ [] [].
+split-pf [X | L] ACC [X | PF] NPF :- name X, not-in X ACC, !, 
+  split-pf L [X | ACC] PF NPF.
+split-pf L _ [] L :- std.forall L (x\ not (name x)).
+
+type comp fo.tm -> fo.tm -> list link -> list link -> ho.subst -> ho.subst -> o.
+comp (fo.con X)   (fo.con X) L L S S.
+comp (fo.app [fo.fov N|Argsss]) TT L L3 S S3 :- !,
+  split-pf Argsss [] PF NPF,
+  TT = ho.hov M PF1,
+  fold4 comp PF PF1 L L S S1,
+  fold4 comp NPF NPF1 L L1 S1 S2,
+  ho.new S2 M S3,
+  print "After comp in app uvar",
+  len PF Len,
+  % TODO: NYI NPF1 can contain non-closed terms (i.e. local vars...)
+  if (NPF = []) (LinkType = link) (LinkType = link-fo-align NPF1),
+  L3 = [LinkType N M Len | L1].
+comp (fo.app A) (fo.app A1) L L1 S S1 :- fold4 comp A A1 L L1 S S1.
+comp (fo.lam F) (fo.lam F1) L L1 S S1 :- 
+  (pi x y\ (pi A S\ comp x y A A S S) => comp (F x) (F1 y) L L1 S S1).
+comp (fo.fov N) (ho.hov M []) L [link N M z|L] S S1 :- ho.new S M S1.
+
+type solve-link list link -> list link -> ho.subst -> ho.subst -> o.
+solve-link [link N M LenM|L] LR HO HO1 :- take-link L (link N M' LenM') L1, !, std.do! [
+  same-assign M M' LenM LenM' W HO HO2,
+  solve-link [link N W LenM|L1] LR HO2 HO1,
+].
+solve-link [L|LS] [L|LS'] HO HO1 :- solve-link LS LS' HO HO1.
+solve-link [] [] X X.
+
+type same-assign nat -> nat -> nat -> nat -> nat -> ho.subst -> ho.subst -> o.
+same-assign M M' LenM LenM' W HO HO2 :- std.do![
+  if (assigned? M HO T, W = M) true (eta LenM M [] T),
+  if (assigned? M' HO T', W = M') true (eta LenM' M' [] T'),
+  if (LenM = LenM')
+     (std.spy(ho.unif-assignment T T' HO HO2))
+     (hope-for-eta HO T Te,
+      hope-for-eta HO T' Te',
+      std.spy(not(LenM = LenM'),my-unif-assignment Te Te' HO HO2))
+  ].
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%
+%%% nel test 15 abbiamo
+%%%   Len=1  x\ app[f,Y x]
+%%%   Len=0  X
+%%%
+%%% il codice sotto (my-unif-assignment) fa X = a\ app[f,Y a]
+%%% e cambia arietà a X che non va bene
+%%%
+%%% T = x\ app[f,Y x] deve essere di arità zero
+%%% allora o il T coq è (lam x\ app[f,Y x]) oppure f
+%%%
+%%% sempre nel test 15, dopo con'è g = X
+%%% ora falliamo perche g != (lam x\ app[f,Y x])
+%%% penso che dire Y x = x non sia "il più generale"
+%%%
+%%% ora mi sa che fallisce perchè g != lam
+%%% che è "sbagliato" (forse) perchè potrebbe anche avere
+%%% successo assegnado Y (in quel momento, ma non lo possiamo
+%%% fare prima, nelle varie link...)
+%%%
+%%% in pratica mi pare che o perdiamo generalità (e assegnamo Y presto)
+%%% o ritardiamo, restiamo corretti, ma sequenza di successi/fallimenti
+%%% non è fedele.
+%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+type my-unif-assignment ho.assignment -> ho.assignment -> ho.subst -> ho.subst -> o.
+my-unif-assignment A B _ _ :- print A "===" B, fail.
+my-unif-assignment (ho.val T1) (ho.val T2) H H1 :- ho.unif T1 T2 H H1.
+my-unif-assignment (ho.abs F1) (ho.abs F2) H H1 :- pi x\ (pi S\ ho.unif x x S S) => my-unif-assignment (F1 x) (F2 x) H H1.
+my-unif-assignment (ho.val V)  (ho.abs F2) H H1 :-
+    deref H V (ho.hov N L),
+    pi x\ (pi S\ ho.unif x x S S) =>
+      sigma L1\ std.append L [x] L1,
+       my-unif-assignment (ho.val (ho.hov N L1)) (F2 x) H H1.
+my-unif-assignment (ho.val V)  (ho.abs F2) H H1 :-
+    deref H V (fo.app L),
+    pi x\ (pi S\ ho.unif x x S S) =>
+      sigma L1\ std.append L [x] L1,
+       my-unif-assignment (ho.val (fo.app L1)) (F2 x) H H1.
+my-unif-assignment (ho.val V)  (ho.abs F2) H H1 :-
+    deref H V (fo.con C),
+    pi x\ (pi S\ ho.unif x x S S) =>
+       my-unif-assignment (ho.val (fo.app [fo.con C,x])) (F2 x) H H1.
+
+% tries to eta contract at each "depth", not just at the top
+type hope-for-eta ho.subst -> ho.assignment -> ho.assignment -> o.
+hope-for-eta H (ho.abs _ as F) G :- hope-contract H [] F G.
+hope-for-eta H (ho.abs F) (ho.abs G) :-
+  pi x\ deref H x x => hope-for-eta H (F x) (G x).
+hope-for-eta _ (ho.val T) (ho.val T).
+
+% given x\y\z\... it tries to contract against xyz, then xy, then x
+type hope-contract ho.subst -> list fo.tm -> ho.assignment -> ho.assignment -> o.
+hope-contract H L (ho.abs F) T :- 
+  pi x\ deref H x x => hope-contract H [x|L] (F x) T.
+hope-contract H L (ho.abs F) T :- 
+  pi x\ deref H x x => hope-contract.aux H [x|L] (F x) T.
+
+% checks if the term is xxx\ yyy\ app[...|xxx] -> yyy\ app[...]
+type hope-contract.aux ho.subst -> list fo.tm -> ho.assignment -> ho.assignment -> o.
+hope-contract.aux H L (ho.abs F) (ho.abs G) :- pi x\ deref H x x => hope-contract.aux H L (F x) (G x).
+hope-contract.aux H L (ho.val V) (ho.val T) :- std.do! [
+  deref H V (fo.app[Hd|Args]),
+  std.rev L LRev,
+  std.appendR Prefix LRev Args,
+  if (Prefix = []) (T = Hd) (T = fo.app [Hd|Prefix]),
+].
+
+type test-hope-eta-1 o.
+type test-hope-eta-2 o.
+test-hope-eta-1 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (fo.app[fo.con"f",fo.app[fo.con"g",x],y]))
+                                   (ho.abs x\           ho.val (fo.app[fo.con"f",fo.app[fo.con"g",x]  ])).
+test-hope-eta-2 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (fo.app[fo.con"f",fo.app[fo.con"g",y],x]))
+                                   (          ho.abs y\ ho.val (fo.app[fo.con"f",fo.app[fo.con"g",y]  ])).
+
+type deref ho.subst -> fo.tm -> fo.tm -> o.
+deref H (ho.hov N L) X :- assigned? N H T, ho.beta-abs T L X', deref H X' X.
+deref H (fo.app L) (fo.app L1) :- forall2 (deref H) L L1.
+deref _ (fo.con X) (fo.con X).
+deref H (ho.hov X L) (ho.hov X L1) :- forall2 (deref H) L L1.
+deref H (fo.lam F) (fo.lam G) :- pi x\ deref H x x => deref H (F x) (G x).
+
+% [eta Arity VarName Acc Ass]
+type eta nat -> nat -> list fo.tm -> ho.assignment -> o.
+eta z     N Acc (ho.val (ho.hov N Acc')) :- std.rev Acc Acc'.
+eta (s M) N Acc (ho.abs F) :- pi x\ eta M N [x | Acc] (F x).
+
+type take-link list link -> link -> list link -> o.
+take-link [L|XS] L XS.
+take-link [L|XS] L' [L|YS] :- not(L = L'), take-link XS L' YS.
+
+type assign-equal fo.subst -> nat -> fo.subst -> fo.tm -> fo.subst -> o.
+assign-equal _ z (none :: L) Y (some Y :: L).
+assign-equal S z (some A :: L) B (some A :: L) :- fo.equal S A B. 
+assign-equal S (s N) (X :: L) Y (X :: L1) :- assign-equal S N L Y L1.
+
+type assign-replace nat -> fo.subst -> fo.tm -> fo.subst -> o.
+assign-replace z [_|S] X [some X |S].
+assign-replace (s N) [A|S] X [A |S1] :- assign-replace N S X S1.
+
+type decompl.aux list link -> list link -> ho.subst -> fo.subst -> fo.subst -> o.
+decompl.aux [link N M _Arity|L] LK HO FO FO1 :- assigned? M HO T, !, std.do! [
+  % HERE the assign-equal
+  decomp-assign LK HO T T0 FO FO',
+  fo.eta-contract T0 T',
+  assign-replace N FO' T' FO2,
+  decompl.aux L LK HO FO2 FO1,
+].
+
+type get-head fo.tm -> nat -> list fo.tm -> fo.tm -> o.
+get-head (fo.app L) z Args T :-
+  % print "### In base case with" L Args T,
+  appendR [Hd|Tl] Args L,
+  fo.mk-app Hd Tl T.
+get-head Const z [Const] Const :- Const = fo.con _.
+get-head (fo.lam B) (s N) Args T :-
+  pi x\ get-head (B x) N Args (R x),
+  fo.eta-contract (fo.lam R) T.
+
+% Invariante: len(Args) > 0
+decompl.aux [link-fo-align Args N M Arity|L] LK HO FO FO1 :- assigned? M HO T, !, std.do! [
+  decomp-assign LK HO T T0 FO FO'',
+  print "Done A",
+  fold2 (decomp LK HO) Args Args1 FO'' FO',
+  print "Done B with T0 = " T0,
+
+  % Invariant : The eta contract of T0 should always return an app of something
+  % whose length is > (len Args)
+  std.map Args1 fo.eta-contract Args1',
+  print "Done C",
+  std.spy-do![
+    get-head T0 Arity Args1' Head, 
+  ],
+  print "Done D",
+  assign-replace N FO' Head FO2,
+  % print "FO-align of" T "to" Args "gives" Head,
+  decompl.aux L LK HO FO2 FO1,
+].
+decompl.aux [_|L] LK HO FO FO1 :- decompl.aux L LK HO FO FO1.
+decompl.aux [] _ _ X X.
+
+type decompl list link -> list link -> ho.subst -> fo.subst -> fo.subst -> o.
+decompl L LK HO FO FO1 :- std.do! [
+  decompl.aux L LK HO FO NewFO,
+  merge-fo NewFO NewFO FO FO1,
+].
+
+type merge-fo fo.subst -> fo.subst -> fo.subst -> fo.subst -> o.
+merge-fo _ [] [] [].
+merge-fo _ X [] X.
+% TODO: returning [some Y|R] is incorrect, we should return [some Z|R] where
+%       Z is the unification of X and Y in the OL
+merge-fo S [some X|XS] [some Y|YS] [some Y|R] :- std.spy(fo.equal S X Y), merge-fo S XS YS R. 
+merge-fo S [none|XS] [some X|YS] [some X|R] :- merge-fo S XS YS R.
+merge-fo S [some X|XS] [none|YS] [some X|R] :- merge-fo S XS YS R.
+merge-fo S [none|XS] [none|YS] [none|R] :- merge-fo S XS YS R.
+
+% we use links just to know if the variables are new
+type decomp-assign list link -> ho.subst -> ho.assignment -> fo.tm -> fo.subst -> fo.subst -> o.
+% decomp-assign LK HO (ho.abs F) F1 S S1 :-
+%   pi x y\ (pi S\ decomp LK HO x y S S) => decomp-assign LK HO (F x) F1 S S1.
+
+decomp-assign LK HO (ho.abs F) (fo.lam F1) S S1 :-
+  pi x y\ (pi S\ decomp LK HO x y S S) => decomp-assign LK HO (F x) (F1 y) S S1.
+
+decomp-assign LK HO (ho.val T) T1 S S1 :- decomp LK HO T T1 S S1.
+
+type decomp list link -> ho.subst -> fo.tm -> fo.tm -> fo.subst -> fo.subst -> o.
+decomp _ _ (fo.con X)   (fo.con X) S S.
+decomp LK HO (fo.app L) SolOL S S1 :- 
+  fold2 (decomp LK HO) L [HD|TL] S S1,
+  fo.mk-app HD TL SolOL.
+decomp LK HO (fo.lam F) (fo.lam F1) S S1 :-
+  pi x y\ (pi S\ decomp LK HO x y S S) => decomp LK HO (F x) (F1 y) S S1.
+decomp LK HO (ho.hov N Args) SolOL S S1 :- assigned? N HO T, !,
+  ho.beta-abs T Args T1,
+  decomp LK HO T1 SolOL S S1.
+decomp LK HO (ho.hov N Args) SolOL S S1 :-
+  fold2 (decomp LK HO) Args Args1 S S2,
+  if (take-link LK (link X N _) _) (S1 = S2)
+     (fo.new S2 X S1',
+      if (assigned? N HO T)
+         (decomp-assign LK HO T T' S1' S1'', assign X S1'' T' S1)
+         (S1 = S1')),
+  fo.mk-app (fo.fov X) Args1 SolOL.
+
+/*
+type eta-contract tm -> tm -> o.
+eta-contract X X :- var X, !.
+eta-contract (con X) (con X).
+eta-contract (app L) (app L1) :- forall2 eta-contract L L1.
+eta-contract (lam F) T :- contract [] (lam F) T.
+eta-contract (lam F) (lam F1) :- pi x\ (pi X Y\ eta-contract X Y :- name X, X = Y) => eta-contract (F x) (F1 x).
+eta-contract (fov X Args) (fov X Args).
+
+type contract list tm -> tm -> tm -> o.
+% contract A B _ :- print A B, fail.
+contract L X T :- var X, !, fail.
+contract L (lam F) T :- 
+  pi x\ contract [x|L] (F x) T. % also checks H Prefix does not see x
+contract L (app [H|Args]) T :- 
+  %print "Base case",
+  std.rev L LRev, std.appendR Prefix LRev Args,
+  if (Prefix = []) (T = H) (T = app [H|Prefix]).
+*/
+    
+}}
+

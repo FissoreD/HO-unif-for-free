@@ -1,12 +1,12 @@
-macro @X :- try5.fo.uv z.
-macro @Y :- try5.fo.uv (s z).
-macro @Z :- try5.fo.uv (s (s z)).
-macro @f :- try5.fo.c "f".
-macro @g :- try5.fo.c "g".
-macro @h :- try5.fo.c "h".
-macro @a :- try5.fo.c "a".
-macro @b :- try5.fo.c "b".
-macro @c :- try5.fo.c "c".
+macro @X :- try5.fo.fov z.
+macro @Y :- try5.fo.fov (s z).
+macro @Z :- try5.fo.fov (s (s z)).
+macro @f :- try5.fo.con "f".
+macro @g :- try5.fo.con "g".
+macro @h :- try5.fo.con "h".
+macro @a :- try5.fo.con "a".
+macro @b :- try5.fo.con "b".
+macro @c :- try5.fo.con "c".
 macro @app L :- try5.fo.app L.
 macro @lam L :- try5.fo.lam L.
 
@@ -91,14 +91,13 @@ macro @kol N X :- declare-test xtest (test N X ff).
   (triple ok (@lam x\ @app [@X, x]) (@lam x\ @app [@f, x])), 
   (triple ok @f @X)].
 
-% TODO: 131 & 132 don't work yet
-% @okl 131 [
-%   (triple ok (@lam x\ @app [@X, x]) @f), % ci costringe a bucare il lambda, ci puo' essere una eta 
-%   (triple ok @f @X)].
+@okl 131 [
+  (triple ok (@lam x\ @app [@X, x]) @f), % ci costringe a bucare il lambda, ci puo' essere una eta 
+  (triple ok @f @X)].
 
-% @okl 132 [
-%   (triple ok (@lam x\ @app [@X, x]) (@lam x\ @app[@f, x, x])),  % visto che buchiamo a sx, la link deve usare il PF sotto il lambda
-%   (triple ok @X (@lam y\ @app [@f, y, y]))].
+@okl 132 [
+  (triple ok (@lam x\ @app [@X, x]) (@lam x\ @app[@f, x, x])),  % visto che buchiamo a sx, la link deve usare il PF sotto il lambda
+  (triple ok @X (@lam y\ @app [@f, y, y]))].
 
 @okl 14 [
   (triple ok (@lam x\ @app [@X, x]) (@lam x\ @app [@f, x])), 
