@@ -34,11 +34,9 @@ con X ==o con X.
 fov N ==o fov N.
 
 % eta
-lam F ==o T :- not (T = lam _), 
-  pi x\ beta T [x] (T' x), lam F ==o lam T'.
-T ==o lam F :- not (T = lam _), 
-  % TODO: here we could call (T' x) ==o (F x) but it doesn't work?
-  pi x\ beta T [x] (T' x), lam T' ==o lam F.
+lam F ==o T :- not (T = lam _), pi x\ beta T [x] (T' x), lam F ==o lam T'.
+% TODO: here we could call (T' x) ==o (F x) but we need to add the x ==o x
+T ==o lam F :- not (T = lam _), pi x\ beta T [x] (T' x), lam T' ==o lam F.
 
 % beta
 app [lam X | TL] ==o T :- beta (lam X) TL T', T' ==o T.
