@@ -612,10 +612,10 @@ The base equality function over terms can be defined as follows:
     con X ~\Eo~con X.
     fov N ~\Eo~fov N.
     % eta
-    lam F ~\Eo~T :- not (T = lam _), 
-      pi x\ beta T [x] (T' x), lam F ~\Eo~lam T'.
-    T ~\Eo~(lam F) :- not (T = lam _), 
-      pi x\ beta T [x] (T' x), lam T' ~\Eo~lam F.
+    lam F ==o T :- pi x\ beta T [x] (T' x), 
+      x ==o x => F x ==o T' x.
+    T ==o lam F :- pi x\ beta T [x] (T' x), 
+      x ==o x => T' x ==o F x.
     % beta
     app [lam X | TL] ~\Eo~T :- beta (lam X) TL T', T' ~\Eo~T.
     T ~\Eo~app [lam X | TL] :- beta (lam X) TL T', T ~\Eo~T'.
