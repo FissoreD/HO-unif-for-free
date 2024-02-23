@@ -16,36 +16,32 @@ type fov  nat -> tm.
 typeabbrev subst list (option tm).
 
 type deref subst -> tm -> tm -> o.
-deref _ X Y :- (var X ; var Y), halt "flex".
+deref _ X _ :- var X, halt "flex deref".
 deref S (fov N) T1 :- assigned? N S T, deref S T T1.
-deref S (app [fov N|L]) R :- assigned? N S T, !, beta T L R.
+deref S (app [fov N|L]) R :- assigned? N S T, !, beta T L R', deref S R' R.
 deref S (app L1) (app L2) :- forall2 (deref S) L1 L2.
 deref S (lam F1) (lam F2) :- pi x\ deref S x x => deref S (F1 x) (F2 x).
 deref _ (con X) (con X).
 deref _ (fov N) (fov N).
 
-% [equal Subst T1 T2] check if two terms are equal for the OL
-% note: T1 and T2 are never flexible elpi variables
-type equal subst -> tm -> tm -> o.
-equal _ X Y :- (var X ; var Y), halt "flex".
-equal S (fov N) T1 :- assigned? N S T, equal S T T1.
-equal S T1 (fov N) :- assigned? N S T, equal S T1 T.
-equal S (app L1) (app L2) :- forall2 (equal S) L1 L2.
-equal S (lam F1) (lam F2) :- pi x\ equal S x x => equal S (F1 x) (F2 x).
-equal _ (con X) (con X).
-equal _ (fov N) (fov N).
+% [equal T1 T2] check if two terms are equal for the OL
+type equal tm -> tm -> o.
+
+equal X Y :- (var X ; var Y), halt "flex equal". % chekc to prevent implem errors
+equal (app L1) (app L2) :- forall2 equal L1 L2.
+equal (lam F1) (lam F2) :- pi x\ equal x x => equal (F1 x) (F2 x).
+equal (con X) (con X).
+equal (fov N) (fov N).
 
 % eta
-equal S (lam F) T :- not (T = lam _), 
-  pi x\ beta T [x] (T' x), equal S (lam F) (lam T').
-equal S T (lam F) :- not (T = lam _), 
-  pi x\ beta T [x] (T' x), equal S (lam T') (lam F).
+equal (lam F) T :- not (T = lam _), 
+  pi x\ beta T [x] (T' x), equal (lam F) (lam T').
+equal T (lam F) :- not (T = lam _), 
+  pi x\ beta T [x] (T' x), equal (lam T') (lam F).
 
 % beta
-equal S (app [fov N|Args]) T1 :- assigned? N S F, beta F Args T, equal S T T1.
-equal S T1 (app [fov N|Args]) :- assigned? N S F, beta F Args T, equal S T1 T.
-equal S (app [lam X | TL]) T :- beta (lam X) TL T', equal S T' T.
-equal S T (app [lam X | TL]) :- beta (lam X) TL T', equal S T T'.
+equal (app [lam X | TL]) T :- beta (lam X) TL T', equal T' T.
+equal T (app [lam X | TL]) :- beta (lam X) TL T', equal T T'.
 
 % [alloc-subst T S S'] foraech var in T, alloc an fov N at place N in S' (that extends S)
 type alloc-subst tm -> subst -> subst -> o.
@@ -373,18 +369,12 @@ type take-link list link -> link -> list link -> o.
 take-link [L|XS] L XS.
 take-link [L|XS] L' [L|YS] :- not(L = L'), take-link XS L' YS.
 
-type assign-equal fo.subst -> nat -> fo.subst -> fo.tm -> fo.subst -> o.
-assign-equal _ z (none :: L) Y (some Y :: L).
-assign-equal S z (some A :: L) B (some A :: L) :- fo.equal S A B. 
-assign-equal S (s N) (X :: L) Y (X :: L1) :- assign-equal S N L Y L1.
-
 type assign-replace nat -> fo.subst -> fo.tm -> fo.subst -> o.
 assign-replace z [_|S] X [some X |S].
 assign-replace (s N) [A|S] X [A |S1] :- assign-replace N S X S1.
 
 type decompl.aux list link -> list link -> ho.subst -> fo.subst -> fo.subst -> o.
 decompl.aux [link N M _Arity|L] LK HO FO FO1 :- assigned? M HO T, !, std.do! [
-  % HERE the assign-equal
   decomp-assign LK HO T T0 FO FO',
   fo.eta-contract T0 T',
   assign-replace N FO' T' FO2,
@@ -434,7 +424,8 @@ merge-fo _ [] [] [].
 merge-fo _ X [] X.
 % TODO: returning [some Y|R] is incorrect, we should return [some Z|R] where
 %       Z is the unification of X and Y in the OL
-merge-fo S [some X|XS] [some Y|YS] [some Y|R] :- std.spy(fo.equal S X Y), merge-fo S XS YS R. 
+% TODO: instead of deref-deref-equal, we need unif 
+merge-fo S [some X|XS] [some Y|YS] [some Y|R] :- std.spy(fo.deref S X X', fo.deref S Y Y', fo.equal X' Y'), merge-fo S XS YS R. 
 merge-fo S [none|XS] [some X|YS] [some X|R] :- merge-fo S XS YS R.
 merge-fo S [some X|XS] [none|YS] [some X|R] :- merge-fo S XS YS R.
 merge-fo S [none|XS] [none|YS] [none|R] :- merge-fo S XS YS R.
