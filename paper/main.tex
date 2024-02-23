@@ -168,7 +168,7 @@ Instance forall_dec A P : Finite A ~$\to$~            (* r3 *)
 \end{coqcode}
 
 \noindent Under this context of instances a type-class solver is able to prove
-the the following statement automatically by back-chaining.
+the following statement automatically by back-chaining.
 
 \begin{coqcode}
   Check _ : Decision (forall y: fin 7, nfact y 3).  (* g *)
@@ -191,17 +191,17 @@ type c    string -> tm.               % constants
 Following standard $\lambda$Prolog~\cite{miller_nadathur_2012}
 the concrete syntax to abstract, at the meta level, an expression
 \elpiIn{e} over a variable \elpiIn{x}
-is \elpiIn{x\ e}, and square brackets denote a list of
+is <<\elpiIn{x\ e}>>, and square brackets denote a list of
 terms separated by comma. As an example we show the encoding of the Coq term
-``$\forall y:\mathrm{t}.\mathrm{nfact}~ y~ 3$'':
+<<\coqIn{~$\forall$~y:t, nfact y 3}>>:
 
 \begin{elpicode}
 all (c"t") y\ app[c"nfact", y, c"3"]
 \end{elpicode}
 
 \noindent
-We now illustrate the encoding of the three instances above as higher order
-logic programming rules: capital letters denote rule
+We now illustrate the encoding of the three instances above as higher-order
+logic-programming rules: capital letters denote rule
 parameters; \elpiIn{:-} separates the rule's head from the premises;
 \elpiIn{pi w\ p} introduces a fresh nominal constant \elpiIn{w}
 for the premise \elpiIn{p}.
@@ -225,8 +225,8 @@ decision (all (app[c"fin", c"7"]) y\                 % g
 \end{elpicode}
 
 \noindent
-we fail because of this ``higher order'' unification problem (for DTT)
-is phrased as a first order unification problem in the meta language:
+we fail because this ``higher order'' unification problem (for DTT)
+is phrased as a first-order unification problem in the meta language:
 the two lists of terms have different lengths!
 
 \begin{elpicode}
@@ -243,7 +243,7 @@ decision (all A x\ Pm x) :- link Pm A P, finite A,   % r3a
 \end{elpicode}
 
 \noindent
-Since \elpiIn{Pm} is an higher order unification variable with \elpiIn{x}
+Since \elpiIn{Pm} is an higher-order unification variable with \elpiIn{x}
 in its scope, the unification problem (pa) admits one solution:
 
 \begin{elpicode}
@@ -278,7 +278,7 @@ the following unification problem has no solution:
 
 \begin{elpicode}
 app[lam A (a\ app[c"nfact", a, c"3"]), x] =
-app[c"nfact", N, NF]
+  app[c"nfact", N, NF]
 \end{elpicode}
 
 \noindent
@@ -303,19 +303,19 @@ addition to the usual $\eta\beta$-equivalence for functions, terms (hence types)
 are compared up to definition unfolding and fixpoint unrolling. Still,
 for efficiency and predictability reasons, most form of automatic proof search
 employ a unification procedure that captures a simpler one,
-just $\eta\beta$, and that solves higher order problems
+just $\eta\beta$, and that solves higher-order problems
 restricted to the pattern fragment $\mathcal{L}_\lambda$~\cite{miller92jsc}.
 We call this unification procedure \Uo{}.
 
 The equational theory of the meta language Elpi that we want to use to
 implement a form of proof automation is strikingly similar, since it
 it comprises $\eta\beta$ (for the meta language functions), and the
-unification procedure \Ue{} solves higher order problems in
+unification procedure \Ue{} solves higher-order problems in
 $\mathcal{L}_\lambda$.
 
 In spite of the similarity the link between \Ue{} and \Uo{} is not trivial,
 since the abstraction and application term constructors
-the two unification procedure deal with are different. For example
+the two unification procedures deal with are different. For example
 
 \begin{tabular}{lcl}
 \elpiIn{x\ f x} & \Ue{} & \elpiIn{f}\\
@@ -354,7 +354,7 @@ TODO extend \Eo and \Ee with reflexivity on uvars.
 We write $t_1 \Ue t_2 \mapsto \sigma$ when $t_1$ and $t_2$ unify with substitution
 $\sigma$, we write $\sigma t$ for the application of the substitution to
 $t$ and we assume that the unification of our meta language is correct:
-
+%
 $$
 t_1 \Ue t_2 \mapsto \sigma \Rightarrow \sigma t_1 \Ee \sigma t_2
 $$
@@ -750,6 +750,6 @@ of variable point to the respective substitution.
 
 % \section{Conclusion}
 
-% \printbibliography
+\printbibliography
 
 \end{document}
