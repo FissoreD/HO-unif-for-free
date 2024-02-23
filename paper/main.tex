@@ -185,7 +185,7 @@ constructors:
 type lam  tm -> (tm -> tm) -> tm.     % lambda abstraction
 type app  list tm -> tm.              % n-ary application
 type all  tm -> (tm -> tm) -> tm.     % forall quantifier
-type c    string -> tm.               % constants
+type con  string -> tm.               % constants
 \end{elpicode}
 
 \noindent
@@ -197,7 +197,7 @@ terms separated by comma. As an example we show the encoding of the Coq term
 <<\coqIn{~$\forall$~y:t, nfact y 3}>>:
 
 \begin{elpicode}
-all (c"t") y\ app[c"nfact", y, c"3"]
+all (con"t") y\ app[con"nfact", y, con"3"]
 \end{elpicode}
 
 \noindent
@@ -208,8 +208,8 @@ parameters; \elpiIn{:-} separates the rule's head from the premises;
 for the premise \elpiIn{p}.
 
 \begin{elpicode}
-finite (app[c"fin", N]).                              ~\customlabel{clause:r1}{(r1)}~
-decision (app [c"nfact", N, NF]).                     ~\customlabel{clause:r2}{(r2)}~
+finite (app[con"fin", N]).                            ~\customlabel{clause:r1}{(r1)}~
+decision (app [con"nfact", N, NF]).                   ~\customlabel{clause:r2}{(r2)}~
 decision (all A x\ app[P, x]) :- finite A,            ~\customlabel{clause:r3}{(r3)}~
   pi w\ decision (app[P, w]).
 \end{elpicode}
@@ -221,8 +221,8 @@ language (its type is \elpiIn{tm}).
 If we try to backchain the rule \ref{clause:r3} on the encoding of the goal \ref{goal:g} below:
   
 \begin{elpicode}
-decision (all (app[c"fin", c"7"]) y\                 
-  app[c"nfact", y, c"3"]).
+decision (all (app[con"fin", con"7"]) y\                 
+  app[con"nfact", y, con"3"]).
 \end{elpicode}
 
 \noindent
@@ -232,7 +232,7 @@ the two lists of terms have different lengths! The root cause is that
 first order due to the encoding in the meta language.
 
 \begin{elpicode}
-app[c"nfact", y, c"3"] = app[P, y]                     ~\customlabel{problem:p}{(p)}~
+app[con"nfact", y, con"3"] = app[P, y]                 ~\customlabel{problem:p}{(p)}~
 \end{elpicode}
 
 \noindent
@@ -249,9 +249,9 @@ Since \elpiIn{Pm} is an higher order unification variable with \elpiIn{x}
 in its scope, the unification problem \ref{problem:pa} admits one solution:
 
 \begin{elpicode}
-app[c"nfact", y, c"3"] = Pm y                         ~\customlabel{problem:pa}{(pa)}~
-Pm = x\ app[c"nfact", x, c"3"]       % assignment for Pm
-A = app[c"fin", c"7"]                % assignment for A
+app[con"nfact", y, con"3"] = Pm y                     ~\customlabel{problem:pa}{(pa)}~
+Pm = x\ app[con"nfact", x, con"3"]     % assignment for Pm
+A = app[con"fin", con"7"]              % assignment for A
 \end{elpicode}
   
 \noindent
@@ -261,7 +261,7 @@ assignment for \elpiIn{Pm} (that has type \elpiIn{tm -> tm})
 back to the domain of Coq terms (the type \elpiIn{tm}):
 
 \begin{elpicode}
-P = lam A a\ app[c"nfact", a, c"3"]
+P = lam A a\ app[con"nfact", a, con"3"]
 \end{elpicode}
 
 \noindent
@@ -271,7 +271,7 @@ is not trivial, since the solution for \elpiIn{P} above generates a
 under the \elpiIn{pi w\ }\hspace{-0.8em}):
 
 \begin{elpicode}
-decision (app[lam A (a\ app[c"nfact", a, c"3"]), w])
+decision (app[lam A (a\ app[con"nfact", a, con"3"]), w])
 \end{elpicode}
 
 \noindent
@@ -279,8 +279,8 @@ In turn this redex prevents the rule \ref{clause:r2} to backchain properly since
 the following unification problem has no solution:
 
 \begin{elpicode}
-app[lam A (a\ app[c"nfact", a, c"3"]), x] =
-  app[c"nfact", N, NF]
+app[lam A (a\ app[con"nfact", a, con"3"]), x] =
+  app[con"nfact", N, NF]
 \end{elpicode}
 
 \noindent
@@ -321,8 +321,8 @@ the two unification procedures deal with are different. For example
 
 \begin{tabular}{lcl}
 \elpiIn{x\ f x} & \Ue{} & \elpiIn{f}\\
-\elpiIn{lam A x\ app[c"f", x]} & \Uo{} & \elpiIn{c"f"}\\
-\elpiIn{lam A x\ app[c"f", x]} & \nUe{} & \elpiIn{c"f"} \\
+\elpiIn{lam A x\ app[con"f", x]} & \Uo{} & \elpiIn{con"f"}\\
+\elpiIn{lam A x\ app[con"f", x]} & \nUe{} & \elpiIn{con"f"} \\
 \elpiIn{P x} & \Ue{} & \elpiIn{x}\\
 \elpiIn{app[P, x]} & \Uo{} & \elpiIn{x}\\
 \elpiIn{app[P, x]} & \nUe{} & \elpiIn{x}\\
