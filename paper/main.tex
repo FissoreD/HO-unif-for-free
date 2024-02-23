@@ -51,6 +51,7 @@
 \newcommand{\nUe}{\ensuremath{\nUnifRel_\lambda}\xspace}
 \newcommand{\Ee}{\ensuremath{\EqualRel_\lambda}\xspace}
 \newcommand{\nEe}{\ensuremath{\nEqualRel_\lambda}\xspace}
+\newcommand{\llambda}{\ensuremath{\mathcal{L}_\lambda}\xspace}
 
 \newcommand{\Fo}{\ensuremath{\mathcal{F}_{\!o}\xspace}} % space non va
 \newcommand{\Ho}{\ensuremath{\mathcal{H}_o}\xspace}
@@ -351,13 +352,41 @@ We call \Eo the equality over ground terms in \Fo,
 \Ue the one provided by the meta language.
 TODO extend \Eo and \Ee with reflexivity on uvars.
 
+\newcommand{\specunif}[3]{
+  #3_i \in \mathcal{L}_\lambda \Rightarrow %
+    \exists \rho, %
+      \rho #3_1 #1 \rho #3_2  %
+        \Leftrightarrow #3_1 #2 #3_2 \mapsto \rho' \subseteq \rho 
+}
+
+
+\newcommand{\unifcorrect}[3]{
+  % \forall \rho #3_1 #3_2, %
+    % \{#3_1, #3_2\} \subseteq \llambda \Rightarrow %
+    #3_i \in \llambda \Rightarrow
+      #3_1 #2 #3_2 \mapsto \rho
+        \Rightarrow 
+          \rho #3_1 #1 \rho #3_2  %
+}
+
+\newcommand{\unifcomplete}[3]{
+  % \forall #3_1 #3_2, %
+    % \{#3_1, #3_2\} \subseteq \llambda \Rightarrow %
+    #3_i \in \llambda \Rightarrow
+      % \forall \rho, %
+        \rho #3_1 #1 \rho #3_2  %
+          \Rightarrow \exists \rho', #3_1 #2 #3_2 \mapsto \rho' \land \rho' \subseteq \rho 
+}
+
 We write $t_1 \Ue t_2 \mapsto \sigma$ when $t_1$ and $t_2$ unify with substitution
 $\sigma$, we write $\sigma t$ for the application of the substitution to
 $t$ and we assume that the unification of our meta language is correct:
+
 %
-$$
-t_1 \Ue t_2 \mapsto \sigma \Rightarrow \sigma t_1 \Ee \sigma t_2
-$$
+\begin{gather}
+  \unifcorrect{\Ee}{\Ue}{t}\\
+  \unifcomplete{\Ee}{\Ue}{t}
+\end{gather}
 
 \newcommand{\C}[3]{\ensuremath{\langle #1 \rangle}\mapsto(#2,#3)}
 \newcommand{\D}[3]{\ensuremath{\langle #1,#2 \rangle^{-1}\mapsto #3}}
@@ -381,12 +410,16 @@ $$
 
 We write $s \in \mathcal{L}_\lambda$ if all unif variables in
 $s$ are applied to distinct bound variables.
-
-\begin{align}
-t_1 \Uo t_2 \mapsto \rho &\Rightarrow \rho t_1 \Eo \rho t_2\\
-s_i \in \mathcal{L}_\lambda \land \exists \rho, \rho s_1 \Eo \rho s_2 &\Leftrightarrow s_1 \Uo s_2 \mapsto \rho' \subseteq \rho \\
-\forall \rho, \rho s_1 \Eo \rho s_2 &\Rightarrow \rho t_1 \Uo \rho t_2
-\end{align}
+%
+\begin{gather}
+\unifcorrect{\Eo}{\Uo}{s}\\
+\unifcomplete{\Eo}{\Uo}{s}\\
+% \forall \rho'\rho, 
+  \rho s_1 \Eo \rho s_2 \Rightarrow
+  \rho' \subseteq \rho \Rightarrow
+  \rho's_i \in \mathcal{L}_\lambda \Rightarrow
+  \rho' s_1 \Uo \rho' s_2
+\end{gather}
 
 the first one is that we are correct
 
@@ -448,7 +481,7 @@ This other paper~\cite{10.1007/978-3-031-38499-8_25} should also be cited.
 \section{Languages description}
 \label{sec:lang-spec}
 
-\input{lang_descr.tex}
+% \input{lang_descr.tex}
 
 % Description of languages (OL and ML)
 
@@ -558,12 +591,37 @@ any node of the form \elpiIn{ho_uv}.
 \old
 
 A key property needed in unification is being able to verify if two terms are
-equal. This is kind of a structural equality verification between two terms,
-where variable dereferencing is performed when the variable is assigned. A
-sketch of the equality function is given for the OL language in
-\cref{code:term-equal}. Though, this equality relation over terms of a language
-can be powered by other reduction rules depending equational theory being
-considered. In our case, the OL terms are equal under $\eta\beta$ redex. This mean
+equal wrt a given equational theory. This relation allow to compare terms under
+a certain substitution mapping, so that any time a variable $v$ is assigned in a
+subterm, a dereferencing of $v$ is performed. After variable dereferencing, the
+test for equality is continued on the new-created subterm.
+
+The base equality function over terms can be defined as follows:
+
+\begin{figure}
+  \begin{elpicode}
+    % congruence
+    type ~(\Eo)~ tm -> tm -> o.
+    app L1 ~\Eo~app L2 :- forall2 ~(\Eo)~ L1 L2.
+    lam F1 ~\Eo~lam F2 :- pi x\ x ~\Eo~x => F1 x ~\Eo~F2 x.
+    con X ~\Eo~con X.
+    fov N ~\Eo~fov N.
+    % eta
+    lam F ~\Eo~T :- not (T = lam _), 
+      pi x\ beta T [x] (T' x), lam F ~\Eo~lam T'.
+    T ~\Eo~(lam F) :- not (T = lam _), 
+      pi x\ beta T [x] (T' x), lam T' ~\Eo~lam F.
+    % beta
+    app [lam X | TL] ~\Eo~T :- beta (lam X) TL T', T' ~\Eo~T.
+    T ~\Eo~app [lam X | TL] :- beta (lam X) TL T', T ~\Eo~T'.
+  \end{elpicode}
+  \caption{Equal predicate}
+  \label{code:eq-pred}
+  \Description[code:equal-pred]{code:equal-pred}
+\end{figure}
+
+Though, this equality relation is to be extended with $\eta\beta$ reduction
+rules to mirror the theory of the OL. This mean
 that new rules for those two redexes are added in the implementation of
 \elpiIn{fo_equal}.
 

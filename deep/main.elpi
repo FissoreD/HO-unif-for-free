@@ -7,8 +7,10 @@ accumulate common.
 % accumulate unif-3-ho-test.
 % accumulate unif-4.
 % accumulate unif-4-test.
-accumulate unif-5.
-accumulate unif-5-test.
+% accumulate unif-5.
+% accumulate unif-5-test.
+accumulate unif-6.
+accumulate unif-6-test.
 
 
 main [] :-

@@ -44,18 +44,37 @@
 
 
 \begin{figure*}
-  \begin{tabular}{c}
-    \begin{minipage}{.80\textwidth}
+  \begin{tabular}{cc}
+    \begin{minipage}{.50\textwidth}
       \begin{elpicode}
         type fo_equal subst -> tm -> tm -> o.
         % deref
-        fo_equal S (uv N) T1 :- assigned? N S T, fo_equal S T T1.
-        fo_equal S T1 (uv N) :- assigned? N S T, fo_equal S T1 T.
+        fo_equal S (fo_uv N) T1 :- assigned? N S T, fo_equal S T T1.
+        fo_equal S T1 (fo_uv N) :- assigned? N S T, fo_equal S T1 T.
         % congruence
         fo_equal S (app L1) (app L2) :- forall2 (fo_equal S) L1 L2.
-        fo_equal S (lam F1) (lam F2) :- pi x\ fo_equal S x x => fo_equal S (F1 x) (F2 x).
+        fo_equal S (lam F1) (lam F2) :- 
+          pi x\ fo_equal S x x => fo_equal S (F1 x) (F2 x).
         fo_equal _ (c X) (c X).
-        fo_equal _ (uv N) (uv N).
+        fo_equal _ (fo_uv N) (fo_uv N).
+      \end{elpicode}
+    \end{minipage}
+    &
+    \begin{minipage}{.50\textwidth}
+      \begin{elpicode}
+
+        % eta
+        fo_equal S (lam F) T :- not (T = lam _), 
+          pi x\ beta T [x] (T' x), fo_equal S (lam F) (lam T').
+        fo_equal S T (lam F) :- not (T = lam _), 
+          pi x\ beta T [x] (T' x), fo_equal S (lam T') (lam F).
+        % beta
+        fo_equal S (app [uv N|Args]) T1 :- 
+          assigned? N S F, beta F Args T, fo_equal S T T1.
+        fo_equal S T1 (app [uv N|Args]) :- 
+          assigned? N S F, beta F Args T, fo_equal S T1 T.
+        fo_equal S (app [lam X | TL]) T :- beta (lam X) TL T', fo_equal S T' T.
+        fo_equal S T (app [lam X | TL]) :- beta (lam X) TL T', fo_equal S T T'.
       \end{elpicode}
     \end{minipage}
   \end{tabular}
