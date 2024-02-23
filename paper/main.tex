@@ -172,7 +172,7 @@ Instance forall_dec A P : Finite A ~$\to$~            (* r3 *)
 the following statement automatically by back-chaining.
 
 \begin{coqcode}
-  Check _ : Decision (forall y: fin 7, nfact y 3).  (* g *)
+  Check _ : Decision (forall y: fin 7, nfact y 3).   ~\customlabel{goal:g}{(g)}~
 \end{coqcode}
 
 \noindent
@@ -208,53 +208,54 @@ parameters; \elpiIn{:-} separates the rule's head from the premises;
 for the premise \elpiIn{p}.
 
 \begin{elpicode}
-finite (app[c"fin", N]).                             % r1
-decision (app [c"nfact", N, NF]).                    % r2
-decision (all A x\ app[P, x]) :- finite A,           % r3
+finite (app[c"fin", N]).                              ~\customlabel{clause:r1}{(r1)}~
+decision (app [c"nfact", N, NF]).                     ~\customlabel{clause:r2}{(r2)}~
+decision (all A x\ app[P, x]) :- finite A,            ~\customlabel{clause:r3}{(r3)}~
   pi w\ decision (app[P, w]).
 \end{elpicode}
 
 \noindent
-Unfortunately this direct translation of rule (r3) uses the
+Unfortunately this direct translation of rule \ref{clause:r3} uses the
 predicate \coqIn{P} essentially as a first order term for the meta
 language (its type is \elpiIn{tm}).
-If we try to backchain the rule (r3) on the encoding of the goal (g) below:
+If we try to backchain the rule \ref{clause:r3} on the encoding of the goal \ref{goal:g} below:
   
 \begin{elpicode}
-decision (all (app[c"fin", c"7"]) y\                 % g
+decision (all (app[c"fin", c"7"]) y\                 
   app[c"nfact", y, c"3"]).
 \end{elpicode}
 
 \noindent
-we fail because this ``higher order'' unification problem (for DTT)
-is phrased as a first-order unification problem in the meta language:
-the two lists of terms have different lengths!
+we obtain an unsolvable unification problem \ref{problem:p}:
+the two lists of terms have different lengths! The root cause is that
+\ref{problem:p} is an higher order in DTT, but becomes
+first order due to the encoding in the meta language.
 
 \begin{elpicode}
-app[c"nfact", y, c"3"] = app[P, y]                   % p
+app[c"nfact", y, c"3"] = app[P, y]                     ~\customlabel{problem:p}{(p)}~
 \end{elpicode}
 
 \noindent
 In this paper we study a more sophisticated encoding of Coq terms allowing
-us to rephrase the problematic rule (r3) as follows:
+us to rephrase the problematic rule \ref{clause:r3} as follows:
 
 \begin{elpicode}
-decision (all A x\ Pm x) :- link Pm A P, finite A,   % r3a
+decision (all A x\ Pm x) :- link Pm A P, finite A,   ~\customlabel{clause:r3a}{(r3a)}~
   pi x\ decision (app[P, x]).
 \end{elpicode}
 
 \noindent
-Since \elpiIn{Pm} is an higher-order unification variable with \elpiIn{x}
-in its scope, the unification problem (pa) admits one solution:
+Since \elpiIn{Pm} is an higher order unification variable with \elpiIn{x}
+in its scope, the unification problem \ref{problem:pa} admits one solution:
 
 \begin{elpicode}
-app[c"nfact", y, c"3"] = Pm y                       % pa
+app[c"nfact", y, c"3"] = Pm y                         ~\customlabel{problem:pa}{(pa)}~
 Pm = x\ app[c"nfact", x, c"3"]       % assignment for Pm
 A = app[c"fin", c"7"]                % assignment for A
 \end{elpicode}
   
 \noindent
-After unifying the head of rule (r3a) with the goal Elpi runs
+After unifying the head of rule \ref{clause:r3a} with the goal Elpi runs
 the premise \elpiIn{link Pm A P} that is in charge of bringing the
 assignment for \elpiIn{Pm} (that has type \elpiIn{tm -> tm})
 back to the domain of Coq terms (the type \elpiIn{tm}):
@@ -274,7 +275,7 @@ decision (app[lam A (a\ app[c"nfact", a, c"3"]), w])
 \end{elpicode}
 
 \noindent
-In turn this redex prevents the rule (r2) to backchain properly since
+In turn this redex prevents the rule \ref{clause:r2} to backchain properly since
 the following unification problem has no solution:
 
 \begin{elpicode}
@@ -330,7 +331,7 @@ the two unification procedures deal with are different. For example
 \noindent
 One could ignore this similarity, and ``just'' describe the object language
 unification procedure in the meta language, that is crafting a \elpiIn{unif}
-predicate to be used as follows in rule (r3):
+predicate to be used as follows in rule \ref{clause:r3}:
 
 \begin{elpicode}
 decision X :- unif X (all A x\ app[P, x]), finite A,
@@ -441,42 +442,46 @@ also takes the same paths, that is it fails as early as possible.
 \subsection{Alternative encodings and related work}
 
 
-Our choice of encoding of DTT may look weird to the reader familiar with
-LF, since used a shallow encoding of classes and binders, but not of the
-``lambda calculus'' part of DTT. Here a more lightweight encoding
-that unfortunately does not fit our use case
+Our encoding of DTT may look ``semi shallow'' since we we use the meta language
+lambda abstraction but not its application (for the terms of type \elpiIn{tm}).
+A fully shallow encoding unfortunately does not fit our use case, although
+it would make the running example work:
 
 \begin{elpicode}
 finite (fin N).
 decision (nfact N NF).
-decision (all A x\ P x) :- 
-  (pi x\ decision (P x)), finite A.
+decision (all A x\ P x) :- finite A, pi x\ decision (P x).
 \end{elpicode}
 
-but in DTT this is not always possible and not handy in our use case,
-since the arity of constants is not fixed.
+\noindent
+There are two reasons for dismissing this encoding. The first one is that
+in DTT it is not always possible to adopt it since the type system
+of the meta language is too weak to accommodate terms with a variable arity,
+like the following example:
 
 \begin{coqcode}
-Fixpoint narr T n := 
-  if n is S m then T -> narr T m else T.
-Definition nsum n : narr nat (n+1).
-Check nsum 2   8 9 : nat.
-Check nsum 3 7 8 9 : nat.
+Fixpoint arr T n := if n is S m then T -> arr T m else T.
+Definition sum n : arr nat n := ...
+Check sum 2   7 8   : nat.
+Check sum 3   7 8 9 : nat.
 \end{coqcode}
-  
-moreover we use the same encoding for meta programming, or even just to provide
-hand written rules. We want to access the syntax of OL, so our embedding cannot
-be that shallow. We want to keep it shallow for the binders, but we need
-the c, app and lam nodes. % all ?
 
+\noindent
+The second reason is the encoding for Coq is used for meta programming the
+system, hence it must accommodate the manipulation of terms that are now
+know in advance (not even defined in Coq) without using introspection
+primitives such as Prologs's \texttt{functor} and \texttt{arg}.
 
-Note that this~\cite{felty93lics} is related and make the
+In the literature we could find a few related encoding of DTT.
+TODO In~\cite{felty93lics} is related and make the
 discrepancy between the types of ML and DTT visible. In this case
 one needs 4 application nodes. Moreover the objective is an encoding
 of terms, proofs, not proof search. Also note the conv predicate,
 akin to the unif we rule out.
 
-This other paper~\cite{10.1007/978-3-031-38499-8_25} should also be cited.
+TODO This other paper~\cite{10.1007/978-3-031-38499-8_25} should also be cited.
+
+None of the encodings above provide a solution to our problem.
 
 \section{Languages description}
 \label{sec:lang-spec}
