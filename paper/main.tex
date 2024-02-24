@@ -162,9 +162,9 @@ linking a natural number \coqIn{n} to its prime factors \coqIn{nf}, is decidable
 predicate has and if its domain is finite.
 
 \begin{coqcode}
-Instance fin_fin n : Finite (fin n).             (* r1 *)
-Instance nfact_dec n nf : Decision (nfact n nf). (* r2 *)
-Instance forall_dec A P : Finite A ~$\to$~            (* r3 *)
+Instance fin_fin n : Finite (fin n).              (* r1 *)
+Instance nfact_dec n nf : Decision (nfact n nf).  (* r2 *)
+Instance forall_dec A P : Finite A ~$\to$~             (* r3 *)
   ~$\forall$~x:A, Decision (P x) ~$\to$~ Decision (~$\forall$~x:A, P x).
 \end{coqcode}
 
@@ -172,7 +172,7 @@ Instance forall_dec A P : Finite A ~$\to$~            (* r3 *)
 the following statement automatically by back-chaining.
 
 \begin{coqcode}
-  Check _ : Decision (forall y: fin 7, nfact y 3).   ~\customlabel{goal:g}{(g)}~
+  Check _ : Decision (forall y: fin 7, nfact y 3).       ~\customlabel{goal:g}{(g)}~
 \end{coqcode}
 
 \noindent
@@ -215,10 +215,11 @@ decision (all A x\ app[P, x]) :- finite A,            ~\customlabel{clause:r3}{(
 \end{elpicode}
 
 \noindent
-Unfortunately this direct translation of rule \ref{clause:r3} uses the
-predicate \coqIn{P} essentially as a first order term for the meta
+Unfortunately this translation of rule \ref{clause:r3} uses the
+predicate \coqIn{P} as a first order term for the meta
 language (its type is \elpiIn{tm}).
-If we try to backchain the rule \ref{clause:r3} on the encoding of the goal \ref{goal:g} below:
+If we try to backchain the rule \ref{clause:r3} on the encoding of the goal
+\ref{goal:g}:
   
 \begin{elpicode}
 decision (all (app[con"fin", con"7"]) y\                 
@@ -227,9 +228,10 @@ decision (all (app[con"fin", con"7"]) y\
 
 \noindent
 we obtain an unsolvable unification problem \ref{problem:p}:
-the two lists of terms have different lengths! The root cause is that
-\ref{problem:p} is an higher order in DTT, but becomes
-first order due to the encoding in the meta language.
+the two lists of terms have different lengths!
+%The root cause is that
+%\ref{problem:p} is an higher order in DTT, but becomes
+%first order in the meta language due to the ``naive'' encoding.
 
 \begin{elpicode}
 app[con"nfact", y, con"3"] = app[P, y]                 ~\customlabel{problem:p}{(p)}~
@@ -249,7 +251,7 @@ Since \elpiIn{Pm} is an higher order unification variable with \elpiIn{x}
 in its scope, the unification problem \ref{problem:pa} admits one solution:
 
 \begin{elpicode}
-app[con"nfact", y, con"3"] = Pm y                     ~\customlabel{problem:pa}{(pa)}~
+app[con"nfact", y, con"3"] = Pm y                     ~\customlabel{problem:pa}{(p')}~
 Pm = x\ app[con"nfact", x, con"3"]     % assignment for Pm
 A = app[con"fin", con"7"]              % assignment for A
 \end{elpicode}
@@ -258,7 +260,7 @@ A = app[con"fin", con"7"]              % assignment for A
 After unifying the head of rule \ref{clause:r3a} with the goal Elpi runs
 the premise \elpiIn{link Pm A P} that is in charge of bringing the
 assignment for \elpiIn{Pm} (that has type \elpiIn{tm -> tm})
-back to the domain of Coq terms (the type \elpiIn{tm}):
+back to the domain of Coq terms:
 
 \begin{elpicode}
 P = lam A a\ app[con"nfact", a, con"3"]
@@ -266,9 +268,12 @@ P = lam A a\ app[con"nfact", a, con"3"]
 
 \noindent
 This simple example is sufficient to show that the encoding we seek
-is not trivial, since the solution for \elpiIn{P} above generates a
+is not trivial and does not only concern the head of rules, but the entire sequence
+of unification problems that constitute the execution of a logic program.
+In fact
+the solution for \elpiIn{P} above generates a
 (Coq) $\beta$-redex in the second premise (the predicate
-under the \elpiIn{pi w\ }\hspace{-0.8em}):
+under the \elpiIn{pi w\ }\hspace{-0.4em}):
 
 \begin{elpicode}
 decision (app[lam A (a\ app[con"nfact", a, con"3"]), w])
@@ -280,14 +285,15 @@ the following unification problem has no solution:
 
 \begin{elpicode}
 app[lam A (a\ app[con"nfact", a, con"3"]), x] =
-  app[con"nfact", N, NF]
+app[con"nfact", N, NF]
 \end{elpicode}
-
 \noindent
-The root cause of the problems we face is that the unification procedure
-\Ue of the meta language is not aware of the equational theory of the object
-logic \Uo, even if both theories include $\eta\beta$-conversion and admit most general
-unifiers for problems in the pattern fragment~\cite{miller92jsc}.
+~\\
+The root cause of the problems we sketched in the running example
+is that the unification procedure \Ue of the meta language is not aware
+of the equational theory of the object logic, even if both theories
+include $\eta\beta$-conversion and admit most general
+unifiers for unification problems in the pattern fragment \llambda~\cite{miller92jsc}.
 
 \paragraph{Contributions}
 In this paper we discuss alternative encodings of Coq in
@@ -297,7 +303,7 @@ We then detail an encoding \elpiIn{comp} from \Fo{} to \Ho (the language of
 the meta language) and a decoding \elpiIn{decomp} to relate the unifiers
 bla bla.. TODO citare Teyjus.
 
-\section{Problem statement and alternative encodings} %%%%%%%%%%%%%%%%%%%%%%
+\section{Problem statement} %%%%%%%%%%%%%%%%%%%%%%
 \label{sec:encodings}
 
 The equational theory of Coq's Dependent Type Theory is very rich. In
@@ -381,7 +387,8 @@ TODO extend \Eo and \Ee with reflexivity on uvars.
 
 We write $t_1 \Ue t_2 \mapsto \sigma$ when $t_1$ and $t_2$ unify with substitution
 $\sigma$, we write $\sigma t$ for the application of the substitution to
-$t$ and we assume that the unification of our meta language is correct:
+$t$, $\sigma \subseteq \sigma'$ when $\sigma$ is more general than $\sigma'$,
+and we assume that the unification of our meta language is correct:
 
 %
 \begin{gather}
@@ -408,38 +415,58 @@ s_1 \Uo s_2 \mapsto \rho \stackrel{def}{=}
     t_1 \Ue t_2 \mapsto \sigma \land
     \D{\sigma}{l_1 + l_2}{\rho}
 $$
+Where $l_1 + l_2$ is the list concatenation of links.
 
 We write $s \in \mathcal{L}_\lambda$ if all unif variables in
 $s$ are applied to distinct bound variables.
 %
 \begin{gather}
-\unifcorrect{\Eo}{\Uo}{s}\\
-\unifcomplete{\Eo}{\Uo}{s}\\
+\unifcorrect{\Eo}{\Uo}{s}\label{prop:correct}\\
+\unifcomplete{\Eo}{\Uo}{s}\label{prop:complete}\\
 % \forall \rho'\rho, 
   \rho s_1 \Eo \rho s_2 \Rightarrow
   \rho' \subseteq \rho \Rightarrow
   \rho's_i \in \mathcal{L}_\lambda \Rightarrow
-  \rho' s_1 \Uo \rho' s_2
+  \rho' s_1 \Uo \rho' s_2 \label{prop:simulation}
 \end{gather}
 
-the first one is that we are correct
+Properties \ref{prop:correct} and \ref{prop:complete} state, respectively, that
+in \llambda the implementation of \Uo is correct, complete and returns the most
+general unifier.
 
-the second one is that we are complete and mgu iff the problems are nice
+Property \ref{prop:simulation} states that \Uo is resilient to problems outside
+\llambda if a third party provides a (partial) solution for its problem. Since
+we are interested in using \Uo in a proof search procedure, made of a sequence
+of unification problems, not necessarily in \llambda. In practice it is often
+the case the order in which these problems are stated matters. A Typical example
+is the following problem
 
-the third one is still broken since we did not define how
-to apply a fo subst to a ho term but it morally means
-that any valid substitution for s1 s2 cannot break
-the unification of terms t1 t2 obtained by compiling
-s1 and s2 before knowing the subst.
+\begin{elpicode}
+app [F, con"a"] = app[F, con"a", con"a"]
+\end{elpicode}
 
-These properties allow us to simulate a unification based
-backward search on DTT by using \Ue, in a faithful way:
-the trace of the logic program
-performing the search not only gives the same result, but
-also takes the same paths, that is it fails as early as possible.
+\noindent
+preceded by 
 
+\begin{elpicode}
+F = lam x\app[const f,x,x]
+\end{elpicode}
 
-\subsection{Alternative encodings and related work}
+\noindent
+becomes solvable in DTT trivially, since the term is ground (hence in \llambda),
+but is one substitutes F in the LHS does not find, structurally, the RHS
+hence \Ue would fail (since \Ue does not know about the $\beta$ rule of DTT).
+Our compiler takes care of making property \ref{prop:simulation} hold, see
+section XXX.
+
+Property \ref{prop:complete} is also relevant to use \Uo for logic programming.
+In particular we want failures to occur as early as possible, so want
+the decomp phase to take place immediately after \Ue, and fail if need be.
+This becomes particularly important since compile may introduce two
+ho variables for the same fo one, leaving the task of unifying the solutions
+to decomp.
+
+\section{Alternative encodings and related work}
 
 
 Our encoding of DTT may look ``semi shallow'' since we we use the meta language
