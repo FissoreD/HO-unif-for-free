@@ -727,8 +727,18 @@ function \elpiIn{f} and that \elpiIn{lam x\ app[f, x]} is not that equivalent to
 unification procure of the ML, by \cref{prop:correct-ml}, we can use the
 \Ue relation to test, when needed if two terms are equal in the ML.
 
-\paragraph{Term unification: \Uo vs. \Ue}
-TODO
+\paragraph{Term unification: \Uo vs. \Ue} 
+The last but not least important relation we should take care of before
+presenting our full algorithm aiming to unify terms of the OL in the ML and
+provide the substitution produced in the ML to the OL, is term unification. This
+procedure is a more powerful version of the equal predicate, since unification
+checks if two terms can be equal be assigning unification variables. In our
+representation, variable assignment (or refinement) is performed by modifying
+the corresponding substitution mapping. We will not give an implementation of
+\Uo in the world of the OL, since we are giving an implementation of it using
+our algorithm, see \cref{XX}.
+
+On the other hand, we can 
 
 \old
 
