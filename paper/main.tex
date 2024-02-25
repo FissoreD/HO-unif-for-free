@@ -772,9 +772,12 @@ original term, it is replaced with a meta variable, and if the OL variable is
 applied to a list of distinct names $L$, then this list becomes the scope of the variable. 
 For all the other constructors of
 \elpiIn{tm}, the same term constructor is returned and its arguments are
-recursively compiled. The predicate in charge for term compilation is:\\
-\elpiIn{type comp tm -> tm -> links -> links -> subst -> subst -> o}.
-Where, we take the term of the OL, produce the term of the ML, take a list
+recursively compiled. The predicate in charge for term compilation is:
+
+\elpiIn{type comp tm -> tm -> links -> links -> subst -> subst -> o}. 
+
+\noindent
+where, we take the term of the OL, produce the term of the ML, take a list
 of link and produce a list of new links, take a substitution and return a 
 new substitution.
 
