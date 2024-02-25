@@ -247,7 +247,7 @@ decision (all A x\ Pm x) :- link Pm A P, finite A,   ~\customlabel{clause:r3a}{(
 \end{elpicode}
 
 \noindent
-Since \elpiIn{Pm} is an higher order unification variable with \elpiIn{x}
+Since \elpiIn{Pm} is an higher-order unification variable with \elpiIn{x}
 in its scope, the unification problem \ref{problem:pa} admits one solution:
 
 \begin{elpicode}
@@ -257,8 +257,8 @@ A = app[con"fin", con"7"]              % assignment for A
 \end{elpicode}
   
 \noindent
-After unifying the head of rule \ref{clause:r3a} with the goal Elpi runs
-the premise \elpiIn{link Pm A P} that is in charge of bringing the
+After unifying the head of rule \ref{clause:r3a} with the goal, Elpi runs
+the premise <<\elpiIn{link Pm A P}>> that is in charge of bringing the
 assignment for \elpiIn{Pm} (that has type \elpiIn{tm -> tm})
 back to the domain of Coq terms:
 
@@ -392,7 +392,7 @@ and we assume that the unification of our meta language is correct:
 
 %
 \begin{gather}
-  \unifcorrect{\Ee}{\Ue}{t}\\
+  \unifcorrect{\Ee}{\Ue}{t} \label{prop:correct-ml}\\
   \unifcomplete{\Ee}{\Ue}{t}
 \end{gather}
 
@@ -626,9 +626,108 @@ dereferencing. There predicates are supposed to be implemented in the OL and the
 ML following respectively their specification. In the following few paragraphs
 we give a brief definition of them.
 
-\paragraph{Term equality: \Eo vs. \Ee}
-\paragraph{Term unification: \Uo vs. \Ue}
 \paragraph{Term dereferencing: $\rho s$ vs. $\sigma t$}
+
+Since in our encoding we explicitly drag substitution mappings, we need to
+dereference variables of the two languages. This is particularly useful to check
+if two terms in the OL (resp. in the ML) are equal. The constructors
+representing rigid terms, namely \elpiIn{app}, \elpiIn{lam} and \elpiIn{con},
+make the dereferencing procedure to recurse over the their subterms. The code
+below display this behavior for the dereferencing performed by the OL:
+
+\begin{elpicode}
+  type fo_deref fo_subst -> tm -> tm -> o.
+  fo_deref S (app L1) (app L2) :- forall2 (fo_deref S) L1 L2.
+  fo_deref S (lam F1) (lam F2) :- 
+    pi x\ fo_deref S x x => fo_deref S (F1 x) (F2 x).
+  fo_deref _ (con X) (con X).
+\end{elpicode}
+
+A very similar implementation for the dereferencing performed by the ML, given 
+in the appendix, can be encoded respecting the signature:
+
+\begin{elpicode}
+  type ho_deref ho_subst -> tm -> tm -> o.
+\end{elpicode}
+
+More attention should be payed when the dereferencing encounters a subterm that
+is unification variable. The following new rules should be added to the previous
+code snipper to complete the dereferencing of variables of the OL:
+
+\begin{elpicode}
+  fo_deref S (fov N) R :- assigned? N S T, fo_deref S T R.
+  fo_deref S (app [fov N|L]) R :- 
+    assigned? N S T, beta T L R', fo_deref S R' R.
+  fo_deref _ (fov N) (fov N).
+\end{elpicode}
+
+In particular, 1) if the variable \elpiIn{fov N} is assigned to a term
+\elpiIn{T} in a substitution mapping \elpiIn{S}, we return the result of
+dereferencing \elpiIn{T}; 2) if the current term is the application of a
+variable \elpiIn{fov N} assigned to a list of terms \elpiIn{L} and \elpiIn{uv N}
+is assigned to a term \elpiIn{T}, we return the result of dereferencing the beta
+reduction of \elpiIn{T} to \elpiIn{L}. This is due to the semantics of the
+unification variables within the OL; 3) finally, if \elpiIn{uv N} is not
+assigned, then the same variable is returned.
+
+A different reasoning is to be addressed to the variables of the ML. Firstly, a
+meta variable cannot appear in the \elpiIn{app} node as the first element of the
+list, we will explain why in \cref{sec:compilation}; secondly, variables in the
+ML have a scope which should be taken into account. The following few lines of
+code outline the rules of dereferencing for the ML:
+
+\begin{elpicode}
+  ho_deref H (hov N L) R :- assigned? N H T, 
+    ho_beta T L R', ho_deref H R' R.
+  ho_deref H (hov X L) (hov X L1) :- 
+    forall2 (ho_deref H) L L1.
+\end{elpicode}
+
+\noindent
+where, 1) if the variable \elpiIn{hov N L} has an assignment \elpiIn{T}, we
+return the dereferencing of the beta reduction \elpiIn{T} to the scope
+\elpiIn{L}.
+
+\begin{figure}
+  \begin{elpicode}
+    type ~(\Eo)~ tm -> tm -> o.
+    % congruence
+    app L1 ~\Eo~app L2 :- forall2 ~(\Eo)~ L1 L2.
+    lam F1 ~\Eo~lam F2 :- pi x\ x ~\Eo~x => F1 x ~\Eo~F2 x.
+    con X ~\Eo~con X.
+    fov N ~\Eo~fov N.
+    % eta
+    lam F ~\Eo~T :- pi x\ beta T [x] (T' x),                 ~($\customlabel{clause:eta1}{\eta_1}$)~
+      x ~\Eo~x => F x ~\Eo~T' x.
+    T ~\Eo~lam F :- pi x\ beta T [x] (T' x),                 ~($\customlabel{clause:eta2}{\eta_2}$)~
+      x ~\Eo~x => T' x ~\Eo~F x.
+    % beta
+    app [lam X | TL] ~\Eo~T :- beta (lam X) TL T', T' ~\Eo~T. ~($\customlabel{clause:beta1}{\beta_1}$)~
+    T ~\Eo~app [lam X | TL] :- beta (lam X) TL T', T ~\Eo~T'. ~($\customlabel{clause:beta2}{\beta_2}$)~
+  \end{elpicode}
+  \caption{Equal predicate}
+  \label{code:eq-pred}
+  \Description[code:equal-pred]{code:equal-pred}
+\end{figure}
+
+\paragraph{Term equality: \Eo vs. \Ee} We can test if two terms are equal
+following the equational theory of the language being considered. In
+\cref{code:eq-pred} we provide an implementation of the \Eo predicate. The first
+four rules check if the two terms are equal regarding the structure of the
+current node, that is, two terms are equal if they have same head and if
+recursively each subterm is two by two equal. Moreover, since the theory of the
+OL accepts $\eta$- and $\beta$-equivalence, then we implement the corresponding
+rules.
+
+\noindent
+The equality relation for the ML, accepts $\eta\beta$-equivalence between terms
+of the ML. Recall that \elpiIn{abs x\ f x}, is a valid $\eta$ expansion of the
+function \elpiIn{f} and that \elpiIn{lam x\ app[f, x]} is not that equivalent to
+\elpiIn{f} at meta level. However, since we are interested in using the
+unification procure of the ML, by \cref{prop:correct-ml}, we can use the
+\Ue relation to test, when needed if two terms are equal in the ML.
+
+\paragraph{Term unification: \Uo vs. \Ue}
 TODO
 
 \old
@@ -641,44 +740,6 @@ test for equality is continued on the new-created subterm.
 
 The base equality function over terms can be defined as follows:
 
-\begin{figure}
-  \begin{elpicode}
-    % congruence
-    type ~(\Eo)~ tm -> tm -> o.
-    app L1 ~\Eo~app L2 :- forall2 ~(\Eo)~ L1 L2.
-    lam F1 ~\Eo~lam F2 :- pi x\ x ~\Eo~x => F1 x ~\Eo~F2 x.
-    con X ~\Eo~con X.
-    fov N ~\Eo~fov N.
-    % eta
-    lam F ==o T :- pi x\ beta T [x] (T' x), 
-      x ==o x => F x ==o T' x.
-    T ==o lam F :- pi x\ beta T [x] (T' x), 
-      x ==o x => T' x ==o F x.
-    % beta
-    app [lam X | TL] ~\Eo~T :- beta (lam X) TL T', T' ~\Eo~T.
-    T ~\Eo~app [lam X | TL] :- beta (lam X) TL T', T ~\Eo~T'.
-  \end{elpicode}
-  \caption{Equal predicate}
-  \label{code:eq-pred}
-  \Description[code:equal-pred]{code:equal-pred}
-\end{figure}
-
-Though, this equality relation is to be extended with $\eta\beta$ reduction
-rules to mirror the theory of the OL. This mean
-that new rules for those two redexes are added in the implementation of
-\elpiIn{fo_equal}.
-
-If \elpiIn{fo_equal} is conceived to manage equality between terms of the OL,
-the same equality predicate in the ML behave slightly different. By the given
-definition of the ML, the ML allows $\eta\beta$ congruence of terms, but, since
-the node \elpiIn{app} and \elpiIn{abs} are constructor representing the
-applications and the abstractions of the OL, these two reduction rules cannot
-applied on them. We build therefore a predicate \elpiIn{equal} working for terms
-in the ML which is implemented merely with the rules for the \elpiIn{fo_equal}
-predicate.\todo{not true for uv} For example, if \elpiIn{fo_equal []
-(abs x\ [c"f", c]) (c"f")} is true in the object language, \elpiIn{equal [] (abs
-x\ [c"f", c]) (c"f")} produces a failure.
-
 The solution we are proposing aim to overcome these unification issues by 1)
 compiling the terms $t$ and $u$ of the OL into an internal version $t'$ and $u'$
 in the ML; 2) unifying $t'$ and $u'$ at the meta level instantiating meta
@@ -688,22 +749,11 @@ variables. We claim that $t$ and $u$ unify if and only if $t'$ and $u'$ unify
 and that the substitution in the object language is the same as the one returned
 by the ML. \todo{same or $\supseteq$ or $\subseteq$} 
 
-Mathematically, we what to prove the following property:
-
-\begin{coqcode}
-  forall (t  u : term_ol) (s : subst_ol) 
-         (t' u': term_ml) (s': subst_ml), 
-    equal_ol t u s <->
-      comp t t' /\ comp u u' /\ 
-      unif_ml t' u' s' /\ links ... /\ decomp s' s.
-\end{coqcode}
-
-$$Math\ formula$$
-
 In the following section we explain how we deal with term (de)compilation and
-unification variable linking.
+links between unification variables.
 
 \section[Compilation: fo\_tm to tm]{Compilation}
+\label{sec:compilation}
 
 The compilation step is meant to recover the higher-order variables of the OL,
 expressed in a first order way, by replacing them with higher-order variables in

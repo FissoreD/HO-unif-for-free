@@ -409,6 +409,7 @@ merge-fo _ X [] X.
 % TODO: returning [some Y|R] is incorrect, we should return [some Z|R] where
 %       Z is the unification of X and Y in the OL
 % TODO: instead of deref-deref-equal, we need unif 
+% NOTE: Invariant: if X and Y are assigned, then they are equal (TODO: to be verified)
 merge-fo S [some X|XS] [some Y|YS] [some Y|R] :- std.spy(fo.deref S X X', fo.deref S Y Y', std.spy-do![X' ==o Y']), merge-fo S XS YS R. 
 merge-fo S [none|XS] [some X|YS] [some X|R] :- merge-fo S XS YS R.
 merge-fo S [some X|XS] [none|YS] [some X|R] :- merge-fo S XS YS R.
