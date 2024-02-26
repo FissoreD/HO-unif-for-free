@@ -1,7 +1,7 @@
-internal-test try5.comp.test-hope-eta-1.
-internal-test try5.comp.test-hope-eta-2.
+internal-test try6.comp.test-hope-eta-1.
+internal-test try6.comp.test-hope-eta-2.
 
-namespace try5 {
+namespace try6 {
 
 %%%%%%%%%%%%%%%%%%% the OL %%%%%%%%%%%%%%%%%%%%%
 namespace fo {
