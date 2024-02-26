@@ -44,7 +44,7 @@ T ==o app [lam X | TL] :- beta (lam X) TL T', T ==o T'.
 % [alloc-subst T S S'] foraech var in T, alloc an fov N at place N in S' (that extends S)
 type alloc-subst tm -> subst -> subst -> o.
 alloc-subst (fov N) S S :- len S M, M >n N.
-alloc-subst (fov N) S S' :- len S M, M >=n N, std.append S [none] S'.
+alloc-subst (fov N) S S' :- len S M, N >=n M, std.append S [none] S'', alloc-subst (fov N) S'' S'.
 alloc-subst (lam F) S S' :- pi x\ (pi S\alloc-subst x S S) => alloc-subst (F x) S S'.
 alloc-subst (con _) S S.
 alloc-subst (app L) S S1 :- fold alloc-subst L S S1.
