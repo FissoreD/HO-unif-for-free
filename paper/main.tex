@@ -468,6 +468,7 @@ to decomp.
 
 \section{Alternative encodings and related work}
 
+Paper \cite{10.1145/2966268.2966272} introduces semi-shallow.
 
 Our encoding of DTT may look ``semi shallow'' since we use the meta-language
 lambda abstraction but not its application (for the terms of type \elpiIn{tm}).
@@ -528,90 +529,91 @@ the OL.
 \setlength{\belowcaptionskip}{-13pt}
 
 \begin{figure}[H]
-  \begin{elpicode}
-    kind tm type.
-    type app list tm -> tm.
-    type lam (tm -> tm) -> tm.
-    type con string -> tm.
-  \end{elpicode}
-  \caption{Common terms}
+  \begin{tabular}{ll}
+  \begin{minipage}{0.21\textwidth}
+  \begin{elpicodetab}
+kind fm type.
+type fapp list fm -> fm.
+type flam (fm -> fm) -> fm.
+type fcon string -> fm.
+type fuva nat -> fm.
+\end{elpicodetab}
+  \end{minipage}
+  &
+  \begin{minipage}{0.24\textwidth}
+  \begin{elpicodetab}
+kind tm type.
+type app list tm -> tm.
+type lam (tm -> tm) -> tm.
+type con string -> tm.
+type uva nat -> list tm -> tm.
+  \end{elpicodetab}
+  \end{minipage}
+  \end{tabular}
+  \caption{Source and Target language}
   \label{code:common-terms}
   \Description[code:common-terms]{code:common-terms}
 \end{figure}
-%
+
 \noindent
 This encoding is very similar to the one introduced in \cref{sec:intro},\todo{say we do not care about types} except
 for the \elpiIn{all} constructor. We explicitly neglect it since blabla.
 Moreover, since we are working with unification variables we need to introduce a
 new constructor. 
 
-In the case of the OL, variables have no scope. For example, the subterm
-\coqIn{P x} from the instance forall\_dec has \coqIn{P} an higher order
-variables with type \coqIn{A ~$\to$~ Prop} and \coqIn{x} as bound variable. 
-However, at the meta level, the translation of \coqIn{P x} becomes
-\elpiIn{app[P, x]}, that is, \elpiIn{P} cannot reference \elpiIn{x}. In our
-encoding, we represent the variables of the OL in the following way:
+In the case of the OL unification variables \elpiIn{fuv} have no scope.
+For example the statement of the instance \coqIn{forall_dec} contains the
+term \coqIn{P x} where \coqIn{P} stands for a function of type
+\coqIn{A ~$\to$~ Prop}. However our representation of \coqIn{P x} in the meta
+language is \elpiIn{app[P, x]} where \elpiIn{P} is of type \elpiIn{ftm}.
+In the terms of the ML unification variables come with a scope.
 
 \begin{elpicode}
-  type fo_uv nat -> tm.
+  type uva nat -> list tm -> tm.
 \end{elpicode}
 
-\noindent 
-In particular, a variable of the OL is identified by a integer
-refereeing a memory address. This constructor is prefixed with \elpiIn{fo} since
-the variable, having no scope, is a first-order variable. Finally, the memory of
+\noindent
+Of course some attention
+should be payed when dealing with \elpiIn{uva}, since we have to certify
+that an \elpiIn{uva i} remain in the pattern fragment, that is, the
+list of term in the scope of \elpiIn{i} is always a list of distinct names.
+
+
+Unification variables of the OL are identified by a natural number
+referring to memory address. 
+Finally, the memory of
 the OL is depicted by the following type abbreviation:
 
 \begin{elpicode}
-  typeabbrev fo_subst list (option tm).
+  typeabbrev fsubst list (option fm).
 \end{elpicode}
 
 \noindent 
 which is a list of optional terms. If a cell is \elpiIn{none}, then the variable
 corresponding to this cell is not instantiated.
 
-On the other hand, the terms of the ML have exactly the same shape
-has the terms of \cref{code:common-terms}. However, since the ML is an Higher
-Order Programming Language, unification unification variables must have a scope.
-We represent them in the following way:
-
-\begin{elpicode}
-  type ho_uv nat -> list tm -> tm.
-\end{elpicode}
-
-Of course some attention
-should be payed when dealing with \elpiIn{ho_uv}, since we have to certify
-that an \elpiIn{uv i} remain in the pattern fragment, that is, the
-list of term in the scope of \elpiIn{i} is always a list of distinct names.
-
 Another important implementation should be provided in order to represent the
 lambda abstractions and the applications of the ML. As outlined in
-\cref{sec:encodings}, <<\elpiIn{x\ f x}>> has not the same semantic as 
-<<\elpiIn{lam x\ app[f, x]}>>, since, even though, the two terms represent the same
-concept, the former is the lambda abstraction of \elpiIn{f} applied to the 
-binder in ML, whereas the latter is the same term representation but wrt the OL.
-We already have defined the nodes \elpiIn{app} and \elpiIn{lam} for the OL,
-therefore, in the following code snippet, we give their representation in the
-ML.
+\cref{sec:encodings}, <<\elpiIn{x\ f x}>> has not equal to 
+<<\elpiIn{lam x\ app[f, x]}>>, since, even though the two terms represent the same
+concept, the latter uses the abstraction and application of the OL.
 
 \begin{elpicode}
   kind assmt type.
   type abs (tm -> assmt) -> assmt.
   type val tm -> assmt.
+  typeabbrev subst list (option tm).
 \end{elpicode}
 
 \noindent
-In particular, the node \elpiIn{abs} stands for the lambda abstraction. The
+In particular, the node \elpiIn{abs} stands for the lambda abstraction of the ML.
+The
 node \elpiIn{val} contains terms of the object language. The node for variable
 application is not really necessary, since, using the syntax of the ML, it is
 defined by putting two terms of the ML side by side. For example, the terms 
 <<\elpiIn{x\ f x}>> becomes <<\elpiIn{abs x\ f x}>>.
 
-The memory of the ML, is defined with the following type abbreviation:
-
-\begin{elpicode}
-  typeabbrev ho_subst list (option tm).
-\end{elpicode}
+The memory of the ML is represented by a \elpiIn{subst}.
 
 \noindent
 with the invariant that the \elpiIn{tm} inside the cell never contains the node
@@ -635,31 +637,30 @@ representing rigid terms, namely \elpiIn{app}, \elpiIn{lam} and \elpiIn{con},
 make the dereferencing procedure to recurse over the their subterms. The code
 below display this behavior for the dereferencing performed by the OL:
 
-\begin{elpicode}
-  type fo_deref fo_subst -> tm -> tm -> o.
-  fo_deref S (app L1) (app L2) :- forall2 (fo_deref S) L1 L2.
-  fo_deref S (lam F1) (lam F2) :- 
-    pi x\ fo_deref S x x => fo_deref S (F1 x) (F2 x).
-  fo_deref _ (con X) (con X).
-\end{elpicode}
-
-A very similar implementation for the dereferencing performed by the ML, given 
-in the appendix, can be encoded respecting the signature:
-
-\begin{elpicode}
-  type ho_deref ho_subst -> tm -> tm -> o.
-\end{elpicode}
+\begin{elpicodetab}
+  type fderef fsubst -> fm -> fm -> o.
+  fderef S (fuva N) R :- assigned? N S T, fderef S T R.
+  fderef S (app [fuva N|L]) R :- 
+    assigned? N S (app NL), append NL L AL, fderef S (app AL) R.
+  fderef _ (fuva N) (fuva N).
+  fderef S (fapp L1) (fapp L2) :- forall2 (fderef S) L1 L2.
+  fderef S (flam F1) (flam F2) :- 
+    pi x\ fderef S x x => fderef S (F1 x) (F2 x).
+  fderef _ (fcon X) (fcon X).
+\end{elpicodetab}
 
 More attention should be payed when the dereferencing encounters a subterm that
 is unification variable. The following new rules should be added to the previous
 code snipper to complete the dereferencing of variables of the OL:
 
+A very similar implementation for the dereferencing performed by the ML, given 
+in the appendix, can be encoded respecting the signature:
+
 \begin{elpicode}
-  fo_deref S (fov N) R :- assigned? N S T, fo_deref S T R.
-  fo_deref S (app [fov N|L]) R :- 
-    assigned? N S T, beta T L R', fo_deref S R' R.
-  fo_deref _ (fov N) (fov N).
+  type deref subst -> tm -> tm -> o.
+  deref S (uva N L) R :- assigned? N S T, beta-abs T L T', deref S T' R.
 \end{elpicode}
+
 
 In particular, 1) if the variable \elpiIn{fov N} is assigned to a term
 \elpiIn{T} in a substitution mapping \elpiIn{S}, we return the result of
