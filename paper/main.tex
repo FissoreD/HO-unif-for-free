@@ -809,6 +809,15 @@ links between unification variables.
 \section[Compilation: fo\_tm to tm]{Compilation}
 \label{sec:compilation}
 
+\otext{Goal: $s_1 \Uo s_2$ is compiled into $t_1 \Ue t_2$}
+\otext{What is done: uvars \elpiIn{fo_uv} of OL are replaced into uvars \elpiIn{ho_uv} of the ML}
+\otext{Each \elpiIn{fo_uv} is linked to an \elpiIn{ho_uv} of the OL}
+\otext{Example: \elpiIn{lam x\ app[uv 0, x] ~\Ue~lam x\ c"f"}}
+\otext{Links used to instantiate vars of elpi}
+\otext{After all links, the solution in links are compacted and given to coq}
+\otext{It is not so simple, see next sections (multi-vars, eta, beta)}
+
+
 The compilation step is meant to recover the higher-order variables of the OL,
 expressed in a first order way, by replacing them with higher-order variables in
 the ML. In particular, every time a variable of the OL is encountered in the
@@ -867,30 +876,35 @@ has not the sam meaning of the index \elpiIn{0} in the ML. There exists two
 different substitution mapping, one for the OL and one for the ML and the indexes
 of variable point to the respective substitution.
 
-\noindent
-- how we transform an fo\_tm in tm \\
-- the role of links \\
-- decomp
-- esempio che va in questa semplice rappresentazione (from intro)
-- esempio che non va, multi-var, eta, beta
-% \section{Term de-compilation}
+\section{Use of multivars}
 
-\section{Unification in ML}
-
-- we accept HO unif with PF \\
-- need of multiple vars for a single OL var
-
-% Compile FO to HO
-
-% Assignement in HO should be decompiled
+\subsection{Problems with $\eta$}
+\otext{The following goal: \elpiIn{X = lam x\ lam y\ Y x y, X = lam x\ f}}
+\otext{The snd unif pb, we have to unif \elpiIn{lam x\ lam y\ Y x y} with \elpiIn{lam x\ f}}
+\otext{It is not doable, with the same elpi var}
 
 
+\subsection{Problems with $\beta$}
+
+\otext{The following goal: \elpiIn{X = lam x\ x, app[X, 3] = 3}}
+\otext{We use links-beta}
+
+\section{First order approximation}
+
+\otext{Coq can solve this: \coqIn{f 1 2 = X 2}, by setting X to f 1}
+\otext{We can re-use part of the algo for $\beta$ given before}
 
 
-% -------------------------------------------------------------------
+\section{Unif encoding in real life}
+\otext{Il ML presentato qui è esattamente elpi}
+\otext{Il OL presentato qui è esattamente coq}
+\otext{Come implementatiamo tutto ciò nel solver}
 
-% \noindent
+\section{Results: stdpp and tlc}
+\otext{How may rule are we solving?}
+\otext{Can we do some perf test}
 
+\section{Conclusion}
 
 % \subsection{implementation}
 
