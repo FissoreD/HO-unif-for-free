@@ -96,19 +96,28 @@ type hov  nat -> list tm -> tm.
 
 % [unif T1 T2 SOld SNew] check if T1 and T2 unify looking into SOld. SNew is the final substution
 type unif tm -> tm -> subst -> subst ->  o.
-unif (hov N Args) T S S1 :- assigned? N S F, beta-abs F Args T1, unif T1 T S S1.
-unif T (hov N Args) S S1 :- assigned? N S F, beta-abs F Args T1, unif T T1 S S1.
-unif (hov N A) (hov N A) S S :- pattern-fragment A.
-
-unif (hov N Args1) (hov M Args2) S S3 :- pattern-fragment Args1, pattern-fragment Args2, 
-  std.spy(new S W S1, prunexx W Args1 Args2 Ass, assign N S1 Ass S2, assign M S2 Ass S3).
-
-unif (hov N Args) T S S1 :- not (T = hov _ _), print "In here", std.do![not_occ N S T, pattern-fragment Args, bind Args T T1, assign N S T1 S1].
-unif T (hov N Args) S S1 :- not (T = hov _ _), std.spy(not_occ N S T), pattern-fragment Args, bind Args T T1, assign N S T1 S1.
-
+% Base cases
 unif (app L1) (app L2) S S1 :- fold2 unif L1 L2 S S1.
-unif (lam F1) (lam F2) S S1 :- pi x\ (pi S\ unif x x S S) => unif (F1 x) (F2 x) S S1.
+unif (lam F1) (lam F2) S S1 :- 
+  pi x\ (pi S\ unif x x S S) => unif (F1 x) (F2 x) S S1.
 unif (con X) (con X) S S.
+% Assigned variables
+unif (hov N Args) T S S1 :- 
+  assigned? N S F, beta-abs F Args T1, unif T1 T S S1.
+unif T (hov N Args) S S1 :- 
+  assigned? N S F, beta-abs F Args T1, unif T T1 S S1.
+% Not assigned varis
+unif (hov N A) (hov N A) S S :- pattern-fragment A.
+unif (hov N Args1) (hov M Args2) S S3 :- 
+  pattern-fragment Args1, pattern-fragment Args2, 
+  new S W S1, prunexx W Args1 Args2 Ass, 
+  assign N S1 Ass S2, assign M S2 Ass S3.
+unif (hov N Args) T S S1 :- 
+  not (T = hov _ _), not_occ N S T, pattern-fragment Args, 
+  bind Args T T1, assign N S T1 S1.
+unif T (hov N Args) S S1 :- 
+  not (T = hov _ _), not_occ N S T, pattern-fragment Args, 
+  bind Args T T1, assign N S T1 S1.
 
 % Note: eta & beta for unification is not allowed in ML over terms of the OL
 
