@@ -566,13 +566,8 @@ For example the statement of the instance \coqIn{forall_dec} contains the
 term \coqIn{P x} where \coqIn{P} stands for a function of type
 \coqIn{A ~$\to$~ Prop}. However our representation of \coqIn{P x} in the meta
 language is \elpiIn{app[P, x]} where \elpiIn{P} is of type \elpiIn{ftm}.
-In the terms of the ML unification variables come with a scope.
-
-\begin{elpicode}
-  type uva nat -> list tm -> tm.
-\end{elpicode}
-
-\noindent
+In the terms of the ML unification variables come with a scope (the second
+argument of the \elpiIn{uva} constructor).
 Of course some attention
 should be payed when dealing with \elpiIn{uva}, since we have to certify
 that an \elpiIn{uva i} remain in the pattern fragment, that is, the
@@ -584,8 +579,16 @@ referring to memory address.
 Finally, the memory of
 the OL is depicted by the following type abbreviation:
 
+\marginpar{maybe move code to the appendix}
 \begin{elpicode}
-  typeabbrev fsubst list (option fm).
+typeabbrev memory A (list (option A)).
+type set nat -> memory A -> A -> o.
+set N S T :- nth N S (some T).
+type unset nat -> memory A -> o.
+unset N S :- nth N S none.
+type assign nat -> memory A -> A -> memory A -> o.
+assign z [none|M] T [some T|M].
+assign (s N) [X|M] T [X|M1] :- assign N M T M1. 
 \end{elpicode}
 
 \noindent 
@@ -599,10 +602,12 @@ lambda abstractions and the applications of the ML. As outlined in
 concept, the latter uses the abstraction and application of the OL.
 
 \begin{elpicode}
+  typeabbrev fsubst (memory ftm).
+
   kind assmt type.
   type abs (tm -> assmt) -> assmt.
   type val tm -> assmt.
-  typeabbrev subst list (option tm).
+  typeabbrev subst (memory assmt).
 \end{elpicode}
 
 \noindent
@@ -620,7 +625,10 @@ with the invariant that the \elpiIn{tm} inside the cell never contains the node
 \elpiIn{fo_uv}. Note that, reciprocally, the \elpiIn{fo_subst} does not contain
 any node of the form \elpiIn{ho_uv}.
 
-\subsection{Auxiliary relations}
+\subsection{equational theory and unification}
+
+here we give the functions/signatures to express the properties 3-5 in the problem
+statement
 
 Together with the description of the terms of the language, we need some
 auxiliary functions to perform operations like term equality, unification,
@@ -637,17 +645,19 @@ representing rigid terms, namely \elpiIn{app}, \elpiIn{lam} and \elpiIn{con},
 make the dereferencing procedure to recurse over the their subterms. The code
 below display this behavior for the dereferencing performed by the OL:
 
-\begin{elpicodetab}
-  type fderef fsubst -> fm -> fm -> o.
-  fderef S (fuva N) R :- assigned? N S T, fderef S T R.
-  fderef S (app [fuva N|L]) R :- 
-    assigned? N S (app NL), append NL L AL, fderef S (app AL) R.
-  fderef _ (fuva N) (fuva N).
-  fderef S (fapp L1) (fapp L2) :- forall2 (fderef S) L1 L2.
-  fderef S (flam F1) (flam F2) :- 
-    pi x\ fderef S x x => fderef S (F1 x) (F2 x).
-  fderef _ (fcon X) (fcon X).
-\end{elpicodetab}
+\begin{elpicode}
+type fderef fsubst -> fm -> fm -> o.
+fderef S (fapp [fuva N|A]) R :- set N S (fapp B),
+  append A B C, fderef S (fapp C) R.
+fderef S (fapp [fuva N|A]) (fapp [fuva N|B]) :- unset N S,
+  forall2 (fderef S) A B.
+fderef S (fapp A) (fapp B) :- forall2 (fderef S) A B.
+fderef S (flam F) (flam G) :- 
+  pi x\ fderef S x x => fderef S (F x) (G x).
+fderef _ (fcon C) (fcon C).
+fderef S (fuva N) R :- set N S T, fderef S T R.
+fderef _ (fuva N) (fuva N) :- unset N S.
+\end{elpicode}
 
 More attention should be payed when the dereferencing encounters a subterm that
 is unification variable. The following new rules should be added to the previous
@@ -656,16 +666,21 @@ code snipper to complete the dereferencing of variables of the OL:
 A very similar implementation for the dereferencing performed by the ML, given 
 in the appendix, can be encoded respecting the signature:
 
+\marginpar{what about app uva?}
 \begin{elpicode}
   type deref subst -> tm -> tm -> o.
-  deref S (uva N L) R :- assigned? N S T, beta-abs T L T', deref S T' R.
+  % ... the same
+  deref S (uva N A) R :- set N S T,
+    instantiate T A T', deref S T' R.
+  deref S (uva N A) (uva N B) :-unset N S,
+    forall2 (deref S) A B.
 \end{elpicode}
 
 
-In particular, 1) if the variable \elpiIn{fov N} is assigned to a term
+In particular, 1) if the variable \elpiIn{fuva N} is assigned to a term
 \elpiIn{T} in a substitution mapping \elpiIn{S}, we return the result of
 dereferencing \elpiIn{T}; 2) if the current term is the application of a
-variable \elpiIn{fov N} assigned to a list of terms \elpiIn{L} and \elpiIn{uv N}
+variable \elpiIn{fuva N} assigned to a list of terms \elpiIn{L} and \elpiIn{uv N}
 is assigned to a term \elpiIn{T}, we return the result of dereferencing the beta
 reduction of \elpiIn{T} to \elpiIn{L}. This is due to the semantics of the
 unification variables within the OL; 3) finally, if \elpiIn{uv N} is not
@@ -677,38 +692,44 @@ list, we will explain why in \cref{sec:compilation}; secondly, variables in the
 ML have a scope which should be taken into account. The following few lines of
 code outline the rules of dereferencing for the ML:
 
-\begin{elpicode}
-  ho_deref H (hov N L) R :- assigned? N H T, 
-    ho_beta T L R', ho_deref H R' R.
-  ho_deref H (hov X L) (hov X L1) :- 
-    forall2 (ho_deref H) L L1.
-\end{elpicode}
-
-\noindent
 where, 1) if the variable \elpiIn{hov N L} has an assignment \elpiIn{T}, we
 return the dereferencing of the beta reduction \elpiIn{T} to the scope
 \elpiIn{L}.
 
 \begin{figure}
   \begin{elpicode}
-    type ~(\Eo)~ tm -> tm -> o.
+    type ~(\Eo)~ ftm -> ftm -> o.
     % congruence
-    app L1 ~\Eo~app L2 :- forall2 ~(\Eo)~ L1 L2.
-    lam F1 ~\Eo~lam F2 :- pi x\ x ~\Eo~x => F1 x ~\Eo~F2 x.
-    con X ~\Eo~con X.
-    fov N ~\Eo~fov N.
+    fapp A ~\Eo~fapp B :- forall2 ~(\Eo)~ A B.
+    flam F ~\Eo~flam G :- pi x\ x ~\Eo~x => F x ~\Eo~G x.
+    fcon C ~\Eo~fcon C.
+    fuva N ~\Eo~fuva N.
     % eta
-    lam F ~\Eo~T :- pi x\ beta T [x] (T' x),                 ~($\customlabel{clause:eta1}{\eta_1}$)~
+    flam F ~\Eo~T :- pi x\ beta T [x] (T' x),                 ~($\customlabel{clause:eta1}{\eta_1}$)~
       x ~\Eo~x => F x ~\Eo~T' x.
-    T ~\Eo~lam F :- pi x\ beta T [x] (T' x),                 ~($\customlabel{clause:eta2}{\eta_2}$)~
+    T ~\Eo~flam F :- pi x\ beta T [x] (T' x),                 ~($\customlabel{clause:eta2}{\eta_2}$)~
       x ~\Eo~x => T' x ~\Eo~F x.
     % beta
-    app [lam X | TL] ~\Eo~T :- beta (lam X) TL T', T' ~\Eo~T. ~($\customlabel{clause:beta1}{\beta_1}$)~
-    T ~\Eo~app [lam X | TL] :- beta (lam X) TL T', T ~\Eo~T'. ~($\customlabel{clause:beta2}{\beta_2}$)~
+    fapp [flam X | TL] ~\Eo~T :- beta (flam X) TL T', T' ~\Eo~T. ~($\customlabel{clause:beta1}{\beta_1}$)~
+    T ~\Eo~fapp [flam X | TL] :- beta (flam X) TL T', T ~\Eo~T'. ~($\customlabel{clause:beta2}{\beta_2}$)~
   \end{elpicode}
-  \caption{Equal predicate}
+  \caption{Equal predicate OL}
   \label{code:eq-pred}
   \Description[code:equal-pred]{code:equal-pred}
+\end{figure}
+
+
+\begin{figure}
+  \begin{elpicode}
+    type ~(\Ee)~ tm -> tm -> o.
+    app A ~\Ee~fapp B :- forall2 ~(\Ee)~ A B.
+    lam F ~\Ee~flam G :- pi x\ x ~\Ee~x => F x ~\Ee~G x.
+    con C ~\Ee~fcon C.
+    uva N A ~\Ee~fuva N B :- forall2 ~(\Ee)~ A B.
+  \end{elpicode}
+  \caption{Equal predicate ML}
+  \label{code:eq-pred-meta}
+  \Description[code:equal-pred-meta]{code:equal-pred-meta}
 \end{figure}
 
 \paragraph{Term equality: \Eo vs. \Ee} We can test if two terms are equal
@@ -740,33 +761,36 @@ the corresponding substitution mapping. We will not give an implementation of
 our algorithm, see \cref{XX}.
 
 \begin{figure}
-  \begin{elpicode}
-    type unif tm -> tm -> ho_subst -> ho_subst ->  o.
-    % Base cases
-    unif (app L1) (app L2) S S1 :- fold2 unif L1 L2 S S1.
-    unif (lam F1) (lam F2) S S1 :- 
-      pi x\ (pi S\ unif x x S S) => unif (F1 x) (F2 x) S S1.
-    unif (con X) (con X) S S.
-    % Assigned variables
-    unif (hov N Args) T S S1 :- 
-      assigned-deref N S F, beta-abs F Args T1, unif T1 T S S1.
-    unif T (hov N Args) S S1 :- 
-      assigned-deref N S F, beta-abs F Args T1, unif T T1 S S1.
-    % Non-assigned variabless
-    unif (hov N Args1) (hov M Args2) S S3 :-  
-      pattern-fragment Args1, pattern-fragment Args2, 
-      new S W S1, prune W Args1 Args2 Ass, 
-      assign N S1 Ass S2, assign M S2 Ass S3.
-    unif (hov N Args) T S S1 :- pattern-fragment Args,
-      not (T = hov _ _), not_occ N S T,  
-      bind Args T T1, assign N S T1 S1.
-    unif T (hov N Args) S S1 :- pattern-fragment Args,
-      not (T = hov _ _), not_occ N S T, 
-       bind Args T T1, assign N S T1 S1.
-  \end{elpicode}
-  \caption{The \Ue predicate}
-  \label{code:ue-pred}
-  \Description[code:unif-pred]{code:unif-pred}
+\begin{elpicode}
+type ~(\Ue)~ tm -> tm -> subst -> subst ->  o.
+% Congruence
+(app A ~\Ue~app B) S S1 :- fold2 ~\Ue~A B S S1.
+(lam F ~\Ue~lam G) S S1 :- 
+  pi x\ (pi S\ (x ~\Ue~x) S S) => (F x ~\Ue~G x) S S1.
+~\Ue~(con C) (con C) S S.
+% deref
+(uva N A ~\Ue~T) S S1 :- set N S F,
+  beta-abs F A T1, (T1 ~\Ue~T) S S1.
+(T ~\Ue~uva N A) S S1 :- set N S F,
+  beta-abs F A T1, (T ~\Ue~T1) S S1.
+% flex-flex
+(uva N A ~\Ue~uva M B) S S3 :-  unset M, unset N,
+  pattern-fragment A, pattern-fragment B, 
+  new S W S1, prune W Args1 B Ass, 
+  assign N S1 Ass S2, assign M S2 Ass S3.
+% assignment
+(uva N A ~\Ue~T) S S1 :- pattern-fragment A,
+  not (T = uva _ _), not_occ N S T,  
+  bind A T T1, assign N S T1 S1.
+(T ~\Ue~uva N A) S S1 :- pattern-fragment A,
+  not (T = uva _ _), not_occ N S T, 
+    bind A T T1, assign N S T1 S1.
+%  Note: (a infix b) c d === (infix) a b c d
+
+\end{elpicode}
+\caption{The \Ue predicate // TODO move to the appendix}
+\label{code:ue-pred}
+\Description[code:unif-pred]{code:unif-pred}
 \end{figure}
 
 On the other hand, unification in the ML needs to be defined. In
@@ -865,7 +889,7 @@ lists of different lengths making the unification to fail. The compilation of
 these terms produces a new unification problem with the following shape:
 
 \begin{elpicode}
-  lam x\ app[c"decision", app[c"nfact", x, c"3"]] ~\Ue~ 
+  lam x\ app[c"decision", app[c"nfact", x, c"3"]] ~\Ue~
     lam x\ app [c"decision", uv 1 [x]]
 \end{elpicode}
 
