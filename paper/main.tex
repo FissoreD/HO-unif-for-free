@@ -893,6 +893,14 @@ of variable point to the respective substitution.
 \otext{The following goal: \elpiIn{X = lam x\ x, app[X, 3] = 3}}
 \otext{We use links-beta}
 
+\subsection{Tricky examples}
+
+\begin{elpicode}
+  triple ok (@lam x\ @app[@f, @app[@X, x]]) @Y,
+  triple ok @X (@lam x\ x),
+  triple ok @Y @f
+\end{elpicode}
+
 \section{First order approximation}
 
 \otext{Coq can solve this: \coqIn{f 1 2 = X 2}, by setting X to f 1}
