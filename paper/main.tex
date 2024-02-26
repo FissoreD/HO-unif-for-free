@@ -242,7 +242,7 @@ In this paper we study a more sophisticated encoding of Coq terms allowing
 us to rephrase the problematic rule \ref{clause:r3} as follows:
 
 \begin{elpicode}
-decision (all A x\ Pm x) :- link Pm A P, finite A,   ~\customlabel{clause:r3a}{(r3a)}~
+decision (all A x\ Pm x) :- link Pm P A, finite A,   ~\customlabel{clause:r3a}{(r3a)}~
   pi x\ decision (app[P, x]).
 \end{elpicode}
 
@@ -735,10 +735,54 @@ procedure is a more powerful version of the equal predicate, since unification
 checks if two terms can be equal be assigning unification variables. In our
 representation, variable assignment (or refinement) is performed by modifying
 the corresponding substitution mapping. We will not give an implementation of
-\Uo in the world of the OL, since we are giving an implementation of it using
+\Uo, since we are giving an implementation of it using
 our algorithm, see \cref{XX}.
 
-On the other hand, we can 
+\begin{figure}
+  \begin{elpicode}
+    type unif tm -> tm -> ho_subst -> ho_subst ->  o.
+    % Base cases
+    unif (app L1) (app L2) S S1 :- fold2 unif L1 L2 S S1.
+    unif (lam F1) (lam F2) S S1 :- 
+      pi x\ (pi S\ unif x x S S) => unif (F1 x) (F2 x) S S1.
+    unif (con X) (con X) S S.
+    % Assigned variables
+    unif (hov N Args) T S S1 :- 
+      assigned-deref N S F, beta-abs F Args T1, unif T1 T S S1.
+    unif T (hov N Args) S S1 :- 
+      assigned-deref N S F, beta-abs F Args T1, unif T T1 S S1.
+    % Non-assigned variabless
+    unif (hov N Args1) (hov M Args2) S S3 :-  
+      pattern-fragment Args1, pattern-fragment Args2, 
+      new S W S1, prune W Args1 Args2 Ass, 
+      assign N S1 Ass S2, assign M S2 Ass S3.
+    unif (hov N Args) T S S1 :- pattern-fragment Args,
+      not (T = hov _ _), not_occ N S T,  
+      bind Args T T1, assign N S T1 S1.
+    unif T (hov N Args) S S1 :- pattern-fragment Args,
+      not (T = hov _ _), not_occ N S T, 
+       bind Args T T1, assign N S T1 S1.
+  \end{elpicode}
+  \caption{The \Ue predicate}
+  \label{code:ue-pred}
+  \Description[code:unif-pred]{code:unif-pred}
+\end{figure}
+
+On the other hand, unification in the ML needs to be defined. In
+\cref{code:ue-pred}, we give an implementation of \Ue. This predicate has four
+arguments, the two terms $t_1$ and $t_2$ to unify, the old substitution map
+$\rho_1$, and the new substitution map $\rho_2$, with the invariant $\rho_1
+\subseteq \rho_2$. The first three rules unify terms with same rigid heads, and
+call the unification relation on the sub-terms. If $t_1$ (resp. $t_2$) is an
+assigned variables, $t_1$ is dereferenced to $t_1'$ (resp. $t_2'$) and the
+unification is called between $t_1'$ and $t_2$ (resp. $t_1$ and $t_2'$). If both
+terms are unification variables, we test that their arguments are in the pattern
+fragment, we allocate a new variable $w$ in $\rho_1$ such that $w$ is the
+pruning of the arguments of $t_1$ and $t_2$, we assign both $t_1$ and $t_2$ to
+$w$ and return the new mapping $\rho_2$ containing all the new variable
+assignment. Finally, if only one of the two terms is an unification variable
+$v$, after having verified that $v$ does not occur in the other term $t$, we
+bind $v$ to $t$ and return the new substitution mapping.
 
 \old
 
