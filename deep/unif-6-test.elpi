@@ -63,9 +63,7 @@ xtest (test N LR tt) :- std.do![
   std.forall LR (x\ sigma L R D L' R'\ triple D L R = x, (D = error _ ; 
     try6.fo.deref FOSol L L',
     try6.fo.deref FOSol R R',
-    print "Unifying" L' R',
-    L' ==o R',
-    print "Success")),
+    L' ==o R')),
 ].
 xtest (test _ LR ff) :- std.do! [
   not(eval-unif LR [] _S [] _L [] _FO)
@@ -138,4 +136,14 @@ macro @kol N X :- declare-test xtest (test N X ff).
 
 @okl 21 [
   (triple ok (@lam x\ @lam y\ @app[@f, y, @a]) (@lam x\ @lam y\ @app[@X, x, y]))
+].
+
+% @okl 22 [
+%   triple ok (@lam x\ @lam y\ @app[@Y, x, y]) @X,
+%   triple ok (@lam x\ @f) @X,
+% ].
+
+@okl 23 [
+  triple ok (@lam x\ @app[@f, @app[@X, x]]) @Y,
+  triple ok @X (@lam x\ x),
 ].
