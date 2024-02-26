@@ -23,6 +23,8 @@ deref S (app L1) (app L2) :- forall2 (deref S) L1 L2.
 deref S (lam F1) (lam F2) :- pi x\ deref S x x => deref S (F1 x) (F2 x).
 deref _ (con X) (con X).
 deref _ (fov N) (fov N).
+deref _ N N :- name N.
+deref A B V :- var V, halt "This is should be an error" B A.
 
 % [equal T1 T2] check if two terms are equal for the OL
 type (==o) tm -> tm -> o.
@@ -375,6 +377,8 @@ deref H (fo.app L) (fo.app L1) :- forall2 (deref H) L L1.
 deref _ (fo.con X) (fo.con X).
 deref H (ho.hov X L) (ho.hov X L1) :- forall2 (deref H) L L1.
 deref H (fo.lam F) (fo.lam G) :- pi x\ deref H x x => deref H (F x) (G x).
+deref _ N N :- name N.
+deref A B V :- var V, halt "This is should be an error" B A.
 
 % [eta Arity VarName Acc Ass]
 type eta nat -> nat -> list fo.tm -> ho.assignment -> o.
