@@ -147,3 +147,8 @@ macro @kol N X :- declare-test xtest (test N X ff).
   triple ok (@lam x\ @app[@f, @app[@X, x]]) @Y,
   triple ok @X (@lam x\ x),
 ].
+
+@okl 24 [
+  triple ok (@lam x\ x) @X,
+  triple ok @Y (@lam x\ @app[@f, @app[@X, x]]),
+].

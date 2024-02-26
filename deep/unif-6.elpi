@@ -298,7 +298,7 @@ type my-unif-assignment ho.assignment -> ho.assignment -> ho.subst -> ho.subst -
 my-unif-assignment A B S _ :- print "### unif assign" A "===" B, print "### subst" S, fail.
 my-unif-assignment (ho.val T1) (ho.val T2) H H1 :- ho.unif T1 T2 H H1.
 my-unif-assignment (ho.abs F1) (ho.abs F2) H H1 :- pi x\ (pi S\ ho.unif x x S S) => my-unif-assignment (F1 x) (F2 x) H H1.
-% TODO: manca casa riflessivo, cioè my-unif-assignment (ho.abs F) (ho.val V)
+
 my-unif-assignment (ho.val V)  (ho.abs F2) H H1 :-
     deref H V (ho.hov N L),
     pi x\ (pi S\ ho.unif x x S S) =>
@@ -317,6 +317,26 @@ my-unif-assignment (ho.val V)  (ho.abs F2) H H1 :-
     deref H V (fo.lam C),
     pi x\ (pi S\ ho.unif x x S S) =>
        my-unif-assignment (ho.val (C x)) (F2 x) H H1.
+
+my-unif-assignment (ho.abs F2) (ho.val V) H H1 :-
+    deref H V (ho.hov N L),
+    pi x\ (pi S\ ho.unif x x S S) =>
+      sigma L1\ std.append L [x] L1,
+       my-unif-assignment (ho.val (ho.hov N L1)) (F2 x) H H1.
+my-unif-assignment (ho.abs F2) (ho.val V) H H1 :-
+    deref H V (fo.app L),
+    pi x\ (pi S\ ho.unif x x S S) =>
+      sigma L1\ std.append L [x] L1,
+       my-unif-assignment (ho.val (fo.app L1)) (F2 x) H H1.
+my-unif-assignment (ho.abs F2) (ho.val V) H H1 :-
+    deref H V (fo.con C),
+    pi x\ (pi S\ ho.unif x x S S) =>
+       my-unif-assignment (ho.val (fo.app [fo.con C,x])) (F2 x) H H1.
+my-unif-assignment (ho.abs F2) (ho.val V) H H1 :-
+    deref H V (fo.lam C),
+    pi x\ (pi S\ ho.unif x x S S) =>
+       my-unif-assignment (ho.val (C x)) (F2 x) H H1.
+
 
 % tries to eta contract at each "depth", not just at the top
 type hope-for-eta ho.subst -> ho.assignment -> ho.assignment -> o.
