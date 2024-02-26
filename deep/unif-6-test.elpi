@@ -44,7 +44,6 @@ eval-unif [triple ok L R | TL] HO_Subs1 HO_SubsNN L0 L4 FOSol FOSol4 :- std.do![
   print "## unif" LH "with" RH "in" HO_Subs3,
   std.spy(try6.ho.unif LH RH HO_Subs3 HO_Subs4),
   
-  
   std.spy(try6.comp.solve-link L2 L3 HO_Subs4 HO_Subs5),
 
   try6.fo.alloc-subst L FOSol FOSol1,
@@ -151,4 +150,10 @@ macro @kol N X :- declare-test xtest (test N X ff).
 @okl 24 [
   triple ok (@lam x\ x) @X,
   triple ok @Y (@lam x\ @app[@f, @app[@X, x]]),
+].
+
+@okl 25 [
+  triple ok (@lam x\ @app[@f, @app[@X, x]]) @Y,
+  triple ok @X (@lam x\ x),
+  triple ok @Y @f
 ].

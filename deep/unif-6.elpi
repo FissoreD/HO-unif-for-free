@@ -24,7 +24,7 @@ deref S (lam F1) (lam F2) :- pi x\ deref S x x => deref S (F1 x) (F2 x).
 deref _ (con X) (con X).
 deref _ (fov N) (fov N).
 deref _ N N :- name N.
-deref A B V :- var V, halt "This is should be an error" B A.
+% deref A B V :- var V, halt "This is should be an error" B A.
 
 % [equal T1 T2] check if two terms are equal for the OL
 type (==o) tm -> tm -> o.
@@ -72,6 +72,7 @@ eta-contract (app L) (app L1) :- forall2 eta-contract L L1.
 eta-contract (lam F) T :- contract [] (lam F) T.
 eta-contract (lam F) (lam F1) :- pi x\ eta-contract x x => eta-contract (F x) (F1 x).
 eta-contract (fov X) (fov X).
+eta-contract X X :- name X.
 
 type contract list tm -> tm -> tm -> o.
 contract L (lam F) T :- 
@@ -265,7 +266,7 @@ same-assign M M' LenM LenM' W HO HO2 :- std.do![
   if (assigned? M HO T, W = M) true (eta LenM M [] T),
   if (assigned? M' HO T', W = M') true (eta LenM' M' [] T'),
   if (LenM = LenM')
-     (std.spy(ho.unif-assignment T T' HO HO2))
+     (std.spy(my-unif-assignment T T' HO HO2))
      (hope-for-eta HO T Te,
       hope-for-eta HO T' Te',
       std.spy(not(LenM = LenM'),my-unif-assignment Te Te' HO HO2))
@@ -298,7 +299,16 @@ same-assign M M' LenM LenM' W HO HO2 :- std.do![
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 type my-unif-assignment ho.assignment -> ho.assignment -> ho.subst -> ho.subst -> o.
 my-unif-assignment A B S _ :- print "### unif assign" A "===" B, print "### subst" S, fail.
-my-unif-assignment (ho.val T1) (ho.val T2) H H1 :- ho.unif T1 T2 H H1.
+
+type deref-eta-normalize fo.tm -> ho.subst -> fo.tm -> o.
+deref-eta-normalize T H R :-
+  deref H T T', !,
+  (pi N L\ fo.eta-contract (ho.hov N L) (ho.hov N L) :- !) => fo.eta-contract T' R.
+
+my-unif-assignment (ho.val T1) (ho.val T2) H H1 :-
+  deref-eta-normalize T1 H T1',
+  deref-eta-normalize T2 H T2',
+  ho.unif T1' T2' H H1.
 my-unif-assignment (ho.abs F1) (ho.abs F2) H H1 :- pi x\ (pi S\ ho.unif x x S S) => my-unif-assignment (F1 x) (F2 x) H H1.
 
 my-unif-assignment (ho.val V)  (ho.abs F2) H H1 :-
@@ -378,7 +388,7 @@ deref _ (fo.con X) (fo.con X).
 deref H (ho.hov X L) (ho.hov X L1) :- forall2 (deref H) L L1.
 deref H (fo.lam F) (fo.lam G) :- pi x\ deref H x x => deref H (F x) (G x).
 deref _ N N :- name N.
-deref A B V :- var V, halt "This is should be an error" B A.
+% deref A B V :- var V, halt "This is should be an error" B A.
 
 % [eta Arity VarName Acc Ass]
 type eta nat -> nat -> list fo.tm -> ho.assignment -> o.
