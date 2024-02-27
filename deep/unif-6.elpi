@@ -379,7 +379,7 @@ take-link [L|XS] L XS.
 take-link [L|XS] L' [L|YS] :- not(L = L'), take-link XS L' YS.
 
 type assign-replace nat -> fo.subst -> fo.fm -> fo.subst -> o.
-assign-replace z [_|S] X [some X |S].
+assign-replace z [none|S] X [some X |S].
 assign-replace (s N) [A|S] X [A |S1] :- assign-replace N S X S1.
 
 type decompl.aux list link -> list link -> ho.subst -> fo.subst -> fo.subst -> o.
@@ -392,23 +392,25 @@ decompl.aux [link N M _Arity|L] LK HO FO FO1 :- set? M HO T, !, std.do! [
 
 type get-head fo.fm -> nat -> list fo.fm -> fo.fm -> o.
 get-head (fo.fapp L) z Args T :-
-  % print "### In base case with" L Args T,
   appendR [Hd|Tl] Args L,
   fo.mk-app Hd Tl T.
-get-head Const z [Const] Const :- Const = fo.fcon _.
 get-head (fo.flam B) (s N) Args T :-
   pi x\ get-head (B x) N Args (R x),
   fo.eta-contract (fo.flam R) T.
 
-% Invariante: len(Args) > 0
-decompl.aux [link-fo-align Args N M Arity|L] LK HO FO FO1 :- set? M HO T, !, std.do! [
+% This is classic beta
+decompl.aux [link-fo-align Args N M Arity_|L] LK HO FO FO1 :- set? M HO T, set? N FO R, !, std.spy-do! [
   decomp-assign LK HO T T0 FO FO'',
   fold2 (decomp LK HO) Args Args1 FO'' FO',
-  % Invariant : The eta contract of T0 should always return an app of something
-  % whose length is > (len Args)
-  std.map Args1 fo.eta-contract Args1',
-  get-head T0 Arity Args1' Head, 
-  assign-replace N FO' Head FO2,
+  fo.mk-app R Args1 T0,
+  decompl.aux L LK HO FO' FO1,
+].
+% FO-approx
+decompl.aux [link-fo-align Args N M Arity|L] LK HO FO FO1 :- set? M HO T, unset? N FO, !, std.spy-do! [
+  decomp-assign LK HO T T0 FO FO'',
+  fold2 (decomp LK HO) Args Args1 FO'' FO',
+  get-head T0 Arity Args1 TTT,
+  assign-replace N FO' TTT FO2,
   decompl.aux L LK HO FO2 FO1,
 ].
 decompl.aux [_|L] LK HO FO FO1 :- decompl.aux L LK HO FO FO1.

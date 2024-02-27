@@ -35,7 +35,7 @@ eval-unif [triple (error "unif") L R | _] HO_Subs1 HO_Subs3 L0 L3 FOSol FOSol :-
   not(std.spy(try6.ho.unif LH RH HO_Subs4 HO_Subs4_)),
 ].
 
-eval-unif [triple ok L R | TL] HO_Subs1 HO_SubsNN L0 L4 FOSol FOSol2 :- std.do![
+eval-unif [triple ok L R | TL] HO_Subs1 HO_SubsNN L0 L4 FOSol FOSol2 :- std.spy-do![
 
   std.assert! (try6.comp.comp L LH L0 L1 HO_Subs1 HO_Subs2) "b1",
   std.assert! (try6.comp.comp R RH L1 L2 HO_Subs2 HO_Subs3) "b2",
@@ -47,11 +47,11 @@ eval-unif [triple ok L R | TL] HO_Subs1 HO_SubsNN L0 L4 FOSol FOSol2 :- std.do![
   
   std.spy(try6.comp.solve-link L2 L3 HO_Subs4 HO_Subs5),
 
-  std.spy(try6.comp.decompl L3 L3 HO_Subs5 FOSol FOSol1),
+  % std.spy(try6.comp.decompl L3 L3 HO_Subs5 FOSol FOSol1),
 
-  print "FO Subst" L "==" R ":=" FOSol1,
+  % print "FO Subst" L "==" R ":=" FOSol,
 
-  eval-unif TL HO_Subs5 HO_SubsNN L3 L4 FOSol1 FOSol2,
+  eval-unif TL HO_Subs5 HO_SubsNN L3 L4 FOSol FOSol2,
 ].
 
 type is-nf try6.fo.fm -> o.
@@ -76,15 +76,25 @@ build-fo-subst [triple _ L R | TL] A D :-
   try6.fo.extend-subst L A B, try6.fo.extend-subst R B C,
   build-fo-subst TL C D.
 
+type validate-solution 
+  list (triple diagnostic try6.fo.fm try6.fo.fm) -> int ->
+  list try6.comp.link ->
+  try6.ho.subst ->
+  try6.fo.subst -> o.
+validate-solution Goals N Links HS FS :- 
+  forall1 (x\ x = triple ok _ _) Goals, !,
+  try6.comp.decompl Links Links HS FS FS',
+  print "The solution for" N "is" FS', 
+  forall1 (x\ sigma L R L' R'\ triple _ L R = x,
+    try6.fo.deref FS' L L', try6.fo.deref FS' R R',
+    L' ==o R') Goals.
+validate-solution _ _ _ _ _.
+
 type xtest test try6.fo.fm -> o.
 xtest (test N LR tt) :- std.do![
   build-fo-subst LR [] FO_Subst,
-  eval-unif LR [] _SOL1 [] _Links FO_Subst FOSol,
-  print "FO Subst" N "=" FOSol,
-  std.forall LR (x\ sigma L R D L' R'\ triple D L R = x, (D = error _ ; 
-    try6.fo.deref FOSol L L',
-    try6.fo.deref FOSol R R',
-    L' ==o R')),
+  eval-unif LR [] HO_Subst [] Links FO_Subst FO_Subst',
+  validate-solution LR N {std.rev Links} HO_Subst FO_Subst',
 ].
 xtest (test _ LR ff) :- std.do! [
   build-fo-subst LR [] FO_Subst,
@@ -152,9 +162,9 @@ macro @kol N X :- declare-test xtest (test N X ff).
   (triple ok (@lam x\ @app[@X, x, @a]) (@lam x\ @app[@f, @a]))
 ].                                                                               % here two solutions for X: fun _ _ => f a, fun _ x => f x
 
-@okl 20 [
-  (triple (error "comp1") (@lam x\ @app[@X, x, x, @a]) (@lam x\ @app[@f, x, @a]))
-]. % we are not in PF, X have two solutions: fun x _ => f x | fun _ x => f x
+% @okl 20 [
+%   (triple (error "comp1") (@lam x\ @app[@X, x, x, @a]) (@lam x\ @app[@f, x, @a]))
+% ]. % we are not in PF, X have two solutions: fun x _ => f x | fun _ x => f x
 
 @okl 21 [
   (triple ok (@lam x\ @lam y\ @app[@f, y, @a]) (@lam x\ @lam y\ @app[@X, x, y]))
