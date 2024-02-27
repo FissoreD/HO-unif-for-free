@@ -266,16 +266,19 @@ solve-link [link N M LenM|L] LR HO HO1 :- take-link L (link N M' LenM') L1, !, s
 solve-link [L|LS] [L|LS'] HO HO1 :- solve-link LS LS' HO HO1.
 solve-link [] [] X X.
 
+type test-same-assign nat -> nat -> ho.assignment -> ho.assignment -> ho.subst -> ho.subst -> o.
+test-same-assign L L T T' HO HO2 :- !, std.spy(my-unif-assignment T T' HO HO2).
+test-same-assign _ _ T T' HO HO2 :- 
+  hope-for-eta HO T Te,
+  hope-for-eta HO T' Te',
+  std.spy(my-unif-assignment Te Te' HO HO2).
+
 type same-assign nat -> nat -> nat -> nat -> nat -> ho.subst -> ho.subst -> o.
-same-assign M M' LenM LenM' W HO HO2 :- std.do![
-  if (set? M HO T, W = M) true (eta LenM M [] T),
+same-assign M M' LenM LenM' W HO HO2 :-
+  if (set? M HO T, W = M)  true (eta LenM M [] T),
   if (set? M' HO T', W = M') true (eta LenM' M' [] T'),
-  if (LenM = LenM')
-     (std.spy(my-unif-assignment T T' HO HO2))
-     (hope-for-eta HO T Te,
-      hope-for-eta HO T' Te',
-      std.spy(not(LenM = LenM'),my-unif-assignment Te Te' HO HO2))
-  ].
+  test-same-assign LenM LenM' T T' HO HO2.
+  
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%
 %%% nel test 15 abbiamo
