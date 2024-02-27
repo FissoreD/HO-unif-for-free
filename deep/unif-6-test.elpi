@@ -1,19 +1,19 @@
-macro @X :- try6.fo.fov z.
-macro @Y :- try6.fo.fov (s z).
-macro @Z :- try6.fo.fov (s (s z)).
-macro @f :- try6.fo.con "f".
-macro @g :- try6.fo.con "g".
-macro @h :- try6.fo.con "h".
-macro @a :- try6.fo.con "a".
-macro @b :- try6.fo.con "b".
-macro @c :- try6.fo.con "c".
-macro @app L :- try6.fo.app L.
-macro @lam L :- try6.fo.lam L.
+macro @X :- try6.fo.fuva z.
+macro @Y :- try6.fo.fuva (s z).
+macro @Z :- try6.fo.fuva (s (s z)).
+macro @f :- try6.fo.fcon "f".
+macro @g :- try6.fo.fcon "g".
+macro @h :- try6.fo.fcon "h".
+macro @a :- try6.fo.fcon "a".
+macro @b :- try6.fo.fcon "b".
+macro @c :- try6.fo.fcon "c".
+macro @app L :- try6.fo.fapp L.
+macro @lam L :- try6.fo.flam L.
 
 shorten try6.fo.{(==o)}.
 
 type eval-unif 
-  list (triple diagnostic try6.fo.tm try6.fo.tm) -> 
+  list (triple diagnostic try6.fo.fm try6.fo.fm) -> 
   try6.ho.subst -> try6.ho.subst ->
   list try6.comp.link ->
   list try6.comp.link ->
@@ -55,23 +55,23 @@ eval-unif [triple ok L R | TL] HO_Subs1 HO_SubsNN L0 L4 FOSol FOSol4 :- std.do![
   eval-unif TL HO_Subs5 HO_SubsNN L3 L4 FOSol3 FOSol4,
 ].
 
-type is-nf try6.fo.tm -> o.
-is-nf (try6.fo.con _).
-is-nf (try6.fo.fov _).
-is-nf (try6.fo.app [try6.fo.lam _ | _]) :-
+type is-nf try6.fo.fm -> o.
+is-nf (try6.fo.fcon _).
+is-nf (try6.fo.fuva _).
+is-nf (try6.fo.fapp [try6.fo.flam _ | _]) :-
   halt "There is a beta expansion in the input".
-is-nf (try6.fo.app L) :- std.forall L is-nf.
-is-nf (try6.fo.lam B) :- 
-  pi x\ sigma L\ try6.fo.app L = B x, std.appendR _ [x] L, 
+is-nf (try6.fo.fapp L) :- std.forall L is-nf.
+is-nf (try6.fo.flam B) :- 
+  pi x\ sigma L\ try6.fo.fapp L = B x, std.appendR _ [x] L, 
   halt "There is an eta exapansion in the input".
-is-nf (try6.fo.lam B) :- pi x\ is-nf x => is-nf (B x).
+is-nf (try6.fo.flam B) :- pi x\ is-nf x => is-nf (B x).
 
-type is-nf-goal list (triple diagnostic try6.fo.tm try6.fo.tm) -> o.
+type is-nf-goal list (triple diagnostic try6.fo.fm try6.fo.fm) -> o.
 is-nf-goal [].
 is-nf-goal [triple _ A B | TL] :-
   is-nf A, is-nf B, is-nf-goal TL.
 
-type xtest test try6.fo.tm -> o.
+type xtest test try6.fo.fm -> o.
 xtest (test N LR tt) :- std.do![
   eval-unif LR [] _SOL1 [] _Links [] FOSol,
   print "FO Subst" N "=" FOSol,

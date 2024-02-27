@@ -28,7 +28,7 @@ nth (s N) (_ :: L) X :- nth N L X.
 type exists (A -> o) -> list A -> o.
 exists F [X|XS] :- F X ; exists F XS.
 
-type forall2 (A -> A -> o) -> list A -> list A -> o.
+type forall2 (A -> B -> o) -> list A -> list B -> o.
 forall2 _ [] [].
 forall2 F [X|XS] [Y|YS] :- F X Y, forall2 F XS YS.
 
