@@ -698,7 +698,7 @@ return the dereferencing of the beta reduction \elpiIn{T} to the scope
 
 \begin{figure}
   \begin{elpicode}
-    type ~(\Eo)~ ftm -> ftm -> o.
+    ~\PYG{k+kd}{type} \PYG{n+nf}{(\Eo)} \PYG{k+kt}{ftm -> ftm -> o}~.
     % congruence
     fapp A ~\Eo~fapp B :- forall2 ~(\Eo)~ A B.
     flam F ~\Eo~flam G :- pi x\ x ~\Eo~x => F x ~\Eo~G x.
@@ -721,7 +721,7 @@ return the dereferencing of the beta reduction \elpiIn{T} to the scope
 
 \begin{figure}
   \begin{elpicode}
-    type ~(\Ee)~ tm -> tm -> o.
+    ~\PYG{k+kd}{type} \PYG{n+nf}{(\Ee)} \PYG{k+kt}{tm -> tm -> o}~.
     app A ~\Ee~fapp B :- forall2 ~(\Ee)~ A B.
     lam F ~\Ee~flam G :- pi x\ x ~\Ee~x => F x ~\Ee~G x.
     con C ~\Ee~fcon C.
@@ -762,7 +762,7 @@ our algorithm, see \cref{XX}.
 
 \begin{figure}
 \begin{elpicode}
-type ~(\Ue)~ tm -> tm -> subst -> subst ->  o.
+~\PYG{k+kd}{type} \PYG{n+nf}{(\Ue)} \PYG{k+kt}{tm -> tm -> subst -> subst o}~.
 % Congruence
 (app A ~\Ue~app B) S S1 :- fold2 ~\Ue~A B S S1.
 (lam F ~\Ue~lam G) S S1 :- 
