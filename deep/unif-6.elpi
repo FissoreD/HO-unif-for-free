@@ -334,20 +334,20 @@ my-unif-assignment (ho.abs F2) (ho.val V) H H1 :-
     deref H V (ho.hov N L),
     pi x\ (pi S\ ho.unif x x S S) =>
       sigma L1\ std.append L [x] L1,
-       my-unif-assignment (ho.val (ho.hov N L1)) (F2 x) H H1.
+       my-unif-assignment (F2 x) (ho.val (ho.hov N L1)) H H1.
 my-unif-assignment (ho.abs F2) (ho.val V) H H1 :-
     deref H V (fo.app L),
     pi x\ (pi S\ ho.unif x x S S) =>
       sigma L1\ std.append L [x] L1,
-       my-unif-assignment (ho.val (fo.app L1)) (F2 x) H H1.
+       my-unif-assignment (F2 x) (ho.val (fo.app L1)) H H1.
 my-unif-assignment (ho.abs F2) (ho.val V) H H1 :-
     deref H V (fo.con C),
     pi x\ (pi S\ ho.unif x x S S) =>
-       my-unif-assignment (ho.val (fo.app [fo.con C,x])) (F2 x) H H1.
+       my-unif-assignment (F2 x) (ho.val (fo.app [fo.con C,x])) H H1.
 my-unif-assignment (ho.abs F2) (ho.val V) H H1 :-
     deref H V (fo.lam C),
     pi x\ (pi S\ ho.unif x x S S) =>
-       my-unif-assignment (ho.val (C x)) (F2 x) H H1.
+       my-unif-assignment (F2 x) (ho.val (C x)) H H1.
 
 
 % tries to eta contract at each "depth", not just at the top
