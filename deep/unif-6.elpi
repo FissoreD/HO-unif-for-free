@@ -208,26 +208,15 @@ shorten fo.{ (==o) }.
 kind link type.
 type link nat -> nat -> nat -> link.
 type link-fo-align list ho.tm -> nat -> nat -> nat -> link.
-
-type not-in A -> list A -> o.
-not-in _ [].
-not-in T [X | TL] :- not (X = T), not-in T TL.
-
-type split-pf list A -> list A -> list A -> list A -> o.
-split-pf [] _ [] [].
-split-pf [X | L] ACC [X | PF] NPF :- name X, not-in X ACC, !, 
-  split-pf L [X | ACC] PF NPF.
-split-pf L _ [] L :- std.forall L (x\ not (name x)).
+% TODO: add link eta, in the case of added holes
 
 type comp fo.fm -> ho.tm -> list link -> list link -> ho.subst -> ho.subst -> o.
 comp (fo.fcon X)   (ho.con X) L L S S.
-comp (fo.fapp [fo.fuva N|Argsss]) TT L L3 S S3 :- !,
-  split-pf Argsss [] PF NPF,
-  TT = ho.uva M PF1,
+comp (fo.fapp [fo.fuva N|Args]) (ho.uva M PF1) L L3 S S3 :- !,
+  split-pf Args PF NPF,
   fold4 comp PF PF1 L L S S1,
   fold4 comp NPF NPF1 L L1 S1 S2,
   ho.new S2 M S3,
-  print "After comp in app uvar",
   len PF Len,
   % TODO: NYI NPF1 can contain non-closed terms (i.e. local vars...)
   if (NPF = []) (LinkType = link) (LinkType = link-fo-align NPF1),
@@ -238,19 +227,19 @@ comp (fo.flam F) (ho.lam F1) L L1 S S1 :-
 comp (fo.fuva N) (ho.uva M []) L [link N M z|L] S S1 :- ho.new S M S1.
 
 type solve-link list link -> list link -> ho.subst -> ho.subst -> o.
+solve-link [] [] X X.
 solve-link [link N M LenM|L] LR HO HO1 :- take-link L (link N M' LenM') L1, !, std.do! [
   same-assign M M' LenM LenM' W HO HO2,
   solve-link [link N W LenM|L1] LR HO2 HO1,
 ].
 solve-link [L|LS] [L|LS'] HO HO1 :- solve-link LS LS' HO HO1.
-solve-link [] [] X X.
 
 type test-same-assign nat -> nat -> ho.assignment -> ho.assignment -> ho.subst -> ho.subst -> o.
-test-same-assign L L T T' HO HO2 :- !, std.spy(my-unif-assignment T T' HO HO2).
-test-same-assign _ _ T T' HO HO2 :- 
+test-same-assign L L T R HO HO2 :- !, std.spy(my-unif-assignment T R HO HO2).
+test-same-assign _ _ T R HO HO2 :- 
   hope-for-eta HO T Te,
-  hope-for-eta HO T' Te',
-  std.spy(my-unif-assignment Te Te' HO HO2).
+  hope-for-eta HO R Re,
+  std.spy(my-unif-assignment Te Re HO HO2).
 
 type same-assign nat -> nat -> nat -> nat -> nat -> ho.subst -> ho.subst -> o.
 same-assign M N LenM LenN W HO HO2 :- set? M HO AM, set? N HO AN, W = M,
@@ -289,21 +278,6 @@ same-assign M N LenM LenN W HO HO2 :- unset? M HO, unset? N HO,   W = M, eta Len
 %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 type my-unif-assignment ho.assignment -> ho.assignment -> ho.subst -> ho.subst -> o.
-
-type eta-contract ho.tm -> ho.tm -> o.
-eta-contract (ho.con X) (ho.con X).
-eta-contract (ho.app L) (ho.app L1) :- forall2 eta-contract L L1.
-eta-contract (ho.lam F) T :- contract [] (ho.lam F) T.
-eta-contract (ho.lam F) (ho.lam F1) :- pi x\ eta-contract x x => eta-contract (F x) (F1 x).
-eta-contract (ho.uva X L) (ho.uva X L).
-eta-contract X X :- name X.
-
-type contract list ho.tm -> ho.tm -> ho.tm -> o.
-contract L (ho.lam F) T :- 
-  pi x\ contract [x|L] (F x) T. % also checks H Prefix does not see x
-contract L (ho.app [H|Args]) T :- 
-  std.rev L LRev, std.appendR Prefix LRev Args,
-  if (Prefix = []) (T = H) (T = ho.app [H|Prefix]).
 
 my-unif-assignment (ho.val T) A  H H1 :-
   ho.deref H T T', not(same_term T T'), my-unif-assignment (ho.val T') A H H1.

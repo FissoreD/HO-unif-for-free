@@ -25,6 +25,10 @@ type nth nat -> list A -> A -> o.
 nth z (X :: _) Y  :- X = Y.
 nth (s N) (_ :: L) X :- nth N L X.
 
+type not-in A -> list A -> o.
+not-in _ [].
+not-in T [X | TL] :- not (X = T), not-in T TL.
+
 type exists (A -> o) -> list A -> o.
 exists F [X|XS] :- F X ; exists F XS.
 
@@ -77,6 +81,16 @@ forall1 _ [].
 type len list A -> nat -> o.
 len [] z.
 len [_|L] (s X) :- len L X.
+
+% [split-pf L [] ]
+type split-pf-aux list A -> list A -> list A -> list A -> o.
+split-pf-aux [] _ [] [].
+split-pf-aux [X | L] ACC [X | PF] NPF :- name X, not-in X ACC, !, 
+  split-pf-aux L [X | ACC] PF NPF.
+split-pf-aux L _ [] L :- std.forall L (x\ not (name x)).
+
+type split-pf list A -> list A -> list A -> o.
+split-pf L PF NPF :- split-pf-aux L [] PF NPF.
 
 pred pattern-fragment i:list A.
 pattern-fragment L :- distinct_names L.
