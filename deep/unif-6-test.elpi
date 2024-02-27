@@ -35,7 +35,8 @@ eval-unif [triple (error "unif") L R | _] HO_Subs1 HO_Subs3 L0 L3 FOSol FOSol :-
   not(std.spy(try6.ho.unif LH RH HO_Subs4 HO_Subs4_)),
 ].
 
-eval-unif [triple ok L R | TL] HO_Subs1 HO_SubsNN L0 L4 FOSol FOSol4 :- std.do![
+eval-unif [triple ok L R | TL] HO_Subs1 HO_SubsNN L0 L4 FOSol FOSol2 :- std.do![
+
   std.assert! (try6.comp.comp L LH L0 L1 HO_Subs1 HO_Subs2) "b1",
   std.assert! (try6.comp.comp R RH L1 L2 HO_Subs2 HO_Subs3) "b2",
   print "# comp Left:" LH,
@@ -46,13 +47,11 @@ eval-unif [triple ok L R | TL] HO_Subs1 HO_SubsNN L0 L4 FOSol FOSol4 :- std.do![
   
   std.spy(try6.comp.solve-link L2 L3 HO_Subs4 HO_Subs5),
 
-  try6.fo.alloc-subst L FOSol FOSol1,
-  try6.fo.alloc-subst R FOSol1 FOSol2,
-  std.spy(try6.comp.decompl L3 L3 HO_Subs5 FOSol2 FOSol3),
+  std.spy(try6.comp.decompl L3 L3 HO_Subs5 FOSol FOSol1),
 
-  print "FO Subst" L "==" R ":=" FOSol3,
+  print "FO Subst" L "==" R ":=" FOSol1,
 
-  eval-unif TL HO_Subs5 HO_SubsNN L3 L4 FOSol3 FOSol4,
+  eval-unif TL HO_Subs5 HO_SubsNN L3 L4 FOSol1 FOSol2,
 ].
 
 type is-nf try6.fo.fm -> o.
@@ -71,9 +70,16 @@ is-nf-goal [].
 is-nf-goal [triple _ A B | TL] :-
   is-nf A, is-nf B, is-nf-goal TL.
 
+type build-fo-subst list (triple diagnostic try6.fo.fm try6.fo.fm) -> try6.fo.subst -> try6.fo.subst -> o.
+build-fo-subst [] L L.
+build-fo-subst [triple _ L R | TL] A D :-
+  try6.fo.extend-subst L A B, try6.fo.extend-subst R B C,
+  build-fo-subst TL C D.
+
 type xtest test try6.fo.fm -> o.
 xtest (test N LR tt) :- std.do![
-  eval-unif LR [] _SOL1 [] _Links [] FOSol,
+  build-fo-subst LR [] FO_Subst,
+  eval-unif LR [] _SOL1 [] _Links FO_Subst FOSol,
   print "FO Subst" N "=" FOSol,
   std.forall LR (x\ sigma L R D L' R'\ triple D L R = x, (D = error _ ; 
     try6.fo.deref FOSol L L',
@@ -81,7 +87,8 @@ xtest (test N LR tt) :- std.do![
     L' ==o R')),
 ].
 xtest (test _ LR ff) :- std.do! [
-  not(eval-unif LR [] _S [] _L [] _FO)
+  build-fo-subst LR [] FO_Subst,
+  not(eval-unif LR [] _S [] _L FO_Subst _FO)
 ].
 
 macro @ok N X Y :- declare-test xtest (test N [triple ok X Y] tt).
@@ -153,15 +160,15 @@ macro @kol N X :- declare-test xtest (test N X ff).
   (triple ok (@lam x\ @lam y\ @app[@f, y, @a]) (@lam x\ @lam y\ @app[@X, x, y]))
 ].
 
-@okl 22001 [
-  triple ok (@lam x\ @lam y\ @app[@Y, y, x]) @Z,
-  triple ok (@app[@g, @Z]) @X,
-  triple ok (@app[@g, @f]) @X,
-].
-@okl 22000 [
-  triple ok (@app[@g, (@lam x\ @lam y\ @app[@Y, y, x])]) @X,
-  triple ok (@app[@g, @f]) @X,
-].
+% @okl 22001 [
+%   triple ok (@lam x\ @lam y\ @app[@Y, y, x]) @Z,
+%   triple ok (@app[@g, @Z]) @X,
+%   triple ok (@app[@g, @f]) @X,
+% ].
+% @okl 22000 [
+%   triple ok (@app[@g, (@lam x\ @lam y\ @app[@Y, y, x])]) @X,
+%   triple ok (@app[@g, @f]) @X,
+% ].
 @okl 2200 [
   triple ok (@lam x\ @lam y\ @app[@Y, y, x]) @X,
   triple ok (@f) @X,

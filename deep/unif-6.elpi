@@ -43,13 +43,13 @@ T ==o flam F :- pi x\ beta T [x] (T' x), x ==o x => T' x ==o F x.
 fapp [flam X | TL] ==o T :- beta (flam X) TL T', T' ==o T.
 T ==o fapp [flam X | TL] :- beta (flam X) TL T', T ==o T'.
 
-% [alloc-subst T S S'] foraech var in T, alloc an fuva N at place N in S' (that extends S)
-type alloc-subst fm -> subst -> subst -> o.
-alloc-subst (fuva N) S S :- len S M, M >n N.
-alloc-subst (fuva N) S S' :- len S M, N >=n M, std.append S [none] S'', alloc-subst (fuva N) S'' S'.
-alloc-subst (flam F) S S' :- pi x\ (pi S\alloc-subst x S S) => alloc-subst (F x) S S'.
-alloc-subst (fcon _) S S.
-alloc-subst (fapp L) S S1 :- fold alloc-subst L S S1.
+% [extend-subst T S S'] foraech var in T, alloc an fuva N at place N in S' (that extends S)
+type extend-subst fm -> subst -> subst -> o.
+extend-subst (fuva N) S S :- len S M, M >n N.
+extend-subst (fuva N) S S' :- len S M, N >=n M, std.append S [none] S'', extend-subst (fuva N) S'' S'.
+extend-subst (flam F) S S' :- pi x\ (pi S\extend-subst x S S) => extend-subst (F x) S S'.
+extend-subst (fcon _) S S.
+extend-subst (fapp L) S S1 :- fold extend-subst L S S1.
 
 type beta fm -> list fm -> fm -> o.
 beta A [] A.
