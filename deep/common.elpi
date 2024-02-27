@@ -16,6 +16,7 @@ assigned? (s N) (_ :: L) X :- assigned? N L X.
 
 type assign nat -> list (option A) -> A -> list (option A) -> o.
 assign z (none :: L) Y (some Y :: L).
+assign z (some Y :: L) Y (some Y :: L).
 assign (s N) (X :: L) Y (X :: L1) :- assign N L Y L1.
 
 type nth nat -> list A -> A -> o.
