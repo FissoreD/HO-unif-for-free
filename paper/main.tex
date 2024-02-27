@@ -570,7 +570,9 @@ distinct-names [X|XS] :- name X, not(mem X XS),
 \end{elpicode}
 
 \noindent
-The \elpiIn{name} builtin predicate tests if a term is a bound variable. The
+The \elpiIn{name} builtin predicate tests if a term is a bound variable.
+\footnote{one could always load name x for every x under a pi and get rid of the name builtin}
+The
 compiler~\ref{sec:xxx} needs to support terms outside \llambda for practical
 reasons, so we don't assume all out terms are in \llambda but rather test.
 
@@ -581,7 +583,7 @@ operations are described below:
 \begin{elpicode}
 typeabbrev memory A (list (option A)).
 type set?   nat -> memory A -> A -> o.
-type unset  nat -> memory A -> o.
+type unset? nat -> memory A -> o.
 type assign nat -> memory A -> A -> memory A -> o.
 \end{elpicode}
 
@@ -647,7 +649,7 @@ fderef S (flam F) (flam G) :-
 fderef _ (fcon C) (fcon C).
 % dereferencing
 fderef S (fuva N) R :- set? N S T, fderef S T R.
-fderef _ (fuva N) (fuva N) :- unset N S.
+fderef S (fuva N) (fuva N) :- unset? N S.
 \end{elpicode}
 
 \noindent
@@ -662,7 +664,7 @@ differ in a substantial way:
 type deref subst -> tm -> tm -> o.
 % ... similar to above ...
 deref S (uva N A) R :- set? N S F, move F A T, deref S T R.
-deref S (uva N A) (uva N B) :- unset N S, map (deref S) A B.
+deref S (uva N A) (uva N B) :- unset? N S, map (deref S) A B.
 type move assignment -> list tm -> tm -> o.
 move (abs F) [X | L] R :- move (F X) L R.
 move (val A)         [] A :- !.
@@ -919,7 +921,7 @@ Note that \elpiIn{(a infix b) c d} de-sugars to \elpiIn{(infix) a b c d}.
 (uva N A ~\Ue~T) S S1 :- set? N S F, move F A T1, (T1 ~\Ue~T) S S1.
 (T ~\Ue~uva N A) S S1 :- set? N S F, move F A T1, (T ~\Ue~T1) S S1.
 % flex-flex
-(uva N A ~\Ue~uva M B) S S3 :-  unset M, unset N,
+(uva N A ~\Ue~uva M B) S S3 :-  unset? M, unset? N,
   distinct-names A, distinct-names B, 
   new S W S1, prune W Args1 B Ass, 
   assign N S1 Ass S2, assign M S2 Ass S3.
@@ -937,8 +939,8 @@ distinct-names XS.
 typeabbrev memory A (list (option A)).
 type set? nat -> memory A -> A -> o.
 set? N S T :- nth N S (some T).
-type unset nat -> memory A -> o.
-unset N S :- nth N S none.
+type unset? nat -> memory A -> o.
+unset? N S :- nth N S none.
 type assign nat -> memory A -> A -> memory A -> o.
 assign z [none|M] T [some T|M].
 assign (s N) [X|M] T [X|M1] :- assign N M T M1. 
@@ -953,6 +955,7 @@ type new memory A -> nat -> memory A -> o.
 type prune .
 type move .
 type beta.
+type not_occ.
 TODO
 
 \end{elpicode}

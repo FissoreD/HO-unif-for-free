@@ -10,13 +10,15 @@ kind option type -> type.
 type some A -> option A.
 type none option A.
 
-type assigned? nat -> list (option A) -> A -> o.
-assigned? z (some Y :: _) Y.
-assigned? (s N) (_ :: L) X :- assigned? N L X.
+type set? nat -> list (option A) -> A -> o.
+set? z (some Y :: _) Y.
+set? (s N) (_ :: L) X :- set? N L X.
+type unset? nat -> list (option A) -> o.
+unset? z (none :: _).
+unset? (s N) (_ :: L) :- unset? N L.
 
 type assign nat -> list (option A) -> A -> list (option A) -> o.
 assign z (none :: L) Y (some Y :: L).
-assign z (some Y :: L) Y (some Y :: L).
 assign (s N) (X :: L) Y (X :: L1) :- assign N L Y L1.
 
 type nth nat -> list A -> A -> o.

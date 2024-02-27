@@ -17,8 +17,8 @@ typeabbrev subst list (option tm).
 
 type deref subst -> tm -> tm -> o.
 deref _ X _ :- var X, halt "flex deref".
-deref S (fov N) T1 :- assigned? N S T, deref S T T1.
-deref S (app [fov N|L]) R :- assigned? N S T, !, beta T L R', deref S R' R.
+deref S (fov N) T1 :- set? N S T, deref S T T1.
+deref S (app [fov N|L]) R :- set? N S T, !, beta T L R', deref S R' R.
 deref S (app L1) (app L2) :- forall2 (deref S) L1 L2.
 deref S (lam F1) (lam F2) :- pi x\ deref S x x => deref S (F1 x) (F2 x).
 deref _ (con X) (con X).
@@ -106,15 +106,19 @@ unif (lam F1) (lam F2) S S1 :-
 unif (con X) (con X) S S.
 % Assigned variables
 unif (hov N Args) T S S1 :- 
-  assigned? N S F, beta-abs F Args T1, unif T1 T S S1.
+  set? N S F, move F Args T1, unif T1 T S S1.
 unif T (hov N Args) S S1 :- 
-  assigned? N S F, beta-abs F Args T1, unif T T1 S S1.
+  set? N S F, move F Args T1, unif T T1 S S1.
 % Not assigned varis
 unif (hov N A) (hov N A) S S :- pattern-fragment A.
 unif (hov N Args1) (hov M Args2) S S3 :- 
+  unset? N S, unset? M S,
   pattern-fragment Args1, pattern-fragment Args2, 
   new S W S1, prunexx W Args1 Args2 Ass, 
-  assign N S1 Ass S2, assign M S2 Ass S3.
+  assign N S1 Ass S2,
+  if (unset? M S2) % M = N case
+     (assign M S2 Ass S3)
+     (S3 = S2). 
 unif (hov N Args) T S S1 :- 
   not (T = hov _ _), not_occ N S T, pattern-fragment Args, 
   bind Args T T1, assign N S T1 S1.
@@ -141,12 +145,12 @@ prune-aux N [] [] ACC (val (hov N Args)) tt :- std.rev ACC Args.
 prune-aux N [X|XS] [X|YS] ACC (abs F) O :- pi x\ prune-aux N XS YS [x|ACC] (F x) O.
 prune-aux N [_|XS] [_|YS] ACC (abs F) _ :- pi x\ prune-aux N XS YS ACC (F x) tt.
 
-type beta-abs assignment -> list tm -> tm -> o.
-beta-abs (abs Bo) [H | L] R :- beta-abs (Bo H) L R.
-beta-abs (val A)  [] A.
-beta-abs (val (app A))  L (app X) :- std.append A L X.
-beta-abs (val (hov N A)) L (hov N X) :- std.append A L X.
-beta-abs (val (con H))    L (app [con H | L]).
+type move assignment -> list tm -> tm -> o.
+move (abs Bo) [H | L] R :- move (Bo H) L R.
+move (val A)  [] A.
+move (val (app A))  L (app X) :- std.append A L X.
+move (val (hov N A)) L (hov N X) :- std.append A L X.
+move (val (con H))    L (app [con H | L]).
 
 type beta tm -> list tm -> tm -> o.
 beta A [] A.
@@ -157,18 +161,18 @@ beta (con H) L (app [con H | L]).
 
 % type occ_aux nat -> subst -> tm -> o.
 % occ_aux N _S (fov N _).
-% occ_aux N S (fov M Args) :- assigned? M S F, beta-abs F Args T, occ_aux N S T.
+% occ_aux N S (fov M Args) :- set? M S F, move F Args T, occ_aux N S T.
 % occ_aux N S (app L) :- exists (occ_aux N S) L.
 % occ_aux N S (lam F) :- pi x\ occ_aux N S (F x).
 % 
 % type occ  nat -> subst -> tm -> o.
 % occ N _S (fov N _) :- !, fail.
-% occ N S (fov M Args) :- assigned? M S F, !, beta-abs F Args T, occ N S T.
+% occ N S (fov M Args) :- set? M S F, !, move F Args T, occ N S T.
 % occ N S T :- occ_aux N S T.
 
 type not_occ_aux nat -> subst -> tm -> o.
-not_occ_aux N S (hov M _) :- not(assigned? M S _), diff N M.
-not_occ_aux N S (hov M Args) :- assigned? M S F, beta-abs F Args T, not_occ_aux N S T.
+not_occ_aux N S (hov M _) :- not(set? M S _), diff N M.
+not_occ_aux N S (hov M Args) :- set? M S F, move F Args T, not_occ_aux N S T.
 not_occ_aux N S (app L) :- forall1 (not_occ_aux N S) L.
 not_occ_aux N S (lam F) :- pi x\ /*not_occ_aux N S x =>*/ not_occ_aux N S (F x).
 not_occ_aux _ _ (con _).
@@ -177,8 +181,8 @@ not_occ_aux _ _ X :- name X.
 type not_occ  nat -> subst -> tm -> o.
 not_occ N S T :- print "not occ" N S T, fail.
 not_occ N _ (hov N _).
-not_occ N S (hov M Args) :- assigned? M S F, beta-abs F Args T, not_occ N S T.
-not_occ N S (hov M Args) :- not(assigned? M S _), std.forall Args (not_occ_aux N S).% TODO: not sure of this, since N can appear in Args. However (uv 10) can unify with (uv 5 [uv 10]) if (uv 5 = x\x)
+not_occ N S (hov M Args) :- set? M S F, move F Args T, not_occ N S T.
+not_occ N S (hov M Args) :- not(set? M S _), std.forall Args (not_occ_aux N S).% TODO: not sure of this, since N can appear in Args. However (uv 10) can unify with (uv 5 [uv 10]) if (uv 5 = x\x)
 not_occ _ _ (con _).
 not_occ N S (app L) :- not_occ_aux N S (app L).
 not_occ N S (lam L) :- pi x\ not_occ N S (L x).
@@ -201,12 +205,12 @@ new [X|XS] (s N) [X|YS] :- new XS N YS.
 type unif-assignment assignment -> assignment -> subst -> subst -> o.
 unif-assignment (val T1) (val T2) H H1 :- unif T1 T2 H H1.
 unif-assignment (abs F1) (abs F2) H H1 :- pi x\ (pi S\ unif x x S S) => unif-assignment (F1 x) (F2 x) H H1.
-% unif-assignment (val T) (abs F) H H1 :- unif-assignment (abs x\ val {beta-abs (val T) [x]}) (abs F) H H1.
-% unif-assignment (abs F) (val T) H H1 :- print "HERE", std.do![unif-assignment (abs F) (abs x\ val {beta-abs (val T) [x]}) H H1].
+% unif-assignment (val T) (abs F) H H1 :- unif-assignment (abs x\ val {move (val T) [x]}) (abs F) H H1.
+% unif-assignment (abs F) (val T) H H1 :- print "HERE", std.do![unif-assignment (abs F) (abs x\ val {move (val T) [x]}) H H1].
 
 type equal subst -> tm -> tm -> o.
-equal S (hov N Args) T1 :- assigned? N S F, beta-abs F Args T, equal S T T1.
-equal S T1 (hov N Args) :- assigned? N S F, beta-abs F Args T, equal S T1 T.
+equal S (hov N Args) T1 :- set? N S F, move F Args T, equal S T T1.
+equal S T1 (hov N Args) :- set? N S F, move F Args T, equal S T1 T.
 equal S (app L1) (app L2) :- forall2 (equal S) L1 L2.
 equal S (lam F1) (lam F2) :- pi x\ equal S x x => equal S (F1 x) (F2 x).
 equal _ (con X) (con X).
@@ -264,8 +268,8 @@ solve-link [] [] X X.
 
 type same-assign nat -> nat -> nat -> nat -> nat -> ho.subst -> ho.subst -> o.
 same-assign M M' LenM LenM' W HO HO2 :- std.do![
-  if (assigned? M HO T, W = M) true (eta LenM M [] T),
-  if (assigned? M' HO T', W = M') true (eta LenM' M' [] T'),
+  if (set? M HO T, W = M) true (eta LenM M [] T),
+  if (set? M' HO T', W = M') true (eta LenM' M' [] T'),
   if (LenM = LenM')
      (std.spy(my-unif-assignment T T' HO HO2))
      (hope-for-eta HO T Te,
@@ -389,7 +393,7 @@ test-hope-eta-2 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (fo.app[fo.con"f"
                                    (          ho.abs y\ ho.val (fo.app[fo.con"f",fo.app[fo.con"g",y]  ])).
 
 type deref ho.subst -> fo.tm -> fo.tm -> o.
-deref H (ho.hov N L) X :- assigned? N H T, ho.beta-abs T L X', deref H X' X.
+deref H (ho.hov N L) X :- set? N H T, ho.move T L X', deref H X' X.
 deref H (fo.app L) (fo.app L1) :- forall2 (deref H) L L1.
 deref _ (fo.con X) (fo.con X).
 deref H (ho.hov X L) (ho.hov X L1) :- forall2 (deref H) L L1.
@@ -411,7 +415,7 @@ assign-replace z [_|S] X [some X |S].
 assign-replace (s N) [A|S] X [A |S1] :- assign-replace N S X S1.
 
 type decompl.aux list link -> list link -> ho.subst -> fo.subst -> fo.subst -> o.
-decompl.aux [link N M _Arity|L] LK HO FO FO1 :- assigned? M HO T, !, std.do! [
+decompl.aux [link N M _Arity|L] LK HO FO FO1 :- set? M HO T, !, std.do! [
   decomp-assign LK HO T T0 FO FO',
   fo.eta-contract T0 T',
   assign-replace N FO' T' FO2,
@@ -429,7 +433,7 @@ get-head (fo.lam B) (s N) Args T :-
   fo.eta-contract (fo.lam R) T.
 
 % Invariante: len(Args) > 0
-decompl.aux [link-fo-align Args N M Arity|L] LK HO FO FO1 :- assigned? M HO T, !, std.do! [
+decompl.aux [link-fo-align Args N M Arity|L] LK HO FO FO1 :- set? M HO T, !, std.do! [
   decomp-assign LK HO T T0 FO FO'',
   print "Done A",
   fold2 (decomp LK HO) Args Args1 FO'' FO',
@@ -487,14 +491,14 @@ decomp LK HO (fo.app L) SolOL S S1 :-
   fo.mk-app HD TL SolOL.
 decomp LK HO (fo.lam F) (fo.lam F1) S S1 :-
   pi x y\ (pi S\ decomp LK HO x y S S) => decomp LK HO (F x) (F1 y) S S1.
-decomp LK HO (ho.hov N Args) SolOL S S1 :- assigned? N HO T, !,
-  ho.beta-abs T Args T1,
+decomp LK HO (ho.hov N Args) SolOL S S1 :- set? N HO T, !,
+  ho.move T Args T1,
   decomp LK HO T1 SolOL S S1.
 decomp LK HO (ho.hov N Args) SolOL S S1 :-
   fold2 (decomp LK HO) Args Args1 S S2,
   if (take-link LK (link X N _) _) (S1 = S2)
      (fo.new S2 X S1',
-      if (assigned? N HO T)
+      if (set? N HO T)
          (decomp-assign LK HO T T' S1' S1'', assign X S1'' T' S1)
          (S1 = S1')),
   fo.mk-app (fo.fov X) Args1 SolOL.
