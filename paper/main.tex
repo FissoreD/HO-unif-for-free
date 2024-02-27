@@ -514,16 +514,11 @@ None of the encodings above provide a solution to our problem.
 \section{Languages description}
 \label{sec:lang-spec}
 
-% \input{lang_descr.tex}
-
-% Description of languages (OL and ML)
-
-\def\eqfo{eq\_fo\xspace}
-
-In order to reason about unification of the terms of the objet language within the
-meta language, we start by formally describing the two languages. Employing
-meta-programming for this purpose, we present in \cref{code:common-terms} a new type for the terms of
-the OL.
+In order to reason about unification we provide a description of the
+\Fo{} and \Ho languages where unification variables
+are first class terms, i.e. they have a concrete syntax. We keep these languages
+minimal, for example we omit the \elpiIn{all} quantifier of DTT we used
+in the example in Section~\ref{sec:intro}. 
 %
 \setlength{\abovecaptionskip}{0pt}
 \setlength{\belowcaptionskip}{-13pt}
@@ -550,36 +545,38 @@ type uva nat -> list tm -> tm.
   \end{elpicodetab}
   \end{minipage}
   \end{tabular}
-  \caption{Source and Target language}
+  \caption{\Fo{} and \Ho language}
   \label{code:common-terms}
   \Description[code:common-terms]{code:common-terms}
 \end{figure}
 
 \noindent
-This encoding is very similar to the one introduced in \cref{sec:intro},\todo{say we do not care about types} except
-for the \elpiIn{all} constructor. We explicitly neglect it since blabla.
-Moreover, since we are working with unification variables we need to introduce a
-new constructor. 
+In the case of \Fo{} unification variables \elpiIn{fuva} have no explicit scope:
+Unification variables standing for functions are applied to variables
+via the \elpiIn{fapp} constructor.
+For example in the statement of the instance \coqIn{forall_dec} the
+term \coqIn{P x} is represented as \elpiIn{fapp[fuva N, x]}, where \elpiIn{N}
+is of type \elpiIn{nat} and \elpiIn{x} is a bound variable.
 
-In the case of the OL unification variables \elpiIn{fuv} have no scope.
-For example the statement of the instance \coqIn{forall_dec} contains the
-term \coqIn{P x} where \coqIn{P} stands for a function of type
-\coqIn{A ~$\to$~ Prop}. However our representation of \coqIn{P x} in the meta
-language is \elpiIn{app[P, x]} where \elpiIn{P} is of type \elpiIn{ftm}.
-In the terms of the ML unification variables come with a scope (the second
-argument of the \elpiIn{uva} constructor).
-Of course some attention
-should be payed when dealing with \elpiIn{uva}, since we have to certify
-that an \elpiIn{uva i} remain in the pattern fragment, that is, the
-list of term in the scope of \elpiIn{i} is always a list of distinct names.
+In \Ho the representation of \coqIn{P x} is instead \elpiIn{uva N [x]}.
+We say that the unification variable \elpiIn{uva N L} is in \llambda iff
+\elpiIn{distinct-names L} holds.
 
+\begin{elpicode}
+type distinct-names list tm -> o.
+distinct-names [].
+distinct-names [X|XS] :- name X, not(mem X XS),
+  distinct-names XS.
+\end{elpicode}
 
-Unification variables of the OL are identified by a natural number
-referring to memory address. 
-Finally, the memory of
-the OL is depicted by the following type abbreviation:
+\noindent
+The \elpiIn{name} builtin predicate tests if a term is a bound variable.
 
-\marginpar{maybe move code to the appendix}
+In both languages unification variables are identified by a natural number,
+which can be seen as a memory address. The memory and its associated
+operations are described below:
+
+\marginpar{maybe move code to the appendix and keep only signatures}
 \begin{elpicode}
 typeabbrev memory A (list (option A)).
 type set nat -> memory A -> A -> o.
@@ -592,14 +589,13 @@ assign (s N) [X|M] T [X|M1] :- assign N M T M1.
 \end{elpicode}
 
 \noindent 
-which is a list of optional terms. If a cell is \elpiIn{none}, then the variable
-corresponding to this cell is not instantiated.
+If a memory cell is \elpiIn{none}, then the corresponding unification variable
+is not set.
 
-Another important implementation should be provided in order to represent the
-lambda abstractions and the applications of the ML. As outlined in
-\cref{sec:encodings}, <<\elpiIn{x\ f x}>> has not equal to 
-<<\elpiIn{lam x\ app[f, x]}>>, since, even though the two terms represent the same
-concept, the latter uses the abstraction and application of the OL.
+Since \Ho unification variables have a scope, their solution needs to be
+abstracted over these in order to enables the instantiation of a single
+solution to different scopes. On the contrary solutions to \Fo variables
+are just terms.
 
 \begin{elpicode}
   typeabbrev fsubst (memory ftm).
@@ -611,19 +607,28 @@ concept, the latter uses the abstraction and application of the OL.
 \end{elpicode}
 
 \noindent
-In particular, the node \elpiIn{abs} stands for the lambda abstraction of the ML.
-The
-node \elpiIn{val} contains terms of the object language. The node for variable
-application is not really necessary, since, using the syntax of the ML, it is
-defined by putting two terms of the ML side by side. For example, the terms 
-<<\elpiIn{x\ f x}>> becomes <<\elpiIn{abs x\ f x}>>.
+One can see \elpiIn{abs} as a syntax for the lambda abstraction of the meta
+language.
+%Luckily  we need to reason on these abstractions only when we
+%manipulate the solution given by the unification of the meta language; when
+%we manipulate the terms we don't 
+%
+%Another important implementation should be provided in order to represent the
+%lambda abstractions and the applications of the ML. As outlined in
+%\cref{sec:encodings}, <<\elpiIn{x\ f x}>> has not equal to 
+%<<\elpiIn{lam x\ app[f, x]}>>, since, even though the two terms represent the same
+%concept, the latter uses the abstraction and application of the OL.
+%
+%In particular, the node \elpiIn{abs} stands for the lambda abstraction of the ML.
+% The
+% node \elpiIn{val} contains terms of the object language. The node for variable
+% application is not really necessary, since, using the syntax of the ML, it is
+% defined by putting two terms of the ML side by side. For example, the terms 
+% <<\elpiIn{x\ f x}>> becomes <<\elpiIn{abs x\ f x}>>.
 
-The memory of the ML is represented by a \elpiIn{subst}.
-
-\noindent
-with the invariant that the \elpiIn{tm} inside the cell never contains the node
-\elpiIn{fo_uv}. Note that, reciprocally, the \elpiIn{fo_subst} does not contain
-any node of the form \elpiIn{ho_uv}.
+The memory \Fo{} is called \elpiIn{fsubst} while the one of \Ho is
+called \elpiIn{subst}.
+Both have the invariant that they are not cyclic, TODO explain.
 
 \subsection{equational theory and unification}
 
