@@ -178,9 +178,10 @@ type not_occ  nat -> subst -> tm -> o.
 not_occ N S T :- print "not occ" N S T, fail.
 not_occ N _ (hov N _).
 not_occ N S (hov M Args) :- assigned? M S F, beta-abs F Args T, not_occ N S T.
+not_occ N S (hov M Args) :- not(assigned? M S _), std.forall Args (not_occ_aux N S).% TODO: not sure of this, since N can appear in Args. However (uv 10) can unify with (uv 5 [uv 10]) if (uv 5 = x\x)
 not_occ _ _ (con _).
 not_occ N S (app L) :- not_occ_aux N S (app L).
-not_occ N S (lam L) :- not_occ_aux N S (lam L).
+not_occ N S (lam L) :- pi x\ not_occ N S (L x).
 not_occ _ _ X :- name X.
 
 type copy tm -> tm -> o.
@@ -298,7 +299,7 @@ same-assign M M' LenM LenM' W HO HO2 :- std.do![
 %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 type my-unif-assignment ho.assignment -> ho.assignment -> ho.subst -> ho.subst -> o.
-my-unif-assignment A B S _ :- print "### unif assign" A "===" B, print "### subst" S, fail.
+% my-unif-assignment A B S _ :- print "### unif assign" A "===" B, print "    subst" S, fail.
 
 type deref-eta-normalize fo.tm -> ho.subst -> fo.tm -> o.
 deref-eta-normalize T H R :-
