@@ -43,10 +43,10 @@ T ==o flam F :- pi x\ beta T [x] (T' x), x ==o x => T' x ==o F x.
 fapp [flam X | TL] ==o T :- beta (flam X) TL T', T' ==o T.
 T ==o fapp [flam X | TL] :- beta (flam X) TL T', T ==o T'.
 
-% [extend-subst T S S'] foraech var in T, alloc an fuva N at place N in S' (that extends S)
+% [extend-subst T S S'] forall fuva N in T, extends S with none at pos N
+% this is used only in test to build the subst-map before running it
 type extend-subst fm -> subst -> subst -> o.
-extend-subst (fuva N) S S :- len S M, M >n N.
-extend-subst (fuva N) S S' :- len S M, N >=n M, std.append S [none] S'', extend-subst (fuva N) S'' S'.
+extend-subst (fuva N) S S' :- new S N S'.
 extend-subst (flam F) S S' :- pi x\ (pi S\extend-subst x S S) => extend-subst (F x) S S'.
 extend-subst (fcon _) S S.
 extend-subst (fapp L) S S1 :- fold extend-subst L S S1.
@@ -61,7 +61,9 @@ beta (fcon H) L (fapp [fcon H | L]).
 % [new S N S'] return S' which is S with none at pos N
 type new subst -> nat -> subst -> o.
 new [] z [none].
+new [] (s N) [none | L] :- new [] N L.
 new [X|XS] (s N) [X|YS] :- new XS N YS.
+new [A|B] z [A|B].
 
 type mk-app fm -> list fm -> fm -> o.
 mk-app T L S :- beta T L S.
