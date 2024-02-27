@@ -129,7 +129,7 @@ macro @kol N X :- declare-test xtest (test N X ff).
   (triple (error "unif") @g @X)]. % we fail early for the wrong reason
 
 @okl 16 [
-  (triple ok (@lam x\ @app [@X, x]) (@lam x\ @app [@f, @app[@Y,x]])), 
+  (triple ok (@X) (@lam x\ @app [@f, @app[@Y,x]])), 
   (triple ok @f @X)].
 
 @okl 17 [
@@ -153,6 +153,15 @@ macro @kol N X :- declare-test xtest (test N X ff).
   (triple ok (@lam x\ @lam y\ @app[@f, y, @a]) (@lam x\ @lam y\ @app[@X, x, y]))
 ].
 
+@okl 22001 [
+  triple ok (@lam x\ @lam y\ @app[@Y, y, x]) @Z,
+  triple ok (@app[@g, @Z]) @X,
+  triple ok (@app[@g, @f]) @X,
+].
+@okl 22000 [
+  triple ok (@app[@g, (@lam x\ @lam y\ @app[@Y, y, x])]) @X,
+  triple ok (@app[@g, @f]) @X,
+].
 @okl 2200 [
   triple ok (@lam x\ @lam y\ @app[@Y, y, x]) @X,
   triple ok (@f) @X,

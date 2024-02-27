@@ -313,7 +313,8 @@ type my-unif-assignment ho.assignment -> ho.assignment -> ho.subst -> ho.subst -
 
 type deref-eta-normalize fo.tm -> ho.subst -> fo.tm -> o.
 deref-eta-normalize T' H R :-
-  %deref H T T', !,
+  %deref H T T', !, 
+  %R = T'.
   (pi N L\ fo.eta-contract (ho.hov N L) (ho.hov N L) :- !) => fo.eta-contract T' R.
 
 my-unif-assignment (ho.val T) A  H H1 :-
