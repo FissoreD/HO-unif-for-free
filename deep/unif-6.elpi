@@ -299,7 +299,6 @@ same-assign M M' LenM LenM' W HO HO2 :- std.do![
 %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 type my-unif-assignment ho.assignment -> ho.assignment -> ho.subst -> ho.subst -> o.
-% my-unif-assignment A B S _ :- print "### unif assign" A "===" B, print "    subst" S, fail.
 
 type deref-eta-normalize fo.tm -> ho.subst -> fo.tm -> o.
 deref-eta-normalize T H R :-
@@ -307,8 +306,15 @@ deref-eta-normalize T H R :-
   (pi N L\ fo.eta-contract (ho.hov N L) (ho.hov N L) :- !) => fo.eta-contract T' R.
 
 my-unif-assignment (ho.val T1) (ho.val T2) H H1 :-
+  % we needd to normalize and deref T1 and T2, since if they are assigned,
+  % they can contain ugly eta exapansions. (see test 25).
+  % TODO: there is still a bug... 
+  % T1 = f and 
+  % T2 = try6.fo.lam c0 \ try6.fo.app [try6.fo.con f, try6.ho.hov (s z) [c0]]
+  % they unify in the ML if the HO_var is set to the identy and T2 is eta-reduced...
   deref-eta-normalize T1 H T1',
   deref-eta-normalize T2 H T2',
+  % print "GOT TWO VAL REDUCED TO" T1' T2',
   ho.unif T1' T2' H H1.
 my-unif-assignment (ho.abs F1) (ho.abs F2) H H1 :- pi x\ (pi S\ ho.unif x x S S) => my-unif-assignment (F1 x) (F2 x) H H1.
 

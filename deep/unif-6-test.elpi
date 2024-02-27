@@ -55,6 +55,22 @@ eval-unif [triple ok L R | TL] HO_Subs1 HO_SubsNN L0 L4 FOSol FOSol4 :- std.do![
   eval-unif TL HO_Subs5 HO_SubsNN L3 L4 FOSol3 FOSol4,
 ].
 
+type is-nf try6.fo.tm -> o.
+is-nf (try6.fo.con _).
+is-nf (try6.fo.fov _).
+is-nf (try6.fo.app [try6.fo.lam _ | _]) :-
+  halt "There is a beta expansion in the input".
+is-nf (try6.fo.app L) :- std.forall L is-nf.
+is-nf (try6.fo.lam B) :- 
+  pi x\ sigma L\ try6.fo.app L = B x, std.appendR _ [x] L, 
+  halt "There is an eta exapansion in the input".
+is-nf (try6.fo.lam B) :- pi x\ is-nf x => is-nf (B x).
+
+type is-nf-goal list (triple diagnostic try6.fo.tm try6.fo.tm) -> o.
+is-nf-goal [].
+is-nf-goal [triple _ A B | TL] :-
+  is-nf A, is-nf B, is-nf-goal TL.
+
 type xtest test try6.fo.tm -> o.
 xtest (test N LR tt) :- std.do![
   eval-unif LR [] _SOL1 [] _Links [] FOSol,
