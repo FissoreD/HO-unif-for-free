@@ -11,8 +11,8 @@ kind fm type.
 type fapp list fm -> fm.
 type flam (fm -> fm) -> fm.
 type fcon string -> fm.
-
 type fuva  nat -> fm.
+
 typeabbrev subst list (option fm).
 
 type deref subst -> fm -> fm -> o.
@@ -34,22 +34,24 @@ fapp L1 ==o fapp L2 :- forall2 (==o) L1 L2.
 flam F1 ==o flam F2 :- pi x\ x ==o x => F1 x ==o F2 x.
 fcon X ==o fcon X.
 fuva N ==o fuva N.
-
-% eta
 flam F ==o T :- pi x\ beta T [x] (T' x), x ==o x => F x ==o T' x.
 T ==o flam F :- pi x\ beta T [x] (T' x), x ==o x => T' x ==o F x.
-
-% beta
 fapp [flam X | TL] ==o T :- beta (flam X) TL T', T' ==o T.
 T ==o fapp [flam X | TL] :- beta (flam X) TL T', T ==o T'.
 
 % [extend-subst T S S'] forall fuva N in T, extends S with none at pos N
 % this is used only in test to build the subst-map before running it
 type extend-subst fm -> subst -> subst -> o.
-extend-subst (fuva N) S S' :- new S N S'.
+extend-subst (fuva N) S S' :- std.spy(extend-nat N S S').
 extend-subst (flam F) S S' :- pi x\ (pi S\extend-subst x S S) => extend-subst (F x) S S'.
 extend-subst (fcon _) S S.
 extend-subst (fapp L) S S1 :- fold extend-subst L S S1.
+
+% aux function for extend-subst
+type extend-nat nat -> subst -> subst -> o.
+extend-nat z X Y :- std.append X [none] Y.
+extend-nat (s N) [] [none | M] :- extend-nat N [] M.
+extend-nat (s N) [X | L] [X | M] :- extend-nat N L M.
 
 type beta fm -> list fm -> fm -> o.
 beta A [] A.
@@ -58,12 +60,10 @@ beta (fapp A) L (fapp X) :- std.append A L X.
 beta (fuva N) L (fapp [fuva N | L]).
 beta (fcon H) L (fapp [fcon H | L]).
 
-% [new S N S'] return S' which is S with none at pos N
+% [new S N S'] returns a new free variable N in S' = S @ [none]
 type new subst -> nat -> subst -> o.
 new [] z [none].
-new [] (s N) [none | L] :- new [] N L.
 new [X|XS] (s N) [X|YS] :- new XS N YS.
-new [A|B] z [A|B].
 
 type mk-app fm -> list fm -> fm -> o.
 mk-app T L S :- beta T L S.
@@ -99,7 +99,7 @@ kind tm  type.
 type app list tm -> tm.
 type lam (tm -> tm) -> tm.
 type con string -> tm.
-type hov  nat -> list tm -> tm.
+type uva  nat -> list tm -> tm.
 
 % [unif T1 T2 SOld SNew] check if T1 and T2 unify looking into SOld. SNew is the final substution
 type unif tm -> tm -> subst -> subst ->  o.
@@ -109,13 +109,13 @@ unif (lam F1) (lam F2) S S1 :-
   pi x\ (pi S\ unif x x S S) => unif (F1 x) (F2 x) S S1.
 unif (con X) (con X) S S.
 % Assigned variables
-unif (hov N Args) T S S1 :- 
+unif (uva N Args) T S S1 :- 
   set? N S F, move F Args T1, unif T1 T S S1.
-unif T (hov N Args) S S1 :- 
+unif T (uva N Args) S S1 :- 
   set? N S F, move F Args T1, unif T T1 S S1.
 % Not assigned varis
-unif (hov N A) (hov N A) S S :- pattern-fragment A.
-unif (hov N Args1) (hov M Args2) S S3 :- 
+unif (uva N A) (uva N A) S S :- pattern-fragment A.
+unif (uva N Args1) (uva M Args2) S S3 :- 
   unset? N S, unset? M S,
   pattern-fragment Args1, pattern-fragment Args2, 
   new S W S1, prunexx W Args1 Args2 Ass, 
@@ -123,11 +123,11 @@ unif (hov N Args1) (hov M Args2) S S3 :-
   if (unset? M S2) % M = N case
      (assign M S2 Ass S3)
      (S3 = S2). 
-unif (hov N Args) T S S1 :- 
-  not (T = hov _ _), not_occ N S T, pattern-fragment Args, 
+unif (uva N Args) T S S1 :- 
+  not (T = uva _ _), not_occ N S T, pattern-fragment Args, 
   bind Args T T1, assign N S T1 S1.
-unif T (hov N Args) S S1 :- 
-  not (T = hov _ _), not_occ N S T, pattern-fragment Args, 
+unif T (uva N Args) S S1 :- 
+  not (T = uva _ _), not_occ N S T, pattern-fragment Args, 
   bind Args T T1, assign N S T1 S1.
 
 % Note: eta & beta for unification is not allowed in ML over terms of the OL
@@ -145,7 +145,7 @@ prunex N A1 A2 S S2 :-
 prunex _ _ _ S S.
 
 type prune-aux nat -> list tm -> list tm -> list tm -> assignment -> bool -> o.
-prune-aux N [] [] ACC (val (hov N Args)) tt :- std.rev ACC Args.
+prune-aux N [] [] ACC (val (uva N Args)) tt :- std.rev ACC Args.
 prune-aux N [X|XS] [X|YS] ACC (abs F) O :- pi x\ prune-aux N XS YS [x|ACC] (F x) O.
 prune-aux N [_|XS] [_|YS] ACC (abs F) _ :- pi x\ prune-aux N XS YS ACC (F x) tt.
 
@@ -153,19 +153,19 @@ type move assignment -> list tm -> tm -> o.
 move (abs Bo) [H | L] R :- move (Bo H) L R.
 move (val A)  [] A.
 move (val (app A))  L (app X) :- std.append A L X.
-move (val (hov N A)) L (hov N X) :- std.append A L X.
+move (val (uva N A)) L (uva N X) :- std.append A L X.
 move (val (con H))    L (app [con H | L]).
 
 type beta tm -> list tm -> tm -> o.
 beta A [] A.
 beta (lam Bo) [H | L] R :- beta (Bo H) L R.
 beta (app A) L (app X) :- std.append A L X.
-beta (hov N A) L (hov N A') :- std.append A L A'.
+beta (uva N A) L (uva N A') :- std.append A L A'.
 beta (con H) L (app [con H | L]).
 
 type not_occ_aux nat -> subst -> tm -> o.
-not_occ_aux N S (hov M _) :- not(set? M S _), diff N M.
-not_occ_aux N S (hov M Args) :- set? M S F, move F Args T, not_occ_aux N S T.
+not_occ_aux N S (uva M _) :- not(set? M S _), diff N M.
+not_occ_aux N S (uva M Args) :- set? M S F, move F Args T, not_occ_aux N S T.
 not_occ_aux N S (app L) :- forall1 (not_occ_aux N S) L.
 not_occ_aux N S (lam F) :- pi x\ /*not_occ_aux N S x =>*/ not_occ_aux N S (F x).
 not_occ_aux _ _ (con _).
@@ -173,9 +173,9 @@ not_occ_aux _ _ X :- name X.
  
 type not_occ  nat -> subst -> tm -> o.
 not_occ N S T :- print "not occ" N S T, fail.
-not_occ N _ (hov N _).
-not_occ N S (hov M Args) :- set? M S F, move F Args T, not_occ N S T.
-not_occ N S (hov M Args) :- not(set? M S _), std.forall Args (not_occ_aux N S).
+not_occ N _ (uva N _).
+not_occ N S (uva M Args) :- set? M S F, move F Args T, not_occ N S T.
+not_occ N S (uva M Args) :- not(set? M S _), std.forall Args (not_occ_aux N S).
 not_occ _ _ (con _).
 not_occ N S (app L) :- not_occ_aux N S (app L).
 not_occ N S (lam L) :- pi x\ not_occ N S (L x).
@@ -184,7 +184,7 @@ not_occ _ _ X :- name X.
 type copy tm -> tm -> o.
 copy (app L) (app L') :- forall2 copy L L'.
 copy (lam T) (lam T') :- pi x\ copy x x => copy (T x) (T' x).
-copy (hov N L) (hov N L') :- forall2 copy L L'.
+copy (uva N L) (uva N L') :- forall2 copy L L'.
 copy (con C) (con C).
 
 type bind list tm -> tm -> assignment -> o.
@@ -200,18 +200,18 @@ unif-assignment (val T1) (val T2) H H1 :- unif T1 T2 H H1.
 unif-assignment (abs F1) (abs F2) H H1 :- pi x\ (pi S\ unif x x S S) => unif-assignment (F1 x) (F2 x) H H1.
 
 type equal subst -> tm -> tm -> o.
-equal S (hov N Args) T1 :- set? N S F, move F Args T, equal S T T1.
-equal S T1 (hov N Args) :- set? N S F, move F Args T, equal S T1 T.
+equal S (uva N Args) T1 :- set? N S F, move F Args T, equal S T T1.
+equal S T1 (uva N Args) :- set? N S F, move F Args T, equal S T1 T.
 equal S (app L1) (app L2) :- forall2 (equal S) L1 L2.
 equal S (lam F1) (lam F2) :- pi x\ equal S x x => equal S (F1 x) (F2 x).
 equal _ (con X) (con X).
-equal _ (hov N A) (hov N A).
+equal _ (uva N A) (uva N A).
 
 type deref ho.subst -> ho.tm -> ho.tm -> o.
-deref H (ho.hov N L) X :- set? N H T, ho.move T L X', deref H X' X.
+deref H (ho.uva N L) X :- set? N H T, ho.move T L X', deref H X' X.
 deref H (ho.app L) (ho.app L1) :- forall2 (deref H) L L1.
 deref _ (ho.con X) (ho.con X).
-deref H (ho.hov X L) (ho.hov X L1) :- forall2 (deref H) L L1.
+deref H (ho.uva X L) (ho.uva X L1) :- forall2 (deref H) L L1.
 deref H (ho.lam F) (ho.lam G) :- pi x\ deref H x x => deref H (F x) (G x).
 deref _ N N :- name N.
 % deref A B V :- var V, halt "This is should be an error" B A.
@@ -239,7 +239,7 @@ type comp fo.fm -> ho.tm -> list link -> list link -> ho.subst -> ho.subst -> o.
 comp (fo.fcon X)   (ho.con X) L L S S.
 comp (fo.fapp [fo.fuva N|Argsss]) TT L L3 S S3 :- !,
   split-pf Argsss [] PF NPF,
-  TT = ho.hov M PF1,
+  TT = ho.uva M PF1,
   fold4 comp PF PF1 L L S S1,
   fold4 comp NPF NPF1 L L1 S1 S2,
   ho.new S2 M S3,
@@ -251,7 +251,7 @@ comp (fo.fapp [fo.fuva N|Argsss]) TT L L3 S S3 :- !,
 comp (fo.fapp A) (ho.app A1) L L1 S S1 :- fold4 comp A A1 L L1 S S1.
 comp (fo.flam F) (ho.lam F1) L L1 S S1 :- 
   (pi x y\ (pi A S\ comp x y A A S S) => comp (F x) (F1 y) L L1 S S1).
-comp (fo.fuva N) (ho.hov M []) L [link N M z|L] S S1 :- ho.new S M S1.
+comp (fo.fuva N) (ho.uva M []) L [link N M z|L] S S1 :- ho.new S M S1.
 
 type solve-link list link -> list link -> ho.subst -> ho.subst -> o.
 solve-link [link N M LenM|L] LR HO HO1 :- take-link L (link N M' LenM') L1, !, std.do! [
@@ -311,7 +311,7 @@ eta-contract (ho.con X) (ho.con X).
 eta-contract (ho.app L) (ho.app L1) :- forall2 eta-contract L L1.
 eta-contract (ho.lam F) T :- contract [] (ho.lam F) T.
 eta-contract (ho.lam F) (ho.lam F1) :- pi x\ eta-contract x x => eta-contract (F x) (F1 x).
-eta-contract (ho.hov X L) (ho.hov X L).
+eta-contract (ho.uva X L) (ho.uva X L).
 eta-contract X X :- name X.
 
 type contract list ho.tm -> ho.tm -> ho.tm -> o.
@@ -336,16 +336,16 @@ my-unif-assignment (ho.val T1) (ho.val T2) H H1 :-
   % they can contain ugly eta exapansions. (see test 25).
   % TODO: there is still a bug... 
   % T1 = f and 
-  % T2 = try6.ho.lam c0 \ try6.ho.app [try6.ho.con f, try6.ho.hov (s z) [c0]]
+  % T2 = try6.ho.lam c0 \ try6.ho.app [try6.ho.con f, try6.ho.uva (s z) [c0]]
   % they unify in the ML if the HO_var is set to the identy and T2 is eta-reduced...
   ho.unif T1 T2 H H1.
 my-unif-assignment (ho.abs F1) (ho.abs F2) H H1 :- pi x\ (pi S\ ho.unif x x S S) => my-unif-assignment (F1 x) (F2 x) H H1.
 
 my-unif-assignment (ho.val V)  (ho.abs F2) H H1 :-
-    ho.deref H V (ho.hov N L),
+    ho.deref H V (ho.uva N L),
     pi x\ (pi S\ ho.unif x x S S) =>
       sigma L1\ std.append L [x] L1,
-       my-unif-assignment (ho.val (ho.hov N L1)) (F2 x) H H1.
+       my-unif-assignment (ho.val (ho.uva N L1)) (F2 x) H H1.
 my-unif-assignment (ho.val V)  (ho.abs F2) H H1 :-
     ho.deref H V (ho.app L),
     pi x\ (pi S\ ho.unif x x S S) =>
@@ -361,10 +361,10 @@ my-unif-assignment (ho.val V)  (ho.abs F2) H H1 :-
        my-unif-assignment (ho.val (C x)) (F2 x) H H1.
 
 my-unif-assignment (ho.abs F2) (ho.val V) H H1 :-
-    ho.deref H V (ho.hov N L),
+    ho.deref H V (ho.uva N L),
     pi x\ (pi S\ ho.unif x x S S) =>
       sigma L1\ std.append L [x] L1,
-       my-unif-assignment (F2 x) (ho.val (ho.hov N L1)) H H1.
+       my-unif-assignment (F2 x) (ho.val (ho.uva N L1)) H H1.
 my-unif-assignment (ho.abs F2) (ho.val V) H H1 :-
     ho.deref H V (ho.app L),
     pi x\ (pi S\ ho.unif x x S S) =>
@@ -413,7 +413,7 @@ test-hope-eta-2 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.app[ho.con"f"
 
 % [eta Arity VarName Acc Ass]
 type eta nat -> nat -> list ho.tm -> ho.assignment -> o.
-eta z     N Acc (ho.val (ho.hov N Acc')) :- std.rev Acc Acc'.
+eta z     N Acc (ho.val (ho.uva N Acc')) :- std.rev Acc Acc'.
 eta (s M) N Acc (ho.abs F) :- pi x\ eta M N [x | Acc] (F x).
 
 type take-link list link -> link -> list link -> o.
@@ -491,10 +491,10 @@ decomp LK HO (ho.app L) SolOL S S1 :-
   fo.mk-app HD TL SolOL.
 decomp LK HO (ho.lam F) (fo.flam F1) S S1 :-
   pi x y\ (pi S\ decomp LK HO x y S S) => decomp LK HO (F x) (F1 y) S S1.
-decomp LK HO (ho.hov N Args) SolOL S S1 :- set? N HO T, !,
+decomp LK HO (ho.uva N Args) SolOL S S1 :- set? N HO T, !,
   ho.move T Args T1,
   decomp LK HO T1 SolOL S S1.
-decomp LK HO (ho.hov N Args) SolOL S S1 :-
+decomp LK HO (ho.uva N Args) SolOL S S1 :-
   fold2 (decomp LK HO) Args Args1 S S2,
   if (take-link LK (link X N _) _) (S1 = S2)
      (fo.new S2 X S1',
