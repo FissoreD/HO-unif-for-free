@@ -638,7 +638,7 @@ make the dereferencing procedure to recurse over the their subterms. The code
 below display this behavior for the dereferencing performed by the OL:
 
 \begin{elpicode}
-type fderef fsubst -> fm -> fm -> o.
+type fderef fsubst -> fm -> fm -> o.                 ~($\customlabel{pred:fderef}{\rho s}$)~
 % flattening
 fderef S (fapp [fuva N|A]) R :- set? N S (fapp B), !,
   append A B C, fderef S (fapp C) R.
@@ -661,7 +661,7 @@ The corresponding code for \Ho is similar, we only show the last two rules that
 differ in a substantial way:
 
 \begin{elpicode}
-type deref subst -> tm -> tm -> o.
+type deref subst -> tm -> tm -> o.                   ~($\customlabel{pred:deref}{\sigma t}$)~
 % ... similar to above ...
 deref S (uva N A) R :- set? N S F, move F A T, deref S T R.
 deref S (uva N A) (uva N B) :- unset? N S, map (deref S) A B.
@@ -682,28 +682,19 @@ A different reasoning is to be addressed to the variables of the ML. Firstly, a
 meta variable cannot appear in the \elpiIn{app} node as the first element of the
 list, we will explain why in \cref{sec:compilation}
 
-\begin{figure}
-  \begin{elpicode}
-    ~\PYG{k+kd}{type} \PYG{n+nf}{(\Eo)} \PYG{k+kt}{ftm -> ftm -> o}~.
-    % congruence
-    fapp A ~\Eo~fapp B :- map ~(\Eo)~ A B.
-    flam F ~\Eo~flam G :- pi x\ x ~\Eo~x => F x ~\Eo~G x.
-    fcon C ~\Eo~fcon C.
-    fuva N ~\Eo~fuva N.
-    % eta
-    flam F ~\Eo~T :- pi x\ beta T [x] (T' x),                 ~($\customlabel{clause:eta1}{\eta_1}$)~
-      x ~\Eo~x => F x ~\Eo~T' x.
-    T ~\Eo~flam F :- pi x\ beta T [x] (T' x),                 ~($\customlabel{clause:eta2}{\eta_2}$)~
-      x ~\Eo~x => T' x ~\Eo~F x.
-    % beta
-    fapp [flam X | TL] ~\Eo~T :- beta (flam X) TL T', T' ~\Eo~T. ~($\customlabel{clause:beta1}{\beta_1}$)~
-    T ~\Eo~fapp [flam X | TL] :- beta (flam X) TL T', T ~\Eo~T'. ~($\customlabel{clause:beta2}{\beta_2}$)~
-  \end{elpicode}
-  \caption{Equal predicate OL}
-  \label{code:eq-pred}
-  \Description[code:equal-pred]{code:equal-pred}
-\end{figure}
-
+\begin{elpicode}
+  ~\PYG{k+kd}{type} \PYG{n+nf}{(\Eo)} \PYG{k+kt}{ftm -> ftm -> o}~.                           ~($\customlabel{pred:fequal}{\Eo}$)~
+  fapp A ~\Eo~fapp B :- map ~(\Eo)~ A B.
+  flam F ~\Eo~flam G :- pi x\ x ~\Eo~x => F x ~\Eo~G x.
+  fcon C ~\Eo~fcon C.
+  fuva N ~\Eo~fuva N.
+  flam F ~\Eo~T :-                                       ~($\customlabel{clause:eta1}{\eta_l}$)~
+    pi x\ beta T [x] (R x), x ~\Eo~x => F x ~\Eo~R x.
+  T ~\Eo~flam F :-                                       ~($\customlabel{clause:eta2}{\eta_r}$)~
+    pi x\ beta T [x] (R x), x ~\Eo~x => R x ~\Eo~F x.
+  fapp [flam X | L] ~\Eo~T :- beta (flam X) L R, R ~\Eo~T. ~($\customlabel{clause:beta1}{\beta_l}$)~
+  T ~\Eo~fapp [flam X | L] :- beta (flam X) L R, T ~\Eo~R. ~($\customlabel{clause:beta2}{\beta_r}$)~
+\end{elpicode}
 
 \begin{figure}
   \begin{elpicode}
@@ -797,7 +788,7 @@ links between unification variables.
 \otext{Goal: $s_1 \Uo s_2$ is compiled into $t_1 \Ue t_2$}
 \otext{What is done: uvars \elpiIn{fo_uv} of OL are replaced into uvars \elpiIn{ho_uv} of the ML}
 \otext{Each \elpiIn{fo_uv} is linked to an \elpiIn{ho_uv} of the OL}
-\otext{Example: \elpiIn{lam x\ app[uv 0, x] ~\Ue~lam x\ c"f"}}
+\otext{Example needing the compiler v0 (tra l'altro lo scope è ignorato):\\ \elpiIn{lam x\ app[con"g",app[uv 0, x]] ~\Uo~lam x\ app[con"g", c"a"]}}
 \otext{Links used to instantiate vars of elpi}
 \otext{After all links, the solution in links are compacted and given to coq}
 \otext{It is not so simple, see next sections (multi-vars, eta, beta)}
@@ -861,17 +852,31 @@ has not the sam meaning of the index \elpiIn{0} in the ML. There exists two
 different substitution mapping, one for the OL and one for the ML and the indexes
 of variable point to the respective substitution.
 
-\section{Use of multivars}
-
-\subsection{Problems with $\eta$}
-\otext{The following goal: \elpiIn{X = lam x\ lam y\ Y x y, X = lam x\ f}}
-\otext{The snd unif pb, we have to unif \elpiIn{lam x\ lam y\ Y x y} with \elpiIn{lam x\ f}}
-\otext{It is not doable, with the same elpi var}
-
+decomp che mappa abs verso lam
 \noindent
 \otext{An other example: \\
-  \elpiIn{@lam x\ @app[@f, @app[@X, x]] = @Y, (@lam x\ x) = @X.}}
+  \elpiIn{lam x\ app[f, app[X, x]] = Y, (lam x\ x) = X.}}
 
+\section{Use of multivars}
+
+Se il termine initziale è della forma
+
+\begin{elpicode}
+  app[con"xxx", (lam x\ lam y\ Y y x), (lam x\ f)]
+  =
+  app[con"xxx",X,X]
+\end{elpicode}
+
+allora se non uso due X diverse non ho modo di recuperare il quoziente che mi manca.
+
+a sto punto consideriamo liste di problemi e così da eliminare sta xxx senza
+perdità di generalità (e facciamo problemi più corti, e modellizziamo anche la
+sequenza)
+
+\subsection{Problems with $\eta$}
+\otext{The following goal necessita v1 (lo scope è usato):\\ \elpiIn{X = lam x\ lam y\ Y y x, X = lam x\ f}}
+\otext{The snd unif pb, we have to unif \elpiIn{lam x\ lam y\ Y x y} with \elpiIn{lam x\ f}}
+\otext{It is not doable, with the same elpi var}
 
 \subsection{Problems with $\beta$}
 
@@ -884,6 +889,13 @@ of variable point to the respective substitution.
   triple ok (@lam x\ @app[@f, @app[@X, x]]) @Y,
   triple ok @X (@lam x\ x),
   triple ok @Y @f
+\end{elpicode}
+
+\begin{elpicode}
+% @okl 22 [
+%   triple ok (@lam x\ @lam y\ @app[@Y, y, x]) @X,
+%   triple ok (@lam x\ @f) @X,
+% ].
 \end{elpicode}
 
 \section{First order approximation}

@@ -312,9 +312,19 @@ same-assign M N LenM LenN W HO HO2 :- unset? M HO, unset? N HO,   W = M, eta Len
 type my-unif-assignment ho.assignment -> ho.assignment -> ho.subst -> ho.subst -> o.
 
 type deref-eta-normalize fo.tm -> ho.subst -> fo.tm -> o.
-deref-eta-normalize T H R :-
-  deref H T T', !,
+deref-eta-normalize T' H R :-
+  %deref H T T', !,
   (pi N L\ fo.eta-contract (ho.hov N L) (ho.hov N L) :- !) => fo.eta-contract T' R.
+
+my-unif-assignment (ho.val T) A  H H1 :-
+  deref H T T', not(same_term T T'), my-unif-assignment (ho.val T') A H H1.
+my-unif-assignment A (ho.val T)  H H1 :-
+  deref H T T', not(same_term T T'), my-unif-assignment A (ho.val T') H H1.
+
+my-unif-assignment (ho.val (fo.lam F)) (ho.val T2) H H1 :-
+  my-unif-assignment (ho.abs x\(ho.val (F x))) (ho.val T2) H H1.
+my-unif-assignment (ho.val T1) (ho.val (fo.lam F)) H H1 :-
+  my-unif-assignment (ho.val T1) (ho.abs x\(ho.val (F x))) H H1.
 
 my-unif-assignment (ho.val T1) (ho.val T2) H H1 :-
   % we needd to normalize and deref T1 and T2, since if they are assigned,
