@@ -191,14 +191,6 @@ type unif-assignment assignment -> assignment -> subst -> subst -> o.
 unif-assignment (val T1) (val T2) H H1 :- unif T1 T2 H H1.
 unif-assignment (abs F1) (abs F2) H H1 :- pi x\ (pi S\ unif x x S S) => unif-assignment (F1 x) (F2 x) H H1.
 
-type equal subst -> tm -> tm -> o.
-equal S (uva N Args) T1 :- set? N S F, move F Args T, equal S T T1.
-equal S T1 (uva N Args) :- set? N S F, move F Args T, equal S T1 T.
-equal S (app L1) (app L2) :- forall2 (equal S) L1 L2.
-equal S (lam F1) (lam F2) :- pi x\ equal S x x => equal S (F1 x) (F2 x).
-equal _ (con X) (con X).
-equal _ (uva N A) (uva N A).
-
 type deref ho.subst -> ho.tm -> ho.tm -> o.
 deref H (ho.uva N L) X :- set? N H T, ho.move T L X', deref H X' X.
 deref H (ho.app L) (ho.app L1) :- forall2 (deref H) L L1.
