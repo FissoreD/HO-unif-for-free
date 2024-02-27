@@ -511,7 +511,7 @@ TODO This other paper~\cite{10.1007/978-3-031-38499-8_25} should also be cited.
 
 None of the encodings above provide a solution to our problem.
 
-\section{Languages description}
+\section{Preliminaries: \Fo{} and \Ho}
 \label{sec:lang-spec}
 
 In order to reason about unification we provide a description of the
@@ -545,14 +545,14 @@ type uva nat -> list tm -> tm.
   \end{elpicodetab}
   \end{minipage}
   \end{tabular}
-  \caption{\Fo{} and \Ho language}
+  \caption{\Fo{} and \Ho language}\vspace{0.3em}
   \label{code:common-terms}
   \Description[code:common-terms]{code:common-terms}
 \end{figure}
 
 \noindent
 In the case of \Fo{} unification variables \elpiIn{fuva} have no explicit scope:
-Unification variables standing for functions are applied to variables
+Unification variables standing for functions are applied their arguments
 via the \elpiIn{fapp} constructor.
 For example in the statement of the instance \coqIn{forall_dec} the
 term \coqIn{P x} is represented as \elpiIn{fapp[fuva N, x]}, where \elpiIn{N}
@@ -570,36 +570,32 @@ distinct-names [X|XS] :- name X, not(mem X XS),
 \end{elpicode}
 
 \noindent
-The \elpiIn{name} builtin predicate tests if a term is a bound variable.
+The \elpiIn{name} builtin predicate tests if a term is a bound variable. The
+compiler~\ref{sec:xxx} needs to support terms outside \llambda for practical
+reasons, so we don't assume all out terms are in \llambda but rather test.
 
 In both languages unification variables are identified by a natural number,
 which can be seen as a memory address. The memory and its associated
 operations are described below:
 
-\marginpar{maybe move code to the appendix and keep only signatures}
 \begin{elpicode}
 typeabbrev memory A (list (option A)).
-type set nat -> memory A -> A -> o.
-set N S T :- nth N S (some T).
-type unset nat -> memory A -> o.
-unset N S :- nth N S none.
+type set?   nat -> memory A -> A -> o.
+type unset  nat -> memory A -> o.
 type assign nat -> memory A -> A -> memory A -> o.
-assign z [none|M] T [some T|M].
-assign (s N) [X|M] T [X|M1] :- assign N M T M1. 
 \end{elpicode}
 
 \noindent 
 If a memory cell is \elpiIn{none}, then the corresponding unification variable
-is not set.
+is not set. \elpiIn{assign} sets an unset cell to the given value.
 
-Since \Ho unification variables have a scope, their solution needs to be
-abstracted over these in order to enables the instantiation of a single
+Since in \Ho unification variables have a scope, their solution needs to be
+abstracted over it in order to enable the instantiation of a single
 solution to different scopes. On the contrary solutions to \Fo variables
-are just terms.
+are plain terms.
 
 \begin{elpicode}
   typeabbrev fsubst (memory ftm).
-
   kind assmt type.
   type abs (tm -> assmt) -> assmt.
   type val tm -> assmt.
@@ -607,30 +603,11 @@ are just terms.
 \end{elpicode}
 
 \noindent
-One can see \elpiIn{abs} as a syntax for the lambda abstraction of the meta
-language.
-%Luckily  we need to reason on these abstractions only when we
-%manipulate the solution given by the unification of the meta language; when
-%we manipulate the terms we don't 
-%
-%Another important implementation should be provided in order to represent the
-%lambda abstractions and the applications of the ML. As outlined in
-%\cref{sec:encodings}, <<\elpiIn{x\ f x}>> has not equal to 
-%<<\elpiIn{lam x\ app[f, x]}>>, since, even though the two terms represent the same
-%concept, the latter uses the abstraction and application of the OL.
-%
-%In particular, the node \elpiIn{abs} stands for the lambda abstraction of the ML.
-% The
-% node \elpiIn{val} contains terms of the object language. The node for variable
-% application is not really necessary, since, using the syntax of the ML, it is
-% defined by putting two terms of the ML side by side. For example, the terms 
-% <<\elpiIn{x\ f x}>> becomes <<\elpiIn{abs x\ f x}>>.
-
-The memory \Fo{} is called \elpiIn{fsubst} while the one of \Ho is
-called \elpiIn{subst}.
+We call \elpiIn{fsubst} the memory of \Fo{}, while we call \elpiIn{subst}
+the one of \Ho.
 Both have the invariant that they are not cyclic, TODO explain.
 
-\subsection{equational theory and unification}
+\subsection{Equational theory and Unification}
 
 here we give the functions/signatures to express the properties 3-5 in the problem
 statement
@@ -641,9 +618,17 @@ dereferencing. There predicates are supposed to be implemented in the OL and the
 ML following respectively their specification. In the following few paragraphs
 we give a brief definition of them.
 
-\paragraph{Term dereferencing: $\rho s$ vs. $\sigma t$}
+\paragraph{Term dereferencing: $\rho s$ and $\sigma t$}
 
-Since in our encoding we explicitly drag substitution mappings, we need to
+Since in our encoding we explicitly carry a substitution we need to
+define the operation that applies it to a term. Its definition
+takes care to normalize (flatten) applications, for example
+it turns
+\elpiIn{(app [app [con"f",con"a"],con"b"])}
+into
+\elpiIn{(app [con"f",con"a",con"b"])}.
+
+
 dereference variables of the two languages. This is particularly useful to check
 if two terms in the OL (resp. in the ML) are equal. The constructors
 representing rigid terms, namely \elpiIn{app}, \elpiIn{lam} and \elpiIn{con},
@@ -652,60 +637,54 @@ below display this behavior for the dereferencing performed by the OL:
 
 \begin{elpicode}
 type fderef fsubst -> fm -> fm -> o.
-fderef S (fapp [fuva N|A]) R :- set N S (fapp B),
+% flattening
+fderef S (fapp [fuva N|A]) R :- set? N S (fapp B), !,
   append A B C, fderef S (fapp C) R.
-fderef S (fapp [fuva N|A]) (fapp [fuva N|B]) :- unset N S,
-  forall2 (fderef S) A B.
-fderef S (fapp A) (fapp B) :- forall2 (fderef S) A B.
+% traversal
+fderef S (fapp A) (fapp B) :- map (fderef S) A B.
 fderef S (flam F) (flam G) :- 
   pi x\ fderef S x x => fderef S (F x) (G x).
 fderef _ (fcon C) (fcon C).
-fderef S (fuva N) R :- set N S T, fderef S T R.
+% dereferencing
+fderef S (fuva N) R :- set? N S T, fderef S T R.
 fderef _ (fuva N) (fuva N) :- unset N S.
 \end{elpicode}
 
-More attention should be payed when the dereferencing encounters a subterm that
-is unification variable. The following new rules should be added to the previous
-code snipper to complete the dereferencing of variables of the OL:
+\noindent
+We use the cut operator to keep the code compact. It is possible to rewrite
+the rule for application traversal so that it is mutually exclusive with the
+first one, but that requires a rather verbose analysis of the head of \elpiIn{A}.
 
-A very similar implementation for the dereferencing performed by the ML, given 
-in the appendix, can be encoded respecting the signature:
+The corresponding code for \Ho is similar, we only show the last two rules that
+differ in a substantial way:
 
-\marginpar{what about app uva?}
 \begin{elpicode}
-  type deref subst -> tm -> tm -> o.
-  % ... the same
-  deref S (uva N A) R :- set N S T,
-    instantiate T A T', deref S T' R.
-  deref S (uva N A) (uva N B) :-unset N S,
-    forall2 (deref S) A B.
+type deref subst -> tm -> tm -> o.
+% ... similar to above ...
+deref S (uva N A) R :- set? N S F, move F A T, deref S T R.
+deref S (uva N A) (uva N B) :- unset N S, map (deref S) A B.
+type move assignment -> list tm -> tm -> o.
+move (abs F) [X | L] R :- move (F X) L R.
+move (val A)         [] A :- !.
+move (val (app A))   L (app X) :- append A L X.
+move (val (uva N A)) L (uva N X) :- append A L X.
+move (val (con H))   L (app [con H | L]).
 \end{elpicode}
 
+\noindent
+Note that when the substitution \elpiIn{S} maps a unification variable
+\elpiIn{N} to an assignment \elpiIn{F} we ....
 
-In particular, 1) if the variable \elpiIn{fuva N} is assigned to a term
-\elpiIn{T} in a substitution mapping \elpiIn{S}, we return the result of
-dereferencing \elpiIn{T}; 2) if the current term is the application of a
-variable \elpiIn{fuva N} assigned to a list of terms \elpiIn{L} and \elpiIn{uv N}
-is assigned to a term \elpiIn{T}, we return the result of dereferencing the beta
-reduction of \elpiIn{T} to \elpiIn{L}. This is due to the semantics of the
-unification variables within the OL; 3) finally, if \elpiIn{uv N} is not
-assigned, then the same variable is returned.
-
+Important!!!
 A different reasoning is to be addressed to the variables of the ML. Firstly, a
 meta variable cannot appear in the \elpiIn{app} node as the first element of the
-list, we will explain why in \cref{sec:compilation}; secondly, variables in the
-ML have a scope which should be taken into account. The following few lines of
-code outline the rules of dereferencing for the ML:
-
-where, 1) if the variable \elpiIn{hov N L} has an assignment \elpiIn{T}, we
-return the dereferencing of the beta reduction \elpiIn{T} to the scope
-\elpiIn{L}.
+list, we will explain why in \cref{sec:compilation}
 
 \begin{figure}
   \begin{elpicode}
     ~\PYG{k+kd}{type} \PYG{n+nf}{(\Eo)} \PYG{k+kt}{ftm -> ftm -> o}~.
     % congruence
-    fapp A ~\Eo~fapp B :- forall2 ~(\Eo)~ A B.
+    fapp A ~\Eo~fapp B :- map ~(\Eo)~ A B.
     flam F ~\Eo~flam G :- pi x\ x ~\Eo~x => F x ~\Eo~G x.
     fcon C ~\Eo~fcon C.
     fuva N ~\Eo~fuva N.
@@ -727,10 +706,10 @@ return the dereferencing of the beta reduction \elpiIn{T} to the scope
 \begin{figure}
   \begin{elpicode}
     ~\PYG{k+kd}{type} \PYG{n+nf}{(\Ee)} \PYG{k+kt}{tm -> tm -> o}~.
-    app A ~\Ee~fapp B :- forall2 ~(\Ee)~ A B.
+    app A ~\Ee~fapp B :- map ~(\Ee)~ A B.
     lam F ~\Ee~flam G :- pi x\ x ~\Ee~x => F x ~\Ee~G x.
     con C ~\Ee~fcon C.
-    uva N A ~\Ee~fuva N B :- forall2 ~(\Ee)~ A B.
+    uva N A ~\Ee~fuva N B :- map ~(\Ee)~ A B.
   \end{elpicode}
   \caption{Equal predicate ML}
   \label{code:eq-pred-meta}
@@ -765,41 +744,15 @@ the corresponding substitution mapping. We will not give an implementation of
 \Uo, since we are giving an implementation of it using
 our algorithm, see \cref{XX}.
 
-\begin{figure}
 \begin{elpicode}
-~\PYG{k+kd}{type} \PYG{n+nf}{(\Ue)} \PYG{k+kt}{tm -> tm -> subst -> subst o}~.
-% Congruence
-(app A ~\Ue~app B) S S1 :- fold2 ~\Ue~A B S S1.
-(lam F ~\Ue~lam G) S S1 :- 
-  pi x\ (pi S\ (x ~\Ue~x) S S) => (F x ~\Ue~G x) S S1.
-~\Ue~(con C) (con C) S S.
-% deref
-(uva N A ~\Ue~T) S S1 :- set N S F,
-  beta-abs F A T1, (T1 ~\Ue~T) S S1.
-(T ~\Ue~uva N A) S S1 :- set N S F,
-  beta-abs F A T1, (T ~\Ue~T1) S S1.
-% flex-flex
-(uva N A ~\Ue~uva M B) S S3 :-  unset M, unset N,
-  pattern-fragment A, pattern-fragment B, 
-  new S W S1, prune W Args1 B Ass, 
-  assign N S1 Ass S2, assign M S2 Ass S3.
-% assignment
-(uva N A ~\Ue~T) S S1 :- pattern-fragment A,
-  not (T = uva _ _), not_occ N S T,  
-  bind A T T1, assign N S T1 S1.
-(T ~\Ue~uva N A) S S1 :- pattern-fragment A,
-  not (T = uva _ _), not_occ N S T, 
-    bind A T T1, assign N S T1 S1.
-%  Note: (a infix b) c d === (infix) a b c d
-
+~\PYG{k+kd}{type} \PYG{n+nf}{(\Ue)} \PYG{k+kt}{tm -> tm -> subst -> subst -> o}~.
 \end{elpicode}
-\caption{The \Ue predicate // TODO move to the appendix}
-\label{code:ue-pred}
-\Description[code:unif-pred]{code:unif-pred}
-\end{figure}
 
 On the other hand, unification in the ML needs to be defined. In
-\cref{code:ue-pred}, we give an implementation of \Ue. This predicate has four
+\cref{code:ue-pred}, we give an implementation of \Ue but
+that is actually what our meta language provides as a builtin.
+
+This predicate has four
 arguments, the two terms $t_1$ and $t_2$ to unify, the old substitution map
 $\rho_1$, and the new substitution map $\rho_2$, with the invariant $\rho_1
 \subseteq \rho_2$. The first three rules unify terms with same rigid heads, and
@@ -950,4 +903,62 @@ of variable point to the respective substitution.
 
 \printbibliography
 
+\clearpage
+\section*{Appendix}
+
+Note that \elpiIn{(a infix b) c d} de-sugars to \elpiIn{(infix) a b c d}.
+
+\begin{figure*}
+\begin{elpicode}
+~\PYG{k+kd}{type} \PYG{n+nf}{(\Ue)} \PYG{k+kt}{tm -> tm -> subst -> subst -> o}~.
+% Congruence
+(app A ~\Ue~app B) S S1 :- fold2 ~(\Ue)~A B S S1.
+(lam F ~\Ue~lam G) S S1 :- pi x\ (pi S\ (x ~\Ue~x) S S) => (F x ~\Ue~G x) S S1.
+~\Ue~(con C) (con C) S S.
+% deref
+(uva N A ~\Ue~T) S S1 :- set? N S F, move F A T1, (T1 ~\Ue~T) S S1.
+(T ~\Ue~uva N A) S S1 :- set? N S F, move F A T1, (T ~\Ue~T1) S S1.
+% flex-flex
+(uva N A ~\Ue~uva M B) S S3 :-  unset M, unset N,
+  distinct-names A, distinct-names B, 
+  new S W S1, prune W Args1 B Ass, 
+  assign N S1 Ass S2, assign M S2 Ass S3.
+% assignment
+(uva N A ~\Ue~T) S S1 :- distinct-names A, not (T = uva _ _), not_occ N S T,  
+  bind A T T1, assign N S T1 S1.
+(T ~\Ue~uva N A) S S1 :- distinct-names A, not (T = uva _ _), not_occ N S T, 
+  bind A T T1, assign N S T1 S1. 
+      
+type distinct-names list tm -> o.
+distinct-names [].
+distinct-names [X|XS] :- name X, not(mem X XS),
+distinct-names XS.
+
+typeabbrev memory A (list (option A)).
+type set? nat -> memory A -> A -> o.
+set? N S T :- nth N S (some T).
+type unset nat -> memory A -> o.
+unset N S :- nth N S none.
+type assign nat -> memory A -> A -> memory A -> o.
+assign z [none|M] T [some T|M].
+assign (s N) [X|M] T [X|M1] :- assign N M T M1. 
+kind nat type.
+type z nat.
+type s nat -> nat.
+type nth nat -> list A -> A -> o.
+nth z [X|_] X.
+nth (s N) [_|L] X :- nth N L X.
+
+type new memory A -> nat -> memory A -> o.
+type prune .
+type move .
+type beta.
+TODO
+
+\end{elpicode}
+\caption{Implementation of the \Ue predicate for \Ho}
+\label{code:ue-pred}
+\Description[code:unif-pred]{code:unif-pred}
+\end{figure*}
+  
 \end{document}
