@@ -15,23 +15,19 @@ jobs:
     steps:
       - name: Set up Git repository
         uses: actions/checkout@v3
-      - name: Commit files  
-        run:
-          sudo apt-get update
-          
-          sudo apt-get install texlive-full
+      
+      - name: Install tex
+        run: sudo apt-get update && sudo apt-get install texlive-full python3-pygments
+      
+      - name: Make pdf from tex
+        run: cd paper && make && cd .. && mkdir pdf && cp paper/.aux/main.pdf ./pdf
 
-          sudo apt-get install python3-pygments
-          
-          cd paper && make && cd ..
-          
-          git config --local user.name actions-user
-          
-          git config --local user.email "actions@github.com"
-          
-          cp paper/.aux/main.pdf .
-          
-          git add -f main.pdf;
-          git commit -m "add generated pdf $(date)";
-          git push -f origin ${GITHUB_REF##*/}
-          
+      # Push to branch
+      - name: Push to pdf branch
+        uses: s0/git-publish-subdir-action@develop
+        env:
+          REPO: self
+          BRANCH: pdf # The branch name where you want to push the assets
+          FOLDER: pdf # The directory where your assets are generated
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # GitHub will automatically add this - you don't need to bother getting a token
+          MESSAGE: "Build pdf: ({sha}) {msg}" # The commit message
