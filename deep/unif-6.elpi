@@ -274,11 +274,11 @@ test-same-assign _ _ T T' HO HO2 :-
   std.spy(my-unif-assignment Te Te' HO HO2).
 
 type same-assign nat -> nat -> nat -> nat -> nat -> ho.subst -> ho.subst -> o.
-same-assign M M' LenM LenM' W HO HO2 :-
-  if (set? M HO T, W = M)  true (eta LenM M [] T),
-  if (set? M' HO T', W = M') true (eta LenM' M' [] T'),
-  test-same-assign LenM LenM' T T' HO HO2.
-  
+same-assign M M' LenM LenM' W HO HO2 :- set? M HO T, set? M' HO T', W = M, test-same-assign LenM LenM' T T' HO HO2.
+same-assign M M' LenM LenM' W HO HO2 :- set? M HO T, unset? M' HO, W = M, eta LenM' M' [] T', test-same-assign LenM LenM' T T' HO HO2.
+same-assign M M' LenM LenM' W HO HO2 :- unset? M HO, set? M' HO T', W = M', eta LenM M [] T, test-same-assign LenM LenM' T T' HO HO2.
+same-assign M M' LenM LenM' W HO HO2 :- unset? M HO, unset? M' HO, W = M, eta LenM' M' [] T', eta LenM M [] T, test-same-assign LenM LenM' T T' HO HO2.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%
 %%% nel test 15 abbiamo
