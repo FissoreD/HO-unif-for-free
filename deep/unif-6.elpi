@@ -125,10 +125,10 @@ unif (uva N Args1) (uva M Args2) S S3 :-
      (S3 = S2). 
 unif (uva N Args) T S S1 :- 
   not (T = uva _ _), not_occ N S T, pattern-fragment Args, 
-  bind Args T T1, assign N S T1 S1.
+  bind T Args T1, assign N S T1 S1.
 unif T (uva N Args) S S1 :- 
   not (T = uva _ _), not_occ N S T, pattern-fragment Args, 
-  bind Args T T1, assign N S T1 S1.
+  bind T Args T1, assign N S T1 S1.
 
 % Note: eta & beta for unification is not allowed in ML over terms of the OL
 
@@ -174,14 +174,14 @@ not_occ N S (lam L) :- pi x\ not_occ N S (L x).
 not_occ _ _ X :- name X.
 
 type copy tm -> tm -> o.
-copy (app L) (app L') :- forall2 copy L L'.
-copy (lam T) (lam T') :- pi x\ copy x x => copy (T x) (T' x).
+copy (app L)   (app L') :- forall2 copy L L'.
+copy (lam T)   (lam T') :- pi x\ copy x x => copy (T x) (T' x).
 copy (uva N L) (uva N L') :- forall2 copy L L'.
-copy (con C) (con C).
+copy (con C)   (con C).
 
-type bind list tm -> tm -> assignment -> o.
-bind [] T (val T') :- copy T T'.
-bind [X | TL] T (abs T') :- pi x\ copy X x => bind TL T (T' x).
+type bind tm -> list tm -> assignment -> o.
+bind T [] (val T') :- copy T T'.
+bind T [X | TL] (abs T') :- pi x\ copy X x => bind T TL (T' x).
 
 type new subst -> nat -> subst -> o.
 new [] z [none].
