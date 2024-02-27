@@ -113,7 +113,7 @@ unif (uva N Args) T S S1 :-
   set? N S F, move F Args T1, unif T1 T S S1.
 unif T (uva N Args) S S1 :- 
   set? N S F, move F Args T1, unif T T1 S S1.
-% Not assigned varis
+% Not assigned vars
 unif (uva N A) (uva N A) S S :- pattern-fragment A.
 unif (uva N Args1) (uva M Args2) S S3 :- 
   unset? N S, unset? M S,
@@ -133,28 +133,20 @@ unif T (uva N Args) S S1 :-
 % Note: eta & beta for unification is not allowed in ML over terms of the OL
 
 type prunexx nat -> list tm -> list tm -> assignment -> o.
-prunexx N A1 A2 T :-
-  prune-aux N A1 A2 [] T _.
+prunexx N A1 A2 T :- prune-aux N A1 A2 [] T.
 
+type prune-aux nat -> list tm -> list tm -> list tm -> assignment -> o.
+prune-aux N [] [] ACC (val (uva N Args)) :- std.rev ACC Args.
+prune-aux N [X|XS] [X|YS] ACC (abs F) :- pi x\ prune-aux N XS YS [x|ACC] (F x).
+prune-aux N [_|XS] [_|YS] ACC (abs F) :- pi x\ prune-aux N XS YS ACC (F x).
 
-type prunex nat -> list tm -> list tm -> subst -> subst -> o.
-prunex N A1 A2 S S2 :-
-  new S M S1,
-  prune-aux M A1 A2 [] F ff,
-  assign N S1 F S2.
-prunex _ _ _ S S.
-
-type prune-aux nat -> list tm -> list tm -> list tm -> assignment -> bool -> o.
-prune-aux N [] [] ACC (val (uva N Args)) tt :- std.rev ACC Args.
-prune-aux N [X|XS] [X|YS] ACC (abs F) O :- pi x\ prune-aux N XS YS [x|ACC] (F x) O.
-prune-aux N [_|XS] [_|YS] ACC (abs F) _ :- pi x\ prune-aux N XS YS ACC (F x) tt.
-
+% What is this for? We also lack of the case: move (abs Bo) [] _ => ??
 type move assignment -> list tm -> tm -> o.
-move (abs Bo) [H | L] R :- move (Bo H) L R.
-move (val A)  [] A.
-move (val (app A))  L (app X) :- std.append A L X.
-move (val (uva N A)) L (uva N X) :- std.append A L X.
-move (val (con H))    L (app [con H | L]).
+move (abs Bo)        [H|L] R :- move (Bo H) L R.
+move (val A)         []    A.
+move (val (app A))   L     (app X) :- std.append A L X.
+move (val (uva N A)) L     (uva N X) :- std.append A L X.
+move (val (con H))   L     (app [con H | L]).
 
 type beta tm -> list tm -> tm -> o.
 beta A [] A.
@@ -175,7 +167,7 @@ type not_occ  nat -> subst -> tm -> o.
 not_occ N S T :- print "not occ" N S T, fail.
 not_occ N _ (uva N _).
 not_occ N S (uva M Args) :- set? M S F, move F Args T, not_occ N S T.
-not_occ N S (uva M Args) :- not(set? M S _), std.forall Args (not_occ_aux N S).
+not_occ N S (uva M Args) :- unset? M S, std.forall Args (not_occ_aux N S).
 not_occ _ _ (con _).
 not_occ N S (app L) :- not_occ_aux N S (app L).
 not_occ N S (lam L) :- pi x\ not_occ N S (L x).
