@@ -94,16 +94,16 @@ validate-solution _ _ _ _ _ _.
 type same-sols list (option A) -> list (option A) -> o.
 same-sols [] [].
 same-sols [A|L] [A|M] :- !, same-sols L M.
-same-sols [] L :- std.assert! (forall1 ((=) none) L) "Invalid solution".
-same-sols L [] :- std.assert! (forall1 ((=) none) L) "Invalid solution".
-same-sols A B :- halt "INVALID SOL" A B.
+same-sols [] L :- /*std.assert!*/ (forall1 ((=) none) L) /*"Invalid solution"*/.
+same-sols L [] :- /*std.assert!*/ (forall1 ((=) none) L) /*"Invalid solution"*/.
+%same-sols A B :- halt "Invalid sol" A B.
 
 
 type check-sol option (list try6.fo.fm) -> try6.fo.subst -> o.
 check-sol none _. 
 check-sol (some Sol) L :-
   std.map Sol (x\r\ if (var x) (r = none) (r = some x)) L1,
-  same-sols L L1. 
+  if (same-sols L L1) true (print "wrong solution:" L "\nexpected:" L1, fail). 
 
 type xtest test try6.fo.fm -> o.
 xtest (test N (pr LR Sol) tt) :- std.do![
@@ -121,8 +121,7 @@ xtest (test _ (pr LR _) ff) :- std.do! [
 macro @ok N X Y S :- declare-test xtest (test N (pr [triple ok X Y] (some S)) tt).
 macro @ko N X Y :- declare-test xtest (test N (pr [triple ok X Y] none) ff).
 
-macro @okl N X :- declare-test xtest (test N (pr X none) tt).
-macro @okl1 N X S:- declare-test xtest (test N (pr X (some S)) tt).
+macro @okl N X S :- declare-test xtest (test N (pr X (some S)) tt).
 macro @kol N X :- declare-test xtest (test N (pr X none) ff).
 
 @ok 1 (@app [@f, @X]) (@app [@f, @a]) [@a].
@@ -144,7 +143,10 @@ macro @kol N X :- declare-test xtest (test N (pr X none) ff).
 
 @okl 13 [
   (triple ok (@lam x\ @app [@X, x]) (@lam x\ @app [@f, x])), 
-  (triple ok @f @X)].
+  (triple ok @f @X)]
+  [% X =
+    @f
+  ].
 
 % TODO: 131 & 132 dont work yet...
 % @okl 131 [
@@ -157,28 +159,45 @@ macro @kol N X :- declare-test xtest (test N (pr X none) ff).
 
 @okl 14 [
   (triple ok (@lam x\ @app [@X, x]) (@lam x\ @app [@f, x])), 
-  (triple (error "unif") @g @X)]. % we fail early
+  (triple (error "unif") @g @X)]
+  []. % we fail early
 
 @okl 15 [
   (triple ok (@lam x\ @app [@X, x]) (@lam x\ @app [@f, @app[@Y,x]])), 
-  (triple (error "unif") @g @X)]. % we fail early for the wrong reason
+  (triple (error "unif") @g @X)]
+  []. % we fail early for the wrong reason
 
 @okl 16 [
   (triple ok (@X) (@lam x\ @app [@f, @app[@Y,x]])), 
-  (triple ok @f @X)].
+  (triple ok @f @X)]
+  [% X =
+    @f
+  ,% Y =  
+   (@lam x\x)
+  ].
 
 @okl 17 [
   (triple ok @X (@lam x\ x)),
-  (triple ok (@app [@X, @a]) (@a))
-]. % beta redex
+  (triple ok (@app [@X, @a]) (@a))]
+  [% X =
+   (@lam x\ x)
+  ]. % beta redex
+
 
 @okl 18 [
   (triple ok (@lam x\ @app[@X, x, @a]) (@lam x\ @app[@f, x, @a]))
-].                                                                               % here two solutions for X: fun x _ => f x a, fun x y => f x y
+  ]
+  [% X =
+   @f
+  ]. % here two solutions for X: fun x _ => f x a, fun x y => f x y
+
 
 @okl 19 [
   (triple ok (@lam x\ @app[@X, x, @a]) (@lam x\ @app[@f, @a]))
-].                                                                               % here two solutions for X: fun _ _ => f a, fun _ x => f x
+  ]
+  [% X =
+   (@lam _\@f)
+  ]. % here two solutions for X: fun _ _ => f a, fun _ x => f x
 
 % @okl 20 [
 %   (triple (error "comp1") (@lam x\ @app[@X, x, x, @a]) (@lam x\ @app[@f, x, @a]))
@@ -186,11 +205,19 @@ macro @kol N X :- declare-test xtest (test N (pr X none) ff).
 
 @okl 21 [
   (triple ok (@lam x\ @lam y\ @app[@f, y, @a]) (@lam x\ @lam y\ @app[@X, x, y]))
-].
+  ]
+  [% X =
+   (@lam _\@lam x\@app[@f, x, @a])
+  ].
 
-@okl1 288 [
+@okl 288 [
   triple ok (@lam x\ @lam y\ @app[@X, y, x]) @Y
-] [_, @lam x\ @lam y\ @app[try6.fo.fuva z, y, x]].
+  ]
+  [ % X =
+    _
+  , % Y =
+    @lam x\ @lam y\ @app[try6.fo.fuva z, y, x]
+  ].
 
 % @okl 22001 [
 %   triple ok (@lam x\ @lam y\ @app[@Y, y, x]) @Z,
@@ -201,31 +228,68 @@ macro @kol N X :- declare-test xtest (test N (pr X none) ff).
 %   triple ok (@app[@g, (@lam x\ @lam y\ @app[@Y, y, x])]) @X,
 %   triple ok (@app[@g, @f]) @X,
 % ].
+
 @okl 2200 [
   triple ok (@lam x\ @lam y\ @app[@Y, y, x]) @X,
   triple ok (@f) @X,
-].
+  ]
+  [% X =
+   @f
+  , % Y =
+   (@lam x\@lam y\@app[@f,y,x])
+  ].
+
+
 @okl 220 [
   triple ok (@lam x\ @lam y\ @app[@Y, y, x]) @X,
   triple ok (@lam x\             @f) @X,
-].
+  ]
+  [% X =
+   (@lam _\@f)
+  , % Y =
+   (@lam x\@lam _\@app[@f,x])
+  ].
+
+
+
 @okl 22 [
   triple ok (             @f) @X,
   triple ok ( @lam y\ @app[@Y, y]) @X,
-].
+  ]
+  [% X =
+   @f
+  , % Y =
+   @f
+  ].
+
 
 @okl 23 [
   triple ok (@lam x\ @app[@f, @app[@X, x]]) @Y,
   triple ok @X (@lam x\ x),
-].
+  ]
+  [% X =
+   (@lam x\x)
+  , % Y =
+   @f
+  ].
 
 @okl 24 [
   triple ok (@lam x\ x) @X,
   triple ok @Y (@lam x\ @app[@f, @app[@X, x]]),
-].
+  ]
+  [% X =
+   (@lam x\x)
+  , % Y =
+   @f
+  ].
 
 @okl 25 [
   triple ok (@lam x\ @app[@f, @app[@X, x]]) @Y,
   triple ok @X (@lam x\ x),
   triple ok @Y @f
-].
+  ]
+  [% X =
+   (@lam x\x)
+  , % Y =
+   @f
+  ].
