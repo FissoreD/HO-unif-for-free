@@ -35,7 +35,7 @@ eval-unif [triple (error "unif") L R | _] HO_Subs1 HO_Subs3 L0 L3 FOSol FOSol :-
   not(std.spy(try6.ho.unif LH RH HO_Subs4 HO_Subs4_)),
 ].
 
-eval-unif [triple ok L R | TL] HO_Subs1 HO_SubsNN L0 L4 FOSol FOSol2 :- std.spy-do![
+eval-unif [triple ok L R | TL] HO_Subs1 HO_SubsNN L0 L4 FOSol FOSol2 :- std.do![
 
   std.assert! (try6.comp.comp L LH L0 L1 HO_Subs1 HO_Subs2) "b1",
   std.assert! (try6.comp.comp R RH L1 L2 HO_Subs2 HO_Subs3) "b2",
@@ -84,11 +84,11 @@ type validate-solution
   try6.fo.subst -> o.
 validate-solution Goals N Links HS FS FS' :- 
   forall1 (x\ x = triple ok _ _) Goals, !,
-  try6.comp.decompl Links Links HS FS FS',
+  std.spy-do![try6.comp.decompl Links Links HS FS FS',
   print "The solution for" N "is" FS', 
   forall1 (x\ sigma L R L' R'\ triple _ L R = x,
     try6.fo.deref FS' L L', try6.fo.deref FS' R R',
-    L' ==o R') Goals.
+    L' ==o R') Goals].
 validate-solution _ _ _ _ _ _.
 
 type same-sols list (option A) -> list (option A) -> o.
@@ -96,7 +96,7 @@ same-sols [] [].
 same-sols [A|L] [A|M] :- !, same-sols L M.
 same-sols [] L :- std.assert! (forall1 ((=) none) L) "Invalid solution".
 same-sols L [] :- std.assert! (forall1 ((=) none) L) "Invalid solution".
-same-sols A B :- halt "Invalid sol" A B.
+same-sols A B :- halt "INVALID SOL" A B.
 
 
 type check-sol option (list try6.fo.fm) -> try6.fo.subst -> o.
@@ -109,7 +109,8 @@ type xtest test try6.fo.fm -> o.
 xtest (test N (pr LR Sol) tt) :- std.do![
   build-fo-subst LR [] FO_Subst,
   eval-unif LR [] HO_Subst [] Links FO_Subst FO_Subst',
-  validate-solution LR N {std.rev Links} HO_Subst FO_Subst' Sol1,
+  std.rev Links LinksRev,
+  std.spy(validate-solution LR N LinksRev HO_Subst FO_Subst' Sol1),
   check-sol Sol Sol1
 ].
 xtest (test _ (pr LR _) ff) :- std.do! [
@@ -121,6 +122,7 @@ macro @ok N X Y S :- declare-test xtest (test N (pr [triple ok X Y] (some S)) tt
 macro @ko N X Y :- declare-test xtest (test N (pr [triple ok X Y] none) ff).
 
 macro @okl N X :- declare-test xtest (test N (pr X none) tt).
+macro @okl1 N X S:- declare-test xtest (test N (pr X (some S)) tt).
 macro @kol N X :- declare-test xtest (test N (pr X none) ff).
 
 @ok 1 (@app [@f, @X]) (@app [@f, @a]) [@a].
@@ -186,10 +188,14 @@ macro @kol N X :- declare-test xtest (test N (pr X none) ff).
   (triple ok (@lam x\ @lam y\ @app[@f, y, @a]) (@lam x\ @lam y\ @app[@X, x, y]))
 ].
 
+@okl1 288 [
+  triple ok (@lam x\ @lam y\ @app[@X, y, x]) @Y
+] [_, @lam x\ @lam y\ @app[try6.fo.fuva z, y, x]].
+
 % @okl 22001 [
 %   triple ok (@lam x\ @lam y\ @app[@Y, y, x]) @Z,
 %   triple ok (@app[@g, @Z]) @X,
-%   triple ok (@app[@g, @f]) @X,
+%   % triple ok (@app[@g, @f]) @X,
 % ].
 % @okl 22000 [
 %   triple ok (@app[@g, (@lam x\ @lam y\ @app[@Y, y, x])]) @X,

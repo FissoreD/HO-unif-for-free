@@ -61,6 +61,11 @@ map-fold2 F [X | XS] B C [Y | YS] B2 C2 :-
   F X Y B B1 C C1,
   map-fold2 F XS B1 C1 YS B2 C2.
 
+type mem (list A) -> A -> o.
+mem [A|_] A :- !.
+mem [_|L] A :- mem L A.
+
+
 type appendR list A -> list A -> list A -> o.
 appendR [] A A.
 appendR [A | TL] L [A | L'] :- appendR TL L L'.
