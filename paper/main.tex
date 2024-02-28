@@ -216,10 +216,10 @@ decision (all A x\ app[P, x]) :- finite A,            ~\customlabel{clause:r3}{(
 
 \noindent
 Unfortunately this translation of rule \ref{clause:r3} uses the
-predicate \coqIn{P} as a first order term for the meta
-language (its type is \elpiIn{tm}).
+predicate \coqIn{P} as a first order term: for the meta
+language its type is \elpiIn{tm}.
 If we try to backchain the rule \ref{clause:r3} on the encoding of the goal
-\ref{goal:g}:
+\ref{goal:g} given below
   
 \begin{elpicode}
 decision (all (app[con"fin", con"7"]) y\                 
@@ -247,8 +247,11 @@ decision (all A x\ Pm x) :- link Pm P A, finite A,   ~\customlabel{clause:r3a}{(
 \end{elpicode}
 
 \noindent
-Since \elpiIn{Pm} is an higher-order unification variable with \elpiIn{x}
-in its scope, the unification problem \ref{problem:pa} admits one solution:
+Since \elpiIn{Pm} is an higher-order unification variable,
+of type \elpiIn{tm -> tm},
+with \elpiIn{x}
+in its scope, the unification problem \ref{problem:pa}
+admits one solution:
 
 \begin{elpicode}
 app[con"nfact", y, con"3"] = Pm y                     ~\customlabel{problem:pa}{(p')}~
@@ -259,8 +262,7 @@ A = app[con"fin", con"7"]              % assignment for A
 \noindent
 After unifying the head of rule \ref{clause:r3a} with the goal, Elpi runs
 the premise <<\elpiIn{link Pm A P}>> that is in charge of bringing the
-assignment for \elpiIn{Pm} (that has type \elpiIn{tm -> tm})
-back to the domain of Coq terms:
+assignment for \elpiIn{Pm} back to the domain \elpiIn{tm} of Coq terms:
 
 \begin{elpicode}
 P = lam A a\ app[con"nfact", a, con"3"]
@@ -297,7 +299,7 @@ unifiers for unification problems in the pattern fragment \llambda~\cite{miller9
 
 \paragraph{Contributions}
 In this paper we discuss alternative encodings of Coq in
-Elpi~\ref{sec:encodings}, then we identify a minimal language \Fo
+Elpi (Section~\ref{sec:encodings}), then we identify a minimal language \Fo{}
 in which the problems sketched here can be fully described.
 We then detail an encoding \elpiIn{comp} from \Fo{} to \Ho (the language of
 the meta language) and a decoding \elpiIn{decomp} to relate the unifiers
@@ -442,19 +444,20 @@ the case the order in which these problems are stated matters. A Typical example
 is the following problem
 
 \begin{elpicode}
-app [F, con"a"] = app[F, con"a", con"a"]
+app [F, con"a"] = app[con"f", con"a", con"a"]
 \end{elpicode}
 
 \noindent
 preceded by 
 
 \begin{elpicode}
-F = lam x\app[const f,x,x]
+F = lam x\ app[con"f",x,x]
 \end{elpicode}
 
 \noindent
 becomes solvable in DTT trivially, since the term is ground (hence in \llambda),
-but is one substitutes F in the LHS does not find, structurally, the RHS
+but if one substitutes \elpiIn{F} in the LHS does not find,
+structurally, the RHS
 hence \Ue would fail (since \Ue does not know about the $\beta$ rule of DTT).
 Our compiler takes care of making property \ref{prop:simulation} hold, see
 section XXX.
