@@ -9,6 +9,7 @@ macro @b :- try6.fo.fcon "b".
 macro @c :- try6.fo.fcon "c".
 macro @app L :- try6.fo.fapp L.
 macro @lam L :- try6.fo.flam L.
+macro @uv N :- try6.fo.fuva N.
 
 shorten try6.fo.{(==o)}.
 
@@ -216,7 +217,7 @@ macro @kol N X :- declare-test xtest (test N (pr X none) ff).
   [ % X =
     _
   , % Y =
-    @lam x\ @lam y\ @app[try6.fo.fuva z, y, x]
+    @lam x\ @lam y\ @app[@uv z, y, x]
   ].
 
 % @okl 22001 [
