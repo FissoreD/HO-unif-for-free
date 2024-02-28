@@ -217,9 +217,12 @@ type link-fo-align list ho.tm -> nat -> nat -> nat -> link.
 % TODO: add link eta, in the case of added holes
 
 type comp fo.fm -> ho.tm -> list link -> list link -> ho.subst -> ho.subst -> o.
-comp (fo.fcon X)   (ho.con X) L L S S.
-comp (fo.fapp [fo.fuva N|Args]) (ho.uva M PF1) L L3 S S3 :- !,
-  split-pf Args PF NPF,
+comp (fo.fcon X)              (ho.con X) L L S S.
+comp (fo.flam F) (ho.lam F1) L L1 S S1 :- 
+  pi x y\ (pi A S\ comp x y A A S S) => comp (F x) (F1 y) L L1 S S1.
+comp (fo.fuva N)              (ho.uva M []) L [link N M z|L] S S1 :- ho.new S M S1.
+comp (fo.fapp [fo.fuva N|Ag]) (ho.uva M PF1) L L3 S S3 :- !,
+  split-pf Ag PF NPF,
   fold4 comp PF PF1 L L S S1,
   fold4 comp NPF NPF1 L L1 S1 S2,
   ho.new S2 M S3,
@@ -227,10 +230,7 @@ comp (fo.fapp [fo.fuva N|Args]) (ho.uva M PF1) L L3 S S3 :- !,
   % TODO: NYI NPF1 can contain non-closed terms (i.e. local vars...)
   if (NPF = []) (LinkType = link) (LinkType = link-fo-align NPF1),
   L3 = [LinkType N M Len | L1].
-comp (fo.fapp A) (ho.app A1) L L1 S S1 :- fold4 comp A A1 L L1 S S1.
-comp (fo.flam F) (ho.lam F1) L L1 S S1 :- 
-  (pi x y\ (pi A S\ comp x y A A S S) => comp (F x) (F1 y) L L1 S S1).
-comp (fo.fuva N) (ho.uva M []) L [link N M z|L] S S1 :- ho.new S M S1.
+comp (fo.fapp A)              (ho.app A1) L L1 S S1 :- fold4 comp A A1 L L1 S S1.
 
 % type collect-link link -> list link -> list link -> list link -> o.
 % collect-link _ [] [] [].
@@ -245,9 +245,19 @@ comp (fo.fuva N) (ho.uva M []) L [link N M z|L] S S1 :- ho.new S M S1.
 %   collect-link X Xs L1 L2,
 %   collect-links L2 Ys.
 
-% type solve-links list link -> ho.subst -> ho.subst -> o.
-% solve-links L S S' :-
+% type solve-link-- link -> list link -> list link -> ho.subst -> ho.subst -> o.
+% solve-link-- _ [] [] H H.
+% solve-link-- (link N M LenM) [link N M' LenM' | As] [link N W LenM|Bs] S S2 :-
+%   same-assign M M' LenM LenM' W S S1,
+%   solve-link-- (link N W LenM) As Bs S1 S2.
+
+% type solve-link list link ->  list link -> ho.subst -> ho.subst -> o.
+% solve-link L L1 S S' :-
+%   std.spy-do![
 %   collect-links L M,
+%   fold (x\old\new\ sigma HD TL\ [HD|TL] = x, solve-link-- HD TL old new) M S S',
+%   std.map M (x\y\ sigma A\ x = [y|A]) L1], !.
+% solve-link A_ B_ D_ E_ :- halt "STOP".
 
 % We test forall linked var of the ML, that they have the same assignment
 type solve-link list link -> list link -> ho.subst -> ho.subst -> o.
@@ -333,7 +343,6 @@ my-unif-assignment T R S1 S2 :-
   lam->abs TDeref TAbs,
   lam->abs RDeref RAbs,
   my-unif-assignment-aux TAbs RAbs S1 S2.
-
 
 % tries to eta contract at each "depth", not just at the top
 type hope-for-eta ho.subst -> ho.assignment -> ho.assignment -> o.
