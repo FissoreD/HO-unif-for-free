@@ -941,10 +941,20 @@ T ~\Eo~fapp [flam X | L] :- beta (flam X) L R, T ~\Eo~R. ~($\customlabel{clause:
 
 type beta fm -> list fm -> fm -> o.
 beta A [] A.
-beta (flam Bo) [H | L] R :- beta (Bo H) L R.
+beta (flam F) [H | L] R :- subst F H B,
+  beta B L R. % since F could be x\app[x|_] and H be lam _ 
 beta (fapp A) L (fapp X) :- append A L X.
 beta (fuva N) L (fapp [fuva N | L]).
 beta (fcon H) L (fapp [fcon H | L]).
+
+type subst (fm -> fm) -> fm -> fm -> o.
+subst F H B :- napp (F H) B. % since (F H) may generate (app[app _|_])
+
+type napp fm -> fm -> o.
+napp (fcon C) (fcon C).
+napp (flam F) (flam G) :- pi x\ napp x x => napp (F x) (G x).
+napp (fapp[fapp L|M]) R :- !, append L M N, napp (fapp N) R.
+napp (fapp A) (fapp B) :- map napp A B.
 \end{elpicode}
 \caption{Full implementation of the \Eo predicate for \Fo}
 \label{code:eo-pred}
@@ -996,6 +1006,7 @@ type new memory A -> nat -> memory A -> o.
 type prune .
 type move .
 type beta.
+type bind.
 type not_occ.
 TODO
 
