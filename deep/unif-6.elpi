@@ -301,7 +301,7 @@ same-assign M N LenM LenN W HO HO2 :- unset? M HO, unset? N HO,   W = M, eta Len
 %%% non è fedele.
 %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Invariant, the assmt in entry are never on the form `ho.val (ho.abs -)`
+% Invariant, the assmt in entry are never on the form `ho.val (ho.abs _)`
 type my-unif-assignment-aux ho.assignment -> ho.assignment -> ho.subst -> ho.subst -> o.
 
 my-unif-assignment-aux (ho.val T1) (ho.val T2) H H1 :- ho.unif T1 T2 H H1.
@@ -358,13 +358,6 @@ hope-contract.aux H L (ho.val V) (ho.val T) :- std.do! [
   std.appendR Prefix LRev Args,
   if (Prefix = []) (T = Hd) (T = ho.app [Hd|Prefix]),
 ].
-
-type test-hope-eta-1 o.
-type test-hope-eta-2 o.
-test-hope-eta-1 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.app[ho.con"f",ho.app[ho.con"g",x],y]))
-                                   (ho.abs x\           ho.val (ho.app[ho.con"f",ho.app[ho.con"g",x]  ])).
-test-hope-eta-2 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.app[ho.con"f",ho.app[ho.con"g",y],x]))
-                                   (          ho.abs y\ ho.val (ho.app[ho.con"f",ho.app[ho.con"g",y]  ])).
 
 % [eta Arity VarName Acc Ass]
 type eta nat -> nat -> list ho.tm -> ho.assignment -> o.
@@ -459,5 +452,12 @@ decomp LK HO (ho.uva N Args) SolOL S S1 :-
          (decomp-assign LK HO T T' S1' S1'', assign X S1'' T' S1)
          (S1 = S1')),
   fo.mk-app (fo.fuva X) Args1 SolOL.
+
+type test-hope-eta-1 o.
+type test-hope-eta-2 o.
+test-hope-eta-1 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.app[ho.con"f",ho.app[ho.con"g",x],y]))
+                                   (ho.abs x\           ho.val (ho.app[ho.con"f",ho.app[ho.con"g",x]  ])).
+test-hope-eta-2 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.app[ho.con"f",ho.app[ho.con"g",y],x]))
+                                   (          ho.abs y\ ho.val (ho.app[ho.con"f",ho.app[ho.con"g",y]  ])).
 }}
 
