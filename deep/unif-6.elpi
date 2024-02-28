@@ -301,57 +301,38 @@ same-assign M N LenM LenN W HO HO2 :- unset? M HO, unset? N HO,   W = M, eta Len
 %%% non è fedele.
 %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Invariant, the assmt in entry are never on the form `ho.val (ho.abs -)`
 type my-unif-assignment-aux ho.assignment -> ho.assignment -> ho.subst -> ho.subst -> o.
 
-my-unif-assignment-aux (ho.val (ho.lam F)) (ho.val T2) H H1 :-
-  my-unif-assignment-aux (ho.abs x\(ho.val (F x))) (ho.val T2) H H1.
-my-unif-assignment-aux (ho.val T1) (ho.val (ho.lam F)) H H1 :-
-  my-unif-assignment-aux (ho.val T1) (ho.abs x\(ho.val (F x))) H H1.
+my-unif-assignment-aux (ho.val T1) (ho.val T2) H H1 :- ho.unif T1 T2 H H1.
+my-unif-assignment-aux (ho.abs F1) (ho.abs F2) H H1 :- 
+  pi x\ (pi S\ ho.unif x x S S) => my-unif-assignment-aux (F1 x) (F2 x) H H1.
 
-my-unif-assignment-aux (ho.val T1) (ho.val T2) H H1 :-
-  % we needd to normalize and deref T1 and T2, since if they are assigned,
-  % they can contain ugly eta exapansions. (see test 25).
-  % TODO: there is still a bug... 
-  % T1 = f and 
-  % T2 = try6.ho.lam c0 \ try6.ho.app [try6.ho.con f, try6.ho.uva (s z) [c0]]
-  % they unify in the ML if the HO_var is set to the identy and T2 is eta-reduced...
-  ho.unif T1 T2 H H1.
-my-unif-assignment-aux (ho.abs F1) (ho.abs F2) H H1 :- pi x\ (pi S\ ho.unif x x S S) => my-unif-assignment-aux (F1 x) (F2 x) H H1.
+my-unif-assignment-aux (ho.val T) (ho.abs F2) H H1 :-
+  pi x\ sigma R\ unif-mk-app T x R, 
+  (pi S\ ho.unif x x S S) => my-unif-assignment-aux (ho.val R) (F2 x) H H1.
 
-my-unif-assignment-aux (ho.val (ho.uva N L))  (ho.abs F2) H H1 :-
-    pi x\ (pi S\ ho.unif x x S S) =>
-      sigma L1\ std.append L [x] L1,
-       my-unif-assignment-aux (ho.val (ho.uva N L1)) (F2 x) H H1.
-my-unif-assignment-aux (ho.val (ho.app L))  (ho.abs F2) H H1 :-
-    pi x\ (pi S\ ho.unif x x S S) =>
-      sigma L1\ std.append L [x] L1,
-       my-unif-assignment-aux (ho.val (ho.app L1)) (F2 x) H H1.
-my-unif-assignment-aux (ho.val (ho.con C))  (ho.abs F2) H H1 :-
-    pi x\ (pi S\ ho.unif x x S S) =>
-       my-unif-assignment-aux (ho.val (ho.app [ho.con C,x])) (F2 x) H H1.
-my-unif-assignment-aux (ho.val (ho.lam C))  (ho.abs F2) H H1 :-
-    pi x\ (pi S\ ho.unif x x S S) =>
-       my-unif-assignment-aux (ho.val (C x)) (F2 x) H H1.
+my-unif-assignment-aux (ho.abs F2) (ho.val T) H H1 :-
+  pi x\ sigma R\ unif-mk-app T x R, 
+  (pi S\ ho.unif x x S S) => my-unif-assignment-aux (F2 x) (ho.val R) H H1.
 
-my-unif-assignment-aux (ho.abs F2) (ho.val (ho.uva N L)) H H1 :-
-    pi x\ (pi S\ ho.unif x x S S) =>
-      sigma L1\ std.append L [x] L1,
-       my-unif-assignment-aux (F2 x) (ho.val (ho.uva N L1)) H H1.
-my-unif-assignment-aux (ho.abs F2) (ho.val (ho.app L)) H H1 :-
-    pi x\ (pi S\ ho.unif x x S S) =>
-      sigma L1\ std.append L [x] L1,
-       my-unif-assignment-aux (F2 x) (ho.val (ho.app L1)) H H1.
-my-unif-assignment-aux (ho.abs F2) (ho.val (ho.con C)) H H1 :-
-    pi x\ (pi S\ ho.unif x x S S) =>
-       my-unif-assignment-aux (F2 x) (ho.val (ho.app [ho.con C,x])) H H1.
-my-unif-assignment-aux (ho.abs F2) (ho.val (ho.lam C)) H H1 :-
-    pi x\ (pi S\ ho.unif x x S S) =>
-       my-unif-assignment-aux (F2 x) (ho.val (C x)) H H1.
+type lam->abs ho.assignment -> ho.assignment -> o.
+lam->abs (ho.val (ho.lam T)) (ho.abs R) :- !, pi x\ lam->abs (ho.val (T x)) (R x).
+lam->abs (ho.val A) (ho.val A).
+lam->abs (ho.abs T) (ho.abs R) :- pi x\ lam->abs (T x) (R x).
+
+type unif-mk-app ho.tm -> ho.tm -> ho.tm -> o.
+unif-mk-app (ho.uva N L) T (ho.uva N R) :- appendR L [T] R.
+unif-mk-app (ho.con C) T (ho.app [ho.con C, T]).
+unif-mk-app (ho.app L) T (ho.app R) :- appendR L [T] R.
 
 type my-unif-assignment ho.assignment -> ho.assignment -> ho.subst -> ho.subst -> o.
 my-unif-assignment T R S1 S2 :-
   ho.assmt-deref S1 T TDeref,
-  my-unif-assignment-aux TDeref R S1 S2.
+  ho.assmt-deref S1 R RDeref,
+  lam->abs TDeref TAbs,
+  lam->abs RDeref RAbs,
+  my-unif-assignment-aux TAbs RAbs S1 S2.
 
 
 % tries to eta contract at each "depth", not just at the top
