@@ -665,7 +665,7 @@ differ in a substantial way:
 
 \begin{elpicode}
 type deref subst -> tm -> tm -> o.                   ~($\customlabel{pred:deref}{\sigma t}$)~
-% ... similar to above ...
+% ... flattening and traversal are similar to fsubst ...
 deref S (uva N A) R :- set? N S F, move F A T, deref S T R.
 deref S (uva N A) (uva N B) :- unset? N S, map (deref S) A B.
 type move assignment -> list tm -> tm -> o.
@@ -927,6 +927,32 @@ Note that \elpiIn{(a infix b) c d} de-sugars to \elpiIn{(infix) a b c d}.
 
 \begin{figure*}
 \begin{elpicode}
+~\PYG{k+kd}{type} \PYG{n+nf}{(\Eo)} \PYG{k+kt}{ftm -> ftm -> o}~.                           ~($\customlabel{pred:fequal}{\Eo}$)~
+fapp A ~\Eo~fapp B :- map ~(\Eo)~ A B.
+flam F ~\Eo~flam G :- pi x\ x ~\Eo~x => F x ~\Eo~G x.
+fcon C ~\Eo~fcon C.
+fuva N ~\Eo~fuva N.
+flam F ~\Eo~T :-                                       ~($\customlabel{clause:eta1}{\eta_l}$)~
+  pi x\ beta T [x] (R x), x ~\Eo~x => F x ~\Eo~R x.
+T ~\Eo~flam F :-                                       ~($\customlabel{clause:eta2}{\eta_r}$)~
+  pi x\ beta T [x] (R x), x ~\Eo~x => R x ~\Eo~F x.
+fapp [flam X | L] ~\Eo~T :- beta (flam X) L R, R ~\Eo~T. ~($\customlabel{clause:beta1}{\beta_l}$)~
+T ~\Eo~fapp [flam X | L] :- beta (flam X) L R, T ~\Eo~R. ~($\customlabel{clause:beta2}{\beta_r}$)~
+
+type beta fm -> list fm -> fm -> o.
+beta A [] A.
+beta (flam Bo) [H | L] R :- beta (Bo H) L R.
+beta (fapp A) L (fapp X) :- append A L X.
+beta (fuva N) L (fapp [fuva N | L]).
+beta (fcon H) L (fapp [fcon H | L]).
+\end{elpicode}
+\caption{Full implementation of the \Eo predicate for \Fo}
+\label{code:eo-pred}
+\Description[code:eo-pred]{code:eo-pred}
+\end{figure*}
+
+\begin{figure*}
+\begin{elpicode}
 ~\PYG{k+kd}{type} \PYG{n+nf}{(\Ue)} \PYG{k+kt}{tm -> tm -> subst -> subst -> o}~.
 % Congruence
 (app A ~\Ue~app B) S S1 :- fold2 ~(\Ue)~A B S S1.
@@ -976,7 +1002,7 @@ TODO
 \end{elpicode}
 \caption{Implementation of the \Ue predicate for \Ho}
 \label{code:ue-pred}
-\Description[code:unif-pred]{code:unif-pred}
+\Description[code:ue-pred]{code:ue-pred}
 \end{figure*}
   
 \end{document}
