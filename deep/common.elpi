@@ -32,9 +32,9 @@ not-in T [X | TL] :- not (X = T), not-in T TL.
 type exists (A -> o) -> list A -> o.
 exists F [X|XS] :- F X ; exists F XS.
 
-type forall2 (A -> B -> o) -> list A -> list B -> o.
-forall2 _ [] [].
-forall2 F [X|XS] [Y|YS] :- F X Y, forall2 F XS YS.
+type map (A -> B -> o) -> list A -> list B -> o.
+map _ [] [].
+map F [X|XS] [Y|YS] :- F X Y, map F XS YS.
 
 type fold2 (A -> A1 -> B -> B -> o) -> list A -> list A1 -> B -> B -> o.
 fold2 _ [] [] A A.

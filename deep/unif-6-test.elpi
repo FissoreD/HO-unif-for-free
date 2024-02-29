@@ -85,11 +85,13 @@ type validate-solution
   try6.fo.subst -> o.
 validate-solution Goals N Links HS FS FS' :- 
   forall1 (x\ x = triple ok _ _) Goals, !,
-  std.spy-do![try6.comp.decompl Links Links HS FS FS',
-  print "The solution for" N "is" FS', 
-  forall1 (x\ sigma L R L' R'\ triple _ L R = x,
-    try6.fo.deref FS' L L', try6.fo.deref FS' R R',
-    L' ==o R') Goals].
+  std.do! [
+    std.spy (try6.comp.decompl Links Links HS FS FS'),
+    print "The solution for" N "is" FS', 
+    forall1 (x\ sigma L R L' R'\ triple _ L R = x,
+      try6.fo.deref FS' L L', try6.fo.deref FS' R R',
+      if (L' ==o R') true (print "Terms not equal" L' "==/==" R', fail)) Goals
+  ].
 validate-solution _ _ _ _ _ _.
 
 type same-sols list (option A) -> list (option A) -> o.

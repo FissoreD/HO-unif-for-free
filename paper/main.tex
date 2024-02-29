@@ -960,6 +960,7 @@ napp (fcon C) (fcon C).
 napp (flam F) (flam G) :- pi x\ napp x x => napp (F x) (G x).
 napp (fapp[fapp L|M]) R :- !, append L M N, napp (fapp N) R.
 napp (fapp A) (fapp B) :- map napp A B.
+napp (fuva N) (fuva N).
 \end{elpicode}
 \caption{Full implementation of the \Eo predicate for \Fo}
 \label{code:eo-pred}
