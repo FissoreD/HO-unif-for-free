@@ -1,6 +1,7 @@
 macro @X :- try6.fo.fuva z.
 macro @Y :- try6.fo.fuva (s z).
 macro @Z :- try6.fo.fuva (s (s z)).
+macro @W :- try6.fo.fuva (s (s (s z))).
 macro @f :- try6.fo.fcon "f".
 macro @g :- try6.fo.fcon "g".
 macro @h :- try6.fo.fcon "h".
@@ -44,6 +45,7 @@ eval-unif [triple ok L R | TL] HO_Subs1 HO_SubsNN L0 L4 FOSol FOSol2 :- std.do![
 
   print "## unif" LH "with" RH "in" HO_Subs3,
   std.spy(try6.ho.unif LH RH HO_Subs3 HO_Subs4),
+  print "The new HO_Subst is" HO_Subs4,
   
   std.spy(try6.comp.solve-link L2 L3 HO_Subs4 HO_Subs5),
 
@@ -84,12 +86,22 @@ type validate-solution
   try6.fo.subst -> o.
 validate-solution Goals N Links HS FS FS' :- 
   forall1 (x\ x = triple ok _ _) Goals, !,
-  std.spy-do![try6.comp.decompl Links Links HS FS FS',
+  try6.comp.decompl Links Links HS FS FS',
   print "The solution for" N "is" FS', 
   forall1 (x\ sigma L R L' R'\ triple _ L R = x,
     try6.fo.deref FS' L L', try6.fo.deref FS' R R',
-    L' ==o R') Goals].
+    % std.assert!(L' ==o R') "The computed solution is wrong"
+    L' ==o R'
+  ) Goals.
 validate-solution _ _ _ _ _ _.
+
+% (x\y\Y y x) = Z, g Z = X.
+% X = g c0 \ c1 \ Y c1 c0
+% Z = c0 \ c1 \ Y c1 c0
+@okl 22001 [
+  triple ok (@lam x\ @lam y\ @app[@X, y, x]) @Y,
+  triple ok (@app[@g, @Y]) @Z,
+].
 
 type same-sols list (option A) -> list (option A) -> o.
 same-sols [] [].
@@ -109,8 +121,11 @@ type xtest test try6.fo.fm -> o.
 xtest (test N (pr LR Sol) tt) :- std.do![
   build-fo-subst LR [] FO_Subst,
   eval-unif LR [] HO_Subst [] Links FO_Subst FO_Subst',
+  print "After eval-unif the subst fo is" Links,
+  print "The hosubst is" HO_Subst,
+  print, print,
   std.rev Links LinksRev,
-  std.spy(validate-solution LR N LinksRev HO_Subst FO_Subst' Sol1),
+  validate-solution LR N LinksRev HO_Subst FO_Subst' Sol1,
   check-sol Sol Sol1
 ].
 xtest (test _ (pr LR _) ff) :- std.do! [
@@ -197,10 +212,10 @@ macro @kol N X :- declare-test xtest (test N (pr X none) ff).
 %   triple ok (@app[@g, @Z]) @X,
 %   % triple ok (@app[@g, @f]) @X,
 % ].
-% @okl 22000 [
-%   triple ok (@app[@g, (@lam x\ @lam y\ @app[@Y, y, x])]) @X,
-%   triple ok (@app[@g, @f]) @X,
-% ].
+@okl 22000 [
+  triple ok (@app[@g, (@lam x\ @lam y\ @app[@Y, y, x])]) @X,
+  % triple ok (@app[@g, @f]) @X,
+].
 @okl 2200 [
   triple ok (@lam x\ @lam y\ @app[@Y, y, x]) @X,
   triple ok (@f) @X,

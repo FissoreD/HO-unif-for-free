@@ -42,7 +42,7 @@ T ==o fapp [flam X | TL] :- beta (flam X) TL T', T ==o T'.
 % [extend-subst T S S'] forall fuva N in T, extends S with none at pos N
 % this is used only in test to build the subst-map before running it
 type extend-subst fm -> subst -> subst -> o.
-extend-subst (fuva N) S S' :- std.spy(extend-nat N S S').
+extend-subst (fuva N) S S' :- extend-nat N S S'.
 extend-subst (flam F) S S' :- pi x\ (pi S\extend-subst x S S) => extend-subst (F x) S S'.
 extend-subst (fcon _) S S.
 extend-subst (fapp L) S S1 :- fold extend-subst L S S1.
@@ -122,13 +122,15 @@ unif (uva N Args1) (uva M Args2) S S3 :-
   assign N S1 Ass S2,
   if (unset? M S2) % M = N case
      (assign M S2 Ass S3)
-     (S3 = S2). 
+     (S3 = S2),
+  print "Assigning in uva N Args1" N M S1 Ass S3. 
 unif (uva N Args) T S S1 :- 
   not (T = uva _ _), not_occ N S T, pattern-fragment Args, 
-  bind T Args T1, assign N S T1 S1.
+  bind T Args T1, print "Binding T to Args" T Args T1, assign N S T1 S1, print "Assing1 T1" T1.
 unif T (uva N Args) S S1 :- 
-  not (T = uva _ _), not_occ N S T, pattern-fragment Args, 
-  bind T Args T1, assign N S T1 S1.
+  print "In this case before failing",
+  std.spy-do![not (T = uva _ _), not_occ N S T, pattern-fragment Args, 
+  bind T Args T1,print "Binding T to Args" T Args T1,  assign N S T1 S1, print "Assing2 T2" T1].
 
 % Note: eta & beta for unification is not allowed in ML over terms of the OL
 
@@ -148,6 +150,14 @@ move (val (app A))   L     (app X) :- std.append A L X.
 move (val (uva N A)) L     (uva N X) :- std.append A L X.
 move (val (con H))   L     (app [con H | L]).
 
+type move-ass assignment -> list tm -> assignment -> o.
+move-ass (abs Bo)        [H|L] R :- move-ass (Bo H) L R.
+move-ass (abs Bo)        []    (abs Bo).
+move-ass (val A)         []    (val A).
+move-ass (val (app A))   L     (val (app X)) :- std.append A L X.
+move-ass (val (uva N A)) L     (val (uva N X)) :- std.append A L X.
+move-ass (val (con H))   L     (val (app [con H | L])).
+
 type beta tm -> list tm -> tm -> o.
 beta A [] A.
 beta (lam Bo) [H | L] R :- beta (Bo H) L R.
@@ -164,7 +174,7 @@ not_occ_aux _ _ (con _).
 not_occ_aux _ _ X :- name X.
  
 type not_occ  nat -> subst -> tm -> o.
-not_occ N S T :- print "not occ" N S T, fail.
+% not_occ N S T :- print "not occ" N S T, fail.
 not_occ N _ (uva N _).
 not_occ N S (uva M Args) :- set? M S F, move F Args T, not_occ N S T.
 not_occ N S (uva M Args) :- unset? M S, std.forall Args (not_occ_aux N S).
@@ -180,6 +190,9 @@ copy (uva N L) (uva N L') :- forall2 copy L L'.
 copy (con C)   (con C).
 
 type bind tm -> list tm -> assignment -> o.
+% Replace lambdas with abstraction of the ML and abstracting the list of tm in L
+% Note L is a list in the pattern fragment
+bind (lam T) L (abs T') :- !, pi x\ copy x x => bind (T x) L (T' x).
 bind T [] (val T') :- copy T T'.
 bind T [X | TL] (abs T') :- pi x\ copy X x => bind T TL (T' x).
 
@@ -214,10 +227,35 @@ shorten fo.{ (==o) }.
 kind link type.
 type link nat -> nat -> nat -> link.
 type link-fo-align list ho.tm -> nat -> nat -> nat -> link.
+
+% type link-eta list ho.tm 
 % TODO: add link eta, in the case of added holes
+
+% [maybe-eta i:T i:N i:EV o:A o:CV o:Arity]
+% takes OL term, a name, a ML fresh variable
+% returns an assignment and CV if T has the shape (flam x,y,...z. app[fuva CV|L])
+% and N is in L: this should carru out a potential eta expansion if CV is assigned
+% by a previous unif problem
+type maybe-eta fo.fm -> fo.fm -> nat ->  ho.assignment -> nat -> nat -> o.
+maybe-eta (fo.flam B) N EV (ho.abs A) R Arity :- pi x y\ (pi A S\ comp x y A A S S) => maybe-eta (B x) N EV (A y) R Arity.
+% TODO: here I suppose that L is a list of Name, ie, R is in PF. This is not true generally
+maybe-eta (fo.fapp[fo.fuva R | L]) N EV (ho.val (ho.uva EV L1)) R Arity :- 
+  pattern-fragment L,
+  fold4 comp L L1 [] [] S S, 
+  mem L N, len L Arity.
 
 type comp fo.fm -> ho.tm -> list link -> list link -> ho.subst -> ho.subst -> o.
 comp (fo.fcon X)              (ho.con X) L L S S.
+% TODO: this is wrong, since we should pass something in the scope of W
+% comp (fo.flam F) (ho.uva W []) L L1 S S2 :-
+  
+%   pi x y\ (pi A S\ comp x y A A S S) => (
+%     ho.new S W S1,
+%     std.spy-do![maybe-eta (F x) x W (Ass y) CV Arity, !,
+%     print "In comp hypoth eta",
+%     assign W S1 (ho.abs Ass) S2,
+%     L1 = [link CV W Arity| L]]).
+
 comp (fo.flam F) (ho.lam F1) L L1 S S1 :- 
   pi x y\ (pi A S\ comp x y A A S S) => comp (F x) (F1 y) L L1 S S1.
 comp (fo.fuva N)              (ho.uva M []) L [link N M z|L] S S1 :- ho.new S M S1.
@@ -262,8 +300,10 @@ comp (fo.fapp A)              (ho.app A1) L L1 S S1 :- fold4 comp A A1 L L1 S S1
 % We test forall linked var of the ML, that they have the same assignment
 type solve-link list link -> list link -> ho.subst -> ho.subst -> o.
 solve-link [] [] X X.
-solve-link [link N M LenM|L] LR HO HO1 :- take-link L (link N M' LenM') L1, !, std.do! [
+solve-link [link N M LenM|L] LR HO HO1 :- take-link L (link N M' LenM') L1, !, std.spy-do! [
+  print "Anchor same assign che fa cazzate",
   same-assign M M' LenM LenM' W HO HO2,
+  print "Solve link recursive call",
   solve-link [link N W LenM|L1] LR HO2 HO1,
 ].
 solve-link [L|LS] [L|LS'] HO HO1 :- solve-link LS LS' HO HO1.
@@ -273,16 +313,17 @@ same-assign-aux L L T R HO HO2 :- !, std.spy(my-unif-assignment T R HO HO2).
 same-assign-aux _ _ T R HO HO2 :- 
   hope-for-eta HO T Te,
   hope-for-eta HO R Re,
+  print "Acnora più casino qui2",
   std.spy(my-unif-assignment Te Re HO HO2).
  
 type same-assign nat -> nat -> nat -> nat -> nat -> ho.subst -> ho.subst -> o.
 same-assign M N LenM LenN W HO HO2 :- set? M HO AM, set? N HO AN, W = M,
   same-assign-aux LenM LenN AM AN HO HO2.
-same-assign M N LenM LenN W HO HO2 :- set? M HO AM, unset? N HO,  W = M, eta LenN N [] AN,
+same-assign M N LenM LenN W HO HO2 :- set? M HO AM, unset? N HO,  W = M, eta LenN N [] AN, print "Eta for" N "is" AN,
   same-assign-aux LenM LenN AM AN HO HO2.
-same-assign M N LenM LenN W HO HO2 :- unset? M HO, set? N HO AN,  W = N, eta LenM M [] AM,
+same-assign M N LenM LenN W HO HO2 :- unset? M HO, set? N HO AN,  W = N, eta LenM M [] AM, print "Eta for" M "is" AM,
   same-assign-aux LenM LenN AM AN HO HO2.
-same-assign M N LenM LenN W HO HO2 :- unset? M HO, unset? N HO,   W = M, eta LenN N [] AN, eta LenM M [] AM,
+same-assign M N LenM LenN W HO HO2 :- unset? M HO, unset? N HO,   W = M, eta LenN N [] AN, eta LenM M [] AM, print "Eta for" M "is" AM, print "Eta for" N "is" AN,
   same-assign-aux LenM LenN AM AN HO HO2.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -314,13 +355,22 @@ same-assign M N LenM LenN W HO HO2 :- unset? M HO, unset? N HO,   W = M, eta Len
 % Invariant, the assmt in entry are never on the form `ho.val (ho.abs _)`
 type my-unif-assignment-aux ho.assignment -> ho.assignment -> ho.subst -> ho.subst -> o.
 
-my-unif-assignment-aux (ho.val T1) (ho.val T2) H H1 :- ho.unif T1 T2 H H1.
+my-unif-assignment-aux (ho.val (ho.uva V L)) T H H1 :- !,
+  abs->lam T T',
+  ho.unif (ho.uva V L) T' H H1.
+my-unif-assignment-aux T (ho.val (ho.uva V L)) H H1 :- !,
+  abs->lam T T',
+  ho.unif T' (ho.uva V L) H H1.
+
+my-unif-assignment-aux (ho.val T1) (ho.val T2) H H1 :- print "@@@ Start unif between T1 and T2" T1 T2, ho.unif T1 T2 H H1, print "After unif" H H1.
 my-unif-assignment-aux (ho.abs F1) (ho.abs F2) H H1 :- 
   pi x\ (pi S\ ho.unif x x S S) => my-unif-assignment-aux (F1 x) (F2 x) H H1.
 
 my-unif-assignment-aux (ho.val T) (ho.abs F2) H H1 :-
+  print "Enter aa",
   pi x\ sigma R\ unif-mk-app T x R, 
-  (pi S\ ho.unif x x S S) => my-unif-assignment-aux (ho.val R) (F2 x) H H1.
+  (pi S\ ho.unif x x S S) => my-unif-assignment-aux (ho.val R) (F2 x) H H1,
+  print "exit bb".
 
 my-unif-assignment-aux (ho.abs F2) (ho.val T) H H1 :-
   pi x\ sigma R\ unif-mk-app T x R, 
@@ -330,6 +380,10 @@ type lam->abs ho.assignment -> ho.assignment -> o.
 lam->abs (ho.val (ho.lam T)) (ho.abs R) :- !, pi x\ lam->abs (ho.val (T x)) (R x).
 lam->abs (ho.val A) (ho.val A).
 lam->abs (ho.abs T) (ho.abs R) :- pi x\ lam->abs (T x) (R x).
+
+type abs->lam ho.assignment -> ho.tm -> o.
+abs->lam (ho.abs T) (ho.lam R)  :- !, pi x\ abs->lam (T x) (R x).
+abs->lam (ho.val A) A.
 
 type unif-mk-app ho.tm -> ho.tm -> ho.tm -> o.
 unif-mk-app (ho.uva N L) T (ho.uva N R) :- appendR L [T] R.
@@ -342,6 +396,7 @@ my-unif-assignment T R S1 S2 :-
   ho.assmt-deref S1 R RDeref,
   lam->abs TDeref TAbs,
   lam->abs RDeref RAbs,
+  print "Start of unification aux between" TAbs "and" RAbs,
   my-unif-assignment-aux TAbs RAbs S1 S2.
 
 % tries to eta contract at each "depth", not just at the top
@@ -382,7 +437,8 @@ assign-replace z [none|S] X [some X |S].
 assign-replace (s N) [A|S] X [A |S1] :- assign-replace N S X S1.
 
 type decompl.aux list link -> list link -> ho.subst -> fo.subst -> fo.subst -> o.
-decompl.aux [link N M _Arity|L] LK HO FO FO1 :- set? M HO T, !, std.do! [
+decompl.aux [link N M _Arity|L] LK HO FO FO1 :- set? M HO T, !, 
+  ho.assmt-deref HO T T'', print "In HERE", print "The terms assigned is" T "in memory HO" HO "dereferenced is" T'', std.spy-do! [
   decomp-assign LK HO T T0 FO FO',
   fo.eta-contract T0 T',
   assign-replace N FO' T' FO2,
@@ -441,19 +497,21 @@ type decomp-assign list link -> ho.subst -> ho.assignment -> fo.fm -> fo.subst -
 decomp-assign LK HO (ho.abs F) (fo.flam F1) S S1 :-
   pi x y\ (pi S\ decomp LK HO x y S S) => decomp-assign LK HO (F x) (F1 y) S S1.
 
-decomp-assign LK HO (ho.val T) T1 S S1 :- decomp LK HO T T1 S S1.
+decomp-assign LK HO (ho.val T) T1 S S1 :- print "Before decomp LK HO", std.spy(decomp LK HO T T1 S S1).
 
 type decomp list link -> ho.subst -> ho.tm -> fo.fm -> fo.subst -> fo.subst -> o.
-decomp _ _ (ho.con X)   (fo.fcon X) S S.
-decomp LK HO (ho.app L) SolOL S S1 :- 
-  fold2 (decomp LK HO) L [HD|TL] S S1,
-  fo.mk-app HD TL SolOL.
+decomp _ _ (ho.con X)   (fo.fcon X) S S :- print "OK for constant".
+decomp LK HO (ho.app L) SolOL S S1 :- print "In decomp LK HO 2", std.spy-do![
+  fold2 (decomp LK HO) L [HD|TL] S S1, 
+  fo.mk-app HD TL SolOL].
 decomp LK HO (ho.lam F) (fo.flam F1) S S1 :-
   pi x y\ (pi S\ decomp LK HO x y S S) => decomp LK HO (F x) (F1 y) S S1.
-decomp LK HO (ho.uva N Args) SolOL S S1 :- set? N HO T, !,
-  ho.move T Args T1,
-  decomp LK HO T1 SolOL S S1.
-decomp LK HO (ho.uva N Args) SolOL S S1 :-
+decomp LK HO (ho.uva N Args) SolOL S S1 :- set? N HO T, !, print "In set case of uva" T, std.spy-do![
+  ho.move-ass T Args T1a,
+  abs->lam T1a T1,
+  % ho.move T Args T1,
+  decomp LK HO T1 SolOL S S1].
+decomp LK HO (ho.uva N Args) SolOL S S1 :- print "Entering uva decomp",
   fold2 (decomp LK HO) Args Args1 S S2,
   if (take-link LK (link X N _) _) (S1 = S2)
      (fo.new S2 X S1',
