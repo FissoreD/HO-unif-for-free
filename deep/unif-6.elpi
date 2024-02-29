@@ -32,6 +32,7 @@ type napp fm -> fm -> o.
 napp (fcon C) (fcon C).
 napp (flam F) (flam G) :- pi x\ napp x x => napp (F x) (G x).
 napp (fapp[fapp L|M]) R :- !, std.appendR L M N, napp (fapp N) R.
+napp (fapp[X]) R :- !, napp X R.
 napp (fapp A) (fapp B) :- map napp A B.
 napp (fuva N) (fuva N).
 napp X X :- name X.

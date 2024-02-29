@@ -563,13 +563,13 @@ is of type \elpiIn{nat} and \elpiIn{x} is a bound variable.
 
 In \Ho the representation of \coqIn{P x} is instead \elpiIn{uva N [x]}.
 We say that the unification variable \elpiIn{uva N L} is in \llambda iff
-\elpiIn{distinct-names L} holds.
+\elpiIn{distinct L} holds.
 
 \begin{elpicode}
-type distinct-names list tm -> o.
-distinct-names [].
-distinct-names [X|XS] :- name X, not(mem X XS),
-  distinct-names XS.
+type distinct list A -> o.
+distinct [].
+distinct [X|XS] :- name X, not(mem X XS),
+  distinct XS.
 \end{elpicode}
 
 \noindent
@@ -790,8 +790,152 @@ by the ML. \todo{same or $\supseteq$ or $\subseteq$}
 In the following section we explain how we deal with term (de)compilation and
 links between unification variables.
 
-\section[Compilation: fo\_tm to tm]{Compilation}
+\section[Compilation: fo\_tm to tm]{Basic compilation \Fo{} to \Ho{}}
 \label{sec:compilation}
+
+In this section we describe a basic compilation scheme that we refine
+later, in the following sections.
+
+The objective of the compilation is to recognize the higher-order variables
+available in \Ho{} when expressed in a first order way in \Fo{}. The compiler
+also generates a list of links that are used to bring back the substitution from
+\Ho{} to \Fo{} and allocates in the memory a cell for each variable.
+
+\begin{elpicode}
+kind link type.
+type link nat -> nat -> nat -> subst. % link Fo Ho Arity
+typeabbrev links list link.
+type comp fm -> tm -> links -> links -> subst -> subst -> o.
+comp (fcon X) (con X) L L S S.
+comp (flam F) (lam G) K L R S :- pi x y\
+  (pi A S\ comp x y L L S S) => comp (F x) (G y) K L R S.
+comp (fuva M) (uva N []) K [link M N z|K] R S :- new R N S.
+comp (fapp[fuva M|A]) (uva N B) K L R S :- distinct A, !,
+  fold4 comp A B K K R R,
+  new R N S, len A Arity,
+  L = [link N M Arity | K].
+comp (fapp A) (app B) K L R S :- fold4 comp A B K L R S.
+\end{elpicode}
+
+\noindent
+Note that \elpiIn{link} carries the arity (number of expected arguments) of
+the variable. \marginpar{say when this is needed}
+
+\begin{elpicode}
+type solve-links links -> links -> subst -> subst -> o.
+solve-links L L S S.
+\end{elpicode}
+
+Then decomp
+
+\begin{elpicode}
+type decompile links -> subst -> fsubst -> o.
+decompile L S O :-
+  map (_\r\r = none) S O1, % allocate empty fsubst
+  (pi N X\ knil N X :- mem L (link X N _) ; N = X) =>
+    decompl S L O1 O.
+type knil nat -> nat -> o.
+
+type decompl links -> subst -> fsubst -> o.
+decompl S [] [].
+decompl S [link _ N _|L] O P :- unset? N S X,
+  decompl S L O P.
+decompl S [link M N _|L] O P :- set? N S X,
+  decomp-assignment S X T, assign M O (some T) O1,
+  decompl S L O1 P.
+
+type decomp-assignment subst -> assignment -> fm -> o.
+decomp-assignment S (abs F) (flam G) :-
+  pi x y\ decomp-tm S x y => decomp-assignment S (F x) (G y).
+decomp-assignment S (val T) T1 :- decomp S T T1.
+
+type decomp subst -> tm -> fm.
+decomp _ (con C) (fcon C).
+decomp S (app A) (app B) :- map (decomp S) A B.
+decomp S (lam F) (flam G) :-
+  pi x y\ decomp S x y => decomp S (F x) (G y).
+decomp S (uva N A) R :- set? N S F,
+  move F A T, decomp S T R.
+decomp S (uva N A) R :- unset? N S,
+  map (decomp S) A B, knil N M, napp (fapp[fuva M|B]) R.
+\end{elpicode}
+  
+\marginpar{TODO link}
+\marginpar{TODO nuove subst}
+
+Now unif\marginpar{TODO: code unif}
+
+\begin{elpicode}
+~\PYG{k+kd}{type} \PYG{n+nf}{(\Uo)} \PYG{k+kt}{fm -> fm -> subst -> subst -> o}~.
+(X ~\Uo~Y) S S1 :-
+  fderef S X X0, fderef S Y Y0,                    ~($\customlabel{step:norm}{norm}$)~
+  comp X0 X1 [] S0 [] L0,                        ~($\customlabel{step:compile}{compile}$)~
+  comp Y0 Y1 S0 S1 L0 L1,
+  (X1 ~\Ue~Y1) [] HS0,                              ~($\customlabel{step:unify}{unify}$)~
+  solve-links L1 L2 HS0 HS1,                        ~($\customlabel{step:link}{link}$)~
+  decompile L2 HS1  S1.                        ~($\customlabel{step:decompile}{decompile}$)~
+\end{elpicode}
+
+\subsection{Prolog simulation}
+Allows us to express the properties.
+we take all terms involved in a search (if a rule is used twice we simply
+take a copy of it), we compile all of them, and then we pick the unification
+prblems among these terms and step trough them.
+
+\begin{elpicode}
+type pick list A -> (pair nat nat) -> (pair A A) -> o.
+pick L (pr X Y) (pr TX TY) :- nth X L TX, nth Y L TY.
+
+type prolog-fo list fm -> list (pair nat nat) -> subst -> o.
+prolog-fo Terms Problems S :-
+  map (pick Terms) Problems FoProblems,
+  fold4 ~(\Uo)~ FoProblems [] S.
+
+type step-ho (pair tm tm) -> links -> links -> subst -> subst -> o.
+step-ho (pr X Y) L0 L1 S0 S2 :-
+  (X1 ~\Ue~Y1) S0 S1,
+  solve-links L0 L1 S1 S2.
+
+type prolog-ho list fm -> list (pair nat nat) -> subst -> o.
+prolog-ho Terms Problems S :-
+  fold4 comp Terms HoTerms [] L0 [] HS0,
+  map (pick HoTerms) Problems HoProblems,
+  fold4 step-ho HoProblems L0 L HS0 HS,
+  decompile L HS S.
+\end{elpicode}
+
+\noindent
+the proprty is that if a step for Fo succeds then the Ho one does, and
+if Fo fails then the Ho fails ()
+
+\subsection{Example}
+
+OK 
+
+\begin{elpicode}
+Terms [ flam x\ fapp[fcon"g",fapp[fuva z, x]] 
+      , flam x\ fapp[fcon"g", fcon"a"] ]
+Problems = [ pr z (s z) ] % $\lambda x.g (F x) = \lambda x.g a$ 
+lam x\ app[con"g",uva z [x]] ~\Uo~lam x\ app[con"g", con"a"]
+link z z (s z)
+HS = [some (abs x\con"a")]
+S = [some (flam x\fcon a)]
+\end{elpicode}
+
+KO
+
+\begin{elpicode}
+  Terms [ flam x\ fapp[fcon"g",fapp[fuva z, x]] 
+  , flam x\ fapp[fcon"g", fcon"a"] ]
+Problems = [ pr 0 1   % $A = \lambda x.x$
+           , pr 2 3 ] % $A a = a$ 
+lam x\ app[con"g",uva z [x]] ~\Uo~lam x\ app[con"g", con"a"]
+link z z (s z)
+HS = [some (abs x\con"a")]
+S = [some (flam x\fcon a)]
+lam x\ app[f, app[X, x]] = Y,
+  lam x\ x) = X.
+\end{elpicode}
 
 \otext{Goal: $s_1 \Uo s_2$ is compiled into $t_1 \Ue t_2$}
 \otext{What is done: uvars \elpiIn{fo_uv} of OL are replaced into uvars \elpiIn{ho_uv} of the ML}
@@ -959,6 +1103,7 @@ type napp fm -> fm -> o.
 napp (fcon C) (fcon C).
 napp (flam F) (flam G) :- pi x\ napp x x => napp (F x) (G x).
 napp (fapp[fapp L|M]) R :- !, append L M N, napp (fapp N) R.
+napp (fapp[X]) R :- !, napp X R.
 napp (fapp A) (fapp B) :- map napp A B.
 napp (fuva N) (fuva N).
 \end{elpicode}
@@ -971,27 +1116,27 @@ napp (fuva N) (fuva N).
 \begin{elpicode}
 ~\PYG{k+kd}{type} \PYG{n+nf}{(\Ue)} \PYG{k+kt}{tm -> tm -> subst -> subst -> o}~.
 % Congruence
-(app A ~\Ue~app B) S S1 :- fold2 ~(\Ue)~A B S S1.
-(lam F ~\Ue~lam G) S S1 :- pi x\ (pi S\ (x ~\Ue~x) S S) => (F x ~\Ue~G x) S S1.
+(app A ~\Ue~app B) R S :- fold2 ~(\Ue)~A B R S.
+(lam F ~\Ue~lam G) R S :- pi x\ (pi S\ (x ~\Ue~x) S S) => (F x ~\Ue~G x) R S.
 ~\Ue~(con C) (con C) S S.
 % deref
-(uva N A ~\Ue~T) S S1 :- set? N S F, move F A T1, (T1 ~\Ue~T) S S1.
-(T ~\Ue~uva N A) S S1 :- set? N S F, move F A T1, (T ~\Ue~T1) S S1.
+(uva N A ~\Ue~T) R S :- set? N S F, move F A T1, (T1 ~\Ue~T) R S.
+(T ~\Ue~uva N A) R S :- set? N S F, move F A T1, (T ~\Ue~T1) R S.
 % flex-flex
 (uva N A ~\Ue~uva M B) S S3 :-  unset? M, unset? N,
-  distinct-names A, distinct-names B, 
+  distinct A, distinct B, 
   new S W S1, prune W Args1 B Ass, 
   assign N S1 Ass S2, assign M S2 Ass S3.
 % assignment
-(uva N A ~\Ue~T) S S1 :- distinct-names A, not (T = uva _ _), not_occ N S T,  
+(uva N A ~\Ue~T) R S :- distinct A, not (T = uva _ _), not_occ N S T,  
   bind A T T1, assign N S T1 S1.
-(T ~\Ue~uva N A) S S1 :- distinct-names A, not (T = uva _ _), not_occ N S T, 
+(T ~\Ue~uva N A) R S :- distinct A, not (T = uva _ _), not_occ N S T, 
   bind A T T1, assign N S T1 S1. 
       
-type distinct-names list tm -> o.
-distinct-names [].
-distinct-names [X|XS] :- name X, not(mem X XS),
-distinct-names XS.
+type distinct list A -> o.
+distinct [].
+distinct [X|XS] :- name X, not(mem X XS),
+distinct XS.
 
 typeabbrev memory A (list (option A)).
 type set? nat -> memory A -> A -> o.
@@ -1009,6 +1154,9 @@ nth z [X|_] X.
 nth (s N) [_|L] X :- nth N L X.
 
 type new memory A -> nat -> memory A -> o.
+new [] z [none].
+new [X|XS] (s N) [X|YS] :- new XS N YS.
+
 type prune .
 type move .
 type beta.
@@ -1016,8 +1164,28 @@ type bind.
 type not_occ.
 TODO
 
+type fold2 (A -> A1 -> B -> B -> o) -> list A -> list A1 -> B -> B -> o.
+fold2 _ [] [] A A.
+fold2 F [X|XS] [Y|YS] A A1 :- F X Y A A0, fold2 F XS YS A0 A1.
+
 \end{elpicode}
 \caption{Implementation of the \Ue predicate for \Ho}
+\label{code:ue-pred}
+\Description[code:ue-pred]{code:ue-pred}
+\end{figure*}
+
+\begin{figure*}
+\begin{elpicode}
+type fold4 (A -> A1 -> B -> B -> C -> C -> o) -> list A -> list A1 -> B -> B -> C -> C -> o.
+fold4 _ [] [] A A B B.
+fold4 F [X|XS] [Y|YS] A A1 B B1 :- F X Y A A0 B B0, fold4 F XS YS A0 A1 B0 B1.
+
+type len list A -> nat -> o.
+len [] z.
+len [_|L] (s X) :- len L X.
+
+\end{elpicode}
+\caption{Implementation of the compiler}
 \label{code:ue-pred}
 \Description[code:ue-pred]{code:ue-pred}
 \end{figure*}
