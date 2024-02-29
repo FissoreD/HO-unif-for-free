@@ -641,21 +641,22 @@ make the dereferencing procedure to recurse over the their subterms. The code
 below display this behavior for the dereferencing performed by the OL:
 
 \begin{elpicode}
-type fderef fsubst -> fm -> fm -> o.                 ~($\customlabel{pred:fderef}{\rho s}$)~
-% flattening
-fderef S (fapp [fuva N|A]) R :- set? N S (fapp B), !,
-  append A B C, fderef S (fapp C) R.
-% traversal
-fderef S (fapp A) (fapp B) :- map (fderef S) A B.
-fderef S (flam F) (flam G) :- 
-  pi x\ fderef S x x => fderef S (F x) (G x).
-fderef _ (fcon C) (fcon C).
-% dereferencing
-fderef S (fuva N) R :- set? N S T, fderef S T R.
-fderef S (fuva N) (fuva N) :- unset? N S.
+type fder fsubst -> fm -> fm -> o.
+fder S (fapp A) (fapp B) :- map (fder S) A B.
+fder S (flam F) (flam G) :- 
+  pi x\ fder S x x => fder S (F x) (G x).
+fder _ (fcon C) (fcon C).
+fder S (fuva N) R :- set? N S T, fder S T R.
+fder S (fuva N) (fuva N) :- unset? N S.
+
+type fderef fsubst -> fm -> fm -> o.                 ~($\customlabel{pred:fder}{\rho s}$)~
+fderef S T R :- fder S T T', napp T' R.
+
+type napp fm -> fm -> o.
 \end{elpicode}
 
 \noindent
+TODO explain napp.
 We use the cut operator to keep the code compact. It is possible to rewrite
 the rule for application traversal so that it is mutually exclusive with the
 first one, but that requires a rather verbose analysis of the head of \elpiIn{A}.
@@ -665,7 +666,10 @@ differ in a substantial way:
 
 \begin{elpicode}
 type deref subst -> tm -> tm -> o.                   ~($\customlabel{pred:deref}{\sigma t}$)~
-% ... flattening and traversal are similar to fsubst ...
+deref S (app A) (app B) :- map (deref S) A B.
+deref S (lam F) (lam G) :- 
+  pi x\ deref S x x => deref S (F x) (G x).
+deref _ (con C) (con C).
 deref S (uva N A) R :- set? N S F, move F A T, deref S T R.
 deref S (uva N A) (uva N B) :- unset? N S, map (deref S) A B.
 type move assignment -> list tm -> tm -> o.
@@ -677,6 +681,7 @@ move (val (con H))   L (app [con H | L]).
 \end{elpicode}
 
 \noindent
+TODO: no need to napp, see the beta section.
 Note that when the substitution \elpiIn{S} maps a unification variable
 \elpiIn{N} to an assignment \elpiIn{F} we ....
 
