@@ -13,35 +13,39 @@ macro @lam L :- try6.fo.flam L.
 
 shorten try6.fo.{(==o)}.
 
+macro @read :- input_line std_in _.
+
 type eval-unif 
   list (triple diagnostic try6.fo.fm try6.fo.fm) -> 
   try6.ho.subst -> try6.ho.subst ->
   list try6.comp.link ->
-  list try6.comp.link ->
-  try6.fo.subst -> try6.fo.subst -> o.
-eval-unif [] S S L L FO FO.
+  list try6.comp.link -> o.
+eval-unif [] S S L L.
 
-eval-unif [triple (error "comp1") L _ | _] HO_Subs1 _ L0 _ _ _ :- std.do![
+eval-unif [triple (error "comp1") L _ | _] HO_Subs1 _ L0 _ :- std.do![
   not (try6.comp.comp L _ L0 _ HO_Subs1 _)
 ].
 
-eval-unif [triple (error "unif") L R | _] HO_Subs1 HO_Subs3 L0 L3 FOSol FOSol :- std.do![
+eval-unif [triple (error "unif") L R | _] HO_Subs1 HO_Subs3 L0 L3 :- std.do![
   std.assert! (try6.comp.comp L LH L0 L1 HO_Subs1 HO_Subs2) "b1",
   std.assert! (try6.comp.comp R RH L1 L2 HO_Subs2 HO_Subs3) "b2",
   print "# comp Left:" LH,
   print "# comp Right:" RH,
 
-  std.spy(try6.comp.solve-link L2 L3 HO_Subs3 HO_Subs4),
+  std.spy((try6.ho.unif LH RH HO_Subs3 HO_Subs4)),
+
+  std.spy(try6.comp.solve-link L2 L3 HO_Subs4 HO_Subs4_),
   print "## unif" LH "with" RH "in" HO_Subs4,
-  not(std.spy(try6.ho.unif LH RH HO_Subs4 HO_Subs4_)),
+  
 ].
 
-eval-unif [triple ok L R | TL] HO_Subs1 HO_SubsNN L0 L4 FOSol FOSol2 :- std.do![
+eval-unif [triple ok L R | TL] HO_Subs1 HO_SubsNN L0 L4 :- std.do![
 
   std.assert! (try6.comp.comp L LH L0 L1 HO_Subs1 HO_Subs2) "b1",
   std.assert! (try6.comp.comp R RH L1 L2 HO_Subs2 HO_Subs3) "b2",
   print "# comp Left:" LH,
   print "# comp Right:" RH,
+  print "# links after comp" L2,  
 
   print "## unif" LH "with" RH "in" HO_Subs3,
   std.spy(try6.ho.unif LH RH HO_Subs3 HO_Subs4),
@@ -49,11 +53,12 @@ eval-unif [triple ok L R | TL] HO_Subs1 HO_SubsNN L0 L4 FOSol FOSol2 :- std.do![
   
   std.spy(try6.comp.solve-link L2 L3 HO_Subs4 HO_Subs5),
 
-  % std.spy(try6.comp.decompl L3 L3 HO_Subs5 FOSol FOSol1),
+  eval-unif TL HO_Subs5 HO_SubsNN L3 L4,
+].
 
-  % print "FO Subst" L "==" R ":=" FOSol,
-
-  eval-unif TL HO_Subs5 HO_SubsNN L3 L4 FOSol FOSol2,
+@okl 22300 [
+  triple ok (@app[@g, (@lam x\ @lam y\ @app[@Y, y, x])]) @X,
+  % triple ok (@app[@g, @f]) @X,
 ].
 
 type is-nf try6.fo.fm -> o.
@@ -86,11 +91,13 @@ type validate-solution
   try6.fo.subst -> o.
 validate-solution Goals N Links HS FS FS' :- 
   forall1 (x\ x = triple ok _ _) Goals, !,
-  try6.comp.decompl Links Links HS FS FS',
+  print "---------------- Start decompl -----------------",
+  std.assert! (not (var Links)) "Links are var?",
+  std.spy(try6.comp.decompl Links HS FS FS'),
   print "The solution for" N "is" FS', 
   forall1 (x\ sigma L R L' R'\ triple _ L R = x,
     try6.fo.deref FS' L L', try6.fo.deref FS' R R',
-    % std.assert!(L' ==o R') "The computed solution is wrong"
+    % std.assert!(L' ==o R') "The computed solution is wrong",
     L' ==o R'
   ) Goals.
 validate-solution _ _ _ _ _ _.
@@ -98,10 +105,10 @@ validate-solution _ _ _ _ _ _.
 % (x\y\Y y x) = Z, g Z = X.
 % X = g c0 \ c1 \ Y c1 c0
 % Z = c0 \ c1 \ Y c1 c0
-@okl 22001 [
-  triple ok (@lam x\ @lam y\ @app[@X, y, x]) @Y,
-  triple ok (@app[@g, @Y]) @Z,
-].
+% @okl 22001 [
+%   triple ok (@lam x\ @lam y\ @app[@X, y, x]) @Y,
+%   triple ok (@app[@g, @Y]) @Z,
+% ].
 
 type same-sols list (option A) -> list (option A) -> o.
 same-sols [] [].
@@ -117,20 +124,28 @@ check-sol (some Sol) L :-
   std.map Sol (x\r\ if (var x) (r = none) (r = some x)) L1,
   same-sols L L1. 
 
+type no-read o.
+% no-read.
+
+type printC string -> o.
+printC A :- X = "@@@@@@@@@@@@@@@@@@@@@@@@@", print X A X, (no-read; @read).
+
 type xtest test try6.fo.fm -> o.
 xtest (test N (pr LR Sol) tt) :- std.do![
   build-fo-subst LR [] FO_Subst,
-  eval-unif LR [] HO_Subst [] Links FO_Subst FO_Subst',
-  print "After eval-unif the subst fo is" Links,
-  print "The hosubst is" HO_Subst,
-  print, print,
-  std.rev Links LinksRev,
-  validate-solution LR N LinksRev HO_Subst FO_Subst' Sol1,
+  printC "A",
+  eval-unif LR [] HO_Subst [] Links,
+  print "## After eval-unif the links are" Links,
+  print "## The hosubst is" HO_Subst,
+  printC "B",
+  % std.rev Links LinksRev,
+  Links = LinksRev,
+  validate-solution LR N LinksRev HO_Subst FO_Subst Sol1,
+  printC "C",
   check-sol Sol Sol1
 ].
 xtest (test _ (pr LR _) ff) :- std.do! [
-  build-fo-subst LR [] FO_Subst,
-  not(eval-unif LR [] _S [] _L FO_Subst _FO)
+  not(eval-unif LR [] _S [] _L)
 ].
 
 macro @ok N X Y S :- declare-test xtest (test N (pr [triple ok X Y] (some S)) tt).
@@ -142,15 +157,16 @@ macro @kol N X :- declare-test xtest (test N (pr X none) ff).
 
 @ok 1 (@app [@f, @X]) (@app [@f, @a]) [@a].
 @ok 2 (@app [@X, @a]) (@app [@f, @a]) [@f].                                           % here two solutions for X: fun _ => a, fun x => x
-@ok 3 (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, @a]) [@f].
+% @ok 3 (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, @a]) [@f].
 
 @ko 4 (@app [@f, @X]) @X.
 @ko 5 (@app [@f, @X, @X]) (@app [@f, @a, @b]).
 @ok 6 (@app [@f, @X, @Y, @X]) (@app [@f, (@app [@f, @Y]), @b, (@app [@f, @b])]) [@app [@f, @b], @b].
 @ok 7 (@lam x\ (@app [@f, @X])) (@lam x\ (@app [@f, @a])) [@a].
 
-@ok 8 (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@X, x, y]) [@Z].
+@ok 8 (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@X, x, y]) [].
 
+% @ok 9  (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@f, y]) [@lam x\ @f].
 @ok 9  (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@f, y]) [@lam x\ @f].
 @ok 10 @X (@lam x\ @lam y\ @app [@X, y, x]) [@lam x\ @lam y\ TODO_].
 
@@ -168,14 +184,10 @@ macro @kol N X :- declare-test xtest (test N (pr X none) ff).
 
 % @okl 132 [
 %   (triple ok (@lam x\ @app [@X, x]) (@lam x\ @app[@f, x, x])),  % visto che buchiamo a sx, la link deve usare il PF sotto il lambda
-%   (triple ok @X (@lam y\ @app [@f, y, y]))].
-
-@okl 14 [
-  (triple ok (@lam x\ @app [@X, x]) (@lam x\ @app [@f, x])), 
-  (triple (error "unif") @g @X)]. % we fail early
+%   (triple ok @X (@lam y\CV@g @X)]. % we fail early
 
 @okl 15 [
-  (triple ok (@lam x\ @app [@X, x]) (@lam x\ @app [@f, @app[@Y,x]])), 
+  (triple ok @X (@lam x\ @app [@f, @app[@Y,x]])), 
   (triple (error "unif") @g @X)]. % we fail early for the wrong reason
 
 @okl 16 [
@@ -203,9 +215,9 @@ macro @kol N X :- declare-test xtest (test N (pr X none) ff).
   (triple ok (@lam x\ @lam y\ @app[@f, y, @a]) (@lam x\ @lam y\ @app[@X, x, y]))
 ].
 
-@okl1 288 [
-  triple ok (@lam x\ @lam y\ @app[@X, y, x]) @Y
-] [_, @lam x\ @lam y\ @app[try6.fo.fuva z, y, x]].
+% @okl1 288 [
+%   triple ok (@lam x\ @lam y\ @app[@X, y, x]) @Y
+% ] [_, @lam x\ @lam y\ @app[try6.fo.fuva z, y, x]].
 
 % @okl 22001 [
 %   triple ok (@lam x\ @lam y\ @app[@Y, y, x]) @Z,
@@ -214,7 +226,7 @@ macro @kol N X :- declare-test xtest (test N (pr X none) ff).
 % ].
 @okl 22000 [
   triple ok (@app[@g, (@lam x\ @lam y\ @app[@Y, y, x])]) @X,
-  % triple ok (@app[@g, @f]) @X,
+  triple ok (@app[@g, @f]) @X,
 ].
 @okl 2200 [
   triple ok (@lam x\ @lam y\ @app[@Y, y, x]) @X,

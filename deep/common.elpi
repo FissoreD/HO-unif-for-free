@@ -100,6 +100,10 @@ split-pf L PF NPF :- split-pf-aux L [] PF NPF.
 pred pattern-fragment i:list A.
 pattern-fragment L :- distinct_names L.
 
+type last list A -> A -> o.
+last [A] A.
+last [_|L] A :- last L A.
+
 kind test type -> type.
 type test int -> (pair (list (triple diagnostic A A)) (option(list A))) -> bool -> test A.
 type declare-test (test A -> o) -> test A -> o.
