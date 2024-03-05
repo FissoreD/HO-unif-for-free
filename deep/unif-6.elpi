@@ -1,12 +1,15 @@
 internal-test try6.comp.test-hope-eta-1.
 internal-test try6.comp.test-hope-eta-2.
-internal-test try6.comp.test-hope-eta-3.
-internal-test try6.comp.test-hope-eta-4.
-internal-test try6.comp.test-hope-eta-5.
-internal-test try6.comp.test-hope-eta-6.
-% internal-test try6.ho.test-unif-1.
-% internal-test try6.ho.test-unif-2.
+% internal-test try6.comp.test-hope-eta-3.
+% internal-test try6.comp.test-hope-eta-4.
+% internal-test try6.comp.test-hope-eta-5.
+% internal-test try6.comp.test-hope-eta-6.
+internal-test try6.ho.test-unif-1.
+internal-test try6.ho.test-unif-2.
 internal-test try6.ho.test-unif-3.
+internal-test try6.ho.test-unif-4.
+internal-test try6.ho.test-unif-5.
+internal-test try6.ho.test-unif-6.
 
 namespace try6 {
 
@@ -119,7 +122,7 @@ unif (con X) (con X) S S.
 unif (uva N Args) T S S1 :- 
   set? N S F,!, move F Args T1, unif T1 T S S1.
 unif T (uva N Args) S S1 :- 
-  set? N S F,!, move F Args T1, unif T T1 S S1.
+  set? N S F,!, print "In set branch", move F Args T1, print "after move" F Args T1, unif T T1 S S1.
 % Not assigned vars
 unif (uva N A) (uva N A) S S :- !, pattern-fragment A.
 unif (uva V A) (uva U A) S1 S2 :- !, pattern-fragment A,
@@ -138,11 +141,12 @@ unif (uva N Args1) (uva M Args2) S S3 :- % Args with same length
 unif (uva N Args1) (uva M Args2) S S3 :- % Args with diff length
   unset? N S, unset? M S, !,
   print "unif in unset * 2",
+  print "Unifying" (uva N Args1) "and" (uva M Args2),
   pattern-fragment Args1, pattern-fragment Args2, 
-  std.do![new S W S1, prune-diff-length W Args1 Args2 [] Ass1 Ass2, 
+  std.do![new S W S1, std.spy(prune-smart W Args1 Args2 Ass1 Ass2), 
   assign N S1 Ass1 S2,
   assign M S2 Ass2 S3,
-  print "Assigning in uva with diff len" N M S1 Ass1 "and" Ass2 "in subst" S3]. 
+  print "Assigning in uva with diff len" N M S1 "with solution" Ass1 "and" Ass2 "in subst" S3]. 
 unif (uva N Args) T S S1 :- 
   not (T = uva _ _), not_occ N S T, pattern-fragment Args, 
   bind T Args T1, print "Binding T to Args" T Args T1, assign N S T1 S1, print "Assing1 T1" T1.
@@ -181,6 +185,45 @@ prune-diff-length N Args1 [] Acc Ass1 (val (uva N Args)) :- !,
 prune-diff-length N [X|XS] [X|YS] ACC (abs F) (abs G) :- pi x\ prune-diff-length N XS YS [x|ACC] (F x) (G x).
 prune-diff-length N [_|XS] [_|YS] ACC (abs F) (abs G):- pi x\ prune-diff-length N XS YS ACC (F x) (G x).
 prune-diff-length A B C D _ _:- halt A B C D.
+
+type keep list A -> A -> bool -> o.
+keep L A tt :- mem L A, !.
+keep _ _ ff.
+
+type prune-build-ass1 nat -> list tm -> list bool -> assignment -> o.
+prune-build-ass1 N Acc [] (ho.val (uva N Args)) :- std.rev Acc Args.
+prune-build-ass1 N Acc [tt|L] (ho.abs T) :- pi x\ prune-build-ass1 N [x|Acc] L (T x).
+prune-build-ass1 N Acc [ff|L] (ho.abs T) :- pi x\ prune-build-ass1 N Acc L (T x).
+
+type list-init nat -> nat -> (nat -> A -> o) -> list A -> o.
+list-init Len Len _ [].
+list-init Len Pos F [A | TL] :- F Pos A, list-init Len (s Pos) F TL.
+
+type index list A -> A -> nat -> o.
+index [A|_] A z :- !.
+index [_|TL] A (s P) :- index TL A P.
+
+type nth nat -> list A -> A -> o.
+nth z [A|_] A :- !.
+nth (s N) [_|L] A :- !, nth N L A.
+
+type build-order list nat -> list tm -> list tm -> o.
+build-order L T R :-
+  len L Len, list-init Len z (p\r\ sigma Index Elt\ index L p Index, nth Index T r) R.
+
+type prune-build-ass2 nat -> list tm -> list bool -> list nat -> assignment -> o.
+prune-build-ass2 N Acc [] Pos (ho.val (uva N Args)) :- std.rev Acc Acc', std.spy(build-order Pos Acc' Args).
+prune-build-ass2 N Acc [tt|L] Pos (ho.abs T) :- pi x\ prune-build-ass2 N [x|Acc] L Pos (T x).
+prune-build-ass2 N Acc [ff|L] Pos (ho.abs T) :- pi x\ prune-build-ass2 N Acc L Pos (T x).
+
+type prune-smart nat -> list tm -> list tm -> assignment -> assignment -> o.
+prune-smart N Args1 Args2 Ass1 Ass2 :-
+  std.spy-do![std.map Args1 (keep Args2) Bits1, prune-build-ass1 N [] Bits1 Ass1,
+  std.map Args2 (keep Args1) Bits2, 
+  std.filter Args1 (mem Args2) ToKeep1,
+  std.filter Args2 (mem Args1) ToKeep2,
+  std.map ToKeep2 (index ToKeep1) Pos,
+  prune-build-ass2 N [] Bits2 Pos Ass2].
 
 % What is this for? We also lack of the case: move (abs Bo) [] _ => ??
 type move assignment -> list tm -> tm -> o.
@@ -285,22 +328,42 @@ contract L (uva H Args) (uva H Prefix) :-
 type test-unif-1 o.
 type test-unif-2 o.
 type test-unif-3 o.
+type test-unif-4 o.
+type test-unif-5 o.
 test-unif-1 :- pi x\
-  unif (uva z [x]) (uva (s z) []) [none, none, none] L,
+  unif (uva z [x]) (uva (s z) []) [none, none] L,
   Z = (abs x\ val (uva X [])),
   SZ = val (uva X []),
   L = [some Z, some SZ|_].
 
 test-unif-2 :- pi x y\
-  unif (uva z [x, y]) (uva (s z) [y]) [none, none, none] L,
-  Z = (abs x\ abs y\ val (uva X [])),
-  SZ = (abs x\ val (uva X [])),
+  unif (uva z [x, y]) (uva (s z) [y]) [none, none] L,
+  Z = (abs x\ abs y\ val (uva X [y])),
+  SZ = (abs x\ val (uva X [x])),
   L = [some Z, some SZ|_].
 
 test-unif-3 :- pi x y w\
-  unif (uva z [x, y]) (uva (s z) [x, w, y]) [none, none, none] L,
-  Z = (abs x\ abs y\ val (uva X [x])),
-  SZ = (abs x\ abs y\ abs z\ val (uva X [x])),
+  unif (uva z [x, y]) (uva (s z) [x, w, y]) [none, none] L,
+  Z = (abs x\ abs y\ val (uva X [x, y])),
+  SZ = (abs x\ abs y\ abs z\ val (uva X [x, z])),
+  L = [some Z, some SZ|_].
+
+test-unif-4 :- pi x y\ 
+  unif (uva z [x, y]) (uva (s z) [y, x]) [none, none] L,
+  Z = (abs x\ abs y\ val (uva X [x, y])),
+  SZ = (abs x\ abs y\ val (uva X [y, x])),
+  L = [some Z, some SZ|_].
+
+test-unif-5 :- pi x y zz w\
+  unif (uva z [x, w, y]) (uva (s z) [y, zz, w]) [none, none] L,
+  Z = (abs c0\ abs c1\ abs c2\ val (uva X [c1, c2])),
+  SZ = (abs c0\ abs c1\ abs c2\ val (uva X [c2, c0])),
+  L = [some Z, some SZ|_].
+
+test-unif-6 :- pi x y zz w\
+  unif (uva (s z) [y, zz, w]) (uva z [x, w, y]) [none, none] L,
+  Z = (abs c0\ abs c1\ abs c2\ val (uva X [c2, c1])),
+  SZ = (abs c0\ abs c1\ abs c2\ val (uva X [c0, c2])),
   L = [some Z, some SZ|_].
 }
 
@@ -452,7 +515,7 @@ type my-unif-assignment-aux ho.assignment -> ho.assignment -> ho.subst -> ho.sub
 
 my-unif-assignment-aux (ho.val T1) (ho.val T2) H H1 :- 
   print "@@@ Start unif between T1 and T2" T1 T2 "in" H, 
-  std.assert!(ho.unif T1 T2 H H1) "FAIL UNIF", 
+  (ho.unif T1 T2 H H1), 
   print "After unif" H H1.
 my-unif-assignment-aux (ho.abs F1) (ho.abs F2) H H1 :- 
   pi x\ (pi S\ ho.unif x x S S) => ho.copy x x => my-unif-assignment-aux (F1 x) (F2 x) H H1.
@@ -516,12 +579,6 @@ hope-contract.aux L (ho.val V) (ho.val T) :- std.do! [
   std.appendR Prefix LRev Args,
   if (Prefix = []) (T = Hd) (T = ho.app [Hd|Prefix]),
 ].
-hope-contract.aux L (ho.val V) (ho.val T) :- std.do! [
-  V = ho.uva A Args,
-  std.rev L LRev,
-  std.appendR Prefix LRev Args,
-  (T = ho.uva A Prefix),
-].
 
 % [eta Arity VarName Acc Ass]
 type eta nat -> nat -> list ho.tm -> ho.assignment -> o.
@@ -538,7 +595,6 @@ assign-replace (s N) [A|S] X [A |S1] :- assign-replace N S X S1.
 
 type decompl.aux list link -> list link -> ho.subst -> fo.subst -> fo.subst -> o.
 decompl.aux [link N M _Arity|L] LK HO FO FO1 :- print "starting classic eta, coq" N "elpi" M, print HO, set? M HO T, !, 
-  print "CIAO",
   ho.assmt-deref HO T T'', print "In HERE", print "The terms assigned is" T "in memory HO" HO "dereferenced is" T'', std.do! [
   decomp-assign LK HO T T0 FO FO',
   fo.eta-contract T0 T',
@@ -657,3 +713,9 @@ test-hope-eta-6 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.uva z [y, x])
                                    (ho.abs x\ ho.abs y\ ho.val (ho.uva z [y, x])).
 }}
 
+
+
+% Done: 
+%  correct prune in the case of diff length args
+%  hope-for-eta in the case of an uva (I think not)
+% 
