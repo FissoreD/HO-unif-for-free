@@ -371,8 +371,9 @@ shorten fo.{ (==o) }.
 
 kind link type.
 type link nat -> nat -> nat -> link.
-type link-fo-align list ho.tm -> nat -> nat -> nat -> link.
+% type link-fo-align list ho.tm -> nat -> nat -> nat -> link.
 type link-eta nat -> ho.assignment -> link.
+type link-fo-align nat -> nat -> ho.assignment -> link.
 
 % [maybe-eta-aux N T] takes a name N and a term T.
 % return if T could be an eta expansion if T = app L and the last
@@ -404,13 +405,13 @@ comp (fo.flam F) (ho.uva E0 Scope) L L2 S S2 :- print "EEEEEEEE with" F,
   print "with new link: " link-eta E0 (ho.val (ho.lam F1)),
   print "----------------------------------------------".
 
-
 type close-links (ho.tm -> list link) -> list link -> o.
 close-links (_\[]) [].
 close-links (v\[link N M A|XS v]) [link N M A|YS] :- close-links XS YS.
 close-links (v\[link-eta N A|XS v]) [link-eta N A|YS] :- !, close-links XS YS.
 close-links (v\[link-eta N (A v)|XS v]) [link-eta N (ho.abs A)|YS] :- close-links XS YS.
-close-links (v\[link-fo-align E C L A|XS v]) [link-fo-align E C L A|YS] :- close-links XS YS. % FIXME
+close-links (v\[link-fo-align N M A|XS v]) [link-fo-align N M A|YS] :- !, close-links XS YS. % FIXME
+close-links (v\[link-fo-align N M (A v)|XS v]) [link-fo-align N M (ho.abs A)|YS] :- !, close-links XS YS. % FIXME
 
 type comp-lam (fo.fm -> fo.fm) -> (ho.tm -> ho.tm) -> list link -> list link -> ho.subst -> ho.subst -> o.
 comp-lam F F1 L L2 S S1 :-
@@ -418,15 +419,18 @@ comp-lam F F1 L L2 S S1 :-
 
 comp (fo.flam F) (ho.lam F1) L L2 S S1 :- comp-lam F F1 L L2 S S1.
 comp (fo.fuva N)              (ho.uva M []) L [link N M z|L] S S1 :- ho.new S M S1.
-comp (fo.fapp [fo.fuva N|Ag]) (ho.uva M PF1) L L3 S S3 :- !,
+comp (fo.fapp [fo.fuva N|Ag]) (ho.uva M PF1) L L3 S S4 :- !,
   split-pf Ag PF NPF,
   fold4 comp PF PF1 L L S S1,
   fold4 comp NPF NPF1 L L1 S1 S2,
   ho.new S2 M S3,
   len PF Len,
   % TODO: NYI NPF1 can contain non-closed terms (i.e. local vars...)
-  if (NPF = []) (LinkType = link) (LinkType = link-fo-align NPF1),
-  L3 = [LinkType N M Len | L1].
+  if (NPF = []) (L3 = [link N M Len | L1], S3 = S4) 
+    ( ho.new S3 MM S4,
+    std.append PF1 NPF1 LL,
+      L3 = [link N MM Len, link-fo-align M N (ho.val (ho.uva MM LL)) | L1])
+  .
 comp (fo.fapp A)              (ho.app A1) L L1 S S1 :- fold4 comp A A1 L L1 S S1.
 
 type eta-contract-ass ho.assignment -> ho.assignment -> o.
@@ -457,6 +461,21 @@ solve-link [link-eta N A|L1] L2 S S2 :- set? N S A1, !,
   std.spy(same-assign-aux z z A A1 S S1),
   print "After link eta same HO_SUBST is" S1,
   solve-link L1 L2 S1 S2.
+
+solve-link [link-fo-align V Hd T|L1] L2 S S2 :-
+  % if Hd is set then beta (note assmt-deref does the beta-redex)
+  set? Hd S X, not (X = ho.val(ho.uva _ _)), !,
+  ho.assmt-deref S T Ass2,
+  if (set? V S Ass1) (my-unif-assignment Ass1 Ass2 S S1) (assign V S Ass2 S1),
+  solve-link L1 L2 S1 S2.
+
+solve-link [link-fo-align V Hd_ T|L1] L2 S S2 :-
+  % TODO: if Hd is not set, the we do Fo-approx
+  (unset? Hd_ S; (set? Hd S X, X = ho.val(ho.uva _ _))),
+  ho.assmt-deref S T Ass2,
+  if (set? V S Ass1) (my-unif-assignment Ass1 Ass2 S S1) (assign V S Ass2 S1),
+  solve-link L1 L2 S1 S2.
+
 solve-link [L|LS] [L|LS'] HO HO1 :- solve-link LS LS' HO HO1.
 
 % type solve-links list link -> list link -> ho.subst -> ho.subst -> o.
@@ -610,20 +629,20 @@ get-head (fo.flam B) (s N) Args T :-
   fo.eta-contract (fo.flam R) T.
 
 % This is classic beta
-decompl.aux [link-fo-align Args N M Arity_|L] LK HO FO FO1 :- set? M HO T, set? N FO R, !, std.do! [
-  decomp-assign LK HO T T0 FO FO'',
-  fold2 (decomp LK HO) Args Args1 FO'' FO',
-  fo.mk-app R Args1 T0,
-  decompl.aux L LK HO FO' FO1,
-].
-% FO-approx
-decompl.aux [link-fo-align Args N M Arity|L] LK HO FO FO1 :- set? M HO T, unset? N FO, !, std.do! [
-  decomp-assign LK HO T T0 FO FO'',
-  fold2 (decomp LK HO) Args Args1 FO'' FO',
-  get-head T0 Arity Args1 TTT,
-  assign-replace N FO' TTT FO2,
-  decompl.aux L LK HO FO2 FO1,
-].
+% decompl.aux [link-fo-align V _ T|L] LK HO FO FO1 :- set? M HO T, set? N FO R, !, std.do! [
+%   % decomp-assign LK HO T T0 FO FO'',
+%   % fold2 (decomp LK HO) Args Args1 FO'' FO',
+%   % fo.mk-app R Args1 T0,
+%   % decompl.aux L LK HO FO' FO1,
+% ].
+% % FO-approx
+% decompl.aux [link-fo-align V _ T|L] LK HO FO FO1 :- set? M HO T, unset? N FO, !, std.do! [
+%   % decomp-assign LK HO T T0 FO FO'',
+%   % fold2 (decomp LK HO) Args Args1 FO'' FO',
+%   % get-head T0 Arity Args1 TTT,
+%   % assign-replace N FO' TTT FO2,
+%   % decompl.aux L LK HO FO2 FO1,
+% ].
 
 % This is classic eta
 decompl.aux [link-eta M TM |L] LK HO FO FO1 :- set? M HO T, /*unset? N FO,*/ !,
