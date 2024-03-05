@@ -130,7 +130,6 @@ unif (uva V A) (uva U A) S1 S2 :- !, pattern-fragment A,
 unif (uva N Args1) (uva M Args2) S S3 :- % Args with same length
   unset? N S, unset? M S,
   len Args1 N, len Args2 N, !,
-  print "unif in unset * 2",
   pattern-fragment Args1, pattern-fragment Args2, 
   std.do![new S W S1, prunexx W Args1 Args2 Ass, 
   assign N S1 Ass S2],
@@ -140,13 +139,13 @@ unif (uva N Args1) (uva M Args2) S S3 :- % Args with same length
   print "Assigning in uva N Args1" N M S1 Ass S3. 
 unif (uva N Args1) (uva M Args2) S S3 :- % Args with diff length
   unset? N S, unset? M S, !,
-  print "unif in unset * 2",
   print "Unifying" (uva N Args1) "and" (uva M Args2),
   pattern-fragment Args1, pattern-fragment Args2, 
-  std.do![new S W S1, std.spy(prune-smart W Args1 Args2 Ass1 Ass2), 
+  new S W S1, (prune-smart W Args1 Args2 Ass1 Ass2), 
   assign N S1 Ass1 S2,
-  assign M S2 Ass2 S3,
-  print "Assigning in uva with diff len" N M S1 "with solution" Ass1 "and" Ass2 "in subst" S3]. 
+  assign M S2 Ass2 S3
+  % print "Assigning in uva with diff len" N M S1 "with solution" Ass1 "and" Ass2 "in subst" S3
+  . 
 unif (uva N Args) T S S1 :- 
   not (T = uva _ _), not_occ N S T, pattern-fragment Args, 
   bind T Args T1, print "Binding T to Args" T Args T1, assign N S T1 S1, print "Assing1 T1" T1.
@@ -212,13 +211,13 @@ build-order L T R :-
   len L Len, list-init Len z (p\r\ sigma Index Elt\ index L p Index, nth Index T r) R.
 
 type prune-build-ass2 nat -> list tm -> list bool -> list nat -> assignment -> o.
-prune-build-ass2 N Acc [] Pos (ho.val (uva N Args)) :- std.rev Acc Acc', std.spy(build-order Pos Acc' Args).
+prune-build-ass2 N Acc [] Pos (ho.val (uva N Args)) :- std.rev Acc Acc', build-order Pos Acc' Args.
 prune-build-ass2 N Acc [tt|L] Pos (ho.abs T) :- pi x\ prune-build-ass2 N [x|Acc] L Pos (T x).
 prune-build-ass2 N Acc [ff|L] Pos (ho.abs T) :- pi x\ prune-build-ass2 N Acc L Pos (T x).
 
 type prune-smart nat -> list tm -> list tm -> assignment -> assignment -> o.
 prune-smart N Args1 Args2 Ass1 Ass2 :-
-  std.spy-do![std.map Args1 (keep Args2) Bits1, prune-build-ass1 N [] Bits1 Ass1,
+  std.do![std.map Args1 (keep Args2) Bits1, prune-build-ass1 N [] Bits1 Ass1,
   std.map Args2 (keep Args1) Bits2, 
   std.filter Args1 (mem Args2) ToKeep1,
   std.filter Args2 (mem Args1) ToKeep2,
@@ -330,6 +329,7 @@ type test-unif-2 o.
 type test-unif-3 o.
 type test-unif-4 o.
 type test-unif-5 o.
+type test-unif-6 o.
 test-unif-1 :- pi x\
   unif (uva z [x]) (uva (s z) []) [none, none] L,
   Z = (abs x\ val (uva X [])),
