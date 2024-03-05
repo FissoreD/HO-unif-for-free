@@ -31,10 +31,13 @@ eval-unif [triple (error "unif") L R | _] HO_Subs1 HO_Subs3 L0 L3 :- std.do![
   std.assert! (try6.comp.comp R RH L1 L2 HO_Subs2 HO_Subs3) "b2",
   print "# comp Left:" LH,
   print "# comp Right:" RH,
+  print "# links after comp" L2,  
 
-  std.spy((try6.ho.unif LH RH HO_Subs3 HO_Subs4)),
+  print "## unif" LH "with" RH "in" HO_Subs3,
+  std.spy(try6.ho.unif LH RH HO_Subs3 HO_Subs4),
+  print "## after unif new HO_Subst is" HO_Subs4,
 
-  std.spy(try6.comp.solve-link L2 L3 HO_Subs4 HO_Subs4_),
+  std.spy(not(try6.comp.solve-link L2 L3 HO_Subs4 HO_Subs4_)),
   print "## unif" LH "with" RH "in" HO_Subs4,
   
 ].
@@ -49,7 +52,7 @@ eval-unif [triple ok L R | TL] HO_Subs1 HO_SubsNN L0 L4 :- std.do![
 
   print "## unif" LH "with" RH "in" HO_Subs3,
   std.spy(try6.ho.unif LH RH HO_Subs3 HO_Subs4),
-  print "The new HO_Subst is" HO_Subs4,
+  print "## after unif new HO_Subst is" HO_Subs4,
   
   std.spy(try6.comp.solve-link L2 L3 HO_Subs4 HO_Subs5),
 
@@ -125,7 +128,7 @@ check-sol (some Sol) L :-
   same-sols L L1. 
 
 type no-read o.
-% no-read.
+no-read.
 
 type printC string -> o.
 printC A :- X = "@@@@@@@@@@@@@@@@@@@@@@@@@", print X A X, (no-read; @read).
@@ -256,3 +259,9 @@ macro @kol N X :- declare-test xtest (test N (pr X none) ff).
   triple ok @X (@lam x\ x),
   triple ok @Y @f
 ].
+
+/*
+  C = lam xy.y
+  B = lam x.x
+  A = lam xy. A (B x) (C x y)
+*/

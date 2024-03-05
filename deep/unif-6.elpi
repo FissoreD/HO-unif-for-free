@@ -126,24 +126,22 @@ unif T (uva N Args) S S1 :-
 % Not assigned vars
 unif (uva N A) (uva N A) S S :- !, pattern-fragment A.
 unif (uva V A) (uva U A) S1 S2 :- !, pattern-fragment A,
-  prune-same V A [] Ass, assign U S1 Ass S2.
-unif (uva N Args1) (uva M Args2) S S3 :- % Args with same length
-  unset? N S, unset? M S,
-  len Args1 N, len Args2 N, !,
+  prune-same-args V A [] Ass, assign U S1 Ass S2.
+unif (uva N Args1) (uva N Args2) S S2 :- % same var 
+  unset? N S,
+  std.assert!(len Args1 Len, len Args2 Len) "Not typechecking", !, % the length of args must be the same
   pattern-fragment Args1, pattern-fragment Args2, 
-  std.do![new S W S1, prunexx W Args1 Args2 Ass, 
+  std.do![new S W S1, prune-same-variable W Args1 Args2 Ass, 
   assign N S1 Ass S2],
-  if (unset? M S2) % M = N case
-     (assign M S2 Ass S3)
-     (S3 = S2),
-  print "Assigning in uva N Args1" N M S1 Ass S3. 
+  print "Assigning in uva N Args1" N S1 Ass S2. 
 unif (uva N Args1) (uva M Args2) S S3 :- % Args with diff length
   unset? N S, unset? M S, !,
   print "Unifying" (uva N Args1) "and" (uva M Args2),
   pattern-fragment Args1, pattern-fragment Args2, 
   new S W S1, (prune-smart W Args1 Args2 Ass1 Ass2), 
+  std.do![
   assign N S1 Ass1 S2,
-  assign M S2 Ass2 S3
+  (N = M; assign M S2 Ass2 S3)]
   % print "Assigning in uva with diff len" N M S1 "with solution" Ass1 "and" Ass2 "in subst" S3
   . 
 unif (uva N Args) T S S1 :- 
@@ -158,29 +156,29 @@ unif T (uva N Args) S S1 :-
 % Note: eta & beta for unification is not allowed in ML over terms of the OL
 
 % prune in the case of same argumets for the two vars (e.g. uv X L and uv Y L)
-type prune-same nat -> list tm -> list tm -> assignment -> o.
-prune-same N [] Acc (val (uva N Args)) :- std.rev Acc Args.
-prune-same N [_ | B] L (abs T) :- pi x\ prune-same N B [x | L] (T x).
+type prune-same-args nat -> list tm -> list tm -> assignment -> o.
+prune-same-args N [] Acc (val (uva N Args)) :- std.rev Acc Args.
+prune-same-args N [_ | B] L (abs T) :- pi x\ prune-same-args N B [x | L] (T x).
 
 % prune in the case of vars with args of same length (e.g. uv X L1, uv Y L2, len L1 = len L2)
-type prunexx nat -> list tm -> list tm -> assignment -> o.
-prunexx N A1 A2 T :- prune-aux N A1 A2 [] T.
+type prune-same-variable nat -> list tm -> list tm -> assignment -> o.
+prune-same-variable N A1 A2 T :- prune-same-variable-aux N A1 A2 [] T.
 
-type prune-aux nat -> list tm -> list tm -> list tm -> assignment -> o.
-prune-aux N [] [] ACC (val (uva N Args)) :- std.rev ACC Args.
-prune-aux N [X|XS] [X|YS] ACC (abs F) :- pi x\ prune-aux N XS YS [x|ACC] (F x).
-prune-aux N [_|XS] [_|YS] ACC (abs F) :- pi x\ prune-aux N XS YS ACC (F x).
+type prune-same-variable-aux nat -> list tm -> list tm -> list tm -> assignment -> o.
+prune-same-variable-aux N [] [] ACC (val (uva N Args)) :- std.rev ACC Args.
+prune-same-variable-aux N [X|XS] [X|YS] ACC (abs F) :- pi x\ prune-same-variable-aux N XS YS [x|ACC] (F x).
+prune-same-variable-aux N [_|XS] [_|YS] ACC (abs F) :- pi x\ prune-same-variable-aux N XS YS ACC (F x).
 
-type prune-discard-args nat -> list tm -> list tm -> assignment -> o.
-prune-discard-args N [] Acc (val (uva N Acc)).
-prune-discard-args N [_|L] Acc (abs T) :- pi x\ prune-discard-args N L Acc (T x).
+type prune-diff-length-aux nat -> list tm -> list tm -> assignment -> o.
+prune-diff-length-aux N [] Acc (val (uva N Acc)).
+prune-diff-length-aux N [_|L] Acc (abs T) :- pi x\ prune-diff-length-aux N L Acc (T x).
 
 % res = argomenti dell'altro se li vedo anche io (nell'ordine dell'altro)
 type prune-diff-length nat -> list tm -> list tm -> list tm -> assignment -> assignment -> o.
 prune-diff-length N [] Args2 Acc (val (uva N Args)) Ass2 :-  !,
-  std.rev Acc Args, prune-discard-args N Args2 Args Ass2.
+  std.rev Acc Args, prune-diff-length-aux N Args2 Args Ass2.
 prune-diff-length N Args1 [] Acc Ass1 (val (uva N Args)) :- !,
-  std.rev Acc Args, prune-discard-args N Args1 Args Ass1.
+  std.rev Acc Args, prune-diff-length-aux N Args1 Args Ass1.
 prune-diff-length N [X|XS] [X|YS] ACC (abs F) (abs G) :- pi x\ prune-diff-length N XS YS [x|ACC] (F x) (G x).
 prune-diff-length N [_|XS] [_|YS] ACC (abs F) (abs G):- pi x\ prune-diff-length N XS YS ACC (F x) (G x).
 prune-diff-length A B C D _ _:- halt A B C D.
@@ -291,12 +289,12 @@ unif-assignment (val T1) (val T2) H H1 :- unif T1 T2 H H1.
 unif-assignment (abs F1) (abs F2) H H1 :- pi x\ (pi S\ unif x x S S) => ho.copy x x => unif-assignment (F1 x) (F2 x) H H1.
 
 type deref subst -> tm -> tm -> o.
-deref H (uva N L) X :- set? N H T, move T L X', deref H X' X.
-deref H (app L) (app L1) :- forall2 (deref H) L L1.
-deref _ (con X) (con X).
+deref H (uva N L)  X         :- set? N H T, move T L X', deref H X' X.
+deref H (app L)   (app L1)   :- forall2 (deref H) L L1.
+deref _ (con X)   (con X).
 deref H (uva X L) (uva X L1) :- forall2 (deref H) L L1.
-deref H (lam F) (lam G) :- pi x\ deref H x x => deref H (F x) (G x).
-deref _ N N :- name N.
+deref H (lam F)   (lam G)    :- pi x\ deref H x x => deref H (F x) (G x).
+deref _ N         N          :- name N.
 % deref A B V :- var V, halt "This is should be an error" B A.
 
 type assmt-deref subst -> assignment -> assignment -> o.
@@ -307,10 +305,10 @@ assmt-deref S (val T) (val R) :-
 
 
 type eta-contract tm -> tm -> o.
-eta-contract (con X) (con X).
-eta-contract (app L) (app L1) :- forall2 eta-contract L L1.
-eta-contract (lam F) T :- contract [] (lam F) T.
-eta-contract (lam F) (lam F1) :- pi x\ eta-contract x x => eta-contract (F x) (F1 x).
+eta-contract (con X)   (con X).
+eta-contract (app L)   (app L1)   :- forall2 eta-contract L L1.
+eta-contract (lam F)   T          :- contract [] (lam F) T.
+eta-contract (lam F)   (lam F1)   :- pi x\ eta-contract x x => eta-contract (F x) (F1 x).
 eta-contract (uva X L) (uva X L1) :- forall2 eta-contract L L1.
 eta-contract X X :- name X.
 
@@ -398,6 +396,7 @@ comp (fo.flam F) (ho.uva E0 Scope) L L2 S S2 :- print "EEEEEEEE with" F,
     (
       (F1 = (x\ho.uva _ [V1,x]), Scope = [V1]) ;
       (F1 = (x\ho.uva _ [V1,V2,x]), Scope = [V1,V2]) ;
+      (F1 = (x\ho.uva _ [x, V1]), Scope = [V1]) ; % TODO this is needed for test 10
       % (F1 = (x\ho.app[ho.con _,uva ...V1,V2,x]), Scope = [V1,V2]) ;
       Scope = []),
   ], L2 = [link-eta E0 (ho.val (ho.lam F1)) | L1],
