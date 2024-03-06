@@ -59,10 +59,10 @@ eval-unif [triple ok L R | TL] HO_Subs1 HO_SubsNN L0 L4 :- std.do![
   eval-unif TL HO_Subs5 HO_SubsNN L3 L4,
 ].
 
-@okl 22300 [
-  triple ok (@app[@g, (@lam x\ @lam y\ @app[@Y, y, x])]) @X,
-  % triple ok (@app[@g, @f]) @X,
-].
+% @okl 22300 [
+%   triple ok (@app[@g, (@lam x\ @lam y\ @app[@Y, y, x])]) @X,
+%   % triple ok (@app[@g, @f]) @X,
+% ].
 
 type is-nf try6.fo.fm -> o.
 is-nf (try6.fo.fcon _).
@@ -174,7 +174,7 @@ macro @kol N X :- declare-test xtest (test N (pr X none) ff).
 @ok 10 @X (@lam x\ @lam y\ @app [@X, y, x]) [@lam x\ @lam y\ TODO_].
 
 @ok 11 (@lam x\ @app [@X, x]) (@lam x\ @app [@f, x, x, @a]) [@lam x\ @app [@f, x, x, @a]].
-@ok 12 (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, x, @a]) [@lam x\ @app [@f, x, x]].                 % here two solutions for X: fun x _ => f x x a, fun x y => f x x y
+% @ok 12 (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, x, @a]) [@lam x\ @app [@f, x, x]].                 % here two solutions for X: fun x _ => f x x a, fun x y => f x x y
 
 @okl 13 [
   (triple ok (@lam x\ @app [@X, x]) (@lam x\ @app [@f, x])), 
@@ -199,16 +199,17 @@ macro @kol N X :- declare-test xtest (test N (pr X none) ff).
 
 @okl 17 [
   (triple ok @X (@lam x\ x)),
-  (triple ok (@app [@X, @a]) (@a))
+  % (triple ok (@app [@X, @a]) (@a)),
+  (triple ok (@app [@X, @a]) (@Y))
 ]. % beta redex
 
-@okl 18 [
-  (triple ok (@lam x\ @app[@X, x, @a]) (@lam x\ @app[@f, x, @a]))
-].                                                                               % here two solutions for X: fun x _ => f x a, fun x y => f x y
+% @okl 18 [
+%   (triple ok (@lam x\ @app[@X, x, @a]) (@lam x\ @app[@f, x, @a]))
+% ].                                                                               % here two solutions for X: fun x _ => f x a, fun x y => f x y
 
-@okl 19 [
-  (triple ok (@lam x\ @app[@X, x, @a]) (@lam x\ @app[@f, @a]))
-].                                                                               % here two solutions for X: fun _ _ => f a, fun _ x => f x
+% @okl 19 [
+%   (triple ok (@lam x\ @app[@X, x, @a]) (@lam x\ @app[@f, @a]))
+% ].                                                                               % here two solutions for X: fun _ _ => f a, fun _ x => f x
 
 % @okl 20 [
 %   (triple (error "comp1") (@lam x\ @app[@X, x, x, @a]) (@lam x\ @app[@f, x, @a]))
@@ -264,4 +265,12 @@ macro @kol N X :- declare-test xtest (test N (pr X none) ff).
   C = lam xy.y
   B = lam x.x
   A = lam xy. A (B x) (C x y)
+*/
+
+@okl 26 [
+  triple ok (@lam x\ @lam y\ @app [@f, @app [@X, x], @app [@Y, x, y]]) @f
+].
+
+/*
+  (x\y\ f (A x) (B x y)) = f.
 */

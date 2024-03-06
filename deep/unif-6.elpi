@@ -385,6 +385,15 @@ maybe-eta-aux N (fo.flam B) :- !, pi x\ maybe-eta-aux N (B x).
 maybe-eta-aux N (fo.fapp L) :-
   last L T, maybe-eta-aux N T.
 
+type locale ho.tm -> o.
+type get-scope ho.tm -> list ho.tm -> o.
+get-scope (ho.con _) [].
+get-scope (ho.uva _ L) L1 :- fold (x\y\r\ sigma R\ get-scope x R, std.append y R r) L [] L1.
+get-scope (ho.lam B) L1 :- pi x\ locale x => get-scope (B x) L1.
+get-scope (ho.app L) L1 :- fold (x\y\r\ sigma R\ get-scope x R, std.append y R r) L [] L1.
+get-scope X [X] :- name X, not (locale X).
+get-scope X [] :- name X, (locale X).
+
 type comp fo.fm -> ho.tm -> list link -> list link -> ho.subst -> ho.subst -> o.
 comp (fo.fcon X)              (ho.con X) L L S S.
 % TODO: this is wrong, since we should pass something in the scope of W
@@ -393,13 +402,16 @@ comp (fo.flam F) (ho.uva E0 Scope) L L2 S S2 :- print "EEEEEEEE with" F,
   std.spy-do![
     ho.new S E0 S1,
     comp-lam F F1 L L1 S1 S2,
+    names N,
+    (pi x\ locale x => get-scope (F1 x) ScopeDuplicata), 
+    std.filter N (mem ScopeDuplicata) Scope,
     % hack
-    (
-      (F1 = (x\ho.uva _ [V1,x]), Scope = [V1]) ;
-      (F1 = (x\ho.uva _ [V1,V2,x]), Scope = [V1,V2]) ;
-      (F1 = (x\ho.uva _ [x, V1]), Scope = [V1]) ; % TODO this is needed for test 10
-      % (F1 = (x\ho.app[ho.con _,uva ...V1,V2,x]), Scope = [V1,V2]) ;
-      Scope = []),
+    % (
+    %   (F1 = (x\ho.uva _ [V1,x]), Scope = [V1]) ;
+    %   (F1 = (x\ho.uva _ [V1,V2,x]), Scope = [V1,V2]) ;
+    %   (F1 = (x\ho.uva _ [x, V1]), Scope = [V1]) ; % TODO this is needed for test 10
+    %   % (F1 = (x\ho.app[ho.con _,uva ...V1,V2,x]), Scope = [V1,V2]) ;
+    %   Scope = []),
   ], L2 = [link-eta E0 (ho.val (ho.lam F1)) | L1],
   print "------------------ END ETA -------------------",
   print "with new link: " link-eta E0 (ho.val (ho.lam F1)),
@@ -428,8 +440,7 @@ comp (fo.fapp [fo.fuva N|Ag]) (ho.uva M PF1) L L3 S S4 :- !,
   % TODO: NYI NPF1 can contain non-closed terms (i.e. local vars...)
   if (NPF = []) (L3 = [link N M Len | L1], S3 = S4) 
     ( ho.new S3 MM S4,
-    std.append PF1 NPF1 LL,
-      L3 = [link N MM Len, link-fo-align M N (ho.val (ho.uva MM LL)) | L1])
+      L3 = [link N MM Len, link-fo-align M N (ho.val (ho.app[ho.uva MM PF1 | NPF1])) | L1])
   .
 comp (fo.fapp A)              (ho.app A1) L L1 S S1 :- fold4 comp A A1 L L1 S S1.
 
@@ -462,18 +473,35 @@ solve-link [link-eta N A|L1] L2 S S2 :- set? N S A1, !,
   print "After link eta same HO_SUBST is" S1,
   solve-link L1 L2 S1 S2.
 
-solve-link [link-fo-align V Hd T|L1] L2 S S2 :-
+type rigid-head ho.assignment -> o.
+rigid-head (ho.val X) :- not (X = ho.uva _ _).
+rigid-head (ho.abs X) :- pi x\ rigid-head (X x).
+
+% classic beta: the head of the application is rigid
+solve-link [link-fo-align V Hd_ T|L1] L2 S S2 :-
   % if Hd is set then beta (note assmt-deref does the beta-redex)
-  set? Hd S X, not (X = ho.val(ho.uva _ _)), !,
-  ho.assmt-deref S T Ass2,
-  if (set? V S Ass1) (my-unif-assignment Ass1 Ass2 S S1) (assign V S Ass2 S1),
+  ho.assmt-deref S T Ass2,  rigid-head Ass2, !,
+  print "Solve link beta",
+  if (set? V S Ass1) (print "ass1 is" Ass2, my-unif-assignment Ass1 Ass2 S S1) (assign V S Ass2 S1),
   solve-link L1 L2 S1 S2.
+
+type fo-align ho.assignment -> ho.assignment -> list ho.tm -> ho.subst -> ho.subst -> o.
+fo-align (ho.val(ho.uva N Args1)) (ho.val(ho.app Args2)) L_ S S1 :-
+  appendR [Hd|Tl] Args1 Args2,
+  ho.beta Hd Tl T,
+  my-unif-assignment (ho.val (ho.uva N [])) (ho.val T) S S1.
+fo-align (ho.abs X) (ho.abs Y) L S S1 :- pi x\
+  (pi S\ ho.unif x x S S) => fo-align (X x) (Y x) [x|L] S S1.
+fo-align A B S _ _ :- halt A B S.
 
 solve-link [link-fo-align V Hd_ T|L1] L2 S S2 :-
   % TODO: if Hd is not set, the we do Fo-approx
-  (unset? Hd_ S; (set? Hd S X, X = ho.val(ho.uva _ _))),
-  ho.assmt-deref S T Ass2,
-  if (set? V S Ass1) (my-unif-assignment Ass1 Ass2 S S1) (assign V S Ass2 S1),
+  ho.assmt-deref S T Ass2, (not (rigid-head Ass2)), !,
+  print "In second link fo align" Ass1 "et" Ass2,
+  % set? is always true, since before we have done a unif
+  if (set? V S Ass1) (
+    fo-align Ass2 Ass1 [] S S1
+  ) (print "It is not assigned?", assign V S Ass2 S1),
   solve-link L1 L2 S1 S2.
 
 solve-link [L|LS] [L|LS'] HO HO1 :- solve-link LS LS' HO HO1.
