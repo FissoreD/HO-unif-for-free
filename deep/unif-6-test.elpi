@@ -15,6 +15,53 @@ shorten try6.fo.{(==o)}.
 
 macro @read :- input_line std_in _.
 
+type compile-terms 
+  list (triple diagnostic try6.fo.fm try6.fo.fm) -> 
+  list (triple diagnostic try6.ho.tm try6.ho.tm) -> 
+  list try6.comp.link ->
+  try6.ho.subst -> try6.ho.subst ->
+  o.
+  
+compile-terms [] [] [] H H.
+compile-terms [triple D S1 S2|Src] [triple D T1 T2|PS] LS H0 H3 :-
+  std.assert! (try6.comp.comp S1 T1 [] L1 H0 H1) "comp s1",
+  std.assert! (try6.comp.comp S2 T2 L1 L2 H1 H2) "comp s2",
+  compile-terms Src PS Links2 H2 H3,
+  std.append L2 Links2 LS.
+
+type prolog 
+  list (triple diagnostic try6.ho.tm try6.ho.tm) -> 
+  list try6.comp.link -> list try6.comp.link ->
+  try6.ho.subst -> try6.ho.subst ->
+  o.
+prolog [] L L H H :- print "end proog".
+prolog [triple ok L R|Us] Links Links2 H H3 :- std.do! [
+  try6.ho.unif L R H H1,
+  print "## After unif" L "=" R "subst is" H1,
+  print "## Links are" Links,
+  printC "solve links?",
+  try6.comp.solve-link Links Links1 H1 H2,
+  print "## After solve links, links are" Links1,
+  print "## After solve links, subst is" H2,
+  printC "next problem?",
+  prolog Us Links1 Links2 H2 H3,
+].
+prolog [triple (error "unif") L R|_] Links Links H H1 :-
+  if (try6.ho.unif L R H H1)
+     (not(try6.comp.solve-link Links _ H1 _))
+     (H1 = H).
+
+type decompile-subst
+  list try6.comp.link -> 
+  try6.ho.subst ->
+  try6.fo.subst ->
+  try6.fo.subst ->
+  o.
+decompile-subst Links H F F1 :-
+  try6.comp.decompl Links H F F1.
+
+
+
 type eval-unif 
   list (triple diagnostic try6.fo.fm try6.fo.fm) -> 
   try6.ho.subst -> try6.ho.subst ->
@@ -87,23 +134,15 @@ build-fo-subst [triple _ L R | TL] A D :-
   build-fo-subst TL C D.
 
 type validate-solution 
-  list (triple diagnostic try6.fo.fm try6.fo.fm) -> int ->
-  list try6.comp.link ->
-  try6.ho.subst ->
+  list (triple diagnostic try6.fo.fm try6.fo.fm) ->
   try6.fo.subst ->
-  try6.fo.subst -> o.
-validate-solution Goals N Links HS FS FS' :- 
-  forall1 (x\ x = triple ok _ _) Goals, !,
-  print "---------------- Start decompl -----------------",
-  std.assert! (not (var Links)) "Links are var?",
-  std.spy(try6.comp.decompl Links HS FS FS'),
-  print "The solution for" N "is" FS', 
-  forall1 (x\ sigma L R L' R'\ triple _ L R = x,
-    try6.fo.deref FS' L L', try6.fo.deref FS' R R',
-    % std.assert!(L' ==o R') "The computed solution is wrong",
-    L' ==o R'
-  ) Goals.
-validate-solution _ _ _ _ _ _.
+  o.
+validate-solution [] _.
+validate-solution [triple ok L R|Goals] FS :- 
+  try6.fo.deref FS L L', try6.fo.deref FS R R',
+  L' ==o R',
+  validate-solution Goals FS.
+validate-solution [triple (error _) _ _|_] _.
 
 % (x\y\Y y x) = Z, g Z = X.
 % X = g c0 \ c1 \ Y c1 c0
@@ -127,25 +166,41 @@ check-sol (some Sol) L :-
   std.map Sol (x\r\ if (var x) (r = none) (r = some x)) L1,
   same-sols L L1. 
 
-type no-read o.
-no-read.
+type do-read o.
+:if "DEBUG"
+do-read.
 
 type printC string -> o.
-printC A :- X = "@@@@@@@@@@@@@@@@@@@@@@@@@", print X A X, (no-read; @read).
+printC A :- X = "@@@@@@@@@@@@@@@@@@@@@@@@@", print X A X, (not do-read; @read).
 
 type xtest test try6.fo.fm -> o.
 xtest (test N (pr LR Sol) tt) :- std.do![
+  print "## Test" N "=" LR,
+  printC "run test?",
   build-fo-subst LR [] FO_Subst,
-  printC "A",
+  compile-terms LR Uproblems Links [] HO_Subst,
+  print "## After compilation the links are" Links,
+  printC "continue to prolog?",
+  prolog Uproblems Links Links1 HO_Subst HO_Subst1,
+  print "## After prolog HO subst is" HO_Subst1,
+  print "## After prolog links are" Links1,
+  printC "continue to decomp?",
+  decompile-subst Links1 HO_Subst1 FO_Subst Sol1,
+  print "## After decomp FO subst is" Sol1,
+  printC "continue to validate solution?",
+  validate-solution LR Sol1,
+  printC "continue to check solution vs expected?",
+  check-sol Sol Sol1,
+/*
   eval-unif LR [] HO_Subst [] Links,
-  print "## After eval-unif the links are" Links,
-  print "## The hosubst is" HO_Subst,
-  printC "B",
+  print "## After prolog the links are" Links,
+  print "## The hosubst is" HO_Subst1,
   % std.rev Links LinksRev,
   Links = LinksRev,
-  validate-solution LR N LinksRev HO_Subst FO_Subst Sol1,
+  validate-solution LR N LinksRev HO_Subst1 FO_Subst Sol1,
   printC "C",
   check-sol Sol Sol1
+*/
 ].
 xtest (test _ (pr LR _) ff) :- std.do! [
   not(eval-unif LR [] _S [] _L)

@@ -412,7 +412,7 @@ comp (fo.flam F) (ho.uva E0 Scope) L L2 S S2 :- print "EEEEEEEE with" F,
     %   (F1 = (x\ho.uva _ [x, V1]), Scope = [V1]) ; % TODO this is needed for test 10
     %   % (F1 = (x\ho.app[ho.con _,uva ...V1,V2,x]), Scope = [V1,V2]) ;
     %   Scope = []),
-  ], L2 = [link-eta E0 (ho.val (ho.lam F1)) | L1],
+  ], L2 = [link-eta E0 (ho.val (ho.lam F1)) | L1], % TODO save Scope in E0, somehow
   print "------------------ END ETA -------------------",
   print "with new link: " link-eta E0 (ho.val (ho.lam F1)),
   print "----------------------------------------------".
@@ -448,42 +448,9 @@ type eta-contract-ass ho.assignment -> ho.assignment -> o.
 eta-contract-ass (ho.abs F) (ho.abs G) :- pi x\ eta-contract-ass (F x) (G x).
 eta-contract-ass (ho.val T) (ho.val T1) :- ho.eta-contract T T1.
 
-% We test forall linked var of the ML, that they have the same assignment
-type solve-link list link -> list link -> ho.subst -> ho.subst -> o.
-solve-link [] [] X X.
-solve-link [link N M LenM|L] LR HO HO1 :- take-link L (link N M' LenM') L1, !, std.do! [
-  print "Solve simple link" M M',
-  print "In subst" HO,
-  same-assign M M' LenM LenM' W HO HO2,
-  solve-link [link N W LenM|L1] LR HO2 HO1,
-].
-% TODO: we should reconsider if it can still be an eta or not.
-% if it is, we contract
-% if it can't be, we propagate the assignment
-% if it may be, we do nothing
-solve-link [link-eta N A|L1] L2 S S2 :- unset? N S,
-  hope-for-eta S A A'', not (A = A''), !,
-  print "Solve link eta unset contract" N "->" A'',
-  assign N S A'' S1, 
-  solve-link L1 L2 S1 S2.
-solve-link [link-eta N A|L1] L2 S S2 :- set? N S A1, !,
-  print "Solve link eta set check same" N "->" A "=?=" A1,
-  % std.assert!(print "Solve link eta set check same" N "->" {ho.assmt-deref S A} "=?=" {ho.assmt-deref S A1}) "xxx",
-  std.spy(same-assign-aux z z A A1 S S1),
-  print "After link eta same HO_SUBST is" S1,
-  solve-link L1 L2 S1 S2.
-
 type rigid-head ho.assignment -> o.
 rigid-head (ho.val X) :- not (X = ho.uva _ _).
 rigid-head (ho.abs X) :- pi x\ rigid-head (X x).
-
-% classic beta: the head of the application is rigid
-solve-link [link-fo-align V Hd_ T|L1] L2 S S2 :-
-  % if Hd is set then beta (note assmt-deref does the beta-redex)
-  ho.assmt-deref S T Ass2,  rigid-head Ass2, !,
-  print "Solve link beta",
-  if (set? V S Ass1) (print "ass1 is" Ass2, my-unif-assignment Ass1 Ass2 S S1) (assign V S Ass2 S1),
-  solve-link L1 L2 S1 S2.
 
 type fo-align ho.assignment -> ho.assignment -> list ho.tm -> ho.subst -> ho.subst -> o.
 fo-align (ho.val(ho.uva N Args1)) (ho.val(ho.app Args2)) L_ S S1 :-
@@ -493,6 +460,47 @@ fo-align (ho.val(ho.uva N Args1)) (ho.val(ho.app Args2)) L_ S S1 :-
 fo-align (ho.abs X) (ho.abs Y) L S S1 :- pi x\
   (pi S\ ho.unif x x S S) => fo-align (X x) (Y x) [x|L] S S1.
 fo-align A B S _ _ :- halt A B S.
+
+type eta-expand ho.tm -> ho.tm -> o.
+eta-expand T T1 :- (pi x\ unif-mk-app T x (R x)), T1 = ho.lam R.
+
+type progress-eta-link ho.assignment -> ho.assignment -> ho.subst -> ho.subst -> o.
+progress-eta-link (ho.val (ho.app _ as T)) (ho.val (ho.lam x\ ho.uva _ [x] as T1)) H H1 :- ho.unif {eta-expand T} T1 H H1.
+progress-eta-link (ho.val (ho.con _ as T)) (ho.val (ho.lam x\ ho.uva _ [x] as T1)) H H1 :- ho.unif {eta-expand T} T1 H H1.
+progress-eta-link (ho.val (ho.lam _)) _ _ _ :- halt "progress eta lam".
+progress-eta-link (ho.val (ho.uva _ _)) _ H H.
+
+% We test forall linked var of the ML, that they have the same assignment
+type solve-link list link -> list link -> ho.subst -> ho.subst -> o.
+solve-link [] [] X X.
+
+solve-link [link N M LenM|L] LR HO HO1 :- take-link L (link N M' LenM') L1, !, std.do! [
+  print "Solve simple link" M M',
+  print "In subst" HO,
+  same-assign M M' LenM LenM' W HO HO2,
+
+  solve-link [link N W LenM|L1] LR HO2 HO1,
+].
+% TODO: we should reconsider if it can still be an eta or not.
+% if it is, we contract
+% if it can't be, we propagate the assignment
+% if it may be, we do nothing
+solve-link [link-eta N A|L1] [link-eta N A|L2] S S2 :- set? N S T, !,
+  progress-eta-link {ho.assmt-deref S T} {ho.assmt-deref S A} S S1,
+  print "Solve link eta set check same" N "->" A "=?=" T,
+  % std.assert!(print "Solve link eta set check same" N "->" {ho.assmt-deref S A} "=?=" {ho.assmt-deref S A1}) "xxx",
+  %std.spy(same-assign-aux z z A T S S1),
+  print "After link eta same HO_SUBST is" S1,
+  solve-link L1 L2 S1 S2.
+solve-link [link-eta N A|L1] [link-eta N A|L2] S S1 :- unset? N S, solve-link L1 L2 S S1.
+
+% classic beta: the head of the application is rigid
+solve-link [link-fo-align V Hd_ T|L1] L2 S S2 :-
+  % if Hd is set then beta (note assmt-deref does the beta-redex)
+  ho.assmt-deref S T Ass2,  rigid-head Ass2, !,
+  print "Solve link beta",
+  if (set? V S Ass1) (print "ass1 is" Ass2, my-unif-assignment Ass1 Ass2 S S1) (assign V S Ass2 S1),
+  solve-link L1 L2 S1 S2.
 
 solve-link [link-fo-align V Hd_ T|L1] L2 S S2 :-
   % TODO: if Hd is not set, the we do Fo-approx
