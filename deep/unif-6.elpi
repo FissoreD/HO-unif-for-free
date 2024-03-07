@@ -101,9 +101,11 @@ namespace ho {
 
 typeabbrev subst list (option assignment).
 
-kind assignment type.
-type abs (tm -> assignment) -> assignment.
-type val tm -> assignment.
+kind inctx type -> type.
+type abs (tm -> inctx A) -> inctx A.
+type val tm -> inctx A.
+
+typeabbrev assignment (inctx tm).
 
 kind tm  type.
 type app list tm -> tm.
