@@ -36,11 +36,13 @@ type prolog
   o.
 prolog [] L L H H :- print "end proog".
 prolog [triple ok L R|Us] Links Links2 H H3 :- std.do! [
+  print "## unif" L "=" R,
+  print "## unif" {try6.ho.deref H L} "=" {try6.ho.deref H R},
   try6.ho.unif L R H H1,
   print "## After unif" L "=" R "subst is" H1,
   print "## Links are" Links,
   printC "solve links?",
-  try6.comp.solve-link Links Links1 H1 H2,
+  try6.comp.solve-link-fixpoint Links Links1 H1 H2,
   print "## After solve links, links are" Links1,
   print "## After solve links, subst is" H2,
   printC "next problem?",
@@ -249,8 +251,13 @@ macro @kol N X :- declare-test xtest (test N (pr X none) ff).
   (triple (error "unif") @g @X)]. % we fail early for the wrong reason
 
 @okl 16 [
+(triple ok (@X) (@lam x\ @app [@f, @app[@Y,x]])), 
+(triple ok @f @X)
+].
+@okl 160 [
   (triple ok (@X) (@lam x\ @app [@f, @app[@Y,x]])), 
-  (triple ok @f @X)].
+  (triple ok (@Y) (@lam x\ x)), 
+].
 
 @okl 17 [
   (triple ok @X (@lam x\ x)),
