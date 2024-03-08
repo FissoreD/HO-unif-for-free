@@ -16,7 +16,7 @@ accumulate unif-6-test.
 main [] :-
   internal-tests,
   std.findall (declare-test _ _) L,
-  runtests L [].
+  failsafe => runtests L [].
 main [NS] :-
   internal-tests,
   N is string_to_int NS, 

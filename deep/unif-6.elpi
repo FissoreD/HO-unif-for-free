@@ -26,7 +26,7 @@ type fuva  nat -> fm.
 typeabbrev subst list (option fm).
 
 type deref subst -> fm -> fm -> o.
-deref _ X _ :- var X, halt "flex deref".
+deref _ X _ :- var X, fatal "flex deref".
 deref S (fuva N) T1 :- set? N S T, deref S T T1.
 deref S (fapp [fuva N|L]) R :- set? N S T, !, beta T L R', deref S R' R.
 deref S (fapp L1) (fapp L2) :- forall2 (deref S) L1 L2.
@@ -34,12 +34,12 @@ deref S (flam F1) (flam F2) :- pi x\ deref S x x => deref S (F1 x) (F2 x).
 deref _ (fcon X) (fcon X).
 deref _ (fuva N) (fuva N).
 deref _ N N :- name N.
-% deref A B V :- var V, halt "This is should be an error" B A.
+% deref A B V :- var V, fatal "This is should be an error" B A.
 
 % [equal T1 T2] check if two terms are equal for the OL
 type (==o) fm -> fm -> o.
 
-X ==o Y :- (var X ; var Y), halt "flex equal". % chekc to prevent implem errors
+X ==o Y :- (var X ; var Y), fatal "flex equal". % chekc to prevent implem errors
 fapp L1 ==o fapp L2 :- forall2 (==o) L1 L2.
 flam F1 ==o flam F2 :- pi x\ x ==o x => F1 x ==o F2 x.
 fcon X ==o fcon X.
@@ -184,7 +184,7 @@ prune-diff-length N Args1 [] Acc Ass1 (val (uva N Args)) :- !,
   std.rev Acc Args, prune-diff-length-aux N Args1 Args Ass1.
 prune-diff-length N [X|XS] [X|YS] ACC (abs F) (abs G) :- pi x\ prune-diff-length N XS YS [x|ACC] (F x) (G x).
 prune-diff-length N [_|XS] [_|YS] ACC (abs F) (abs G):- pi x\ prune-diff-length N XS YS ACC (F x) (G x).
-prune-diff-length A B C D _ _:- halt "Prune error" A B C D.
+prune-diff-length A B C D _ _:- fatal "Prune error" A B C D.
 
 type keep list A -> A -> bool -> o.
 keep L A tt :- mem L A, !.
@@ -231,8 +231,8 @@ move (val A)         []    A :- !.
 % move (val (app A))   L     (app X) :- std.append A L X.
 move (val (uva N A)) L     (uva N X) :- std.append A L X.
 % move (val (con H))   L     (app [con H | L]).
-% move (abs _)         []    _ :- halt "Invalid move call: too few args for abs".
-% move A               L    _ :- halt "Invalid move call:" A L.
+ move (abs _)         []    _ :- fatal "Invalid move call: too few args for abs".
+ move A               L    _ :- fatal "Invalid move call:" A L.
 
 type move-ass assignment -> list tm -> assignment -> o.
 move-ass (abs Bo)        [H|L] R :- move-ass (Bo H) L R.
@@ -296,7 +296,7 @@ deref _ (con X)   (con X).
 deref H (uva X L) (uva X L1) :- unset? X H, forall2 (deref H) L L1.
 deref H (lam F)   (lam G)    :- pi x\ deref H (F x) (G x).
 deref _ N         N          :- name N.
-% deref A B V :- var V, halt "This is should be an error" B A.
+% deref A B V :- var V, fatal "This is should be an error" B A.
 
 type assmt-deref subst -> assignment -> assignment -> o.
 assmt-deref S (abs T) (abs R) :-
@@ -471,7 +471,7 @@ fo-align (ho.val(ho.uva N Args1)) (ho.val(ho.app Args2)) L_ S S1 :-
   my-unif-assignment (ho.val (ho.uva N [])) (ho.val T) S S1.
 fo-align (ho.abs X) (ho.abs Y) L S S1 :- pi x\
   (pi S\ ho.unif x x S S) => fo-align (X x) (Y x) [x|L] S S1.
-fo-align A B S _ _ :- halt "FO_align" A B S.
+fo-align A B S _ _ :- fatal "FO_align" A B S.
 
 type count->lam ho.tm -> nat -> o.
 count->lam (ho.lam B) (s X) :- !, pi x\ count->lam (B x) X.
@@ -495,9 +495,11 @@ contract-rigid L (ho.app [H|Args]) T :-
 type progress-eta-link ho.tm -> ho.tm -> ho.subst -> ho.subst -> o.
 progress-eta-link (ho.app _ as T) (ho.lam x\ _ as T1) H H1 :- !, print "progrss 1", ho.unif {eta-expand T @one} T1 H H1.
 progress-eta-link (ho.con _ as T) (ho.lam x\ _ as T1) H H1 :- !, print "progrss 2", ho.unif {eta-expand T @one} T1 H H1.
-progress-eta-link (ho.con _ as T) (ho.uva _ _ as T1) H H1 :- !, print "progrss 2.1", std.assert!(ho.unif T T1 H H1) "WHY?".
+progress-eta-link (ho.lam _ as T) T1 H H1 :- !, print "progrss 3", ho.unif T T1 H H1.
 
-progress-eta-link (ho.lam B) (ho.lam C) H H1 :- !, print "progress 3", pi x\ (pi S\ ho.unif x x S S) => ho.copy x x => progress-eta-link (B x) (C x) H H1. % halt "progress eta lam".
+% progress-eta-link (ho.con _ as T) (ho.uva _ _ as T1) H H1 :- !, print "progrss 2.1", std.assert!(ho.unif T T1 H H1) "WHY?".
+% progress-eta-link (ho.lam B) (ho.lam C) H H1 :- !, print "progress 3", pi x\ (pi S\ ho.unif x x S S) => ho.copy x x => progress-eta-link (B x) (C x) H H1. % fatal "progress eta lam".
+
 
 % todo: guardare lo scope della uva di dx e allinearlo con quello di sx
 progress-eta-link (ho.uva _ _ as X) T H H1 :- contract-rigid [] T T1, !, print "progress 4", ho.unif X T1 H H1. % TODO remove this link from Links
@@ -505,7 +507,7 @@ progress-eta-link _ _ H H :- print "no progress". % NO PROGRESS
 
 type my-deref ho.subst -> ho.tm -> ho.tm -> o.
 my-deref T (ho.uva N S_) T1_ :- 
-  set? N T A_, halt "TODO".
+  set? N T A_, fatal "TODO".
 my-deref _ (ho.con C) (ho.con C).
 my-deref S (ho.lam B) (ho.lam B1) :- pi x\ my-deref S x x => my-deref S (B x) (B1 x).
 my-deref S (ho.app L) (ho.app L1) :- std.map L (my-deref S) L1.
@@ -527,7 +529,7 @@ solve-link-ctx (ho.val (link-eta N Scope A) as L) (some L) S S1 :-
 %   ho.deref S (ho.uva Head {std.append PF NPF}) BetaHead,  rigid-head BetaHead, !,
 %   ho.deref S (ho.uva Beta {std.append PF NPF}) BetaAss, ho.unif BetaHead BetaAss S S1.
 
-% solve-link-ctx L _ _ _ :- halt "solve-link-ctx" L.
+solve-link-ctx L _ _ _ :- fatal "solve-link-ctx" L.
 % % classic beta: the head of the application is rigid
 % solve-link [link-fo-align V Hd_ T|L1] L2 S S2 :-
 %   % if Hd is set then beta (note assmt-deref does the beta-redex)
@@ -557,11 +559,12 @@ solve-link-ctx (ho.val (link-eta N Scope A) as L) (some L) S S1 :-
 % We test forall linked var of the ML, that they have the same assignment
 type solve-link-fixpoint list link -> list link -> ho.subst -> ho.subst -> o.
 solve-link-fixpoint L L2 H H2 :-
-  solve-link L L1 H H1,
-  if (L = L1, H = H1) (L2 = L, H2 = H) (solve-link-fixpoint L1 L2 H1 H2).
+  print "fixpoint iteration",
+  solve-link L L1 H H1, !,
+  if (L = L1, H = H1) (print "end fixpoint", L2 = L, H2 = H) (solve-link-fixpoint L1 L2 H1 H2).
 
 type solve-link list link -> list link -> ho.subst -> ho.subst -> o.
-solve-link [] [] X X.
+solve-link [] [] X X :- print "end solv links".
 
 solve-link [link N M LenM|L] LR HO HO1 :- take-link L (link N M' LenM') L1, not (unset? M HO, unset? M' HO), !, std.do! [
   print "Solve simple link" M "/" LenM "==" M' "/" LenM',

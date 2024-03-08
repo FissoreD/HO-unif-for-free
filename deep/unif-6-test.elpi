@@ -33,9 +33,10 @@ type prolog
   list (triple diagnostic try6.ho.tm try6.ho.tm) -> 
   list try6.comp.link -> list try6.comp.link ->
   try6.ho.subst -> try6.ho.subst ->
+  diagnostic ->
   o.
-prolog [] L L H H :- print "end proog".
-prolog [triple ok L R|Us] Links Links2 H H3 :- std.do! [
+prolog [] L L H H ok :- print "end proog".
+prolog [triple ok L R|Us] Links Links2 H H3 D :- std.do! [
   print "## unif" L "=" R,
   print H,
   print "## unif" {try6.ho.deref H L} "=" {try6.ho.deref H R},
@@ -47,11 +48,15 @@ prolog [triple ok L R|Us] Links Links2 H H3 :- std.do! [
   print "## After solve links, links are" Links1,
   print "## After solve links, subst is" H2,
   printC "next problem?",
-  prolog Us Links1 Links2 H2 H3,
+  prolog Us Links1 Links2 H2 H3 D,
 ].
-prolog [triple (error "unif") L R|_] Links Links H H1 :-
+prolog [triple (error "unif") L R|_] Links Links H H1 (error "stop") :-
+  print "## unif (error)" L "=" R,
   if (try6.ho.unif L R H H1)
-     (not(try6.comp.solve-link Links _ H1 _))
+     (print "## After unif" L "=" R "subst is" H1,
+      print "## Links are" Links,
+      printC "solve links?",
+      not(try6.comp.solve-link-fixpoint Links _ H1 _))
      (H1 = H).
 
 type decompile-subst
@@ -62,52 +67,6 @@ type decompile-subst
   o.
 decompile-subst Links H F F1 :-
   try6.comp.decompl Links H F F1.
-
-
-
-type eval-unif 
-  list (triple diagnostic try6.fo.fm try6.fo.fm) -> 
-  try6.ho.subst -> try6.ho.subst ->
-  list try6.comp.link ->
-  list try6.comp.link -> o.
-eval-unif [] S S L L.
-
-eval-unif [triple (error "comp1") L _ | _] HO_Subs1 _ L0 _ :- std.do![
-  not (try6.comp.comp L _ L0 _ HO_Subs1 _)
-].
-
-eval-unif [triple (error "unif") L R | _] HO_Subs1 HO_Subs3 L0 L3 :- std.do![
-  std.assert! (try6.comp.comp L LH L0 L1 HO_Subs1 HO_Subs2) "b1",
-  std.assert! (try6.comp.comp R RH L1 L2 HO_Subs2 HO_Subs3) "b2",
-  print "# comp Left:" LH,
-  print "# comp Right:" RH,
-  print "# links after comp" L2,  
-
-  print "## unif" LH "with" RH "in" HO_Subs3,
-  std.spy(try6.ho.unif LH RH HO_Subs3 HO_Subs4),
-  print "## after unif new HO_Subst is" HO_Subs4,
-
-  std.spy(not(try6.comp.solve-link L2 L3 HO_Subs4 HO_Subs4_)),
-  print "## unif" LH "with" RH "in" HO_Subs4,
-  
-].
-
-eval-unif [triple ok L R | TL] HO_Subs1 HO_SubsNN L0 L4 :- std.do![
-
-  std.assert! (try6.comp.comp L LH L0 L1 HO_Subs1 HO_Subs2) "b1",
-  std.assert! (try6.comp.comp R RH L1 L2 HO_Subs2 HO_Subs3) "b2",
-  print "# comp Left:" LH,
-  print "# comp Right:" RH,
-  print "# links after comp" L2,  
-
-  print "## unif" LH "with" RH "in" HO_Subs3,
-  std.spy(try6.ho.unif LH RH HO_Subs3 HO_Subs4),
-  print "## after unif new HO_Subst is" HO_Subs4,
-  
-  std.spy(try6.comp.solve-link L2 L3 HO_Subs4 HO_Subs5),
-
-  eval-unif TL HO_Subs5 HO_SubsNN L3 L4,
-].
 
 % @okl 22300 [
 %   triple ok (@app[@g, (@lam x\ @lam y\ @app[@Y, y, x])]) @X,
@@ -184,16 +143,18 @@ xtest (test N (pr LR Sol) tt) :- std.do![
   compile-terms LR Uproblems Links [] HO_Subst,
   print "## After compilation the links are" Links,
   printC "continue to prolog?",
-  prolog Uproblems Links Links1 HO_Subst HO_Subst1,
-  print "## After prolog HO subst is" HO_Subst1,
-  print "## After prolog links are" Links1,
-  printC "continue to decomp?",
-  decompile-subst Links1 HO_Subst1 FO_Subst Sol1,
-  print "## After decomp FO subst is" Sol1,
-  printC "continue to validate solution?",
-  validate-solution LR Sol1,
-  printC "continue to check solution vs expected?",
-  check-sol Sol Sol1,
+  prolog Uproblems Links Links1 HO_Subst HO_Subst1 D,
+  if (D = ok) (
+    print "## After prolog HO subst is" HO_Subst1,
+    print "## After prolog links are" Links1,
+    printC "continue to decomp?",
+    decompile-subst Links1 HO_Subst1 FO_Subst Sol1,
+    print "## After decomp FO subst is" Sol1,
+    printC "continue to validate solution?",
+    validate-solution LR Sol1,
+    printC "continue to check solution vs expected?",
+    check-sol Sol Sol1
+  ) (print "Prolog failed at the expected step"),
 /*
   eval-unif LR [] HO_Subst [] Links,
   print "## After prolog the links are" Links,

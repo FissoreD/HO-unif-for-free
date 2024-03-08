@@ -1,3 +1,20 @@
+type fatal any -> o.
+type fatal any -> any -> o.
+type fatal any -> any -> any -> o.
+type fatal any -> any -> any -> any -> o.
+type fatal any -> any -> any -> any -> any -> o.
+fatal A :- failsafe, !, print A, fail.
+fatal A B :- failsafe, !, print A B, fail.
+fatal A B C :- failsafe, !, print A B C, fail.
+fatal A B C D :- failsafe, !, print A B C D, fail.
+fatal A B C D E :- failsafe, !, print A B C D E, fail.
+fatal A :- halt A.
+fatal A B :- halt A B.
+fatal A B C :- halt A B C.
+fatal A B C D :- halt A B C D.
+fatal A B C D E :- halt A B C D E.
+type failsafe o.
+
 kind nat type.
 type z nat.
 type s nat -> nat.
