@@ -571,7 +571,7 @@ link-abs-occur-check (ho.val (link-eta N0 S0 T)) Links H H1 :-
   print "test OC" N0 "->" N "on" T "and" H,
   ho.deref H T T1, !,
 %  ((lam-occur-check N Links T1 H, print "OC, no problem with" N, H1 = H) ; (print "OC error, force progress", force-progress (link-eta N S T1) H H1)).
-  (lam-occur-check N Links T1 H T2, print "OC, progress", ho.unif {eta-expand (ho.uva N []) {len S}} T2 H H1) ; true.
+  (lam-occur-check N Links T1 H T2, print "OC, progress", ho.unif {eta-expand (ho.uva N []) {len S}} T2 H H1) ; true. %TODO: in case OF fails we should fail
 link-abs-occur-check (ho.val (link-eta N _ _)) _ H H :- print "OC skip" N.
 
 type lam-occur-check nat -> links -> ho.tm -> ho.subst -> ho.tm -> o.
