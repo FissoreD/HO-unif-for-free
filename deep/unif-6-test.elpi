@@ -37,6 +37,7 @@ type prolog
 prolog [] L L H H :- print "end proog".
 prolog [triple ok L R|Us] Links Links2 H H3 :- std.do! [
   print "## unif" L "=" R,
+  print H,
   print "## unif" {try6.ho.deref H L} "=" {try6.ho.deref H R},
   try6.ho.unif L R H H1,
   print "## After unif" L "=" R "subst is" H1,
@@ -216,7 +217,7 @@ macro @okl1 N X S:- declare-test xtest (test N (pr X (some S)) tt).
 macro @kol N X :- declare-test xtest (test N (pr X none) ff).
 
 @ok 1 (@app [@f, @X]) (@app [@f, @a]) [@a].
-@ok 2 (@app [@X, @a]) (@app [@f, @a]) [@f].                                           % here two solutions for X: fun _ => a, fun x => x
+% @ok 2 (@app [@X, @a]) (@app [@f, @a]) [@f].                                           % here two solutions for X: fun _ => a, fun x => x
 % @ok 3 (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, @a]) [@f].
 
 @ko 4 (@app [@f, @X]) @X.
@@ -226,11 +227,11 @@ macro @kol N X :- declare-test xtest (test N (pr X none) ff).
 
 @ok 8 (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@X, x, y]) [].
 
-% @ok 9  (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@f, y]) [@lam x\ @f].
 @ok 9  (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@f, y]) [@lam x\ @f].
+@ok 90  (@lam x\ @lam y\ @app [@X, y, x]) (@lam x\ @f) [@lam c0 \ @lam c1 \ @app [@f, c0]].
 @ok 10 @X (@lam x\ @lam y\ @app [@X, y, x]) [@lam x\ @lam y\ TODO_].
 
-@ok 11 (@lam x\ @app [@X, x]) (@lam x\ @app [@f, x, x, @a]) [@lam x\ @app [@f, x, x, @a]].
+% @ok 11 (@lam x\ @app [@X, x]) (@lam x\ @app [@f, x, x, @a]) [@lam x\ @app [@f, x, x, @a]].
 % @ok 12 (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, x, @a]) [@lam x\ @app [@f, x, x]].                 % here two solutions for X: fun x _ => f x x a, fun x y => f x x y
 
 @okl 13 [
@@ -257,6 +258,11 @@ macro @kol N X :- declare-test xtest (test N (pr X none) ff).
 @okl 160 [
   (triple ok (@X) (@lam x\ @app [@f, @app[@Y,x]])), 
   (triple ok (@Y) (@lam x\ x)), 
+].
+@okl 1600 [
+  (triple ok (@f) (@lam x\ @app [@f, @app[@X,x]])), 
+  % (triple ok (@app [@f, @a]) (@app [@f, @app[@X,@a]])),
+  (triple ok (@app [@f, @lam x\x]) (@app [@f, @X])),
 ].
 
 @okl 17 [

@@ -115,6 +115,7 @@ type uva  nat -> list tm -> tm.
 
 % [unif T1 T2 SOld SNew] check if T1 and T2 unify looking into SOld. SNew is the final substution
 type unif tm -> tm -> subst -> subst ->  o.
+unif A B _ _ :- print "--------------" A B, fail.
 % Base cases
 unif (app L1) (app L2) S S1 :- fold2 unif L1 L2 S S1.
 unif (lam F1) (lam F2) S S1 :- 
@@ -148,11 +149,11 @@ unif (uva N Args1) (uva M Args2) S S3 :- % Args with diff length
   . 
 unif (uva N Args) T S S1 :- 
   not (T = uva _ _), not_occ N S T, pattern-fragment Args, 
-  bind T Args T1, print "Binding T to Args" T Args T1, assign N S T1 S1, print "Assing1 T1" T1.
+  bind T Args T1, print "Binding T to Args" T Args T1, assign N S T1 S1, print "Assing1" N "to" T1.
 % TODO: we could unify (f c0) with X, this does not work since c0 is a name
 unif T (uva N Args) S S1 :- 
   print "Unif complex:" T (uva N Args),
-  std.spy-do![not (T = uva _ _), not_occ N S T, pattern-fragment Args, 
+  std.do![not (T = uva _ _), not_occ N S T, pattern-fragment Args, 
   bind T Args T1,print "Binding T to Args" T Args T1,  assign N S T1 S1, print "Assing2 T2" T1].
 
 % Note: eta & beta for unification is not allowed in ML over terms of the OL
@@ -183,7 +184,7 @@ prune-diff-length N Args1 [] Acc Ass1 (val (uva N Args)) :- !,
   std.rev Acc Args, prune-diff-length-aux N Args1 Args Ass1.
 prune-diff-length N [X|XS] [X|YS] ACC (abs F) (abs G) :- pi x\ prune-diff-length N XS YS [x|ACC] (F x) (G x).
 prune-diff-length N [_|XS] [_|YS] ACC (abs F) (abs G):- pi x\ prune-diff-length N XS YS ACC (F x) (G x).
-prune-diff-length A B C D _ _:- halt A B C D.
+prune-diff-length A B C D _ _:- halt "Prune error" A B C D.
 
 type keep list A -> A -> bool -> o.
 keep L A tt :- mem L A, !.
@@ -224,13 +225,14 @@ prune-smart N Args1 Args2 Ass1 Ass2 :-
   std.map ToKeep2 (index ToKeep1) Pos,
   prune-build-ass2 N [] Bits2 Pos Ass2].
 
-% What is this for? We also lack of the case: move (abs Bo) [] _ => ??
 type move assignment -> list tm -> tm -> o.
 move (abs Bo)        [H|L] R :- move (Bo H) L R.
-move (val A)         []    A.
-move (val (app A))   L     (app X) :- std.append A L X.
+move (val A)         []    A :- !.
+% move (val (app A))   L     (app X) :- std.append A L X.
 move (val (uva N A)) L     (uva N X) :- std.append A L X.
-move (val (con H))   L     (app [con H | L]).
+% move (val (con H))   L     (app [con H | L]).
+% move (abs _)         []    _ :- halt "Invalid move call: too few args for abs".
+% move A               L    _ :- halt "Invalid move call:" A L.
 
 type move-ass assignment -> list tm -> assignment -> o.
 move-ass (abs Bo)        [H|L] R :- move-ass (Bo H) L R.
@@ -276,9 +278,6 @@ type scope-check o.
 
 
 type bind tm -> list tm -> assignment -> o.
-% Replace lambdas with abstraction of the ML and abstracting the list of tm in L
-% Note L is a list in the pattern fragment
-bind (lam T) L (abs T') :- !, pi x\ copy x x => bind (T x) L (T' x).
 bind T [] (val T') :- scope-check => copy T T'.
 bind T [X | TL] (abs T') :- pi x\ copy X x => bind T TL (T' x).
 
@@ -294,8 +293,8 @@ type deref subst -> tm -> tm -> o.
 deref H (uva N L)  X         :- set? N H T, move T L X', !, deref H X' X.
 deref H (app L)   (app L1)   :- forall2 (deref H) L L1.
 deref _ (con X)   (con X).
-deref H (uva X L) (uva X L1) :- forall2 (deref H) L L1.
-deref H (lam F)   (lam G)    :- pi x\ deref H x x => deref H (F x) (G x).
+deref H (uva X L) (uva X L1) :- unset? X H, forall2 (deref H) L L1.
+deref H (lam F)   (lam G)    :- pi x\ deref H (F x) (G x).
 deref _ N         N          :- name N.
 % deref A B V :- var V, halt "This is should be an error" B A.
 
@@ -376,7 +375,8 @@ typeabbrev scope (list ho.tm).
 kind linkctx type.
 % type link-fo-align list ho.tm -> nat -> nat -> nat -> link.
 type link-eta nat -> scope -> ho.tm -> linkctx.
-type link-fo-align nat -> nat -> ho.assignment -> linkctx.
+% [link-fo-align Beta HeadVar PFvars NPFvars]
+type link-fo-align nat -> nat -> scope -> scope -> linkctx.
 
 typeabbrev linkctx1 (ho.inctx linkctx).
 
@@ -413,13 +413,12 @@ type comp-lam (fo.fm -> fo.fm) -> (ho.tm -> ho.tm) -> list link -> list link -> 
 comp-lam F F1 L L2 S S1 :-
   pi x y\ (pi A S\ comp x y A A S S) => comp (F x) (F1 y) L (L1 y) S S1, close-links L1 L2.
 
-
 type comp fo.fm -> ho.tm -> list link -> list link -> ho.subst -> ho.subst -> o.
 comp (fo.fcon X)              (ho.con X) L L S S.
 % TODO: this is wrong, since we should pass something in the scope of W
 comp (fo.flam F) (ho.uva E0 Scope) L L2 S S2 :- print "EEEEEEEE with" F,
-  (pi x\ not (F x = x), std.spy(maybe-eta-aux x (F x))), !,
-  std.spy-do![
+  (pi x\ not (F x = x), (maybe-eta-aux x (F x))), !,
+  std.do![
     ho.new S E0 S1,
     comp-lam F F1 L L1 S1 S2,
     names N,
@@ -439,16 +438,16 @@ comp (fo.flam F) (ho.uva E0 Scope) L L2 S S2 :- print "EEEEEEEE with" F,
 
 comp (fo.flam F) (ho.lam F1) L L2 S S1 :- comp-lam F F1 L L2 S S1.
 comp (fo.fuva N)              (ho.uva M []) L L1 S S1 :- alloc L L1 N M z S S1.
-comp (fo.fapp [fo.fuva N|Ag]) (ho.uva M PF1) L L3 S S4 :- !,
+comp (fo.fapp [fo.fuva N|Ag]) (ho.uva MM PF1) L L3 S S4 :- !,
   split-pf Ag PF NPF,
   fold4 comp PF PF1 L L S S1,
   fold4 comp NPF NPF1 L L1 S1 S2,
   len PF Len,
   alloc L1 L2 N M Len S2 S3, % ho.new S2 M S3,
   % TODO: NYI NPF1 can contain non-closed terms (i.e. local vars...)
-  if (NPF = []) (L3 = L2, S3 = S4) 
+  if (NPF = []) (L3 = L2, S3 = S4, MM = M) 
     ( ho.new S3 MM S4,
-      L3 = [link N MM Len, link-abs(ho.val(link-fo-align M N (ho.val (ho.app[ho.uva MM PF1 | NPF1])))) | L2])
+      L3 = [link-abs(ho.val(link-fo-align MM M PF1 NPF1)) | L2])
   .
 comp (fo.fapp A)              (ho.app A1) L L1 S S1 :- fold4 comp A A1 L L1 S S1.
 
@@ -461,9 +460,9 @@ type eta-contract-ass ho.assignment -> ho.assignment -> o.
 eta-contract-ass (ho.abs F) (ho.abs G) :- pi x\ eta-contract-ass (F x) (G x).
 eta-contract-ass (ho.val T) (ho.val T1) :- ho.eta-contract T T1.
 
-type rigid-head ho.assignment -> o.
-rigid-head (ho.val X) :- not (X = ho.uva _ _).
-rigid-head (ho.abs X) :- pi x\ rigid-head (X x).
+type rigid-head ho.tm -> o.
+rigid-head (ho.lam X) :- !, pi x\ rigid-head (X x).
+rigid-head T :- not (T = ho.uva _ _).
 
 type fo-align ho.assignment -> ho.assignment -> list ho.tm -> ho.subst -> ho.subst -> o.
 fo-align (ho.val(ho.uva N Args1)) (ho.val(ho.app Args2)) L_ S S1 :-
@@ -472,14 +471,14 @@ fo-align (ho.val(ho.uva N Args1)) (ho.val(ho.app Args2)) L_ S S1 :-
   my-unif-assignment (ho.val (ho.uva N [])) (ho.val T) S S1.
 fo-align (ho.abs X) (ho.abs Y) L S S1 :- pi x\
   (pi S\ ho.unif x x S S) => fo-align (X x) (Y x) [x|L] S S1.
-fo-align A B S _ _ :- halt A B S.
+fo-align A B S _ _ :- halt "FO_align" A B S.
 
 type count->lam ho.tm -> nat -> o.
 count->lam (ho.lam B) (s X) :- !, pi x\ count->lam (B x) X.
 count->lam _ z.
 
 type eta-expand ho.tm -> nat -> ho.tm -> o.
-eta-expand T z (ho.lam R) :- pi x\ unif-mk-app T x (R x).
+eta-expand T z T.
 eta-expand T (s N) (ho.lam R2) :- pi x\ unif-mk-app T x (R1 x), eta-expand (R1 x) N (R2 x). 
 
 macro @one :- s z.
@@ -494,23 +493,41 @@ contract-rigid L (ho.app [H|Args]) T :-
 
 % invariante: a sx non c'è mai una eta espansione, a destra c'è una lam, altrimenti il link eta è buttato via
 type progress-eta-link ho.tm -> ho.tm -> ho.subst -> ho.subst -> o.
-progress-eta-link (ho.app _ as T) (ho.lam x\ ho.uva _ [x] as T1) H H1 :- !, print "progrss 1", ho.unif {eta-expand T @one} T1 H H1.
-progress-eta-link (ho.con _ as T) (ho.lam x\ ho.uva _ [x] as T1) H H1 :- !, print "progrss 2", ho.unif {eta-expand T @one} T1 H H1.
-progress-eta-link (ho.lam _) _ _ _ :- halt "progress eta lam".
+progress-eta-link (ho.app _ as T) (ho.lam x\ _ as T1) H H1 :- !, print "progrss 1", ho.unif {eta-expand T @one} T1 H H1.
+progress-eta-link (ho.con _ as T) (ho.lam x\ _ as T1) H H1 :- !, print "progrss 2", ho.unif {eta-expand T @one} T1 H H1.
+progress-eta-link (ho.con _ as T) (ho.uva _ _ as T1) H H1 :- !, print "progrss 2.1", std.assert!(ho.unif T T1 H H1) "WHY?".
+
+progress-eta-link (ho.lam B) (ho.lam C) H H1 :- !, print "progress 3", pi x\ (pi S\ ho.unif x x S S) => ho.copy x x => progress-eta-link (B x) (C x) H H1. % halt "progress eta lam".
+
 % todo: guardare lo scope della uva di dx e allinearlo con quello di sx
-progress-eta-link (ho.uva _ _ as X) T H H1 :- contract-rigid [] T T1, !, print "progress 3", ho.unif X T1 H H1. % TODO remove this link from Links
+progress-eta-link (ho.uva _ _ as X) T H H1 :- contract-rigid [] T T1, !, print "progress 4", ho.unif X T1 H H1. % TODO remove this link from Links
 progress-eta-link _ _ H H :- print "no progress". % NO PROGRESS
 
+type my-deref ho.subst -> ho.tm -> ho.tm -> o.
+my-deref T (ho.uva N S_) T1_ :- 
+  set? N T A_, halt "TODO".
+my-deref _ (ho.con C) (ho.con C).
+my-deref S (ho.lam B) (ho.lam B1) :- pi x\ my-deref S x x => my-deref S (B x) (B1 x).
+my-deref S (ho.app L) (ho.app L1) :- std.map L (my-deref S) L1.
+
 type solve-link-ctx linkctx1 -> option linkctx1 -> ho.subst -> ho.subst -> o.
-solve-link-ctx (ho.abs X) R H H1 :- pi x\ solve-link-ctx (X x) (R' x) H H1,
+solve-link-ctx (ho.abs X) R H H1 :- 
+  print "solve-link-ctx under abs",
+  pi x\ (pi S\ ho.unif x x S S) => ho.copy x x => (pi S\ ho.deref S x x) => solve-link-ctx (X x) (R' x) H H1,
   if ((R' x) = some (R'' x)) (R = some (ho.abs R'')) (R = none)
   .
 solve-link-ctx (ho.val (link-eta N Scope A) as L) (some L) S S1 :-
-  print "solve-link-ctx eta" {ho.deref S (ho.uva N Scope)} "=?=" {ho.deref S A},
-  progress-eta-link {ho.deref S (ho.uva N Scope)} {ho.deref S A} S S1. % TODO: remove link if L is no more an eta
-% solve-link-ctx (ho.val (link-fo-align N Scope A) as L) (some L) S S1 :- 
-%   ho.assmt-deref S A Ass2,  rigid-head Ass2, !,
-%   if (set? N S Ass1) (print "ass1 is" Ass2, my-unif-assignment Ass1 Ass2 S S1) (assign V S Ass2 S1).
+  std.do![
+    ho.deref S (ho.uva N Scope) Deref1,
+    ho.deref S A Deref2
+  ],
+  print "solve-link-ctx eta" Deref1 "=?=" Deref2, !,
+  progress-eta-link Deref1 Deref2 S S1, print "finish progress". % TODO: remove link if L is no more an eta
+% solve-link-ctx (ho.val (link-fo-align Beta Head PF NPF) as L) (some L) S S1 :- 
+%   ho.deref S (ho.uva Head {std.append PF NPF}) BetaHead,  rigid-head BetaHead, !,
+%   ho.deref S (ho.uva Beta {std.append PF NPF}) BetaAss, ho.unif BetaHead BetaAss S S1.
+
+% solve-link-ctx L _ _ _ :- halt "solve-link-ctx" L.
 % % classic beta: the head of the application is rigid
 % solve-link [link-fo-align V Hd_ T|L1] L2 S S2 :-
 %   % if Hd is set then beta (note assmt-deref does the beta-redex)
@@ -547,7 +564,7 @@ type solve-link list link -> list link -> ho.subst -> ho.subst -> o.
 solve-link [] [] X X.
 
 solve-link [link N M LenM|L] LR HO HO1 :- take-link L (link N M' LenM') L1, not (unset? M HO, unset? M' HO), !, std.do! [
-  print "Solve simple link" M M',
+  print "Solve simple link" M "/" LenM "==" M' "/" LenM',
   print "In subst" HO,
   same-assign M M' LenM LenM' W HO HO2,
 
@@ -568,7 +585,7 @@ solve-link [link N M LenM|L] [link N M LenM|LR] HO HO1 :- solve-link L LR HO HO1
 %   print "After link eta same HO_SUBST is" S1,
 %   solve-link L1 L2 S1 S2.
 solve-link [link-abs L|L1] L3 S S2 :-
-  solve-link-ctx L R S S1,
+  (solve-link-ctx L R S S1), !,
   if (R = some L')
      (solve-link L1 L2 S1 S2, L3 = [link-abs L'|L2])
      (solve-link L1 L3 S1 S2) .
@@ -659,7 +676,7 @@ my-unif-assignment T R S1 S2 :-
   lam->abs RDeref RAbs,
   print "Start of unification aux between" TAbs "and" RAbs,
   print "In substitution" S1,
-  std.spy(my-unif-assignment-aux TAbs RAbs S1 S2).
+  (my-unif-assignment-aux TAbs RAbs S1 S2).
 
 type hope-for-eta  ho.subst -> ho.assignment -> ho.assignment -> o.
 hope-for-eta H A1 A2 :-
