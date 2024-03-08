@@ -555,7 +555,8 @@ solve-link-ctx L _ _ _ :- fatal "solve-link-ctx" L.
 %   solve-links As Bs S1 S2.
 % solve-links [A|As] [A|Bs] S S1 :- solve-links As Bs S S1.
 
-/*
+typeabbrev links (list link).
+
 type link-occur-check links -> links -> ho.subst -> ho.subst -> o.
 link-occur-check [] _ H H.
 link-occur-check [link _ _ _|L] Links H H1 :- link-occur-check L Links H H1.
@@ -563,30 +564,49 @@ link-occur-check [link-abs A|L] Links H H2 :-
   link-abs-occur-check A Links H H1, link-occur-check L Links H1 H2.
 
 type link-abs-occur-check linkctx1 -> links -> ho.subst -> ho.subst -> o.
-link-abs-occur-check (ho.abs L) Links H H1 :- pi x\ (pi s\ ho.deref s x x) => copy x x => (pi h\ ho.unif x x h h) => link-abs-occur-check (L x) Links H H1.
+link-abs-occur-check (ho.abs L) Links H H1 :- pi x\ (pi s\ ho.deref s x x :- !) => ho.copy x x => (pi h\ ho.unif x x h h) => link-abs-occur-check (L x) Links H H1.
 link-abs-occur-check (ho.val (link-fo-align _ _ _ _)) _ H H.
-link-abs-occur-check (ho.val (link-eta N _ T)) Links H H1 :-
-  ho.deref S T T1,
-  lam-occur-check N Links T1 H H1.
+link-abs-occur-check (ho.val (link-eta N0 S0 T)) Links H H1 :-
+  ho.deref H (ho.uva N0 S0) (ho.uva N S), !,
+  print "test OC" N0 "->" N "on" T "and" H,
+  ho.deref H T T1, !,
+%  ((lam-occur-check N Links T1 H, print "OC, no problem with" N, H1 = H) ; (print "OC error, force progress", force-progress (link-eta N S T1) H H1)).
+  ((lam-occur-check N Links T1 H, print "OC, no problem with" N, H1 = H) ; (print "OC error, force progress", force-progress (link-eta N S T1) H H1)).
+link-abs-occur-check (ho.val (link-eta N _ _)) _ H H :- print "OC skip" N.
 
-type lam-occur-check nat -> links -> ho.tm -> ho.subst -> ho.subst -> o.
-lam-occur-check _ _ (ho.con _) H H.
+type lam-occur-check nat -> links -> ho.tm -> ho.subst -> o.
+lam-occur-check _ _ (ho.con _) _.
 % lam-occur-check N Links (ho.app L) H H1 :- fold ... L.
-lam-occur-check N Links (ho.lam F) H H1 :-
-lam-occur-check N Links (ho.uva N _) H H1 :- halt "OC" Links H H1,
-lam-occur-check N Links (ho.uva M S) H H :-
-  deref-link Links M S T .
-*/
+lam-occur-check N Links (ho.lam F) H :- pi x\ lam-occur-check N Links (F x) H.
+lam-occur-check N _Links (ho.uva N _) _H :- !, fail.
+lam-occur-check N Links (ho.uva M S) H :-
+  forall1 (l\deref-link-occur-check l Links M S N H) Links.
 
+type deref-link-occur-check link -> links -> nat -> list ho.tm -> nat -> ho.subst -> o.
+deref-link-occur-check (link _ _ _) _ _ _ _ _.
+deref-link-occur-check (link-abs A) Links M S N H :-
+  deref-link-abs-occur-check A Links M S N H.
 
+type deref-link-abs-occur-check linkctx1 -> links -> nat -> list ho.tm -> nat -> ho.subst -> o.
+deref-link-abs-occur-check (ho.abs A) Links M S N H :- pi x\ (pi s\ ho.deref s x x) => deref-link-abs-occur-check (A x) Links M S N H.
+deref-link-abs-occur-check (ho.val (link-eta M _ T)) Links M _ N H :- !,
+  std.spy(ho.deref H T T1),
+  lam-occur-check N Links T1 H.
+deref-link-abs-occur-check (ho.val _) _ _ _ _ _.
 
+type force-progress linkctx -> ho.subst -> ho.subst -> o.
+force-progress (link-eta N S T1) H H1 :-
+  print "force "(link-eta N S T1),
+  print "unif" {eta-expand (ho.uva N []) {len S}} "=" T1,
+  ho.unif {eta-expand (ho.uva N []) {len S}} T1 H H1.
 
 % We test forall linked var of the ML, that they have the same assignment
 type solve-link-fixpoint list link -> list link -> ho.subst -> ho.subst -> o.
 solve-link-fixpoint L L2 H H2 :-
-  print "fixpoint iteration" L,
+  print "\nfixpoint iteration" L,
   solve-link L L1 H H0, !,
-  %link-occur-check L1 L1 H0 H1, !,
+  %H1 = H0,
+  link-occur-check L1 L1 H0 H1, !,
   if (L = L1, H = H1) (print "end fixpoint", L2 = L, H2 = H) (solve-link-fixpoint L1 L2 H1 H2).
 
 type make-eta-link nat -> nat -> nat -> nat -> list ho.tm -> linkctx1 -> o.
