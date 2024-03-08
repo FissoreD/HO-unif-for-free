@@ -136,7 +136,7 @@ type printC string -> o.
 printC A :- X = "@@@@@@@@@@@@@@@@@@@@@@@@@", print X A X, (not do-read; @read).
 
 type xtest test try6.fo.fm -> o.
-xtest (test N (pr LR Sol) tt) :- std.do![
+xtest (test N (pr LR Sol)) :- std.do![
   print "## Test" N "=" LR,
   printC "run test?",
   build-fo-subst LR [] FO_Subst,
@@ -155,27 +155,15 @@ xtest (test N (pr LR Sol) tt) :- std.do![
     printC "continue to check solution vs expected?",
     check-sol Sol Sol1
   ) (print "Prolog failed at the expected step"),
-/*
-  eval-unif LR [] HO_Subst [] Links,
-  print "## After prolog the links are" Links,
-  print "## The hosubst is" HO_Subst1,
-  % std.rev Links LinksRev,
-  Links = LinksRev,
-  validate-solution LR N LinksRev HO_Subst1 FO_Subst Sol1,
-  printC "C",
-  check-sol Sol Sol1
-*/
-].
-xtest (test _ (pr LR _) ff) :- std.do! [
-  not(eval-unif LR [] _S [] _L)
+
 ].
 
-macro @ok N X Y S :- declare-test xtest (test N (pr [triple ok X Y] (some S)) tt).
-macro @ko N X Y :- declare-test xtest (test N (pr [triple ok X Y] none) ff).
+macro @ok N X Y S :- declare-test xtest (test N (pr [triple ok X Y] (some S))).
+macro @ko N X Y :- declare-test xtest (test N (pr [triple ok X Y] none)).
 
-macro @okl N X :- declare-test xtest (test N (pr X none) tt).
-macro @okl1 N X S:- declare-test xtest (test N (pr X (some S)) tt).
-macro @kol N X :- declare-test xtest (test N (pr X none) ff).
+macro @okl N X :- declare-test xtest (test N (pr X none)).
+macro @okl1 N X S:- declare-test xtest (test N (pr X (some S))).
+macro @kol N X :- declare-test xtest (test N (pr X none)).
 
 @ok 1 (@app [@f, @X]) (@app [@f, @a]) [@a].
 % @ok 2 (@app [@X, @a]) (@app [@f, @a]) [@f].                                           % here two solutions for X: fun _ => a, fun x => x

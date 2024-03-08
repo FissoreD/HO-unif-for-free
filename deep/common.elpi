@@ -122,7 +122,7 @@ last [A] A.
 last [_|L] A :- last L A.
 
 kind test type -> type.
-type test int -> (pair (list (triple diagnostic A A)) (option(list A))) -> bool -> test A.
+type test int -> (pair (list (triple diagnostic A A)) (option(list A))) -> test A.
 type declare-test (test A -> o) -> test A -> o.
 
 kind triple type -> type -> type -> type.
@@ -131,10 +131,9 @@ type triple A -> B -> C -> triple A B C.
 type runtests list o -> list int -> o.
 runtests [] [] :- print "ALL GOOD!".
 runtests [] F :- print "SOME TEST FAIL:" F, fail.
-runtests [declare-test F (test N LR B as T) |TS] ERR :- print "\n-----" N "-------\n\n\n",
-  if (B = tt) (Rel = "===") (Rel = "=/="),
-  if (F T) (print "ok" Rel LR, runtests TS ERR)
-           (print "\n<<<<<\nko" Rel LR "\n>>>>>\n", runtests TS [N|ERR]).
+runtests [declare-test F (test N LR as T) |TS] ERR :- print "\n-----" N "-------\n\n\n",
+  if (F T) (print "ok" LR, runtests TS ERR)
+           (print "\n<<<<<\nko" LR "\n>>>>>\n", runtests TS [N|ERR]).
 
 type internal-tests o.
 type internal-test o -> o.

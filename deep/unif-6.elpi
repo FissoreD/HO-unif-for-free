@@ -559,12 +559,29 @@ solve-link-ctx L _ _ _ :- fatal "solve-link-ctx" L.
 % We test forall linked var of the ML, that they have the same assignment
 type solve-link-fixpoint list link -> list link -> ho.subst -> ho.subst -> o.
 solve-link-fixpoint L L2 H H2 :-
-  print "fixpoint iteration",
+  print "fixpoint iteration" L,
   solve-link L L1 H H1, !,
   if (L = L1, H = H1) (print "end fixpoint", L2 = L, H2 = H) (solve-link-fixpoint L1 L2 H1 H2).
 
+type make-eta-link nat -> nat -> nat -> nat -> list ho.tm -> linkctx1 -> o.
+make-eta-link (s  X) z     M' M Vars L :- std.rev Vars Scope, eta-expand (ho.uva M Scope) (s X) T, make-eta-link.aux (s X) M' T Vars L.
+make-eta-link (s  X) (s Y) M' M Vars (ho.abs x\ L x) :- pi x\ make-eta-link X Y M M' [x|Vars] (L x).
+make-eta-link.aux z     M' T Vars (ho.val (link-eta M' Scope T)) :- std.rev Vars Scope.
+make-eta-link.aux (s X) M' T Vars (ho.abs L) :- pi x\ make-eta-link.aux X M' T [x|Vars] (L x).
+
 type solve-link list link -> list link -> ho.subst -> ho.subst -> o.
 solve-link [] [] X X :- print "end solv links".
+
+solve-link [link N M LenM|L] LR HO HO1 :- take-link L (link N M' LenM') L1, LenM' >n LenM, !, std.do! [
+   print "new eta link 1",
+   make-eta-link LenM' LenM M' M [] New,
+   solve-link L1 L2 HO HO1, LR = [link N M' LenM', link-abs New | L2],
+].
+solve-link [link N M LenM|L] LR HO HO1 :- take-link L (link N M' LenM') L1, LenM >n LenM', !, std.do! [
+   print "new eta link 2",
+   make-eta-link LenM LenM' M M' [] New,
+   solve-link L1 L2 HO HO1, LR = [link N M LenM, link-abs New | L2],
+].
 
 solve-link [link N M LenM|L] LR HO HO1 :- take-link L (link N M' LenM') L1, not (unset? M HO, unset? M' HO), !, std.do! [
   print "Solve simple link" M "/" LenM "==" M' "/" LenM',

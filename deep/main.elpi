@@ -20,5 +20,5 @@ main [] :-
 main [NS] :-
   internal-tests,
   N is string_to_int NS, 
-  std.findall (declare-test _ (test N _ _)) L,
+  std.findall (declare-test _ (test N _)) L,
   runtests L [].
