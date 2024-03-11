@@ -446,14 +446,15 @@ pplinkabs (ho.abs F) S :- pi x\ std.any->string x N, pplinkabs (F x) S1, S is N 
 pplinkabs (ho.val (link-eta A B)) S :- S is "|- " ^ {ho.pp A} ^ " =η= " ^ {ho.pp B}.
 pplinkabs (ho.val (link-fo-align _ _ _ _)) S :- S is "TODO pp fi align".
 
-% [maybe-eta N T] takes a name N and a term T.
-% return if T could be an eta expansion if T = app L and the last
-% arg T of L can be reduced to N : T is either N or a Uvar seeing N
+% [maybe-eta N T L] takes a name N a term T and a list of binder.
+% return if T could be an eta expansion, possible cases:
+%  - T = uva seing N (N is also the last of L)
+%  - T = app L such that the last args of L are maybe-eta wrt L
 type maybe-eta fo.fm -> fo.fm -> list fo.fm -> o.
 maybe-eta N N _.
 maybe-eta N (fo.fapp[fo.fuva _|Args]) _ :- !, mem Args N. % Head is flex -> if N is in Args, we can have eta
 maybe-eta N (fo.flam B) L :- !, pi x\ maybe-eta N (B x) [x | L].
-maybe-eta _ (fo.fapp [_ |Args]) L :-                   % Head is rigid -> to be an eta we consider also L
+maybe-eta _ (fo.fapp [_ |Args]) L :-                      % Head is rigid -> to be an eta we consider also L
   last-n {len L} Args R, 
   forall2 (x\y\ maybe-eta y x [y]) R {std.rev L}.
 
