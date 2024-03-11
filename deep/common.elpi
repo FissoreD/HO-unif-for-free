@@ -123,7 +123,7 @@ last [_|L] A :- last L A.
 
 kind test type -> type.
 type test int -> (pair (list (triple diagnostic A A)) (option(list A))) -> test A.
-type declare-test (test A -> o) -> test A -> o.
+type declare-test (test A -> o) -> (test A -> string -> o) -> test A -> o.
 
 kind triple type -> type -> type -> type.
 type triple A -> B -> C -> triple A B C.
@@ -131,9 +131,10 @@ type triple A -> B -> C -> triple A B C.
 type runtests list o -> list int -> o.
 runtests [] [] :- print "ALL GOOD!".
 runtests [] F :- print "SOME TEST FAIL:" F, fail.
-runtests [declare-test F (test N LR as T) |TS] ERR :- print "\n-----" N "-------\n\n\n",
-  if (F T) (print "ok" LR, runtests TS ERR)
-           (print "\n<<<<<\nko" LR "\n>>>>>\n", runtests TS [N|ERR]).
+runtests [declare-test F PP (test N _ as T) |TS] ERR :- print "\n-----" N "-------\n\n\n",
+  PP T Tstr,
+  if (F T) (print "ok" Tstr, runtests TS ERR)
+           (print "\n<<<<<\nko" Tstr "\n>>>>>\n", runtests TS [N|ERR]).
 
 type internal-tests o.
 type internal-test o -> o.
@@ -145,3 +146,12 @@ internal-tests :-
 type runinternal o -> o.
 runinternal (internal-test P) :- print "######" P, P, !.
 runinternal (internal-test P) :- halt "fail internal test" P.
+
+type ppnat nat -> string -> o.
+ppnat z "0".
+ppnat (s z) "1".
+ppnat (s (s z)) "2".
+ppnat (s (s (s z))) "3".
+ppnat (s (s (s (s z)))) "4".
+ppnat (s (s (s (s (s z))))) "5".
+ppnat N S :- std.any->string N S.

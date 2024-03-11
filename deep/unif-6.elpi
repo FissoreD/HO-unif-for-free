@@ -23,7 +23,23 @@ type flam (fm -> fm) -> fm.
 type fcon string -> fm.
 type fuva  nat -> fm.
 
+type pp fm -> string -> o.
+pp X "_" :- var X.
+pp (fapp L) S :- std.string.concat " " {std.map L pp} X, S is "(@ " ^ X ^ ")".
+pp (fcon S) S.
+pp (flam F) S :- pi x\ std.any->string x N, pp (F x) S1, S is "λ" ^ N ^ "." ^ S1.
+pp (fuva N) S :- ppnat N X, S is "C" ^ X.
+pp X S :- name X, std.any->string X S.
+
+
 typeabbrev subst list (option fm).
+
+type ppsubst subst -> list string -> o.
+ppsubst L S :- ppsubst.aux z L S.
+type ppsubst.aux nat -> subst -> list string -> o.
+ppsubst.aux _ [] [].
+ppsubst.aux N [some X|XS] [L|LS] :- L is "C" ^ {ppnat N} ^ " := " ^ {pp X}, ppsubst.aux (s N) XS LS.
+ppsubst.aux N [none|XS] [L|LS] :- L is "C" ^ {ppnat N} ^ " := _", ppsubst.aux (s N) XS LS.
 
 type deref subst -> fm -> fm -> o.
 deref _ X _ :- var X, fatal "flex deref".
@@ -113,9 +129,28 @@ type lam (tm -> tm) -> tm.
 type con string -> tm.
 type uva  nat -> list tm -> tm.
 
+type pp tm -> string -> o.
+pp (app L) S :- std.string.concat " " {std.map L pp} X, S is "(" ^ X ^ ")".
+pp (con S) S.
+pp (lam F) S :- pi x\ std.any->string x N, pp (F x) S1, S is N ^ "\\ " ^ S1.
+pp (uva N L) S :- std.string.concat " " {std.map L pp} X, ppnat N H, !, S is "X" ^ H ^ " " ^ X.
+pp X S :- name X, std.any->string X S.
+
+
+type ppsubst subst -> list string -> o.
+ppsubst L S :- ppsubst.aux z L S.
+type ppsubst.aux nat -> subst -> list string -> o.
+ppsubst.aux _ [] [].
+ppsubst.aux N [some X|XS] [L|LS] :- L is "X" ^ {ppnat N} ^ " " ^ {ppass X}, ppsubst.aux (s N) XS LS.
+ppsubst.aux N [none|XS] [L|LS] :- L is "X" ^ {ppnat N} ^ " := _", ppsubst.aux (s N) XS LS.
+
+type ppass assignment -> string -> o.
+ppass (abs F) S :- pi x\ std.any->string x N, ppass (F x) S1, S is N ^ " " ^ S1.
+ppass (val T) S :- S is " := " ^ {pp T}.
+
 % [unif T1 T2 SOld SNew] check if T1 and T2 unify looking into SOld. SNew is the final substution
 type unif tm -> tm -> subst -> subst ->  o.
-unif A B _ _ :- print "--------------" A B, fail.
+unif A B _ _ :- print "## unif" {pp A} "=?=" {pp B}, fail.
 % Base cases
 unif (app L1) (app L2) S S1 :- fold2 unif L1 L2 S S1.
 unif (lam F1) (lam F2) S S1 :- 
@@ -136,10 +171,10 @@ unif (uva N Args1) (uva N Args2) S S2 :- % same var
   pattern-fragment Args1, pattern-fragment Args2, 
   std.do![new S W S1, prune-same-variable W Args1 Args2 Ass, 
   assign N S1 Ass S2],
-  print "Assigning in uva N Args1" N S1 Ass S2. 
+  print "Assigning in uva N Args1" N {ppsubst S1} "+" {ppass Ass} "=>" {ppsubst S2}. 
 unif (uva N Args1) (uva M Args2) S S3 :- % Args with diff length
   unset? N S, unset? M S, !,
-  print "Unifying" (uva N Args1) "and" (uva M Args2),
+  print "Unifying" {pp (uva N Args1)} "and" {pp (uva M Args2)},
   pattern-fragment Args1, pattern-fragment Args2, 
   new S W S1, (prune-smart W Args1 Args2 Ass1 Ass2), 
   std.do![
@@ -384,6 +419,20 @@ kind link type.
 type link-abs linkabs -> link.
 type link nat -> nat -> nat -> link.
 
+type pplinks links -> list string -> o.
+pplinks [] [].
+pplinks [link N M Len|Links] [S|PS] :-
+  S is "C" ^ {ppnat  N} ^ " -> X" ^ {ppnat M} ^ " (" ^ {ppnat Len} ^ ")",
+  pplinks Links PS.
+pplinks [link-abs A|Links] [S|PS] :-
+  pplinkabs A S,
+  pplinks Links PS.
+
+type pplinkabs linkabs -> string -> o.
+pplinkabs (ho.abs F) S :- pi x\ std.any->string x N, pplinkabs (F x) S1, S is N ^ " " ^ S1.
+pplinkabs (ho.val (link-eta A B)) S :- S is "|- " ^ {ho.pp A} ^ " =η= " ^ {ho.pp B}.
+pplinkabs (ho.val (link-fo-align _ _ _ _)) S :- S is "TODO pp fi align".
+
 % [maybe-eta-aux N T] takes a name N and a term T.
 % return if T could be an eta expansion if T = app L and the last
 % arg T of L can be reduced to N : T is either N or a Uvar seeing N
@@ -416,7 +465,8 @@ comp-lam F F1 L L2 S S1 :-
 type comp fo.fm -> ho.tm -> list link -> list link -> ho.subst -> ho.subst -> o.
 comp (fo.fcon X)              (ho.con X) L L S S.
 % TODO: this is wrong, since we should pass something in the scope of W
-comp (fo.flam F) (ho.uva E0 Scope) L L2 S S2 :- print "EEEEEEEE with" F,
+comp (fo.flam F) (ho.uva E0 Scope) L L2 S S2 :-
+  print "## comp eta" {fo.pp (fo.flam F)},
   (pi x\ not (F x = x), (maybe-eta-aux x (F x))), !,
   std.do![
     ho.new S E0 S1,
@@ -431,9 +481,10 @@ comp (fo.flam F) (ho.uva E0 Scope) L L2 S S2 :- print "EEEEEEEE with" F,
     %   (F1 = (x\ho.uva _ [x, V1]), Scope = [V1]) ; % TODO this is needed for test 10
     %   % (F1 = (x\ho.app[ho.con _,uva ...V1,V2,x]), Scope = [V1,V2]) ;
     %   Scope = []),
-  ], L2 = [link-abs (ho.val(link-eta (ho.uva E0 Scope) (ho.lam F1))) | L1], % TODO save Scope in E0, somehow
+    NewLink = link-abs (ho.val(link-eta (ho.uva E0 Scope) (ho.lam F1))),
+  ], L2 = [NewLink| L1], % TODO save Scope in E0, somehow
   print "------------------ END ETA -------------------",
-  print "with new link: eta" E0 Scope "->" (ho.val (ho.lam F1)),
+  print "with new link:" {pplinks [NewLink]},
   print "----------------------------------------------".
 
 comp (fo.flam F) (ho.lam F1) L L2 S S1 :- comp-lam F F1 L L2 S S1.
@@ -514,13 +565,14 @@ my-deref S (ho.app L) (ho.app L1) :- std.map L (my-deref S) L1.
 
 type solve-link-abs linkabs -> option linkabs -> ho.subst -> ho.subst -> o.
 solve-link-abs (ho.abs X) R H H1 :- 
-  print "solve-link-abs under abs",
+  % print "solve-link-abs under abs",
   pi x\ (pi S\ ho.unif x x S S) => ho.copy x x => (pi S\ ho.deref S x x) => solve-link-abs (X x) (R' x) H H1,
   if ((R' x) = some (R'' x)) (R = some (ho.abs R'')) (R = none)
   .
 solve-link-abs (ho.val (link-eta A B) as L) (some L) S S1 :-
-  print "solve-link-abs eta" A "=?=" B, !,
-  progress-eta-link A B S S1, print "finish progress". % TODO: remove link if L is no more an eta
+  print "solve-link-abs eta" {ho.pp A} "=?=" {ho.pp B}, !,
+  progress-eta-link A B S S1.
+  % print "finish progress". % TODO: remove link if L is no more an eta
 % solve-link-abs (ho.val (link-fo-align Beta Head PF NPF) as L) (some L) S S1 :- 
 %   ho.deref S (ho.uva Head {std.append PF NPF}) BetaHead,  rigid-head BetaHead, !,
 %   ho.deref S (ho.uva Beta {std.append PF NPF}) BetaAss, ho.unif BetaHead BetaAss S S1.
@@ -595,28 +647,28 @@ deref-link-abs-occur-check (ho.val (link-eta (ho.uva M _) T)) Links M S N H T3 :
   lam-occur-check N Links T2 H T3.
 
 :index(_ 1)
-type update-link ho.subst -> links -> links -> o.
-update-link _ [] [].
-update-link H [link N M L|XS] [link N M L|YS] :- update-link H XS YS.
-update-link H [link-abs A|XS] [link-abs A1|YS] :- update-link-abs H A A1, update-link H XS YS.
+type deref-links ho.subst -> links -> links -> o.
+deref-links _ [] [].
+deref-links H [link N M L|XS] [link N M L|YS] :- deref-links H XS YS.
+deref-links H [link-abs A|XS] [link-abs A1|YS] :- std.assert! (deref-link-abs H A A1) "bug deref links", deref-links H XS YS.
 
-type update-link-abs ho.subst -> linkabs -> linkabs -> o.
-update-link-abs H (ho.abs F) (ho.abs G) :- pi x\ update-link-abs H (F x) (G x).
-update-link-abs H (ho.val (link-eta A B)) (ho.val (link-eta A1 B1)) :-
+type deref-link-abs ho.subst -> linkabs -> linkabs -> o.
+deref-link-abs H (ho.abs F) (ho.abs G) :- pi x\ deref-link-abs H (F x) (G x).
+deref-link-abs H (ho.val (link-eta A B)) (ho.val (link-eta A1 B1)) :-
   ho.deref H A A1, ho.deref H B B1.
+deref-link-abs _ (ho.val (link-fo-align A B C D)) (ho.val (link-fo-align A B C D)).
 
 % We test forall linked var of the ML, that they have the same assignment
 type solve-links-fixpoint list link -> list link -> ho.subst -> ho.subst -> o.
 solve-links-fixpoint L0 L2 H H2 :- std.do! [
-  print "update links\n",
-  update-link H L0 L, !,
-  print "\nfixpoint iteration" L,
+  deref-links H L0 L, !,
+  print "\nfixpoint iteration" {pplinks L},
   solve-links L L1 H H1, !,
   %H1 = H0,
   %link-occur-check L1 L1 H0 H1, !,
   if (L = L1, H = H1)
-     (print "end fixpoint", L2 = L, H2 = H)
-     (print "links" L1, printC "next fixpoint iteration", solve-links-fixpoint L1 L2 H1 H2)
+     (print "end fixpoint", deref-links H L L2 , H2 = H)
+     (print "## Links are" {pplinks {deref-links H1 L1}}, printC "next fixpoint iteration", solve-links-fixpoint L1 L2 H1 H2)
 ].
 type make-eta-link nat -> nat -> nat -> nat -> list ho.tm -> linkabs -> o.
 make-eta-link (s  X) z     M' M Vars L :- std.rev Vars Scope, eta-expand (ho.uva M Scope) (s X) T, make-eta-link.aux (s X) M' T Vars L.
@@ -631,12 +683,12 @@ solve-links [] [] X X :- print "end solve links".
 
 solve-links [link N M LenM|L] LR HO HO1 :- take-link L (link N M' LenM') L1, LenM' >n LenM, !, std.do! [
    make-eta-link LenM' LenM M M' [] New,
-   print "new eta link 1" LenM' LenM M' M "->" New,
+   print "new eta link" {pplinkabs New},
    solve-links L1 L2 HO HO1, LR = [link N M' LenM', link-abs New | L2],
 ].
 solve-links [link N M LenM|L] LR HO HO1 :- take-link L (link N M' LenM') L1, LenM >n LenM', !, std.do! [
    make-eta-link LenM LenM' M' M [] New,
-   print "new eta link 2" LenM LenM' M M' "->" New,
+   print "new eta link" {pplinkabs New},
    solve-links L1 L2 HO HO1, LR = [link N M LenM, link-abs New | L2],
 ].
 
@@ -809,8 +861,11 @@ assign-replace z [none|S] X [some X |S].
 assign-replace (s N) [A|S] X [A |S1] :- assign-replace N S X S1.
 
 type decompl.aux list link -> list link -> ho.subst -> fo.subst -> fo.subst -> o.
-decompl.aux [link N M _Arity|L] LK HO FO FO1 :- print "starting classic eta, coq" N "elpi" M, print HO, set? M HO T, !, 
-  ho.assmt-deref HO T T'', print "In HERE", print "The terms assigned is" T "in memory HO" HO "dereferenced is" T'', std.do! [
+decompl.aux [link N M _Arity|L] LK HO FO FO1 :- print "starting classic eta, coq" {ppnat N} "elpi" {ppnat M},
+  print {ho.ppsubst HO}, set? M HO T, !, 
+  ho.assmt-deref HO T T'',
+  print "The terms assigned is" {ho.ppass T}
+    "in memory HO" {ho.ppsubst HO} "dereferenced is" {ho.ppass T''}, std.do! [
   decomp-assign LK HO T T0 FO FO',
   fo.eta-contract T0 T',
   assign-replace N FO' T' FO2,

@@ -37,24 +37,22 @@ type prolog
   o.
 prolog [] L L H H ok :- print "end proog".
 prolog [triple ok L R|Us] Links Links2 H H3 D :- std.do! [
-  print "## unif" L "=" R,
-  print H,
-  print "## unif" {try6.ho.deref H L} "=" {try6.ho.deref H R},
+  print "## prolog unif step" {try6.ho.pp {try6.ho.deref H L}} "=" {try6.ho.pp {try6.ho.deref H R}},
   try6.ho.unif L R H H1,
-  print "## After unif" L "=" R "subst is" H1,
-  print "## Links are" Links,
+  print "## After unif subst is" {try6.ho.ppsubst H1},
+  print "## Links are" {try6.comp.pplinks Links},
   printC "solve links?",
   try6.comp.solve-links-fixpoint Links Links1 H1 H2,
-  print "## After solve links, links are" Links1,
-  print "## After solve links, subst is" H2,
+  print "## After solve links, links are" {try6.comp.pplinks Links1},
+  print "## After solve links, subst is" {try6.ho.ppsubst H2},
   printC "next problem?",
   prolog Us Links1 Links2 H2 H3 D,
 ].
 prolog [triple (error "unif") L R|_] Links Links H H1 (error "stop") :-
   print "## unif (error)" L "=" R,
   if (try6.ho.unif L R H H1)
-     (print "## After unif" L "=" R "subst is" H1,
-      print "## Links are" Links,
+     (print "## After unif" L "=" R "subst is" {try6.ho.ppsubst H1},
+      print "## Links are" {try6.comp.pplinks Links},
       printC "solve links?",
       not(try6.comp.solve-links-fixpoint Links _ H1 _))
      (H1 = H).
@@ -114,12 +112,12 @@ validate-solution [triple (error _) _ _|_] _.
 %   triple ok (@app[@g, @Y]) @Z,
 % ].
 
-type same-sols list (option A) -> list (option A) -> o.
+type same-sols list (option try6.fo.fm) -> list (option try6.fo.fm) -> o.
 same-sols [] [].
 same-sols [A|L] [A|M] :- !, same-sols L M.
 same-sols [] L :- std.assert! (forall1 ((=) none) L) "Invalid solution".
 same-sols L [] :- std.assert! (forall1 ((=) none) L) "Invalid solution".
-same-sols A B :- halt "INVALID SOL" A B.
+same-sols A B :- halt "INVALID SOL" {try6.fo.ppsubst A} " =/= " {try6.fo.ppsubst B}.
 
 
 type check-sol option (list try6.fo.fm) -> try6.fo.subst -> o.
@@ -135,21 +133,35 @@ do-read.
 type printC string -> o.
 printC A :- X = "@@@@@@@@@@@@@@@@@@@@@@@@@", print X A X, (not do-read; @read).
 
+type ptest test try6.fo.fm -> string -> o.
+ptest (test _ (pr Pbs (some Sol))) S :-
+  std.map Pbs pppbs S1,
+  try6.fo.ppsubst {std.map Sol (x\r\ r = some x)} S2,
+  S is {std.string.concat "; " S1} ^ "\n==> " ^ {std.string.concat "; " S2}.
+ptest (test _ (pr Pbs none)) S :-
+  std.map Pbs pppbs S1,
+  S is {std.string.concat "\n" S1} ^ "\n==> _".
+
+
+type pppbs triple diagnostic try6.fo.fm try6.fo.fm -> string -> o.
+pppbs (triple ok A B) S :- S is {try6.fo.pp A} ^ " == " ^ {try6.fo.pp B}.
+pppbs (triple (error _) A B) S :- S is {try6.fo.pp A} ^ " =/= " ^ {try6.fo.pp B}.
+
 type xtest test try6.fo.fm -> o.
-xtest (test N (pr LR Sol)) :- std.do![
-  print "## Test" N "=" LR,
+xtest (test N (pr LR Sol) as Test) :- std.do![
+  print "## Test" N ":" {ptest Test},
   printC "run test?",
   build-fo-subst LR [] FO_Subst,
   compile-terms LR Uproblems Links [] HO_Subst,
-  print "## After compilation the links are" Links,
+  print "## After compilation the links are" {try6.comp.pplinks Links},
   printC "continue to prolog?",
   prolog Uproblems Links Links1 HO_Subst HO_Subst1 D,
   if (D = ok) (
-    print "## After prolog HO subst is" HO_Subst1,
-    print "## After prolog links are" Links1,
+    print "## After prolog HO subst is" {try6.ho.ppsubst HO_Subst1},
+    print "## After prolog links are" {try6.comp.pplinks Links1},
     printC "continue to decomp?",
     decompile-subst Links1 HO_Subst1 FO_Subst Sol1,
-    print "## After decomp FO subst is" Sol1,
+    print "## After decomp FO subst is" {try6.fo.ppsubst Sol1},
     printC "continue to validate solution?",
     validate-solution LR Sol1,
     printC "continue to check solution vs expected?",
@@ -158,12 +170,12 @@ xtest (test N (pr LR Sol)) :- std.do![
 
 ].
 
-macro @ok N X Y S :- declare-test xtest (test N (pr [triple ok X Y] (some S))).
-macro @ko N X Y :- declare-test xtest (test N (pr [triple ok X Y] none)).
+macro @ok N X Y S :- declare-test xtest ptest (test N (pr [triple ok X Y] (some S))).
+macro @ko N X Y :- declare-test xtest ptest (test N (pr [triple ok X Y] none)).
 
-macro @okl N X :- declare-test xtest (test N (pr X none)).
-macro @okl1 N X S:- declare-test xtest (test N (pr X (some S))).
-macro @kol N X :- declare-test xtest (test N (pr X none)).
+macro @okl N X :- declare-test xtest ptest (test N (pr X none)).
+macro @okl1 N X S:- declare-test xtest ptest (test N (pr X (some S))).
+macro @kol N X :- declare-test xtest ptest (test N (pr X none)).
 
 @ok 1 (@app [@f, @X]) (@app [@f, @a]) [@a].
 % @ok 2 (@app [@X, @a]) (@app [@f, @a]) [@f].                                           % here two solutions for X: fun _ => a, fun x => x
@@ -178,7 +190,7 @@ macro @kol N X :- declare-test xtest (test N (pr X none)).
 
 @ok 9  (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@f, y]) [@lam x\ @f].
 @ok 90  (@lam x\ @lam y\ @app [@X, y, x]) (@lam x\ @f) [@lam c0 \ @lam c1 \ @app [@f, c0]].
-@ok 10 @X (@lam x\ @lam y\ @app [@X, y, x]) [@lam x\ @lam y\ TODO_].
+@ok 10 @X (@lam x\ @lam y\ @app [@X, y, x]) [@lam x\ @lam y\ @Z].
 
 % @ok 11 (@lam x\ @app [@X, x]) (@lam x\ @app [@f, x, x, @a]) [@lam x\ @app [@f, x, x, @a]].
 % @ok 12 (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, x, @a]) [@lam x\ @app [@f, x, x]].                 % here two solutions for X: fun x _ => f x x a, fun x y => f x x y
