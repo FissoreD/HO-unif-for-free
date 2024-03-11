@@ -156,7 +156,7 @@ ppass (val T) S :- S is " := " ^ {pp T}.
 
 % [unif T1 T2 SOld SNew] check if T1 and T2 unify looking into SOld. SNew is the final substution
 type unif tm -> tm -> subst -> subst ->  o.
-unif A B _ _ :- print "## unif" {pp A} "=?=" {pp B}, fail.
+%unif A B _ _ :- print "## unif" {pp A} "=?=" {pp B}, fail.
 % Base cases
 unif (app L1) (app L2) S S1 :- fold2 unif L1 L2 S S1.
 unif (lam F1) (lam F2) S S1 :- 
@@ -711,7 +711,7 @@ solve-links [(link N M LenM as X)|L] LR HO HO1 :- take-link L (link N M' LenM') 
 ].
 
 solve-links [(link _ _ _ as X)|L] [X|LR] HO HO1 :-
-  print "postponing link:" {pplink X},
+  print "ignoring link:" {pplink X},
   solve-links L LR HO HO1.
 
 solve-links [link-abs A|L1] [link-abs A|L3] S S2 :- take-link-abs A L1 B L2, !, std.do! [
@@ -735,7 +735,7 @@ same-link-abs (ho.val (link-eta (ho.uva N S1) A))
   std.assert! (std.length S1 {std.length S2}) "no same scope",
   std.map2 S1 S2 (x\y\r\ r = ho.copy x y) Perm,
   Perm => ho.copy A A',
-  print {ho.pp A'} "=?=" {ho.pp B},
+  %print {ho.pp A'} "=?=" {ho.pp B},
   ho.unif A' B H H1,
 ].
 
@@ -956,7 +956,7 @@ type decomp-assign list link -> ho.subst -> ho.assignment -> fo.fm -> fo.subst -
 decomp-assign LK HO (ho.abs F) (fo.flam F1) S S1 :-
   pi x y\ (pi S\ decomp LK HO x y S S) => decomp-assign LK HO (F x) (F1 y) S S1.
 
-decomp-assign LK HO (ho.val T) T1 S S1 :- print "Before decomp LK HO", (decomp LK HO T T1 S S1).
+decomp-assign LK HO (ho.val T) T1 S S1 :- (decomp LK HO T T1 S S1).
 
 type decomp list link -> ho.subst -> ho.tm -> fo.fm -> fo.subst -> fo.subst -> o.
 decomp _ _ (ho.con X)   (fo.fcon X) S S :- print "OK for constant".
@@ -970,7 +970,7 @@ decomp LK HO (ho.uva N Args) SolOL S S1 :- set? N HO T, !, print "In set case of
   abs->lam T1a T1,
   % ho.move T Args T1,
   decomp LK HO T1 SolOL S S1].
-decomp LK HO (ho.uva N Args) SolOL S S1 :- print "Entering uva decomp",
+decomp LK HO (ho.uva N Args) SolOL S S1 :-
   fold2 (decomp LK HO) Args Args1 S S2,
   if (take-link LK (link X N _) _) (S1 = S2)
      (fo.new S2 X S1',
