@@ -258,9 +258,11 @@ macro @kol N X :- declare-test xtest ptest (test N (pr X none)).
   (triple ok (@lam x\ @lam y\ @app[@f, y, @a]) (@lam x\ @lam y\ @app[@X, x, y]))
 ].
 
+% BUG: first decomp the eta, and then the normal links,
+% or force the ta links when used in the normal links
 % @okl1 288 [
 %   triple ok (@lam x\ @lam y\ @app[@X, y, x]) @Y
-% ] [_, @lam x\ @lam y\ @app[try6.fo.fuva z, y, x]].
+% ] [_, @lam x\ @lam y\ @app[@X, y, x]].
 
 % @okl 22001 [
 %   triple ok (@lam x\ @lam y\ @app[@Y, y, x]) @Z,
