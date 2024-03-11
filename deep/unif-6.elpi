@@ -560,25 +560,18 @@ contract-rigid L (ho.app [H|Args]) T :-
 
 
 % invariante: a sx non c'è mai una eta espansione, a destra c'è una lam, altrimenti il link eta è buttato via
-type progress-eta-link ho.tm -> ho.tm -> ho.subst -> ho.subst -> o.
-progress-eta-link (ho.app _ as T) (ho.lam x\ _ as T1) H H1 :- !, print "progress 1", ho.unif {eta-expand T @one} T1 H H1.
-progress-eta-link (ho.con _ as T) (ho.lam x\ _ as T1) H H1 :- !, print "progress 2", ho.unif {eta-expand T @one} T1 H H1.
-progress-eta-link (ho.lam _ as T) T1 H H1 :- !, print "progress 3", ho.unif T T1 H H1.
+type progress-eta-link ho.tm -> ho.tm -> ho.subst -> ho.subst -> bool -> o.
+progress-eta-link (ho.app _ as T) (ho.lam x\ _ as T1) H H1 ff :- !, print "progress 1", ho.unif {eta-expand T @one} T1 H H1.
+progress-eta-link (ho.con _ as T) (ho.lam x\ _ as T1) H H1 ff :- !, print "progress 2", ho.unif {eta-expand T @one} T1 H H1.
+progress-eta-link (ho.lam _ as T) T1 H H1 ff :- !, print "progress 3", ho.unif T T1 H H1.
 
 % progress-eta-link (ho.con _ as T) (ho.uva _ _ as T1) H H1 :- !, print "progrss 2.1", std.assert!(ho.unif T T1 H H1) "WHY?".
 % progress-eta-link (ho.lam B) (ho.lam C) H H1 :- !, print "progress 3", pi x\ (pi S\ ho.unif x x S S) => ho.copy x x => progress-eta-link (B x) (C x) H H1. % fatal "progress eta lam".
 
 
 % todo: guardare lo scope della uva di dx e allinearlo con quello di sx
-progress-eta-link (ho.uva _ _ as X) T H H1 :- contract-rigid [] T T1, !, print "progress 4", ho.unif X T1 H H1. % TODO remove this link from Links
-progress-eta-link _ _ H H :- print "no progress". % NO PROGRESS
-
-type my-deref ho.subst -> ho.tm -> ho.tm -> o.
-my-deref T (ho.uva N S_) T1_ :- 
-  set? N T A_, fatal "TODO".
-my-deref _ (ho.con C) (ho.con C).
-my-deref S (ho.lam B) (ho.lam B1) :- pi x\ my-deref S x x => my-deref S (B x) (B1 x).
-my-deref S (ho.app L) (ho.app L1) :- std.map L (my-deref S) L1.
+progress-eta-link (ho.uva _ _ as X) T H H1 ff :- contract-rigid [] T T1, !, print "progress 4", ho.unif X T1 H H1. % TODO remove this link from Links
+progress-eta-link _ _ H H tt :- print "no progress". % NO PROGRESS
 
 type solve-link-abs linkabs -> option linkabs -> ho.subst -> ho.subst -> o.
 solve-link-abs (ho.abs X) R H H1 :- 
@@ -586,8 +579,10 @@ solve-link-abs (ho.abs X) R H H1 :-
   pi x\ (pi S\ ho.unif x x S S) => ho.copy x x => (pi S\ ho.deref S x x) => solve-link-abs (X x) (R' x) H H1,
   if ((R' x) = some (R'' x)) (R = some (ho.abs R'')) (R = none)
   .
-solve-link-abs (ho.val (link-eta A B) as L) (some L) S S1 :- !,
-  progress-eta-link A B S S1.
+solve-link-abs (ho.val (link-eta A B) as L) Keep S S1 :- !,
+  print "In progress eta link for" {ho.pp A} {ho.pp B},
+  progress-eta-link A B S S1 R,
+  if (R = tt) (Keep = some L) (Keep = none).
   % print "finish progress". % TODO: remove link if L is no more an eta
 % solve-link-abs (ho.val (link-fo-align Beta Head PF NPF) as L) (some L) S S1 :- 
 %   ho.deref S (ho.uva Head {std.append PF NPF}) BetaHead,  rigid-head BetaHead, !,
@@ -735,7 +730,7 @@ solve-links [link-abs L|L1] L3 S S2 :-
   (solve-link-abs L R S S1), !,
   if (R = some L')
      (solve-links L1 L2 S1 S2, L3 = [link-abs L'|L2])
-     (solve-links L1 L3 S1 S2) .
+     (print {pplinkabs L} "is removed", solve-links L1 L3 S1 S2) .
 
 type same-link-abs linkabs -> linkabs -> ho.subst -> ho.subst -> o.
 same-link-abs (ho.abs F) B H H1 :- pi x\ same-link-abs (F x) B H H1.
