@@ -556,7 +556,7 @@ contract-rigid L (ho.app [H|Args]) T :-
 % invariante: a sx non c'è mai una eta espansione, a destra c'è una lam, altrimenti il link eta è buttato via
 type progress-eta-link ho.tm -> ho.tm -> ho.subst -> ho.subst -> o.
 progress-eta-link (ho.app _ as T) (ho.lam x\ _ as T1) H H1 :- !, print "progress 1", ho.unif {eta-expand T @one} T1 H H1.
-progress-eta-link (ho.con _ as T) (ho.lam x\ _ as T1) H H1 :- !, print "progress 2", ho.unif {eta-expand T @one} T1 H H1, print "x".
+progress-eta-link (ho.con _ as T) (ho.lam x\ _ as T1) H H1 :- !, print "progress 2", ho.unif {eta-expand T @one} T1 H H1.
 progress-eta-link (ho.lam _ as T) T1 H H1 :- !, print "progress 3", ho.unif T T1 H H1.
 
 % progress-eta-link (ho.con _ as T) (ho.uva _ _ as T1) H H1 :- !, print "progrss 2.1", std.assert!(ho.unif T T1 H H1) "WHY?".
