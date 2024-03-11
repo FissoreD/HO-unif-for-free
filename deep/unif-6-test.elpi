@@ -206,14 +206,17 @@ macro @kol N X :- declare-test xtest ptest (test N (pr X none)).
   (triple ok (@lam x\ @app [@X, x]) (@lam x\ @app [@f, x])), 
   (triple ok @f @X)].
 
-% TODO: 131 & 132 dont work yet...
-% @okl 131 [
-%   (triple ok (@lam x\ @app [@X, x]) @f), % ci costringe a bucare il lambda, ci puo' essere una eta 
-%   (triple ok @f @X)].
+@okl1 131 [
+   (triple ok (@lam x\ @app [@X, x]) @f), % ci costringe a bucare il lambda, ci puo' essere una eta 
+   (triple ok @f @X)]
+   [@f]
+   .
 
-% @okl 132 [
-%   (triple ok (@lam x\ @app [@X, x]) (@lam x\ @app[@f, x, x])),  % visto che buchiamo a sx, la link deve usare il PF sotto il lambda
-%   (triple ok @X (@lam y\CV@g @X)]. % we fail early
+@okl1 132 [
+  (triple ok (@lam x\ @app [@X, x]) (@lam x\ @app[@f, x, x])),  % visto che buchiamo a sx, la link deve usare il PF sotto il lambda
+  (triple ok @X (@lam y\@app[@f,y,y]))]
+  [(@lam y\@app[@f,y,y])]
+  .
 
 @okl 15 [
   (triple ok @X (@lam x\ @app [@f, @app[@Y,x]])), 
