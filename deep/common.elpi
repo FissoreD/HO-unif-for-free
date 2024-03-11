@@ -154,4 +154,4 @@ ppnat (s (s z)) "2" :- !.
 ppnat (s (s (s z))) "3" :- !.
 ppnat (s (s (s (s z)))) "4" :- !.
 ppnat (s (s (s (s (s z))))) "5" :- !.
-ppnat N S :- std :- !.any->string N S :- !.
+ppnat N S :- std.any->string N S.

@@ -45,9 +45,11 @@ prolog [triple ok L R|Us] Links Links2 H H3 D :- std.do! [
   try6.comp.solve-links-fixpoint Links Links1 H1 H2,
   print "## After solve links, links are" {try6.comp.pplinks Links1},
   print "## After solve links, subst is" {try6.ho.ppsubst H2},
+  ],
+  !,
   printC "next problem?",
-  prolog Us Links1 Links2 H2 H3 D,
-].
+  prolog Us Links1 Links2 H2 H3 D.
+prolog [_|_] L L H H (error "xx").
 prolog [triple (error "unif") L R|_] Links Links H H1 (error "stop") :-
   print "## unif (error)" L "=" R,
   if (try6.ho.unif L R H H1)
