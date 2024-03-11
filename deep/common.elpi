@@ -117,9 +117,21 @@ split-pf L PF NPF :- split-pf-aux L [] PF NPF.
 pred pattern-fragment i:list A.
 pattern-fragment L :- distinct_names L.
 
+type minus nat -> nat -> nat -> o.
+minus z _ z.
+minus A z A.
+minus (s N) (s M) R :- minus N M R.  
+
 type last list A -> A -> o.
 last [A] A.
 last [_|L] A :- last L A.
+
+type drop-first-n nat -> list A -> list A -> o.
+drop-first-n z L L.
+drop-first-n (s N) [_|As] Bs :- drop-first-n N As Bs. 
+
+type last-n nat -> list A -> list A -> o.
+last-n N L R :- minus {len L} N PrefLen, drop-first-n PrefLen L R.
 
 kind test type -> type.
 type test int -> (pair (list (triple diagnostic A A)) (option(list A))) -> test A.
@@ -147,12 +159,10 @@ type runinternal o -> o.
 runinternal (internal-test P) :- print "######" P, P, !.
 runinternal (internal-test P) :- halt "fail internal test" P.
 
+type ppnat-aux nat -> int -> o.
+ppnat-aux z 0.
+ppnat-aux (s N) M :- ppnat-aux N M1, M is M1 + 1.
+
 type ppnat nat -> string -> o.
 ppnat X _ :- var X, halt "ppnat".
-ppnat z "0" :- !.
-ppnat (s z) "1" :- !.
-ppnat (s (s z)) "2" :- !.
-ppnat (s (s (s z))) "3" :- !.
-ppnat (s (s (s (s z)))) "4" :- !.
-ppnat (s (s (s (s (s z))))) "5" :- !.
-ppnat N S :- std.any->string N S.
+ppnat N S :- ppnat-aux N M, std.any->string M S.
