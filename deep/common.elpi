@@ -148,10 +148,10 @@ runinternal (internal-test P) :- print "######" P, P, !.
 runinternal (internal-test P) :- halt "fail internal test" P.
 
 type ppnat nat -> string -> o.
-ppnat z "0".
-ppnat (s z) "1".
-ppnat (s (s z)) "2".
-ppnat (s (s (s z))) "3".
-ppnat (s (s (s (s z)))) "4".
-ppnat (s (s (s (s (s z))))) "5".
-ppnat N S :- std.any->string N S.
+ppnat z "0" :- !.
+ppnat (s z) "1" :- !.
+ppnat (s (s z)) "2" :- !.
+ppnat (s (s (s z))) "3" :- !.
+ppnat (s (s (s (s z)))) "4" :- !.
+ppnat (s (s (s (s (s z))))) "5" :- !.
+ppnat N S :- std :- !.any->string N S :- !.

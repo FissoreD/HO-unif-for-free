@@ -357,7 +357,6 @@ contract L (app [H|Args]) T :-
 contract L (uva H Args) (uva H Prefix) :- 
   std.rev L LRev, std.appendR Prefix LRev Args.
 
-
 type test-unif-1 o.
 type test-unif-2 o.
 type test-unif-3 o.
@@ -544,9 +543,9 @@ contract-rigid L (ho.app [H|Args]) T :-
 
 % invariante: a sx non c'è mai una eta espansione, a destra c'è una lam, altrimenti il link eta è buttato via
 type progress-eta-link ho.tm -> ho.tm -> ho.subst -> ho.subst -> o.
-progress-eta-link (ho.app _ as T) (ho.lam x\ _ as T1) H H1 :- !, print "progrss 1", ho.unif {eta-expand T @one} T1 H H1.
-progress-eta-link (ho.con _ as T) (ho.lam x\ _ as T1) H H1 :- !, print "progrss 2", ho.unif {eta-expand T @one} T1 H H1.
-progress-eta-link (ho.lam _ as T) T1 H H1 :- !, print "progrss 3", ho.unif T T1 H H1.
+progress-eta-link (ho.app _ as T) (ho.lam x\ _ as T1) H H1 :- !, print "progress 1", ho.unif {eta-expand T @one} T1 H H1.
+progress-eta-link (ho.con _ as T) (ho.lam x\ _ as T1) H H1 :- !, print "progress 2", ho.unif {eta-expand T @one} T1 H H1, print "x".
+progress-eta-link (ho.lam _ as T) T1 H H1 :- !, print "progress 3", ho.unif T T1 H H1.
 
 % progress-eta-link (ho.con _ as T) (ho.uva _ _ as T1) H H1 :- !, print "progrss 2.1", std.assert!(ho.unif T T1 H H1) "WHY?".
 % progress-eta-link (ho.lam B) (ho.lam C) H H1 :- !, print "progress 3", pi x\ (pi S\ ho.unif x x S S) => ho.copy x x => progress-eta-link (B x) (C x) H H1. % fatal "progress eta lam".
@@ -569,8 +568,8 @@ solve-link-abs (ho.abs X) R H H1 :-
   pi x\ (pi S\ ho.unif x x S S) => ho.copy x x => (pi S\ ho.deref S x x) => solve-link-abs (X x) (R' x) H H1,
   if ((R' x) = some (R'' x)) (R = some (ho.abs R'')) (R = none)
   .
-solve-link-abs (ho.val (link-eta A B) as L) (some L) S S1 :-
-  print "solve-link-abs eta" {ho.pp A} "=?=" {ho.pp B}, !,
+solve-link-abs (ho.val (link-eta A B) as L) (some L) S S1 :- !,
+  print "solve-link-abs eta" {ho.pp A} "=?=" {ho.pp B},
   progress-eta-link A B S S1.
   % print "finish progress". % TODO: remove link if L is no more an eta
 % solve-link-abs (ho.val (link-fo-align Beta Head PF NPF) as L) (some L) S S1 :- 
@@ -662,13 +661,13 @@ deref-link-abs _ (ho.val (link-fo-align A B C D)) (ho.val (link-fo-align A B C D
 type solve-links-fixpoint list link -> list link -> ho.subst -> ho.subst -> o.
 solve-links-fixpoint L0 L2 H H2 :- std.do! [
   deref-links H L0 L, !,
-  print "\nfixpoint iteration" {pplinks L},
+  print "\nfixpoint iteration" {pplinks L}, !,
   solve-links L L1 H H1, !,
   %H1 = H0,
   %link-occur-check L1 L1 H0 H1, !,
   if (L = L1, H = H1)
      (print "end fixpoint", deref-links H L L2 , H2 = H)
-     (print "## Links are" {pplinks {deref-links H1 L1}}, printC "next fixpoint iteration", solve-links-fixpoint L1 L2 H1 H2)
+     (print "## Links are" {pplinks {deref-links H1 L1}}, !, solve-links-fixpoint L1 L2 H1 H2)
 ].
 type make-eta-link nat -> nat -> nat -> nat -> list ho.tm -> linkabs -> o.
 make-eta-link (s  X) z     M' M Vars L :- std.rev Vars Scope, eta-expand (ho.uva M Scope) (s X) T, make-eta-link.aux (s X) M' T Vars L.
@@ -719,9 +718,10 @@ same-link-abs A (ho.abs G) H H1 :- pi x\ same-link-abs A (G x) H H1.
 same-link-abs (ho.val (link-eta (ho.uva N S1) A))
               (ho.val (link-eta (ho.uva N S2) B)) H H1 :- std.do! [
   std.assert! (std.length S1 {std.length S2}) "no same scope",
-  std.assert! (S1 = []) "not implemented",
-  print A "=?=" B,
-  ho.unif A B H H1,
+  std.map2 S1 S2 (x\y\r\ r = ho.copy x y) Perm,
+  Perm => ho.copy A A',
+  print {ho.pp A'} "=?=" {ho.pp B},
+  ho.unif A' B H H1,
 ].
 
 % TODO:
@@ -861,8 +861,9 @@ assign-replace z [none|S] X [some X |S].
 assign-replace (s N) [A|S] X [A |S1] :- assign-replace N S X S1.
 
 type decompl.aux list link -> list link -> ho.subst -> fo.subst -> fo.subst -> o.
-decompl.aux [link N M _Arity|L] LK HO FO FO1 :- print "starting classic eta, coq" {ppnat N} "elpi" {ppnat M},
-  print {ho.ppsubst HO}, set? M HO T, !, 
+decompl.aux [link N M _Arity|L] LK HO FO FO1 :-  set? M HO T, !,
+  print "starting classic eta, coq" {ppnat N} "elpi" {ppnat M},
+  print {ho.ppsubst HO}, 
   ho.assmt-deref HO T T'',
   print "The terms assigned is" {ho.ppass T}
     "in memory HO" {ho.ppsubst HO} "dereferenced is" {ho.ppass T''}, std.do! [
