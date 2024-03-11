@@ -35,7 +35,7 @@ type prolog
   try6.ho.subst -> try6.ho.subst ->
   diagnostic ->
   o.
-prolog [] L L H H ok :- print "end proog".
+prolog [] L L H H ok :- print "end proggram\n".
 prolog [triple ok L R|Us] Links Links2 H H3 D :- std.do! [
   print "## prolog unif step" {try6.ho.pp {try6.ho.deref H L}} "=" {try6.ho.pp {try6.ho.deref H R}},
   try6.ho.unif L R H H1,
@@ -149,12 +149,17 @@ type pppbs triple diagnostic try6.fo.fm try6.fo.fm -> string -> o.
 pppbs (triple ok A B) S :- S is {try6.fo.pp A} ^ " == " ^ {try6.fo.pp B}.
 pppbs (triple (error _) A B) S :- S is {try6.fo.pp A} ^ " =/= " ^ {try6.fo.pp B}.
 
+type pppbsc triple diagnostic try6.ho.tm try6.ho.tm -> string -> o.
+pppbsc (triple ok A B) S :- S is {try6.ho.pp A} ^ " == " ^ {try6.ho.pp B}.
+pppbsc (triple (error _) A B) S :- S is {try6.ho.pp A} ^ " =/= " ^ {try6.ho.pp B}.
+
 type xtest test try6.fo.fm -> o.
 xtest (test N (pr LR Sol) as Test) :- std.do![
   print "## Test" N ":" {ptest Test},
   printC "run test?",
   build-fo-subst LR [] FO_Subst,
   compile-terms LR Uproblems Links [] HO_Subst,
+  print "## After compilation the terms are" {std.map Uproblems pppbsc},
   print "## After compilation the links are" {try6.comp.pplinks Links},
   printC "continue to prolog?",
   prolog Uproblems Links Links1 HO_Subst HO_Subst1 D,

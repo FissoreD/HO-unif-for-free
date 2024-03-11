@@ -148,6 +148,7 @@ runinternal (internal-test P) :- print "######" P, P, !.
 runinternal (internal-test P) :- halt "fail internal test" P.
 
 type ppnat nat -> string -> o.
+ppnat X _ :- var X, halt "ppnat".
 ppnat z "0" :- !.
 ppnat (s z) "1" :- !.
 ppnat (s (s z)) "2" :- !.
