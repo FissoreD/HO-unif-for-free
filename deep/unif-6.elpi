@@ -427,6 +427,8 @@ kind link type.
 type link-abs linkabs -> link.
 type link nat -> nat -> nat -> link.
 
+typeabbrev links (list link).
+
 type pplinks links -> list string -> o.
 pplinks [] [].
 pplinks [L|Links] [S|PS] :-
@@ -463,17 +465,17 @@ get-scope (ho.app L) L1 :- fold (x\y\r\ sigma R\ get-scope x R, std.append y R r
 get-scope X [X] :- name X, not (locale X).
 get-scope X [] :- name X, (locale X).
 
-type close-links (ho.tm -> list link) -> list link -> o.
+type close-links (ho.tm -> links) -> links -> o.
 close-links (_\[]) [].
 close-links (v\[link N M A|XS v]) [link N M A|YS] :- close-links XS YS.
 close-links (v\[link-abs L|XS v]) [link-abs L|YS] :- !, close-links XS YS.
 close-links (v\[link-abs(L v)|XS v]) [link-abs(ho.abs L)|YS] :- !, close-links XS YS.
 
-type comp-lam (fo.fm -> fo.fm) -> (ho.tm -> ho.tm) -> list link -> list link -> ho.subst -> ho.subst -> o.
+type comp-lam (fo.fm -> fo.fm) -> (ho.tm -> ho.tm) -> links -> links -> ho.subst -> ho.subst -> o.
 comp-lam F F1 L L2 S S1 :-
   pi x y\ (pi A S\ comp x y A A S S) => comp (F x) (F1 y) L (L1 y) S S1, close-links L1 L2.
 
-type comp fo.fm -> ho.tm -> list link -> list link -> ho.subst -> ho.subst -> o.
+type comp fo.fm -> ho.tm -> links -> links -> ho.subst -> ho.subst -> o.
 comp (fo.fcon X)              (ho.con X) L L S S.
 % TODO: this is wrong, since we should pass something in the scope of W
 comp (fo.flam F) (ho.uva E0 Scope) L L2 S S2 :-
@@ -514,7 +516,7 @@ comp (fo.fapp [fo.fuva N|Ag]) (ho.uva MM PF1) L L3 S S4 :- !,
   .
 comp (fo.fapp A)              (ho.app A1) L L1 S S1 :- fold4 comp A A1 L L1 S S1.
 
-type alloc list link -> list link -> nat -> nat -> nat -> ho.subst -> ho.subst -> o.
+type alloc links -> links -> nat -> nat -> nat -> ho.subst -> ho.subst -> o.
 alloc Links Links N M Len H H :- std.mem Links (link N M Len), !.
 alloc Links [link N M Len|Links] N M Len H H1 :- ho.new H M H1.
   
@@ -607,14 +609,12 @@ solve-link-abs L _ _ _ :- fatal "solve-link-abs" L.
 %   ) (print "It is not assigned?", assign V S Ass2 S1),
 %   solve-links L1 L2 S1 S2.
 
-% type solve-links list link -> list link -> ho.subst -> ho.subst -> o.
+% type solve-links links -> links -> ho.subst -> ho.subst -> o.
 % solve-links [] [] S S.
 % solve-links [A|As] Bs S S2 :-
 %   solve-links A S S1,
 %   solve-links As Bs S1 S2.
 % solve-links [A|As] [A|Bs] S S1 :- solve-links As Bs S S1.
-
-typeabbrev links (list link).
 
 type link-occur-check links -> links -> ho.subst -> ho.subst -> o.
 link-occur-check [] _ H H.
@@ -670,7 +670,7 @@ deref-link-abs H (ho.val (link-eta A B)) (ho.val (link-eta A1 B1)) :-
 deref-link-abs _ (ho.val (link-fo-align A B C D)) (ho.val (link-fo-align A B C D)).
 
 % We test forall linked var of the ML, that they have the same assignment
-type solve-links-fixpoint list link -> list link -> ho.subst -> ho.subst -> o.
+type solve-links-fixpoint links -> links -> ho.subst -> ho.subst -> o.
 solve-links-fixpoint L0 L2 H H2 :- std.do! [
   deref-links H L0 L, !,
   print "\nfixpoint iteration on:" {pplinks L}, !,
@@ -689,7 +689,7 @@ make-eta-link.aux z     M' T Vars (ho.val (link-eta (ho.uva M' Scope) T)) :- std
 make-eta-link.aux (s X) M' T Vars L :- make-eta-link.aux X M' T Vars L.
 % make-eta-link.aux (s X) M' T Vars (ho.abs L) :- pi x\ make-eta-link.aux X M' T [x|Vars] (L x).
 
-type solve-links list link -> list link -> ho.subst -> ho.subst -> o.
+type solve-links links -> links -> ho.subst -> ho.subst -> o.
 solve-links [] [] X X :- print "end solve links".
 
 solve-links [(link N M LenM as X)|L] LR HO HO1 :- take-link L (link N M' LenM') L1, LenM' >n LenM, !, std.do! [
@@ -859,7 +859,7 @@ type eta nat -> nat -> list ho.tm -> ho.assignment -> o.
 eta z     N Acc (ho.val (ho.uva N Acc')) :- std.rev Acc Acc'.
 eta (s M) N Acc (ho.abs F) :- pi x\ eta M N [x | Acc] (F x).
 
-type take-link list link -> link -> list link -> o.
+type take-link links -> link -> links -> o.
 take-link [L|XS] L XS.
 take-link [L|XS] L' [L|YS] :- not(L = L'), take-link XS L' YS.
 
@@ -876,7 +876,7 @@ type assign-replace nat -> fo.subst -> fo.fm -> fo.subst -> o.
 assign-replace z [none|S] X [some X |S].
 assign-replace (s N) [A|S] X [A |S1] :- assign-replace N S X S1.
 
-type decompl.aux list link -> list link -> ho.subst -> fo.subst -> fo.subst -> o.
+type decompl.aux links -> links -> ho.subst -> fo.subst -> fo.subst -> o.
 decompl.aux [link N M _Arity|L] LK HO FO FO1 :-  set? M HO T, !,
   print "decomp:" {fo.ppuva N} "<-" {ho.ppuva M},
   ho.assmt-deref HO T T'',
@@ -931,7 +931,7 @@ get-head (fo.flam B) (s N) Args T :-
 decompl.aux [_|L] LK HO FO FO1 :- decompl.aux L LK HO FO FO1.
 decompl.aux [] _ _ X X.
 
-type decompl list link -> ho.subst -> fo.subst -> fo.subst -> o.
+type decompl links -> ho.subst -> fo.subst -> fo.subst -> o.
 decompl L HO FO FO1 :- std.do! [
   decompl.aux L L HO FO NewFO,
   merge-fo NewFO NewFO FO FO1,
@@ -950,7 +950,7 @@ merge-fo S [some X|XS] [none|YS] [some X|R] :- merge-fo S XS YS R.
 merge-fo S [none|XS] [none|YS] [none|R] :- merge-fo S XS YS R.
 
 % we use links just to know if the variables are new
-type decomp-assign list link -> ho.subst -> ho.assignment -> fo.fm -> fo.subst -> fo.subst -> o.
+type decomp-assign links -> ho.subst -> ho.assignment -> fo.fm -> fo.subst -> fo.subst -> o.
 % decomp-assign LK HO (ho.abs F) F1 S S1 :-
 %   pi x y\ (pi S\ decomp LK HO x y S S) => decomp-assign LK HO (F x) F1 S S1.
 
@@ -959,7 +959,7 @@ decomp-assign LK HO (ho.abs F) (fo.flam F1) S S1 :-
 
 decomp-assign LK HO (ho.val T) T1 S S1 :- (decomp LK HO T T1 S S1).
 
-type decomp list link -> ho.subst -> ho.tm -> fo.fm -> fo.subst -> fo.subst -> o.
+type decomp links -> ho.subst -> ho.tm -> fo.fm -> fo.subst -> fo.subst -> o.
 decomp _ _ (ho.con X)   (fo.fcon X) S S :- print "OK for constant".
 decomp LK HO (ho.app L) SolOL S S1 :- print "In decomp LK HO 2", std.do![
   fold2 (decomp LK HO) L [HD|TL] S S1, 

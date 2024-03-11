@@ -18,7 +18,7 @@ macro @read :- input_line std_in _.
 type compile-terms 
   list (triple diagnostic try6.fo.fm try6.fo.fm) -> 
   list (triple diagnostic try6.ho.tm try6.ho.tm) -> 
-  list try6.comp.link ->
+  try6.comp.links ->
   try6.ho.subst -> try6.ho.subst ->
   o.
   
@@ -31,7 +31,7 @@ compile-terms [triple D S1 S2|Src] [triple D T1 T2|PS] LS H0 H3 :-
 
 type prolog 
   list (triple diagnostic try6.ho.tm try6.ho.tm) -> 
-  list try6.comp.link -> list try6.comp.link ->
+  try6.comp.links -> try6.comp.links ->
   try6.ho.subst -> try6.ho.subst ->
   diagnostic ->
   o.
@@ -60,7 +60,7 @@ prolog [triple (error "unif") L R|_] Links Links H H1 (error "stop") :-
      (H1 = H).
 
 type decompile-subst
-  list try6.comp.link -> 
+  try6.comp.links -> 
   try6.ho.subst ->
   try6.fo.subst ->
   try6.fo.subst ->
