@@ -140,7 +140,7 @@ type internal-test o -> o.
 
 internal-tests :-
   std.findall (internal-test _) L,
-  forall1 runinternal L.
+  forall1 runinternal L, !.
 
 type runinternal o -> o.
 runinternal (internal-test P) :- print "######" P, P, !.

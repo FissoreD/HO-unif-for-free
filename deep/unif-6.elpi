@@ -378,10 +378,10 @@ type link-eta ho.tm -> ho.tm -> linkctx.
 % [link-fo-align Beta HeadVar PFvars NPFvars]
 type link-fo-align nat -> nat -> scope -> scope -> linkctx.
 
-typeabbrev linkctx1 (ho.inctx linkctx).
+typeabbrev linkabs (ho.inctx linkctx).
 
 kind link type.
-type link-abs linkctx1 -> link.
+type link-abs linkabs -> link.
 type link nat -> nat -> nat -> link.
 
 % [maybe-eta-aux N T] takes a name N and a term T.
@@ -431,9 +431,9 @@ comp (fo.flam F) (ho.uva E0 Scope) L L2 S S2 :- print "EEEEEEEE with" F,
     %   (F1 = (x\ho.uva _ [x, V1]), Scope = [V1]) ; % TODO this is needed for test 10
     %   % (F1 = (x\ho.app[ho.con _,uva ...V1,V2,x]), Scope = [V1,V2]) ;
     %   Scope = []),
-  ], L2 = [link-abs (ho.val(link-eta E0 Scope (ho.lam F1))) | L1], % TODO save Scope in E0, somehow
+  ], L2 = [link-abs (ho.val(link-eta (ho.uva E0 Scope) (ho.lam F1))) | L1], % TODO save Scope in E0, somehow
   print "------------------ END ETA -------------------",
-  print "with new link: " link-eta E0 (ho.val (ho.lam F1)),
+  print "with new link: eta" E0 Scope "->" (ho.val (ho.lam F1)),
   print "----------------------------------------------".
 
 comp (fo.flam F) (ho.lam F1) L L2 S S1 :- comp-lam F F1 L L2 S S1.
@@ -512,33 +512,29 @@ my-deref _ (ho.con C) (ho.con C).
 my-deref S (ho.lam B) (ho.lam B1) :- pi x\ my-deref S x x => my-deref S (B x) (B1 x).
 my-deref S (ho.app L) (ho.app L1) :- std.map L (my-deref S) L1.
 
-type solve-link-ctx linkctx1 -> option linkctx1 -> ho.subst -> ho.subst -> o.
-solve-link-ctx (ho.abs X) R H H1 :- 
-  print "solve-link-ctx under abs",
-  pi x\ (pi S\ ho.unif x x S S) => ho.copy x x => (pi S\ ho.deref S x x) => solve-link-ctx (X x) (R' x) H H1,
+type solve-link-abs linkabs -> option linkabs -> ho.subst -> ho.subst -> o.
+solve-link-abs (ho.abs X) R H H1 :- 
+  print "solve-link-abs under abs",
+  pi x\ (pi S\ ho.unif x x S S) => ho.copy x x => (pi S\ ho.deref S x x) => solve-link-abs (X x) (R' x) H H1,
   if ((R' x) = some (R'' x)) (R = some (ho.abs R'')) (R = none)
   .
-solve-link-ctx (ho.val (link-eta N Scope A) as L) (some L) S S1 :-
-  std.do![
-    ho.deref S (ho.uva N Scope) Deref1,
-    ho.deref S A Deref2
-  ],
-  print "solve-link-ctx eta" Deref1 "=?=" Deref2, !,
-  progress-eta-link Deref1 Deref2 S S1, print "finish progress". % TODO: remove link if L is no more an eta
-% solve-link-ctx (ho.val (link-fo-align Beta Head PF NPF) as L) (some L) S S1 :- 
+solve-link-abs (ho.val (link-eta A B) as L) (some L) S S1 :-
+  print "solve-link-abs eta" A "=?=" B, !,
+  progress-eta-link A B S S1, print "finish progress". % TODO: remove link if L is no more an eta
+% solve-link-abs (ho.val (link-fo-align Beta Head PF NPF) as L) (some L) S S1 :- 
 %   ho.deref S (ho.uva Head {std.append PF NPF}) BetaHead,  rigid-head BetaHead, !,
 %   ho.deref S (ho.uva Beta {std.append PF NPF}) BetaAss, ho.unif BetaHead BetaAss S S1.
 
-solve-link-ctx L _ _ _ :- fatal "solve-link-ctx" L.
+solve-link-abs L _ _ _ :- fatal "solve-link-abs" L.
 % % classic beta: the head of the application is rigid
-% solve-link [link-fo-align V Hd_ T|L1] L2 S S2 :-
+% solve-links [link-fo-align V Hd_ T|L1] L2 S S2 :-
 %   % if Hd is set then beta (note assmt-deref does the beta-redex)
 %   ho.assmt-deref S T Ass2,  rigid-head Ass2, !,
 %   print "Solve link beta",
 %   if (set? V S Ass1) (print "ass1 is" Ass2, my-unif-assignment Ass1 Ass2 S S1) (assign V S Ass2 S1),
-%   solve-link L1 L2 S1 S2.
+%   solve-links L1 L2 S1 S2.
 
-% solve-link [link-fo-align V Hd_ T|L1] L2 S S2 :-
+% solve-links [link-fo-align V Hd_ T|L1] L2 S S2 :-
 %   % TODO: if Hd is not set, the we do Fo-approx
 %   ho.assmt-deref S T Ass2, (not (rigid-head Ass2)), !,
 %   print "In second link fo align" Ass1 "et" Ass2,
@@ -546,12 +542,12 @@ solve-link-ctx L _ _ _ :- fatal "solve-link-ctx" L.
 %   if (set? V S Ass1) (
 %     fo-align Ass2 Ass1 [] S S1
 %   ) (print "It is not assigned?", assign V S Ass2 S1),
-%   solve-link L1 L2 S1 S2.
+%   solve-links L1 L2 S1 S2.
 
 % type solve-links list link -> list link -> ho.subst -> ho.subst -> o.
 % solve-links [] [] S S.
 % solve-links [A|As] Bs S S2 :-
-%   solve-link A S S1,
+%   solve-links A S S1,
 %   solve-links As Bs S1 S2.
 % solve-links [A|As] [A|Bs] S S1 :- solve-links As Bs S S1.
 
@@ -563,16 +559,16 @@ link-occur-check [link _ _ _|L] Links H H1 :- link-occur-check L Links H H1.
 link-occur-check [link-abs A|L] Links H H2 :-
   link-abs-occur-check A Links H H1, link-occur-check L Links H1 H2.
 
-type link-abs-occur-check linkctx1 -> links -> ho.subst -> ho.subst -> o.
+type link-abs-occur-check linkabs -> links -> ho.subst -> ho.subst -> o.
 link-abs-occur-check (ho.abs L) Links H H1 :- pi x\ (pi s\ ho.deref s x x :- !) => ho.copy x x => (pi h\ ho.unif x x h h) => link-abs-occur-check (L x) Links H H1.
 link-abs-occur-check (ho.val (link-fo-align _ _ _ _)) _ H H.
-link-abs-occur-check (ho.val (link-eta N0 S0 T)) Links H H1 :-
+link-abs-occur-check (ho.val (link-eta(ho.uva N0 S0) T)) Links H H1 :-
   ho.deref H (ho.uva N0 S0) (ho.uva N S), !,
   print "test OC" N0 "->" N "on" T "and" H,
   ho.deref H T T1, !,
 %  ((lam-occur-check N Links T1 H, print "OC, no problem with" N, H1 = H) ; (print "OC error, force progress", force-progress (link-eta N S T1) H H1)).
   (lam-occur-check N Links T1 H T2, print "OC, progress", ho.unif {eta-expand (ho.uva N []) {len S}} T2 H H1) ; true. %TODO: in case OF fails we should fail
-link-abs-occur-check (ho.val (link-eta N _ _)) _ H H :- print "OC skip" N.
+link-abs-occur-check (ho.val (link-eta N _)) _ H H :- print "OC skip" N.
 
 type lam-occur-check nat -> links -> ho.tm -> ho.subst -> ho.tm -> o.
 lam-occur-check _ _ (ho.con X) _ (ho.con X).
@@ -584,88 +580,97 @@ lam-occur-check N Links (ho.uva M S) H T :-
 
 type deref-link-occur-check link -> links -> nat -> list ho.tm -> nat -> ho.subst -> ho.tm -> o.
 deref-link-occur-check (link M X LenX) Links M S N H T :-
-  if (LenX = s _) (halt "len") true,
+  if (LenX = s _) (halt "len" S) true,
   lam-occur-check N Links (ho.uva X []) H T.
 deref-link-occur-check (link-abs A) Links M S N H T :-
   deref-link-abs-occur-check A Links M S N H T.
 
-type deref-link-abs-occur-check linkctx1 -> links -> nat -> list ho.tm -> nat -> ho.subst -> ho.tm -> o.
+type deref-link-abs-occur-check linkabs -> links -> nat -> list ho.tm -> nat -> ho.subst -> ho.tm -> o.
 deref-link-abs-occur-check (ho.abs A) Links M [V|S] N H T :- deref-link-abs-occur-check (A V) Links M S N H T.
-deref-link-abs-occur-check (ho.val (link-eta M _ T)) Links M S N H T3 :- !,
-  print "OC follow "(link-eta M S T),
+deref-link-abs-occur-check (ho.val (link-eta (ho.uva M _) T)) Links M S N H T3 :- !,
+  print "OC follow " link-eta M "->" T,
   ho.deref H T T1,
   ho.beta T1 S T2,
   print "OC rec on" T2,
   lam-occur-check N Links T2 H T3.
 
-type update-link ho.subst -> links -> links.
+:index(_ 1)
+type update-link ho.subst -> links -> links -> o.
 update-link _ [] [].
 update-link H [link N M L|XS] [link N M L|YS] :- update-link H XS YS.
 update-link H [link-abs A|XS] [link-abs A1|YS] :- update-link-abs H A A1, update-link H XS YS.
 
-type update-link-abs ho.subst -> linkctx1 -> linkctx1.
-update-link-abs (ho.abs F) (ho.abs G) :- pi x\ update-link-abs H (F x) (G x).
-update-link-abs (ho.val link-eta)
-
+type update-link-abs ho.subst -> linkabs -> linkabs -> o.
+update-link-abs H (ho.abs F) (ho.abs G) :- pi x\ update-link-abs H (F x) (G x).
+update-link-abs H (ho.val (link-eta A B)) (ho.val (link-eta A1 B1)) :-
+  ho.deref H A A1, ho.deref H B B1.
 
 % We test forall linked var of the ML, that they have the same assignment
-type solve-link-fixpoint list link -> list link -> ho.subst -> ho.subst -> o.
-solve-link-fixpoint L0 L2 H H2 :-
-  update-link H L0 L1, 
-  print "\nfixpoint iteration" L0,
-  solve-link L L1 H H0, !,
+type solve-links-fixpoint list link -> list link -> ho.subst -> ho.subst -> o.
+solve-links-fixpoint L0 L2 H H2 :- std.do! [
+  print "update links\n",
+  update-link H L0 L, !,
+  print "\nfixpoint iteration" L,
+  solve-links L L1 H H1, !,
   %H1 = H0,
-  link-occur-check L1 L1 H0 H1, !,
-  if (L = L1, H = H1) (print "end fixpoint", L2 = L, H2 = H) (solve-link-fixpoint L1 L2 H1 H2).
-
-type make-eta-link nat -> nat -> nat -> nat -> list ho.tm -> linkctx1 -> o.
+  %link-occur-check L1 L1 H0 H1, !,
+  if (L = L1, H = H1)
+     (print "end fixpoint", L2 = L, H2 = H)
+     (print "links" L1, printC "next fixpoint iteration", solve-links-fixpoint L1 L2 H1 H2)
+].
+type make-eta-link nat -> nat -> nat -> nat -> list ho.tm -> linkabs -> o.
 make-eta-link (s  X) z     M' M Vars L :- std.rev Vars Scope, eta-expand (ho.uva M Scope) (s X) T, make-eta-link.aux (s X) M' T Vars L.
 make-eta-link (s  X) (s Y) M' M Vars L :- make-eta-link X Y M M' Vars L.
 %make-eta-link (s  X) (s Y) M' M Vars (ho.abs x\ L x) :- pi x\ make-eta-link X Y M M' [x|Vars] (L x).
-make-eta-link.aux z     M' T Vars (ho.val (link-eta M' Scope T)) :- std.rev Vars Scope.
+make-eta-link.aux z     M' T Vars (ho.val (link-eta (ho.uva M' Scope) T)) :- std.rev Vars Scope.
 make-eta-link.aux (s X) M' T Vars L :- make-eta-link.aux X M' T Vars L.
 % make-eta-link.aux (s X) M' T Vars (ho.abs L) :- pi x\ make-eta-link.aux X M' T [x|Vars] (L x).
 
-type solve-link list link -> list link -> ho.subst -> ho.subst -> o.
-solve-link [] [] X X :- print "end solv links".
+type solve-links list link -> list link -> ho.subst -> ho.subst -> o.
+solve-links [] [] X X :- print "end solve links".
 
-solve-link [link N M LenM|L] LR HO HO1 :- take-link L (link N M' LenM') L1, LenM' >n LenM, !, std.do! [
+solve-links [link N M LenM|L] LR HO HO1 :- take-link L (link N M' LenM') L1, LenM' >n LenM, !, std.do! [
    make-eta-link LenM' LenM M M' [] New,
    print "new eta link 1" LenM' LenM M' M "->" New,
-   solve-link L1 L2 HO HO1, LR = [link N M' LenM', link-abs New | L2],
+   solve-links L1 L2 HO HO1, LR = [link N M' LenM', link-abs New | L2],
 ].
-solve-link [link N M LenM|L] LR HO HO1 :- take-link L (link N M' LenM') L1, LenM >n LenM', !, std.do! [
+solve-links [link N M LenM|L] LR HO HO1 :- take-link L (link N M' LenM') L1, LenM >n LenM', !, std.do! [
    make-eta-link LenM LenM' M' M [] New,
    print "new eta link 2" LenM LenM' M M' "->" New,
-   solve-link L1 L2 HO HO1, LR = [link N M LenM, link-abs New | L2],
+   solve-links L1 L2 HO HO1, LR = [link N M LenM, link-abs New | L2],
 ].
 
-solve-link [link N M LenM|L] LR HO HO1 :- take-link L (link N M' LenM') L1, not (unset? M HO, unset? M' HO), !, std.do! [
+solve-links [link N M LenM|L] LR HO HO1 :- take-link L (link N M' LenM') L1, not (unset? M HO, unset? M' HO), !, std.do! [
   print "Solve simple link" M "/" LenM "==" M' "/" LenM',
   print "In subst" HO,
   same-assign M M' LenM LenM' W HO HO2,
 
-  solve-link [link N W LenM|L1] LR HO2 HO1,
+  solve-links [link N W LenM|L1] LR HO2 HO1,
 ].
 
-solve-link [link N M LenM|L] [link N M LenM|LR] HO HO1 :- solve-link L LR HO HO1.
+solve-links [link N M LenM|L] [link N M LenM|LR] HO HO1 :- solve-links L LR HO HO1.
 
-% TODO: we should reconsider if it can still be an eta or not.
-% if it is, we contract
-% if it can't be, we propagate the assignment
-% if it may be, we do nothing
-% solve-link [link-eta N A|L1] [link-eta N A|L2] S S2 :- set? N S T, !,
-%   progress-eta-link {ho.assmt-deref S T} {ho.assmt-deref S A} S S1,
-%   print "Solve link eta set check same" N "->" A "=?=" T,
-%   % std.assert!(print "Solve link eta set check same" N "->" {ho.assmt-deref S A} "=?=" {ho.assmt-deref S A1}) "xxx",
-%   %std.spy(same-assign-aux z z A T S S1),
-%   print "After link eta same HO_SUBST is" S1,
-%   solve-link L1 L2 S1 S2.
-solve-link [link-abs L|L1] L3 S S2 :-
-  (solve-link-ctx L R S S1), !,
+solve-links [link-abs A|L1] [link-abs A|L3] S S2 :- take-link-abs A L1 B L2, !, std.do! [
+  same-link-abs A B S S1, 
+  solve-links L2 L3 S1 S2,
+].
+
+solve-links [link-abs L|L1] L3 S S2 :-
+  (solve-link-abs L R S S1), !,
   if (R = some L')
-     (solve-link L1 L2 S1 S2, L3 = [link-abs L'|L2])
-     (solve-link L1 L3 S1 S2) .
+     (solve-links L1 L2 S1 S2, L3 = [link-abs L'|L2])
+     (solve-links L1 L3 S1 S2) .
+
+type same-link-abs linkabs -> linkabs -> ho.subst -> ho.subst -> o.
+same-link-abs (ho.abs F) B H H1 :- pi x\ same-link-abs (F x) B H H1.
+same-link-abs A (ho.abs G) H H1 :- pi x\ same-link-abs A (G x) H H1.
+same-link-abs (ho.val (link-eta (ho.uva N S1) A))
+              (ho.val (link-eta (ho.uva N S2) B)) H H1 :- std.do! [
+  std.assert! (std.length S1 {std.length S2}) "no same scope",
+  std.assert! (S1 = []) "not implemented",
+  print A "=?=" B,
+  ho.unif A B H H1,
+].
 
 % TODO:
 type same-assign-aux nat -> nat -> ho.assignment -> ho.assignment -> ho.subst -> ho.subst -> o.
@@ -789,6 +794,15 @@ eta (s M) N Acc (ho.abs F) :- pi x\ eta M N [x | Acc] (F x).
 type take-link list link -> link -> list link -> o.
 take-link [L|XS] L XS.
 take-link [L|XS] L' [L|YS] :- not(L = L'), take-link XS L' YS.
+
+type take-link-abs linkabs -> links -> linkabs -> links -> o.
+take-link-abs A [link-abs B|XS] B XS :- link-abs-same-lhs A B, !.
+take-link-abs A [L|XS] B [L|YS] :- take-link-abs A XS B YS.
+
+type link-abs-same-lhs linkabs -> linkabs -> o.
+link-abs-same-lhs (ho.abs F) B :- pi x\ link-abs-same-lhs (F x) B.
+link-abs-same-lhs A (ho.abs G) :- pi x\ link-abs-same-lhs A (G x).
+link-abs-same-lhs (ho.val (link-eta (ho.uva N _) _)) (ho.val (link-eta (ho.uva N _) _)).
 
 type assign-replace nat -> fo.subst -> fo.fm -> fo.subst -> o.
 assign-replace z [none|S] X [some X |S].

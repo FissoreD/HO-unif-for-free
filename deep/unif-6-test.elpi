@@ -44,7 +44,7 @@ prolog [triple ok L R|Us] Links Links2 H H3 D :- std.do! [
   print "## After unif" L "=" R "subst is" H1,
   print "## Links are" Links,
   printC "solve links?",
-  try6.comp.solve-link-fixpoint Links Links1 H1 H2,
+  try6.comp.solve-links-fixpoint Links Links1 H1 H2,
   print "## After solve links, links are" Links1,
   print "## After solve links, subst is" H2,
   printC "next problem?",
@@ -56,7 +56,7 @@ prolog [triple (error "unif") L R|_] Links Links H H1 (error "stop") :-
      (print "## After unif" L "=" R "subst is" H1,
       print "## Links are" Links,
       printC "solve links?",
-      not(try6.comp.solve-link-fixpoint Links _ H1 _))
+      not(try6.comp.solve-links-fixpoint Links _ H1 _))
      (H1 = H).
 
 type decompile-subst
