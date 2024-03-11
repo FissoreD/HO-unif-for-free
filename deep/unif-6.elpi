@@ -166,7 +166,7 @@ unif (con X) (con X) S S.
 unif (uva N Args) T S S1 :- 
   set? N S F,!, move F Args T1, unif T1 T S S1.
 unif T (uva N Args) S S1 :- 
-  set? N S F,!, print "In set branch", move F Args T1, print "after move" F Args T1, unif T T1 S S1.
+  set? N S F,!, move F Args T1, unif T T1 S S1.
 % Not assigned vars
 unif (uva N A) (uva N A) S S :- !, pattern-fragment A.
 unif (uva V A) (uva U A) S1 S2 :- !, pattern-fragment A,
@@ -195,9 +195,10 @@ unif (uva N Args) T S S1 :-
   assign N S T1 S1.
 % TODO: we could unify (f c0) with X, this does not work since c0 is a name
 unif T (uva N Args) S S1 :- 
-  print "Unif complex:" T (uva N Args),
-  std.do![not (T = uva _ _), not_occ N S T, pattern-fragment Args, 
-  bind T Args T1,print "Binding T to Args" T Args T1,  assign N S T1 S1, print "Assing2 T2" T1].
+  not (T = uva _ _), not_occ N S T, pattern-fragment Args, 
+  bind T Args T1,
+  print "Binding args" {std.map Args pp} "in" {pp T} "gives" {ppuva N} {ppass T1},
+  assign N S T1 S1.
 
 % Note: eta & beta for unification is not allowed in ML over terms of the OL
 
