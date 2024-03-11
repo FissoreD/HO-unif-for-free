@@ -714,6 +714,12 @@ solve-links [(link N M LenM as X)|L] LR HO HO1 :- take-link L (link N M' LenM') 
   solve-links [link N W LenM|L1] LR HO2 HO1,
 ].
 
+solve-links [(link N M LenM as X)|L] LR HO HO1 :- take-link L (link N M' LenM) L1, unset? M HO, unset? M' HO, !, std.do! [
+  print "deduplicating uvars w\\same length:" {pplink X} "===" {pplink (link N M' LenM)},
+  ho.unif (ho.uva M []) (ho.uva M' []) HO HO2,
+  solve-links [link N M LenM|L1] LR HO2 HO1,
+].
+
 solve-links [(link _ _ _ as X)|L] [X|LR] HO HO1 :-
   print "ignoring link:" {pplink X},
   solve-links L LR HO HO1.
