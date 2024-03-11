@@ -446,15 +446,16 @@ pplinkabs (ho.abs F) S :- pi x\ std.any->string x N, pplinkabs (F x) S1, S is N 
 pplinkabs (ho.val (link-eta A B)) S :- S is "|- " ^ {ho.pp A} ^ " =η= " ^ {ho.pp B}.
 pplinkabs (ho.val (link-fo-align _ _ _ _)) S :- S is "TODO pp fi align".
 
-% [maybe-eta-aux N T] takes a name N and a term T.
+% [maybe-eta N T] takes a name N and a term T.
 % return if T could be an eta expansion if T = app L and the last
 % arg T of L can be reduced to N : T is either N or a Uvar seeing N
-type maybe-eta-aux fo.fm -> fo.fm -> o.
-maybe-eta-aux N N.
-maybe-eta-aux N (fo.fapp[fo.fuva _|L]) :- !, mem L N.
-maybe-eta-aux N (fo.flam B) :- !, pi x\ maybe-eta-aux N (B x).
-maybe-eta-aux N (fo.fapp L) :-
-  last L T, maybe-eta-aux N T.
+type maybe-eta fo.fm -> fo.fm -> list fo.fm -> o.
+maybe-eta N N _.
+maybe-eta N (fo.fapp[fo.fuva _|Args]) _ :- !, mem Args N. % Head is flex -> if N is in Args, we can have eta
+maybe-eta N (fo.flam B) L :- !, pi x\ maybe-eta N (B x) [x | L].
+maybe-eta _ (fo.fapp [_ |Args]) L :-                   % Head is rigid -> to be an eta we consider also L
+  last-n {len L} Args R, 
+  forall2 (x\y\ maybe-eta y x [y]) R {std.rev L}.
 
 type locale ho.tm -> o.
 type get-scope ho.tm -> list ho.tm -> o.
@@ -480,7 +481,8 @@ comp (fo.fcon X)              (ho.con X) L L S S.
 % TODO: this is wrong, since we should pass something in the scope of W
 comp (fo.flam F) (ho.uva E0 Scope) L L2 S S2 :-
   %print "## comp eta" {fo.pp (fo.flam F)},
-  (pi x\ not (F x = x), (maybe-eta-aux x (F x))), !,
+  (pi x\ not (F x = x), (maybe-eta x (F x)) [x]), !,
+  % (pi x\ print {fo.pp (F x)} "is maybe eta"),
   std.do![
     ho.new S E0 S1,
     comp-lam F F1 L L1 S1 S2,
