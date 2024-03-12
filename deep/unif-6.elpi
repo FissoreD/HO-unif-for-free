@@ -275,8 +275,8 @@ move (val A)         []    A :- !.
 % move (val (app A))   L     (app X) :- std.append A L X.
 move (val (uva N A)) L     (uva N X) :- std.append A L X.
 % move (val (con H))   L     (app [con H | L]).
- move (abs _)         []    _ :- fatal "Invalid move call: too few args for abs".
- move A               L    _ :- fatal "Invalid move call:" A L.
+ move (abs A)         []    _ :- !, fatal "Invalid move call: too few args for abs" A.
+ move A               L    _ :- !, fatal "Invalid move call:" A L.
 
 type move-ass assignment -> list tm -> assignment -> o.
 move-ass (abs Bo)        [H|L] R :- move-ass (Bo H) L R.
@@ -411,6 +411,16 @@ test-unif-6 :- pi x y zz w\
 
 namespace comp {
 
+kind objectVar type.
+type obj nat -> objectVar.
+
+kind metaVar type.
+type meta nat -> metaVar.
+
+kind mapping type.
+type mapping objectVar -> metaVar -> nat -> mapping.
+typeabbrev mappings (list mapping).
+
 shorten fo.{ (==o) }.
 
 typeabbrev scope (list ho.tm).
@@ -425,7 +435,6 @@ typeabbrev linkabs (ho.inctx linkctx).
 
 kind link type.
 type link-abs linkabs -> link.
-type link nat -> nat -> nat -> link.
 
 typeabbrev links (list link).
 
@@ -436,10 +445,15 @@ pplinks [L|Links] [S|PS] :-
   pplinks Links PS.
 
 type pplink link -> string -> o.
-pplink (link N M Len) S :-
-  S is {fo.ppuva  N} ^ " -> " ^ {ho.ppuva M} ^ " (" ^ {ppnat Len} ^ ")".
 pplink (link-abs A) S :-
   pplinkabs A S.
+
+type ppmapping mapping -> string -> o.
+ppmapping (mapping (obj N) (meta M) Len) S :-
+  S is {fo.ppuva  N} ^ " -> " ^ {ho.ppuva M} ^ " (" ^ {ppnat Len} ^ ")".
+
+type ppmappings mappings -> list string -> o.
+ppmappings Map Str :- forall2 ppmapping Map Str.
 
 type pplinkabs linkabs -> string -> o.
 pplinkabs (ho.abs F) S :- pi x\ std.any->string x N, pplinkabs (F x) S1, S is N ^ " " ^ S1.
@@ -469,24 +483,23 @@ get-scope X [] :- name X, (locale X).
 
 type close-links (ho.tm -> links) -> links -> o.
 close-links (_\[]) [].
-close-links (v\[link N M A|XS v]) [link N M A|YS] :- close-links XS YS.
 close-links (v\[link-abs L|XS v]) [link-abs L|YS] :- !, close-links XS YS.
 close-links (v\[link-abs(L v)|XS v]) [link-abs(ho.abs L)|YS] :- !, close-links XS YS.
 
-type comp-lam (fo.fm -> fo.fm) -> (ho.tm -> ho.tm) -> links -> links -> ho.subst -> ho.subst -> o.
-comp-lam F F1 L L2 S S1 :-
-  pi x y\ (pi A S\ comp x y A A S S) => comp (F x) (F1 y) L (L1 y) S S1, close-links L1 L2.
+type comp-lam (fo.fm -> fo.fm) -> (ho.tm -> ho.tm) -> mappings -> mappings -> links -> links -> ho.subst -> ho.subst -> o.
+comp-lam F F1 Mappings1 Mappings2 L L2 S S1 :-
+  pi x y\ (pi M L S\ comp x y M M L L S S) => comp (F x) (F1 y) Mappings1 Mappings2 L (L1 y) S S1, close-links L1 L2.
 
-type comp fo.fm -> ho.tm -> links -> links -> ho.subst -> ho.subst -> o.
-comp (fo.fcon X)              (ho.con X) L L S S.
+type comp fo.fm -> ho.tm -> mappings -> mappings -> links -> links -> ho.subst -> ho.subst -> o.
+comp (fo.fcon X)              (ho.con X) Mappings Mappings L L S S.
 % TODO: this is wrong, since we should pass something in the scope of W
-comp (fo.flam F) (ho.uva E0 Scope) L L2 S S2 :-
+comp (fo.flam F) (ho.uva E0 Scope) Mappings1 Mappings2  L L2 S S2 :-
   %print "## comp eta" {fo.pp (fo.flam F)},
   (pi x\ not (F x = x), (maybe-eta x (F x)) [x]), !,
   % (pi x\ print {fo.pp (F x)} "is maybe eta"),
   std.do![
     ho.new S E0 S1,
-    comp-lam F F1 L L1 S1 S2,
+    comp-lam F F1 Mappings1 Mappings2 L L1 S1 S2,
     names N,
     (pi x\ locale x => get-scope (F1 x) ScopeDuplicata), 
     std.filter N (mem ScopeDuplicata) Scope,
@@ -504,24 +517,57 @@ comp (fo.flam F) (ho.uva E0 Scope) L L2 S S2 :-
   % print "with new link:" {pplinks [NewLink]},
   % print "----------------------------------------------".
 
-comp (fo.flam F) (ho.lam F1) L L2 S S1 :- comp-lam F F1 L L2 S S1.
-comp (fo.fuva N)              (ho.uva M []) L L1 S S1 :- alloc L L1 N M z S S1.
-comp (fo.fapp [fo.fuva N|Ag]) (ho.uva MM PF1) L L3 S S4 :- !,
+comp (fo.flam F) (ho.lam F1) Mappings1 Mappings2 L L2 S S1 :- comp-lam F F1 Mappings1 Mappings2 L L2 S S1.
+comp (fo.fuva N)              (ho.uva M []) Mappings Mappings1 L L S S1 :- alloc Mappings Mappings1 (obj N) (meta M) z S S1.
+comp (fo.fapp [fo.fuva N|Ag]) (ho.uva MM PF1) Mappings1 Mappings3 L L3 S S4 :- !,
   split-pf Ag PF NPF,
-  fold4 comp PF PF1 L L S S1,
-  fold4 comp NPF NPF1 L L1 S1 S2,
+  fold6 comp PF PF1 Mappings1 Mappings1 L L S S1,                                 % Note : PF is a list of names -> Mappings1 and L not change
+  fold6 comp NPF NPF1 Mappings1 Mappings2 L L1 S1 S2,
   len PF Len,
-  alloc L1 L2 N M Len S2 S3, % ho.new S2 M S3,
+  alloc Mappings2 Mappings3 (obj N) (meta M) Len S2 S3, % ho.new S2 M S3,
   % TODO: NYI NPF1 can contain non-closed terms (i.e. local vars...)
-  if (NPF = []) (L3 = L2, S3 = S4, MM = M) 
+  if (NPF = []) (L3 = L1, S3 = S4, MM = M) 
     ( ho.new S3 MM S4,
-      L3 = [link-abs(ho.val(link-fo-align MM M PF1 NPF1)) | L2])
+      L3 = [link-abs(ho.val(link-fo-align MM M PF1 NPF1)) | L1])
   .
-comp (fo.fapp A)              (ho.app A1) L L1 S S1 :- fold4 comp A A1 L L1 S S1.
+comp (fo.fapp A)              (ho.app A1) Mappings1 Mappings2 L L1 S S1 :- fold6 comp A A1 Mappings1 Mappings2 L L1 S S1.
 
-type alloc links -> links -> nat -> nat -> nat -> ho.subst -> ho.subst -> o.
-alloc Links Links N M Len H H :- std.mem Links (link N M Len), !.
-alloc Links [link N M Len|Links] N M Len H H1 :- ho.new H M H1.
+type put-abs-uva nat -> metaVar -> list ho.tm -> ho.assignment -> o.
+put-abs-uva z (meta M) L (ho.val (ho.uva M L1)) :- std.rev L L1.
+put-abs-uva (s N) MV L (ho.abs B) :- pi x\ put-abs-uva N MV [x|L] (B x).
+
+type post-comp mappings -> mappings -> ho.subst -> ho.subst -> links -> links -> o.
+post-comp [] [] H H L L.
+% Same obj-variable, with same arity appearing twice: the first is removed and
+% the two meta-vars are unified
+post-comp [mapping (obj O) (meta M1) Arity | Map1] Map2 H1 H3 L1 L2 :- 
+  mem Map1 (mapping (obj O) (meta M2) Arity), !,
+  put-abs-uva Arity (meta M1) [] Ass1,
+  put-abs-uva Arity (meta M2) [] Ass2,
+  ho.unif-assignment Ass1 Ass2 H1 H2,
+  post-comp Map1 Map2 H2 H3 L1 L2.
+post-comp [(mapping (obj O) (meta M) LenM as X1) | Map1] Map2 H1 H2 L1 L3 :-
+  take-list Map1 (mapping (obj O) (meta M') LenM') _, LenM' >n LenM, !, std.do! [
+    print "arity-fix links:" {ppmapping X1} "~<~" {ppmapping (mapping (obj O) (meta M') LenM')}, 
+    make-eta-link LenM' LenM M M' [] New,
+    print "new eta link" {pplinkabs New},
+    L2 = [link-abs New | L1],
+    post-comp Map1 Map2 H1 H2 L2 L3
+  ].
+post-comp [(mapping (obj O) (meta M) LenM as X1) | Map1] Map2 H1 H2 L1 L3 :-
+  take-list Map1 (mapping (obj O) (meta M') LenM') _, LenM >n LenM', !, std.do! [
+    print "arity-fix links:" {ppmapping X1} "~<~" {ppmapping (mapping (obj O) (meta M') LenM')}, 
+    make-eta-link LenM LenM' M' M [] New,
+    print "new eta link" {pplinkabs New},
+    L2 = [link-abs New | L1],
+    post-comp Map1 Map2 H1 H2 L2 L3
+  ].
+post-comp [A|As] [A|Bs] H1 H2 L1 L2 :- post-comp As Bs H1 H2 L1 L2, !.
+post-comp [A|_] _ H _ _ _ :- halt {ppmapping A} {ho.ppsubst H}.
+
+type alloc mappings -> mappings -> objectVar -> metaVar -> nat -> ho.subst -> ho.subst -> o.
+alloc Map Map N M Len H H :- std.mem Map (mapping N M Len), !.
+alloc Map [mapping (obj N) (meta M) Len|Map] (obj N) (meta M) Len H H1 :- ho.new H M H1.
   
 
 type eta-contract-ass ho.assignment -> ho.assignment -> o.
@@ -616,7 +662,6 @@ solve-link-abs L _ _ _ :- fatal "solve-link-abs" L.
 
 type link-occur-check links -> links -> ho.subst -> ho.subst -> o.
 link-occur-check [] _ H H.
-link-occur-check [link _ _ _|L] Links H H1 :- link-occur-check L Links H H1.
 link-occur-check [link-abs A|L] Links H H2 :-
   link-abs-occur-check A Links H H1, link-occur-check L Links H1 H2.
 
@@ -640,9 +685,9 @@ lam-occur-check N Links (ho.uva M S) H T :-
   exists (l\deref-link-occur-check l Links M S N H T) Links.
 
 type deref-link-occur-check link -> links -> nat -> list ho.tm -> nat -> ho.subst -> ho.tm -> o.
-deref-link-occur-check (link M X LenX) Links M S N H T :-
-  if (LenX = s _) (halt "len" S) true,
-  lam-occur-check N Links (ho.uva X []) H T.
+% deref-link-occur-check (link M X LenX) Links M S N H T :-
+%   if (LenX = s _) (halt "len" S) true,
+%   lam-occur-check N Links (ho.uva X []) H T.
 deref-link-occur-check (link-abs A) Links M S N H T :-
   deref-link-abs-occur-check A Links M S N H T.
 
@@ -658,7 +703,7 @@ deref-link-abs-occur-check (ho.val (link-eta (ho.uva M _) T)) Links M S N H T3 :
 :index(_ 1)
 type deref-links ho.subst -> links -> links -> o.
 deref-links _ [] [].
-deref-links H [link N M L|XS] [link N M L|YS] :- deref-links H XS YS.
+% deref-links H [link N M L|XS] [link N M L|YS] :- deref-links H XS YS.
 deref-links H [link-abs A|XS] [link-abs A1|YS] :- std.assert! (deref-link-abs H A A1) "bug deref links", deref-links H XS YS.
 
 type deref-link-abs ho.subst -> linkabs -> linkabs -> o.
@@ -690,34 +735,12 @@ make-eta-link.aux (s X) M' T Vars L :- make-eta-link.aux X M' T Vars L.
 type solve-links links -> links -> ho.subst -> ho.subst -> o.
 solve-links [] [] X X :- print "end solve links".
 
-solve-links [(link N M LenM as X)|L] LR HO HO1 :- take-link L (link N M' LenM') L1, LenM' >n LenM, !, std.do! [
-  print "arity-fix links:" {pplink X} "~<~" {pplink (link N M' LenM')}, 
-   make-eta-link LenM' LenM M M' [] New,
-   print "new eta link" {pplinkabs New},
-   solve-links L1 L2 HO HO1, LR = [link N M' LenM', link-abs New | L2],
-].
-solve-links [(link N M LenM as X)|L] LR HO HO1 :- take-link L (link N M' LenM') L1, LenM >n LenM', !, std.do! [
-  print "arity-fix links:" {pplink X} "~>~" {pplink (link N M' LenM')}, 
-   make-eta-link LenM LenM' M' M [] New,
-   print "new eta link" {pplinkabs New},
-   solve-links L1 L2 HO HO1, LR = [link N M LenM, link-abs New | L2],
-].
-
-solve-links [(link N M LenM as X)|L] LR HO HO1 :- take-link L (link N M' LenM') L1, not (unset? M HO, unset? M' HO), !, std.do! [
-  print "deduplicating links:" {pplink X} "===" {pplink (link N M' LenM')}, 
-  same-assign M M' LenM LenM' W HO HO2,
-  solve-links [link N W LenM|L1] LR HO2 HO1,
-].
-
-solve-links [(link N M LenM as X)|L] LR HO HO1 :- take-link L (link N M' LenM) L1, unset? M HO, unset? M' HO, !, std.do! [
-  print "deduplicating uvars w\\same length:" {pplink X} "===" {pplink (link N M' LenM)},
-  ho.unif (ho.uva M []) (ho.uva M' []) HO HO2,
-  solve-links [link N M LenM|L1] LR HO2 HO1,
-].
-
-solve-links [(link _ _ _ as X)|L] [X|LR] HO HO1 :-
-  print "ignoring link:" {pplink X},
-  solve-links L LR HO HO1.
+% TODO: THIS IS TO CHECK BETTER
+% solve-links [(link N M LenM as X)|L] LR HO HO1 :- take-list L (link N M' LenM') L1, not (unset? M HO, unset? M' HO), !, std.do! [
+%   print "deduplicating links:" {pplink X} "===" {pplink (link N M' LenM')}, 
+%   same-assign M M' LenM LenM' W HO HO2,
+%   solve-links [link N W LenM|L1] LR HO2 HO1,
+% ].
 
 solve-links [link-abs A|L1] [link-abs A|L3] S S2 :- take-link-abs A L1 B L2, !, std.do! [
   print "deduplicating links:" {pplinkabs A} "===" {pplinkabs B}, 
@@ -863,9 +886,9 @@ type eta nat -> nat -> list ho.tm -> ho.assignment -> o.
 eta z     N Acc (ho.val (ho.uva N Acc')) :- std.rev Acc Acc'.
 eta (s M) N Acc (ho.abs F) :- pi x\ eta M N [x | Acc] (F x).
 
-type take-link links -> link -> links -> o.
-take-link [L|XS] L XS.
-take-link [L|XS] L' [L|YS] :- not(L = L'), take-link XS L' YS.
+type take-list list A -> A -> list A -> o.
+take-list [L|XS] L XS.
+take-list [L|XS] L' [L|YS] :- not(L = L'), take-list XS L' YS.
 
 type take-link-abs linkabs -> links -> linkabs -> links -> o.
 take-link-abs A [link-abs B|XS] B XS :- link-abs-same-lhs A B, !.
@@ -885,16 +908,23 @@ decompl-eta [] [] H H.
 decompl-eta [link-abs Abs| Links] L H H2 :- decompl-eta-aux Abs H H1 [], !, decompl-eta Links L H1 H2.
 decompl-eta [Hd | Tl] [Hd | L] H H1 :- decompl-eta Tl L H H1.
 
-% Invariant: links are only on the form (link VO VM Arity), each VO appears once and each VM appears once
-type decompl-mapping links -> links -> ho.subst -> fo.subst -> fo.subst -> o.
-decompl-mapping _ [] _ F F.
-decompl-mapping Links [link VO VM _|Tl] H F F2 :- set? VM H T,
-  abs->lam {ho.assmt-deref H T} T', decomp Links T' T1, fo.eta-contract T1 T2, assign VO F T2 F1,
-  decompl-mapping Links Tl H F1 F2. 
-decompl-mapping Links [link _ VM _|Tl] H F F2 :- unset? VM H, decompl-mapping Links Tl H F F2.
-decompl-mapping _ [L|_] H _ _ :- halt "Decompl mapping: failed on" {pplink L} {ho.ppsubst H}.
+type put-abs nat -> ho.tm -> ho.assignment -> o.
+put-abs z T (ho.val T).
+put-abs (s N) T (ho.abs B) :- pi x\ sigma T'\ ho.beta T [x] T', put-abs N T' (B x).
 
-type decomp links -> ho.tm -> fo.fm -> o.
+% Invariant: links are only on the form (link VO VM Arity), each VO appears once and each VM appears once
+type decompl-mapping mappings -> mappings -> ho.subst -> fo.subst -> fo.subst -> o.
+decompl-mapping _ [A|_] _ _ _ :- print "Solving" {ppmapping A}, fail.
+decompl-mapping _ [] _ F F.
+decompl-mapping Map [mapping (obj VO) (meta VM) _Arity|Tl] H F F2 :- set? VM H T, !, % TODO: is the res of set? always a val?
+  print {ho.ppsubst H} {ho.ppass T},
+  std.assert!((ho.assmt-deref H T TTT)) "Should not fail",
+  abs->lam TTT T', decomp Map T' T1, fo.eta-contract T1 T2, assign VO F T2 F1,
+  decompl-mapping Map Tl H F1 F2. 
+decompl-mapping Map [mapping _ (meta VM) _|Tl] H F F2 :- unset? VM H, decompl-mapping Map Tl H F F2.
+decompl-mapping _ [L|_] H _ _ :- halt "Decompl mapping: failed on" {ppmapping L} {ho.ppsubst H}.
+
+type decomp mappings -> ho.tm -> fo.fm -> o.
 decomp _ (ho.con C)  (fo.fcon C).
 decomp L (ho.lam B1) (fo.flam B2) :- pi x y\ decomp _ x y => decomp L (B1 x) (B2 y).
 decomp L (ho.app L1) T :-
@@ -902,35 +932,34 @@ decomp L (ho.app L1) T :-
   fo.mk-app Hd Tl T.
 decomp L (ho.uva VM TL) T :-
   forall2 (decomp L) TL T1,
-  std.assert! (len {std.findall (mem L (link _ VM _))} (s z)) "Sanity check decompl1",
-  mem L (link VO VM _),
+  std.assert! (len {std.findall (mem L (mapping (obj VO) (meta VM) _))} (s z)) "Sanity check decompl1",
   fo.mk-app (fo.fuva VO) T1 T.
-decomp L H _ :- halt "Fail in decomp" {pplinks L} {ho.pp H}.
+decomp L H _ :- halt "Fail in decomp" {ppmappings L} {ho.pp H}.
 
-type add-new-links-aux ho.subst -> list ho.tm -> links -> links ->  fo.subst -> fo.subst -> o.
+type add-new-links-aux ho.subst -> list ho.tm -> mappings -> mappings ->  fo.subst -> fo.subst -> o.
 add-new-links-aux _ [] _ [] S S.
 add-new-links-aux H [T|Ts] L L2 S S2 :- add-new-link H T L L1 S S1, add-new-links-aux H Ts L1 L2 S1 S2.
 
-type add-new-link ho.subst -> ho.tm -> links -> links ->  fo.subst -> fo.subst -> o.
-add-new-link _ (ho.uva N _) Links [] F1 F1 :- mem Links (link _ N _), !.
+type add-new-link ho.subst -> ho.tm -> mappings -> mappings ->  fo.subst -> fo.subst -> o.
+add-new-link _ (ho.uva N _) Links [] F1 F1 :- mem Links (mapping _ (meta N) _), !.
 add-new-link H (ho.uva N Args) Links Links2 F1 F3 :- set? N H T, !,      % Deref
   ho.move-ass T Args T1a,
   abs->lam T1a T1,
   add-new-link H T1 Links Links2 F1 F3.
 add-new-link H (ho.uva N L) Links [Link1 | Links1] F1 F3 :-              % Build new link
   fo.new F1 M F2,
-  len L Arity, Link1 = link M N Arity,
+  len L Arity, Link1 = mapping (obj M) (meta N) Arity,
   add-new-link H (ho.app L) [Link1 | Links] Links1 F2 F3.
 add-new-link H (ho.lam B) Links NewLinks F1 F2 :- pi x\ add-new-link H (B x) Links NewLinks F1 F2.
 add-new-link H (ho.app L) Links NewLinks F1 F3 :- add-new-links-aux H L Links NewLinks F1 F3.
 add-new-link _ (ho.con _) _ [] F F :- !.
 add-new-link _ N _ [] F F :- name N.
 
-type add-new-link-ass ho.subst -> ho.assignment -> links -> links ->  fo.subst -> fo.subst -> o.
+type add-new-link-ass ho.subst -> ho.assignment -> mappings -> mappings ->  fo.subst -> fo.subst -> o.
 add-new-link-ass H (ho.val Val) Links1 Links2 F1 F2 :- add-new-link H Val Links1 Links2 F1 F2.
 add-new-link-ass H (ho.abs Abs) Links1 Links2 F1 F2 :- pi x\ add-new-link-ass H (Abs x) Links1 Links2 F1 F2.
 
-type complete-link ho.subst -> ho.subst -> links -> links -> fo.subst -> fo.subst -> o.
+type complete-link ho.subst -> ho.subst -> mappings -> mappings -> fo.subst -> fo.subst -> o.
 complete-link _ [] L L F F.
 complete-link H [none | Tl] L1 L2 F1 F2 :- complete-link H Tl L1 L2 F1 F2.
 complete-link H [some T | Tl] L1 L3 F1 F3 :-
@@ -938,13 +967,13 @@ complete-link H [some T | Tl] L1 L3 F1 F3 :-
   std.append L1 L2 LAll,
   complete-link H Tl LAll L3 F2 F3.
 
-type decompl links -> ho.subst -> fo.subst -> fo.subst -> o.
-decompl L HO FO FO2 :- std.do! [
-  decompl-eta L L1 HO HO1,                                                          % L1 conaints no link-eta
-  print "# After decompl-eta, subst is" {ho.ppsubst HO1} "with links" {pplinks L1},
-  complete-link HO1 HO1 L1 L2 FO FO1,                                               % Foreach VM not mapped to OL, we build a link
-  print "# After complete-link, links are" {pplinks L2} "with ho-subst" {ho.ppsubst HO1}, 
-  decompl-mapping L2 L2 HO1 FO1 FO2,
+type decompl mappings -> links -> ho.subst -> fo.subst -> fo.subst -> o.
+decompl Map1 L HO FO FO2 :- std.do! [
+  decompl-eta L L1_ HO HO1,                                                          % L1 conaints no link-eta (it may contain beta)
+  print "# After decompl-eta, subst is" {ho.ppsubst HO1} "with links" {pplinks L},
+  complete-link HO1 HO1 Map1 Map2 FO FO1,                                            % Foreach VM not mapped to OL, we build a link
+  print "# After complete-link, mappings are" {ppmappings Map2} "with ho-subst" {ho.ppsubst HO1}, 
+  decompl-mapping Map2 Map2 HO1 FO1 FO2,
 ].
 
 type test-hope-eta-1 o.

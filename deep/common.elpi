@@ -91,6 +91,10 @@ type fold4 (A -> A1 -> B -> B -> C -> C -> o) -> list A -> list A1 -> B -> B -> 
 fold4 _ [] [] A A B B.
 fold4 F [X|XS] [Y|YS] A A1 B B1 :- F X Y A A0 B B0, fold4 F XS YS A0 A1 B0 B1.
 
+type fold6 (A -> A1 -> B -> B -> C -> C -> D -> D -> o) -> list A -> list A1 -> B -> B -> C -> C -> D -> D -> o.
+fold6 _ [] [] A A B B C C.
+fold6 F [X|XS] [Y|YS] A A1 B B1 C C1 :- F X Y A A0 B B0 C C0, fold6 F XS YS A0 A1 B0 B1 C0 C1.
+
 type all list o -> o.
 all [].
 all [P|PS] :- P, all PS.

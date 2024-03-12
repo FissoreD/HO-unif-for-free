@@ -18,15 +18,16 @@ macro @read :- input_line std_in _.
 type compile-terms 
   list (triple diagnostic try6.fo.fm try6.fo.fm) -> 
   list (triple diagnostic try6.ho.tm try6.ho.tm) -> 
+  try6.comp.mappings ->
   try6.comp.links ->
   try6.ho.subst -> try6.ho.subst ->
   o.
-  
-compile-terms [] [] [] H H.
-compile-terms [triple D S1 S2|Src] [triple D T1 T2|PS] LS H0 H3 :-
-  std.assert! (try6.comp.comp S1 T1 [] L1 H0 H1) "comp s1",
-  std.assert! (try6.comp.comp S2 T2 L1 L2 H1 H2) "comp s2",
-  compile-terms Src PS Links2 H2 H3,
+compile-terms [] [] [] [] H H.
+compile-terms [triple D S1 S2|Src] [triple D T1 T2|PS] MapS LS H0 H3 :-
+  std.assert! (try6.comp.comp S1 T1 [] Map1 [] L1 H0 H1) "comp s1",
+  std.assert! (try6.comp.comp S2 T2 Map1 Map2 L1 L2 H1 H2) "comp s2",
+  compile-terms Src PS Maps2 Links2 H2 H3,
+  std.append Map2 Maps2 MapS,
   std.append L2 Links2 LS.
 
 type prolog 
@@ -60,13 +61,14 @@ prolog [triple (error "unif") L R|_] Links Links H H1 (error "stop") :-
      (H1 = H).
 
 type decompile-subst
+  try6.comp.mappings -> 
   try6.comp.links -> 
   try6.ho.subst ->
   try6.fo.subst ->
   try6.fo.subst ->
   o.
-decompile-subst Links H F F1 :-
-  try6.comp.decompl Links H F F1.
+decompile-subst Mappings Links H F F1 :-
+  try6.comp.decompl Mappings Links H F F1.
 
 % @okl 22300 [
 %   triple ok (@app[@g, (@lam x\ @lam y\ @app[@Y, y, x])]) @X,
@@ -159,16 +161,19 @@ xtest (test N (pr LR Sol) as Test) :- std.do![
   print "## Test" N ":" {ptest Test},
   printC "run test?",
   build-fo-subst LR [] FO_Subst,
-  compile-terms LR Uproblems Links [] HO_Subst,
+  compile-terms LR Uproblems Map1 Links [] HO_Subst,
+  try6.comp.post-comp Map1 Map2 HO_Subst HO_Subst1 Links Links2,                % TODO: refactor compile-terms so that it also does post processing 
   print "## After compilation the terms are" {std.map Uproblems pppbsc},
-  print "## After compilation the links are" {try6.comp.pplinks Links},
+  print "## After compilation the links are" {try6.comp.pplinks Links2},
+  print "## After compilation the mappings are" {try6.comp.ppmappings Map2},
   printC "continue to prolog?",
-  prolog Uproblems Links Links1 HO_Subst HO_Subst1 D,
+  prolog Uproblems Links2 Links1 HO_Subst1 HO_Subst2 D,
   if (D = ok) (
-    print "## After prolog HO subst is" {try6.ho.ppsubst HO_Subst1},
+    print "## After prolog HO subst is" {try6.ho.ppsubst HO_Subst2},
     print "## After prolog links are" {try6.comp.pplinks Links1},
+    print "## After prolog mappings are" {try6.comp.ppmappings Map2},
     printC "continue to decomp?",
-    decompile-subst Links1 HO_Subst1 FO_Subst Sol1,
+    decompile-subst Map2 Links1 HO_Subst2 FO_Subst Sol1,
     print "## After decomp FO subst is" {try6.fo.ppsubst Sol1},
     printC "continue to validate solution?",
     validate-solution LR Sol1,
