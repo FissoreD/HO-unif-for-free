@@ -326,9 +326,9 @@ macro @kol N X :- declare-test xtest ptest (test N (pr X none)).
   A = lam xy. A (B x) (C x y)
 */
 
-@okl 26 [
+@okl1 26 [
   triple ok (@lam x\ @lam y\ @app [@f, @app [@X, x], @app [@Y, x, y]]) @f
-].
+] [(@lam x\x), (@lam x\@lam y\y)].
 
 /*
   (x\y\ f (A x) (B x y)) = f.
