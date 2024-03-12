@@ -849,8 +849,9 @@ type my-unif-assignment ho.assignment -> ho.assignment -> ho.subst -> ho.subst -
 my-unif-assignment T R S1 S2 :-
   ho.assmt-deref S1 T TDeref,
   ho.assmt-deref S1 R RDeref,
-  lam->abs TDeref TAbs,
-  lam->abs RDeref RAbs,
+  % lam->abs TDeref TAbs,
+  % lam->abs RDeref RAbs,
+  TAbs = TDeref, RAbs = RDeref,
   print "Start of unification aux between" TAbs "and" RAbs,
   print "In substitution" S1,
   (my-unif-assignment-aux TAbs RAbs S1 S2).
