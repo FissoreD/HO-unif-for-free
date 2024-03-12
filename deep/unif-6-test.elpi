@@ -101,9 +101,10 @@ type validate-solution
   o.
 validate-solution [] _.
 validate-solution [triple ok L R|Goals] FS :- 
-  try6.fo.deref FS L L', try6.fo.deref FS R R',
-  L' ==o R',
-  validate-solution Goals FS.
+  std.do![try6.fo.deref FS L L', try6.fo.deref FS R R',
+  %  (L' ==o R'),
+  std.assert! (L' ==o R') "Invalid solution",
+  validate-solution Goals FS].
 validate-solution [triple (error _) _ _|_] _.
 
 % (x\y\Y y x) = Z, g Z = X.
@@ -272,9 +273,9 @@ macro @kol N X :- declare-test xtest ptest (test N (pr X none)).
 
 % BUG: first decomp the eta, and then the normal links,
 % or force the ta links when used in the normal links
-% @okl1 288 [
-%   triple ok (@lam x\ @lam y\ @app[@X, y, x]) @Y
-% ] [_, @lam x\ @lam y\ @app[@X, y, x]].
+@okl1 288 [
+  triple ok (@lam x\ @lam y\ @app[@X, y, x]) @Y
+] [_, @lam x\ @lam y\ @app[@X, y, x]].
 
 % @okl 22001 [
 %   triple ok (@lam x\ @lam y\ @app[@Y, y, x]) @Z,

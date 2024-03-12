@@ -876,113 +876,76 @@ link-abs-same-lhs (ho.abs F) B :- pi x\ link-abs-same-lhs (F x) B.
 link-abs-same-lhs A (ho.abs G) :- pi x\ link-abs-same-lhs A (G x).
 link-abs-same-lhs (ho.val (link-eta (ho.uva N _) _)) (ho.val (link-eta (ho.uva N _) _)).
 
-type assign-replace nat -> fo.subst -> fo.fm -> fo.subst -> o.
-assign-replace z [none|S] X [some X |S].
-assign-replace (s N) [A|S] X [A |S1] :- assign-replace N S X S1.
+type decompl-eta-aux linkabs -> ho.subst -> ho.subst -> list ho.tm -> o.
+decompl-eta-aux (ho.val (link-eta T1 T2)) H H1 _ :- ho.unif T1 T2 H H1.
+decompl-eta-aux (ho.abs B) H H1 L :- pi x\ decompl-eta-aux (B x) H H1 [x|L].
 
-type decompl.aux links -> links -> ho.subst -> fo.subst -> fo.subst -> o.
-decompl.aux [link N M _Arity|L] LK HO FO FO1 :-  set? M HO T, !,
-  print "decomp:" {fo.ppuva N} "<-" {ho.ppuva M},
-  ho.assmt-deref HO T T'',
-  print "The HO assignement is:" {ho.ppuva M} {ho.ppass T''}, std.do! [
-  decomp-assign LK HO T T0 FO FO',
-  print "The FO assignement is:" {fo.pp T0},
-  fo.eta-contract T0 T',
-  print "The eta short FO assignement is:" {fo.pp T'},
-  assign-replace N FO' T' FO2,
-  decompl.aux L LK HO FO2 FO1,
-].
+type decompl-eta links -> links -> ho.subst -> ho.subst -> o.
+decompl-eta [] [] H H.
+decompl-eta [link-abs Abs| Links] L H H2 :- decompl-eta-aux Abs H H1 [], !, decompl-eta Links L H1 H2.
+decompl-eta [Hd | Tl] [Hd | L] H H1 :- decompl-eta Tl L H H1.
 
-type get-head fo.fm -> nat -> list fo.fm -> fo.fm -> o.
-get-head (fo.fapp L) z Args T :-
-  appendR [Hd|Tl] Args L,
+% Invariant: links are only on the form (link VO VM Arity), each VO appears once and each VM appears once
+type decompl-mapping links -> links -> ho.subst -> fo.subst -> fo.subst -> o.
+decompl-mapping _ [] _ F F.
+decompl-mapping Links [link VO VM _|Tl] H F F2 :- set? VM H T,
+  abs->lam {ho.assmt-deref H T} T', decomp Links T' T1, fo.eta-contract T1 T2, assign VO F T2 F1,
+  decompl-mapping Links Tl H F1 F2. 
+decompl-mapping Links [link _ VM _|Tl] H F F2 :- unset? VM H, decompl-mapping Links Tl H F F2.
+decompl-mapping _ [L|_] H _ _ :- halt "Decompl mapping: failed on" {pplink L} {ho.ppsubst H}.
+
+type decomp links -> ho.tm -> fo.fm -> o.
+decomp _ (ho.con C)  (fo.fcon C).
+decomp L (ho.lam B1) (fo.flam B2) :- pi x y\ decomp _ x y => decomp L (B1 x) (B2 y).
+decomp L (ho.app L1) T :-
+  forall2 (decomp L) L1 [Hd|Tl],
   fo.mk-app Hd Tl T.
-get-head (fo.flam B) (s N) Args T :-
-  pi x\ get-head (B x) N Args (R x),
-  fo.eta-contract (fo.flam R) T.
+decomp L (ho.uva VM TL) T :-
+  forall2 (decomp L) TL T1,
+  std.assert! (len {std.findall (mem L (link _ VM _))} (s z)) "Sanity check decompl1",
+  mem L (link VO VM _),
+  fo.mk-app (fo.fuva VO) T1 T.
+decomp L H _ :- halt "Fail in decomp" {pplinks L} {ho.pp H}.
 
-% This is classic beta
-% decompl.aux [link-fo-align V _ T|L] LK HO FO FO1 :- set? M HO T, set? N FO R, !, std.do! [
-%   % decomp-assign LK HO T T0 FO FO'',
-%   % fold2 (decomp LK HO) Args Args1 FO'' FO',
-%   % fo.mk-app R Args1 T0,
-%   % decompl.aux L LK HO FO' FO1,
-% ].
-% % FO-approx
-% decompl.aux [link-fo-align V _ T|L] LK HO FO FO1 :- set? M HO T, unset? N FO, !, std.do! [
-%   % decomp-assign LK HO T T0 FO FO'',
-%   % fold2 (decomp LK HO) Args Args1 FO'' FO',
-%   % get-head T0 Arity Args1 TTT,
-%   % assign-replace N FO' TTT FO2,
-%   % decompl.aux L LK HO FO2 FO1,
-% ].
+type add-new-links-aux ho.subst -> list ho.tm -> links -> links ->  fo.subst -> fo.subst -> o.
+add-new-links-aux _ [] _ [] S S.
+add-new-links-aux H [T|Ts] L L2 S S2 :- add-new-link H T L L1 S S1, add-new-links-aux H Ts L1 L2 S1 S2.
 
-% This is classic eta
-% decompl.aux [link-eta M TM |L] LK HO FO FO1 :- set? M HO T, /*unset? N FO,*/ !,
-%   print "In link eta1 with link" M TM , std.do![
-%   my-unif-assignment TM T HO HO1,
-%   % decomp-assign LK HO1 T T0 FO FO2,
-%   % fo.eta-contract T0 T1,
-%   % assign-replace N FO2 T1 FO3,
-%   decompl.aux L LK HO1 FO FO1
-% ].
-
-% % This is classic eta
-% decompl.aux [link-eta M _T |L] LK HO FO FO1 :- unset? M HO, /*unset? N FO,*/ !, 
-%   print "Classic eta unset",
-%   decompl.aux L LK HO FO FO1.
-
-decompl.aux [_|L] LK HO FO FO1 :- decompl.aux L LK HO FO FO1.
-decompl.aux [] _ _ X X.
-
-type decompl links -> ho.subst -> fo.subst -> fo.subst -> o.
-decompl L HO FO FO1 :- std.do! [
-  decompl.aux L L HO FO NewFO,
-  merge-fo NewFO NewFO FO FO1,
-].
-
-type merge-fo fo.subst -> fo.subst -> fo.subst -> fo.subst -> o.
-merge-fo _ [] [] [].
-merge-fo _ X [] X.
-% TODO: returning [some Y|R] is incorrect, we should return [some Z|R] where
-%       Z is the unification of X and Y in the OL
-% TODO: instead of deref-equal, we need unif 
-% NOTE: Invariant: if X and Y are assigned, then they are equal (TODO: to be verified)
-merge-fo S [some X|XS] [some Y|YS] [some Y|R] :- (fo.deref S X X', fo.deref S Y Y', std.do![X' ==o Y']), merge-fo S XS YS R. 
-merge-fo S [none|XS] [some X|YS] [some X|R] :- merge-fo S XS YS R.
-merge-fo S [some X|XS] [none|YS] [some X|R] :- merge-fo S XS YS R.
-merge-fo S [none|XS] [none|YS] [none|R] :- merge-fo S XS YS R.
-
-% we use links just to know if the variables are new
-type decomp-assign links -> ho.subst -> ho.assignment -> fo.fm -> fo.subst -> fo.subst -> o.
-% decomp-assign LK HO (ho.abs F) F1 S S1 :-
-%   pi x y\ (pi S\ decomp LK HO x y S S) => decomp-assign LK HO (F x) F1 S S1.
-
-decomp-assign LK HO (ho.abs F) (fo.flam F1) S S1 :-
-  pi x y\ (pi S\ decomp LK HO x y S S) => decomp-assign LK HO (F x) (F1 y) S S1.
-
-decomp-assign LK HO (ho.val T) T1 S S1 :- (decomp LK HO T T1 S S1).
-
-type decomp links -> ho.subst -> ho.tm -> fo.fm -> fo.subst -> fo.subst -> o.
-decomp _ _ (ho.con X)   (fo.fcon X) S S :- print "OK for constant".
-decomp LK HO (ho.app L) SolOL S S1 :- print "In decomp LK HO 2", std.do![
-  fold2 (decomp LK HO) L [HD|TL] S S1, 
-  fo.mk-app HD TL SolOL].
-decomp LK HO (ho.lam F) (fo.flam F1) S S1 :-
-  pi x y\ (pi S\ decomp LK HO x y S S) => decomp LK HO (F x) (F1 y) S S1.
-decomp LK HO (ho.uva N Args) SolOL S S1 :- set? N HO T, !, print "In set case of uva" T, std.do![
+type add-new-link ho.subst -> ho.tm -> links -> links ->  fo.subst -> fo.subst -> o.
+add-new-link _ (ho.uva N _) Links [] F1 F1 :- mem Links (link _ N _), !.
+add-new-link H (ho.uva N Args) Links Links2 F1 F3 :- set? N H T, !,      % Deref
   ho.move-ass T Args T1a,
   abs->lam T1a T1,
-  % ho.move T Args T1,
-  decomp LK HO T1 SolOL S S1].
-decomp LK HO (ho.uva N Args) SolOL S S1 :-
-  fold2 (decomp LK HO) Args Args1 S S2,
-  if (take-link LK (link X N _) _) (S1 = S2)
-     (fo.new S2 X S1',
-      if (set? N HO T)
-         (decomp-assign LK HO T T' S1' S1'', assign X S1'' T' S1)
-         (S1 = S1')),
-  fo.mk-app (fo.fuva X) Args1 SolOL.
+  add-new-link H T1 Links Links2 F1 F3.
+add-new-link H (ho.uva N L) Links [Link1 | Links1] F1 F3 :-              % Build new link
+  fo.new F1 M F2,
+  len L Arity, Link1 = link M N Arity,
+  add-new-link H (ho.app L) [Link1 | Links] Links1 F2 F3.
+add-new-link H (ho.lam B) Links NewLinks F1 F2 :- pi x\ add-new-link H (B x) Links NewLinks F1 F2.
+add-new-link H (ho.app L) Links NewLinks F1 F3 :- add-new-links-aux H L Links NewLinks F1 F3.
+add-new-link _ (ho.con _) _ [] F F :- !.
+add-new-link _ N _ [] F F :- name N.
+
+type add-new-link-ass ho.subst -> ho.assignment -> links -> links ->  fo.subst -> fo.subst -> o.
+add-new-link-ass H (ho.val Val) Links1 Links2 F1 F2 :- add-new-link H Val Links1 Links2 F1 F2.
+add-new-link-ass H (ho.abs Abs) Links1 Links2 F1 F2 :- pi x\ add-new-link-ass H (Abs x) Links1 Links2 F1 F2.
+
+type complete-link ho.subst -> ho.subst -> links -> links -> fo.subst -> fo.subst -> o.
+complete-link _ [] L L F F.
+complete-link H [none | Tl] L1 L2 F1 F2 :- complete-link H Tl L1 L2 F1 F2.
+complete-link H [some T | Tl] L1 L3 F1 F3 :-
+  add-new-link-ass H T L1 L2 F1 F2, 
+  std.append L1 L2 LAll,
+  complete-link H Tl LAll L3 F2 F3.
+
+type decompl links -> ho.subst -> fo.subst -> fo.subst -> o.
+decompl L HO FO FO2 :- std.do! [
+  decompl-eta L L1 HO HO1,                                                          % L1 conaints no link-eta
+  print "# After decompl-eta, subst is" {ho.ppsubst HO1} "with links" {pplinks L1},
+  complete-link HO1 HO1 L1 L2 FO FO1,                                               % Foreach VM not mapped to OL, we build a link
+  print "# After complete-link, links are" {pplinks L2} "with ho-subst" {ho.ppsubst HO1}, 
+  decompl-mapping L2 L2 HO1 FO1 FO2,
+].
 
 type test-hope-eta-1 o.
 type test-hope-eta-2 o.
@@ -1003,10 +966,3 @@ test-hope-eta-5 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.uva z [x, y])
 test-hope-eta-6 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.uva z [y, x]))
                                    (ho.abs x\ ho.abs y\ ho.val (ho.uva z [y, x])).
 }}
-
-
-
-% Done: 
-%  correct prune in the case of diff length args
-%  hope-for-eta in the case of an uva (I think not)
-% 
