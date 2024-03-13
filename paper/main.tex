@@ -310,18 +310,18 @@ bla bla.. TODO citare Teyjus.
 
 The equational theory of Coq's Dependent Type Theory is very rich. In
 addition to the usual $\eta\beta$-equivalence for functions, terms (hence types)
-are compared up to definition unfolding and fixpoint unrolling. Still,
+are compared up to proposition unfolding and fixpoint unrolling. Still,
 for efficiency and predictability reasons, most form of automatic proof search
 employ a unification procedure that captures a simpler one,
 just $\eta\beta$, and that solves higher-order problems
-restricted to the pattern fragment $\mathcal{L}_\lambda$~\cite{miller92jsc}.
+restricted to the pattern fragment $\llambda$~\cite{miller92jsc}.
 We call this unification procedure \Uo{}.
 
 The equational theory of the meta language Elpi that we want to use to
 implement a form of proof automation is strikingly similar, since it
 it comprises $\eta\beta$ (for the meta language functions), and the
 unification procedure \Ue{} solves higher-order problems in
-$\mathcal{L}_\lambda$.
+$\llambda$.
 
 In spite of the similarity the link between \Ue{} and \Uo{} is not trivial,
 since the abstraction and application term constructors
@@ -362,7 +362,7 @@ We call \Eo the equality over ground terms in \Fo,
 TODO extend \Eo and \Ee with reflexivity on uvars.
 
 \newcommand{\specunif}[3]{
-  #3_i \in \mathcal{L}_\lambda \Rightarrow %
+  #3_i \in \llambda \Rightarrow %
     \exists \rho, %
       \rho #3_1 #1 \rho #3_2  %
         \Leftrightarrow #3_1 #2 #3_2 \mapsto \rho' \subseteq \rho 
@@ -407,30 +407,91 @@ The links connect unification variables in \Ho with variables
 in \Fo{} and are used to decompile the assignment,
 $\D{\sigma}{l}{\rho}$.
 
-Given 
-$$
-\C{s_1}{t_1}{l_1} \land \C{s_2}{t_2}{l_2}
-$$
-we define
-$$
-s_1 \Uo s_2 \mapsto \rho \stackrel{def}{=}
-    t_1 \Ue t_2 \mapsto \sigma \land
-    \D{\sigma}{l_1 + l_2}{\rho}
-$$
-Where $l_1 + l_2$ is the list concatenation of links.
-
-We write $s \in \mathcal{L}_\lambda$ if all unif variables in
-$s$ are applied to distinct bound variables.
+We represent a logic program run for a goal g as
+a list steps $p$ of length $\mathcal{N}$ each made of a unification problem
+between terms $\mathcal{S}_{p_l}$ and $\mathcal{S}_{p_r}$
+taken from the set of all terms $\mathcal{S}$.
+If a rule is used
+twice in a run we make two copies of the terms (the predicates)
+occurring in the head or premises. So a run is the conjunction of all
+unification problems, where $\rho_0$ is the empty substitution
 %
+$$
+\bigwedge_{p = 1 \ldots \mathcal{N}}
+\underbrace{
+  \rho_{(p-1)}\mathcal{S}_{p_l} \Uo \rho_{(p-1)}\mathcal{S}_{p_l} \mapsto \rho_p
+}_\mathrm{step}
+$$
+
+We simulate this run as where $\sigma_0$ is the empty substitution
+%
+\newcommand{\solve}{\ensuremath{\mathrm{check}}}
+\begin{gather*}
+\mathcal{T} \times \mathbb{L} = \{ (t_j,l_j) | s_j \in \mathcal{S}, \C{s_j}{t_j}{l_j} \}\\
+\bigwedge_{p = 1 \ldots \mathcal{N}}
+ \underbrace{
+  \sigma_{(p-1)}\mathcal{T}_{p_l} \Ue \sigma_{(p-1)}\mathcal{T}_{p_r} \mapsto \sigma_p' \land
+  \solve~(\mathbb{L},\sigma_p')\mapsto \sigma_p
+ }_\mathrm{step'}\\
+\D{\sigma_{\mathcal{N}}}{\mathbb{L}}{\rho_{\mathcal{N}}}
+\end{gather*}
+
+\begin{proposition}[Simulation fidelity]\label{prop:fidelity}
+  $\forall p, \mathrm{step}(p,\rho) \mapsto \rho' \Leftrightarrow
+              \mathrm{step'}(p,\sigma) \mapsto \sigma'$
+\end{proposition}
+
+\newcommand{\maybebeta}{\ensuremath{\stackrel{?}{\beta}}\xspace}
+\begin{definition}[\maybebeta]
+  $t$ is in \maybebeta if it contains a subterm matching the
+  pattern \elpiIn{app[uva _ _|_]}
+\end{definition}
+
+\newcommand{\maybeeta}{\ensuremath{\stackrel{?}{\eta}}\xspace}
+\begin{definition}[\maybeeta]
+  $t$ is in \maybeeta if it contains a subterm matching the
+  pattern \elpiIn{lam x\ .. lam y\ app[con _,x, ...,uva _ [y]]}\\
+   or
+  \elpiIn{lam x\lam y\uva _ [y,x]}
+\end{definition}
+
+\begin{definition}[Normal form]
+  We write $norm(\mathcal{T})$ when $\mathcal{T} \cap (\maybebeta \cup \maybeeta) = \emptyset$
+\end{definition}
+
+We write $\sigma\mathcal{T} = \{ \sigma t_i | t_i \in \mathcal{T}\}$.
+
+\begin{proposition}[Normal form preservation]
+  $norm(\sigma\mathcal{T}) \land \mathrm{step'}(p,\sigma) \mapsto \sigma'
+  \Rightarrow norm(\sigma\mathcal{T})$   
+\end{proposition}
+
+If we focus on a single unification problem, that is
+$\mathcal{S} = \{ s_1, s_2 \}$ and 
+$\C{s_1}{t_1}{l_1}$ and $\C{s_2}{t_2}{l_2}$ we write
+$$
+\begin{array}{l}
+s_1 \Uo s_2 \mapsto \rho \stackrel{def}{=}\\
+\quad    t_1 \Ue t_2 \mapsto \sigma' \land
+    \solve~(\{l_1,l_2\},\sigma') \mapsto \sigma'' \land
+    \D{\sigma''}{\{l_1,l_2\}}{\rho}
+\end{array}
+$$
+\noindent
+We write $s \in \llambda$ if all unif variables in
+$s$ are applied to distinct bound variables.
+
+\begin{proposition}[Properties of \Uo{}]
 \begin{gather}
-\unifcorrect{\Eo}{\Uo}{s}\label{prop:correct}\\
+  \unifcorrect{\Eo}{\Uo}{s}\label{prop:correct}\\
 \unifcomplete{\Eo}{\Uo}{s}\label{prop:complete}\\
 % \forall \rho'\rho, 
   \rho s_1 \Eo \rho s_2 \Rightarrow
   \rho' \subseteq \rho \Rightarrow
-  \rho's_i \in \mathcal{L}_\lambda \Rightarrow
+  \rho's_i \in \llambda \Rightarrow
   \rho' s_1 \Uo \rho' s_2 \label{prop:simulation}
 \end{gather}
+\end{proposition}
 
 Properties \ref{prop:correct} and \ref{prop:complete} state, respectively, that
 in \llambda the implementation of \Uo is correct, complete and returns the most
@@ -462,12 +523,18 @@ hence \Ue would fail (since \Ue does not know about the $\beta$ rule of DTT).
 Our compiler takes care of making property \ref{prop:simulation} hold, see
 section XXX.
 
-Property \ref{prop:complete} is also relevant to use \Uo for logic programming.
+Property \ref{prop:fidelity} is also relevant to use \Uo for logic programming.
 In particular we want failures to occur as early as possible, so want
-the decomp phase to take place immediately after \Ue, and fail if need be.
-This becomes particularly important since compile may introduce two
-ho variables for the same fo one, leaving the task of unifying the solutions
-to decomp.
+the check phase to take place immediately after \Ue, and fail if need be.
+
+\paragraph{The intuition} is that a term s is compiled in a term t where any
+``problematic'' sp is replaced by a hole hp and an accessory
+(suspended) unification problem tp \Ue hp (called link) where
+tp is the compiled of sp. 
+On t \Ue is well behaved (captures \Eo), and check solves links when it can by
+using \Ue or keeps them suspended until the decompilation phase.
+check also detects occur checks trough the suspended unif problems
+in order to grant \cref{prop:fidelity}.
 
 \section{Alternative encodings and related work}
 
@@ -563,13 +630,13 @@ is of type \elpiIn{nat} and \elpiIn{x} is a bound variable.
 
 In \Ho the representation of \coqIn{P x} is instead \elpiIn{uva N [x]}.
 We say that the unification variable \elpiIn{uva N L} is in \llambda iff
-\elpiIn{distinct-names L} holds.
+\elpiIn{distinct L} holds.
 
 \begin{elpicode}
-type distinct-names list tm -> o.
-distinct-names [].
-distinct-names [X|XS] :- name X, not(mem X XS),
-  distinct-names XS.
+type distinct list A -> o.
+distinct [].
+distinct [X|XS] :- name X, not(mem X XS),
+  distinct XS.
 \end{elpicode}
 
 \noindent
@@ -621,12 +688,12 @@ Together with the description of the terms of the language, we need some
 auxiliary functions to perform operations like term equality, unification,
 dereferencing. There predicates are supposed to be implemented in the OL and the
 ML following respectively their specification. In the following few paragraphs
-we give a brief definition of them.
+we give a brief proposition of them.
 
 \paragraph{Term dereferencing: $\rho s$ and $\sigma t$}
 
 Since in our encoding we explicitly carry a substitution we need to
-define the operation that applies it to a term. Its definition
+define the operation that applies it to a term. Its proposition
 takes care to normalize (flatten) applications, for example
 it turns
 \elpiIn{(app [app [con"f",con"a"],con"b"])}
@@ -641,21 +708,22 @@ make the dereferencing procedure to recurse over the their subterms. The code
 below display this behavior for the dereferencing performed by the OL:
 
 \begin{elpicode}
-type fderef fsubst -> fm -> fm -> o.                 ~($\customlabel{pred:fderef}{\rho s}$)~
-% flattening
-fderef S (fapp [fuva N|A]) R :- set? N S (fapp B), !,
-  append A B C, fderef S (fapp C) R.
-% traversal
-fderef S (fapp A) (fapp B) :- map (fderef S) A B.
-fderef S (flam F) (flam G) :- 
-  pi x\ fderef S x x => fderef S (F x) (G x).
-fderef _ (fcon C) (fcon C).
-% dereferencing
-fderef S (fuva N) R :- set? N S T, fderef S T R.
-fderef S (fuva N) (fuva N) :- unset? N S.
+type fder fsubst -> fm -> fm -> o.
+fder S (fapp A) (fapp B) :- map (fder S) A B.
+fder S (flam F) (flam G) :- 
+  pi x\ fder S x x => fder S (F x) (G x).
+fder _ (fcon C) (fcon C).
+fder S (fuva N) R :- set? N S T, fder S T R.
+fder S (fuva N) (fuva N) :- unset? N S.
+
+type fderef fsubst -> fm -> fm -> o.                 ~($\customlabel{pred:fder}{\rho s}$)~
+fderef S T R :- fder S T T', napp T' R.
+
+type napp fm -> fm -> o.
 \end{elpicode}
 
 \noindent
+TODO explain napp.
 We use the cut operator to keep the code compact. It is possible to rewrite
 the rule for application traversal so that it is mutually exclusive with the
 first one, but that requires a rather verbose analysis of the head of \elpiIn{A}.
@@ -665,7 +733,10 @@ differ in a substantial way:
 
 \begin{elpicode}
 type deref subst -> tm -> tm -> o.                   ~($\customlabel{pred:deref}{\sigma t}$)~
-% ... similar to above ...
+deref S (app A) (app B) :- map (deref S) A B.
+deref S (lam F) (lam G) :- 
+  pi x\ deref S x x => deref S (F x) (G x).
+deref _ (con C) (con C).
 deref S (uva N A) R :- set? N S F, move F A T, deref S T R.
 deref S (uva N A) (uva N B) :- unset? N S, map (deref S) A B.
 type move assignment -> list tm -> tm -> o.
@@ -677,6 +748,7 @@ move (val (con H))   L (app [con H | L]).
 \end{elpicode}
 
 \noindent
+TODO: no need to napp, see the beta section.
 Note that when the substitution \elpiIn{S} maps a unification variable
 \elpiIn{N} to an assignment \elpiIn{F} we ....
 
@@ -785,8 +857,152 @@ by the ML. \todo{same or $\supseteq$ or $\subseteq$}
 In the following section we explain how we deal with term (de)compilation and
 links between unification variables.
 
-\section[Compilation: fo\_tm to tm]{Compilation}
+\section[Compilation: fo\_tm to tm]{Basic compilation \Fo{} to \Ho{}}
 \label{sec:compilation}
+
+In this section we describe a basic compilation scheme that we refine
+later, in the following sections.
+
+The objective of the compilation is to recognize the higher-order variables
+available in \Ho{} when expressed in a first order way in \Fo{}. The compiler
+also generates a list of links that are used to bring back the substitution from
+\Ho{} to \Fo{} and allocates in the memory a cell for each variable.
+
+\begin{elpicode}
+kind link type.
+type link nat -> nat -> nat -> subst. % link Fo Ho Arity
+typeabbrev links list link.
+type comp fm -> tm -> links -> links -> subst -> subst -> o.
+comp (fcon X) (con X) L L S S.
+comp (flam F) (lam G) K L R S :- pi x y\
+  (pi A S\ comp x y L L S S) => comp (F x) (G y) K L R S.
+comp (fuva M) (uva N []) K [link M N z|K] R S :- new R N S.
+comp (fapp[fuva M|A]) (uva N B) K L R S :- distinct A, !,
+  fold4 comp A B K K R R,
+  new R N S, len A Arity,
+  L = [link N M Arity | K].
+comp (fapp A) (app B) K L R S :- fold4 comp A B K L R S.
+\end{elpicode}
+
+\noindent
+Note that \elpiIn{link} carries the arity (number of expected arguments) of
+the variable. \marginpar{say when this is needed}
+
+\begin{elpicode}
+type solve-links links -> links -> subst -> subst -> o.
+solve-links L L S S.
+\end{elpicode}
+
+Then decomp
+
+\begin{elpicode}
+type decompile links -> subst -> fsubst -> o.
+decompile L S O :-
+  map (_\r\r = none) S O1, % allocate empty fsubst
+  (pi N X\ knil N X :- mem L (link X N _) ; N = X) =>
+    decompl S L O1 O.
+type knil nat -> nat -> o.
+
+type decompl links -> subst -> fsubst -> o.
+decompl S [] [].
+decompl S [link _ N _|L] O P :- unset? N S X,
+  decompl S L O P.
+decompl S [link M N _|L] O P :- set? N S X,
+  decomp-assignment S X T, assign M O (some T) O1,
+  decompl S L O1 P.
+
+type decomp-assignment subst -> assignment -> fm -> o.
+decomp-assignment S (abs F) (flam G) :-
+  pi x y\ decomp-tm S x y => decomp-assignment S (F x) (G y).
+decomp-assignment S (val T) T1 :- decomp S T T1.
+
+type decomp subst -> tm -> fm.
+decomp _ (con C) (fcon C).
+decomp S (app A) (app B) :- map (decomp S) A B.
+decomp S (lam F) (flam G) :-
+  pi x y\ decomp S x y => decomp S (F x) (G y).
+decomp S (uva N A) R :- set? N S F,
+  move F A T, decomp S T R.
+decomp S (uva N A) R :- unset? N S,
+  map (decomp S) A B, knil N M, napp (fapp[fuva M|B]) R.
+\end{elpicode}
+  
+\marginpar{TODO link}
+\marginpar{TODO nuove subst}
+
+Now unif\marginpar{TODO: code unif}
+
+\begin{elpicode}
+~\PYG{k+kd}{type} \PYG{n+nf}{(\Uo)} \PYG{k+kt}{fm -> fm -> subst -> subst -> o}~.
+(X ~\Uo~Y) S S1 :-
+  fderef S X X0, fderef S Y Y0,                    ~($\customlabel{step:norm}{norm}$)~
+  comp X0 X1 [] S0 [] L0,                        ~($\customlabel{step:compile}{compile}$)~
+  comp Y0 Y1 S0 S1 L0 L1,
+  (X1 ~\Ue~Y1) [] HS0,                              ~($\customlabel{step:unify}{unify}$)~
+  solve-links L1 L2 HS0 HS1,                        ~($\customlabel{step:link}{link}$)~
+  decompile L2 HS1  S1.                        ~($\customlabel{step:decompile}{decompile}$)~
+\end{elpicode}
+
+\subsection{Prolog simulation}
+Allows us to express the properties.
+we take all terms involved in a search (if a rule is used twice we simply
+take a copy of it), we compile all of them, and then we pick the unification
+prblems among these terms and step trough them.
+
+\begin{elpicode}
+type pick list A -> (pair nat nat) -> (pair A A) -> o.
+pick L (pr X Y) (pr TX TY) :- nth X L TX, nth Y L TY.
+
+type prolog-fo list fm -> list (pair nat nat) -> subst -> o.
+prolog-fo Terms Problems S :-
+  map (pick Terms) Problems FoProblems,
+  fold4 ~(\Uo)~ FoProblems [] S.
+
+type step-ho (pair tm tm) -> links -> links -> subst -> subst -> o.
+step-ho (pr X Y) L0 L1 S0 S2 :-
+  (X1 ~\Ue~Y1) S0 S1,
+  solve-links L0 L1 S1 S2.
+
+type prolog-ho list fm -> list (pair nat nat) -> subst -> o.
+prolog-ho Terms Problems S :-
+  fold4 comp Terms HoTerms [] L0 [] HS0,
+  map (pick HoTerms) Problems HoProblems,
+  fold4 step-ho HoProblems L0 L HS0 HS,
+  decompile L HS S.
+\end{elpicode}
+
+\noindent
+the proprty is that if a step for Fo succeds then the Ho one does, and
+if Fo fails then the Ho fails ()
+
+\subsection{Example}
+
+OK 
+
+\begin{elpicode}
+Terms [ flam x\ fapp[fcon"g",fapp[fuva z, x]] 
+      , flam x\ fapp[fcon"g", fcon"a"] ]
+Problems = [ pr z (s z) ] % $\lambda x.g (F x) = \lambda x.g a$ 
+lam x\ app[con"g",uva z [x]] ~\Uo~lam x\ app[con"g", con"a"]
+link z z (s z)
+HS = [some (abs x\con"a")]
+S = [some (flam x\fcon a)]
+\end{elpicode}
+
+KO
+
+\begin{elpicode}
+  Terms [ flam x\ fapp[fcon"g",fapp[fuva z, x]] 
+  , flam x\ fapp[fcon"g", fcon"a"] ]
+Problems = [ pr 0 1   % $A = \lambda x.x$
+           , pr 2 3 ] % $A a = a$ 
+lam x\ app[con"g",uva z [x]] ~\Uo~lam x\ app[con"g", con"a"]
+link z z (s z)
+HS = [some (abs x\con"a")]
+S = [some (flam x\fcon a)]
+lam x\ app[f, app[X, x]] = Y,
+  lam x\ x) = X.
+\end{elpicode}
 
 \otext{Goal: $s_1 \Uo s_2$ is compiled into $t_1 \Ue t_2$}
 \otext{What is done: uvars \elpiIn{fo_uv} of OL are replaced into uvars \elpiIn{ho_uv} of the ML}
@@ -927,29 +1143,67 @@ Note that \elpiIn{(a infix b) c d} de-sugars to \elpiIn{(infix) a b c d}.
 
 \begin{figure*}
 \begin{elpicode}
+~\PYG{k+kd}{type} \PYG{n+nf}{(\Eo)} \PYG{k+kt}{ftm -> ftm -> o}~.                           ~($\customlabel{pred:fequal}{\Eo}$)~
+fapp A ~\Eo~fapp B :- map ~(\Eo)~ A B.
+flam F ~\Eo~flam G :- pi x\ x ~\Eo~x => F x ~\Eo~G x.
+fcon C ~\Eo~fcon C.
+fuva N ~\Eo~fuva N.
+flam F ~\Eo~T :-                                       ~($\customlabel{clause:eta1}{\eta_l}$)~
+  pi x\ beta T [x] (R x), x ~\Eo~x => F x ~\Eo~R x.
+T ~\Eo~flam F :-                                       ~($\customlabel{clause:eta2}{\eta_r}$)~
+  pi x\ beta T [x] (R x), x ~\Eo~x => R x ~\Eo~F x.
+fapp [flam X | L] ~\Eo~T :- beta (flam X) L R, R ~\Eo~T. ~($\customlabel{clause:beta1}{\beta_l}$)~
+T ~\Eo~fapp [flam X | L] :- beta (flam X) L R, T ~\Eo~R. ~($\customlabel{clause:beta2}{\beta_r}$)~
+
+type beta fm -> list fm -> fm -> o.
+beta A [] A.
+beta (flam F) [H | L] R :- subst F H B,
+  beta B L R. % since F could be x\app[x|_] and H be lam _ 
+beta (fapp A) L (fapp X) :- append A L X.
+beta (fuva N) L (fapp [fuva N | L]).
+beta (fcon H) L (fapp [fcon H | L]).
+
+type subst (fm -> fm) -> fm -> fm -> o.
+subst F H B :- napp (F H) B. % since (F H) may generate (app[app _|_])
+
+type napp fm -> fm -> o.
+napp (fcon C) (fcon C).
+napp (flam F) (flam G) :- pi x\ napp x x => napp (F x) (G x).
+napp (fapp[fapp L|M]) R :- !, append L M N, napp (fapp N) R.
+napp (fapp[X]) R :- !, napp X R.
+napp (fapp A) (fapp B) :- map napp A B.
+napp (fuva N) (fuva N).
+\end{elpicode}
+\caption{Full implementation of the \Eo predicate for \Fo}
+\label{code:eo-pred}
+\Description[code:eo-pred]{code:eo-pred}
+\end{figure*}
+
+\begin{figure*}
+\begin{elpicode}
 ~\PYG{k+kd}{type} \PYG{n+nf}{(\Ue)} \PYG{k+kt}{tm -> tm -> subst -> subst -> o}~.
 % Congruence
-(app A ~\Ue~app B) S S1 :- fold2 ~(\Ue)~A B S S1.
-(lam F ~\Ue~lam G) S S1 :- pi x\ (pi S\ (x ~\Ue~x) S S) => (F x ~\Ue~G x) S S1.
+(app A ~\Ue~app B) R S :- fold2 ~(\Ue)~A B R S.
+(lam F ~\Ue~lam G) R S :- pi x\ (pi S\ (x ~\Ue~x) S S) => (F x ~\Ue~G x) R S.
 ~\Ue~(con C) (con C) S S.
 % deref
-(uva N A ~\Ue~T) S S1 :- set? N S F, move F A T1, (T1 ~\Ue~T) S S1.
-(T ~\Ue~uva N A) S S1 :- set? N S F, move F A T1, (T ~\Ue~T1) S S1.
+(uva N A ~\Ue~T) R S :- set? N S F, move F A T1, (T1 ~\Ue~T) R S.
+(T ~\Ue~uva N A) R S :- set? N S F, move F A T1, (T ~\Ue~T1) R S.
 % flex-flex
 (uva N A ~\Ue~uva M B) S S3 :-  unset? M, unset? N,
-  distinct-names A, distinct-names B, 
+  distinct A, distinct B, 
   new S W S1, prune W Args1 B Ass, 
   assign N S1 Ass S2, assign M S2 Ass S3.
 % assignment
-(uva N A ~\Ue~T) S S1 :- distinct-names A, not (T = uva _ _), not_occ N S T,  
+(uva N A ~\Ue~T) R S :- distinct A, not (T = uva _ _), not_occ N S T,  
   bind A T T1, assign N S T1 S1.
-(T ~\Ue~uva N A) S S1 :- distinct-names A, not (T = uva _ _), not_occ N S T, 
+(T ~\Ue~uva N A) R S :- distinct A, not (T = uva _ _), not_occ N S T, 
   bind A T T1, assign N S T1 S1. 
       
-type distinct-names list tm -> o.
-distinct-names [].
-distinct-names [X|XS] :- name X, not(mem X XS),
-distinct-names XS.
+type distinct list A -> o.
+distinct [].
+distinct [X|XS] :- name X, not(mem X XS),
+distinct XS.
 
 typeabbrev memory A (list (option A)).
 type set? nat -> memory A -> A -> o.
@@ -967,16 +1221,40 @@ nth z [X|_] X.
 nth (s N) [_|L] X :- nth N L X.
 
 type new memory A -> nat -> memory A -> o.
+new [] z [none].
+new [X|XS] (s N) [X|YS] :- new XS N YS.
+
 type prune .
 type move .
 type beta.
+type bind.
 type not_occ.
 TODO
+
+type fold2 (A -> A1 -> B -> B -> o) -> list A -> list A1 -> B -> B -> o.
+fold2 _ [] [] A A.
+fold2 F [X|XS] [Y|YS] A A1 :- F X Y A A0, fold2 F XS YS A0 A1.
 
 \end{elpicode}
 \caption{Implementation of the \Ue predicate for \Ho}
 \label{code:ue-pred}
-\Description[code:unif-pred]{code:unif-pred}
+\Description[code:ue-pred]{code:ue-pred}
+\end{figure*}
+
+\begin{figure*}
+\begin{elpicode}
+type fold4 (A -> A1 -> B -> B -> C -> C -> o) -> list A -> list A1 -> B -> B -> C -> C -> o.
+fold4 _ [] [] A A B B.
+fold4 F [X|XS] [Y|YS] A A1 B B1 :- F X Y A A0 B B0, fold4 F XS YS A0 A1 B0 B1.
+
+type len list A -> nat -> o.
+len [] z.
+len [_|L] (s X) :- len L X.
+
+\end{elpicode}
+\caption{Implementation of the compiler}
+\label{code:ue-pred}
+\Description[code:ue-pred]{code:ue-pred}
 \end{figure*}
   
 \end{document}
