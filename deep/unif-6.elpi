@@ -929,10 +929,6 @@ add-new-links-aux H [T|Ts] L L2 S S2 :- add-new-link H T L L1 S S1, add-new-link
 
 type add-new-link ho.subst -> ho.tm -> mappings -> mappings ->  fo.subst -> fo.subst -> o.
 add-new-link _ (ho.uva N _) Links [] F1 F1 :- mem Links (mapping _ (hv N _)), !.
-add-new-link H (ho.uva N Args) Links Links2 F1 F3 :- set? N H T, !,      % Deref
-  ho.move-ass T Args T1a,
-  abs->lam T1a T1,
-  add-new-link H T1 Links Links2 F1 F3.
 add-new-link H (ho.uva N L) Links [Link1 | Links1] F1 F3 :-              % Build new link
   mem-new F1 M F2,
   len L Arity, Link1 = mapping (fv M) (hv N (arity Arity)),
@@ -949,7 +945,8 @@ add-new-link-ass H (ho.abs Abs) Links1 Links2 F1 F2 :- pi x\ add-new-link-ass H 
 type complete-link ho.subst -> ho.subst -> mappings -> mappings -> fo.subst -> fo.subst -> o.
 complete-link _ [] L L F F.
 complete-link H [none | Tl] L1 L2 F1 F2 :- complete-link H Tl L1 L2 F1 F2.
-complete-link H [some T | Tl] L1 L3 F1 F3 :-
+complete-link H [some T0 | Tl] L1 L3 F1 F3 :-
+  ho.assmt-deref H T0 T,
   add-new-link-ass H T L1 L2 F1 F2, 
   std.append L1 L2 LAll,
   complete-link H Tl LAll L3 F2 F3.
