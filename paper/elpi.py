@@ -79,7 +79,7 @@ class ElpiLexer(RegexLexer):
              'elpi-chr-rule-start'),
 
             (r"(?=[A-Z_]){}".format(constant_re), Name.Variable),
-            (r"(?=[a-z_]){}\\".format(constant_re), Name.Variable),
+            (r"(?=[a-z_])({}|_)\\".format(constant_re), Name.Variable),
             (r"_", Name.Variable),
             (r"({}|!|=>|;)".format(symbol_re), Keyword.Declaration),
             (constant_re, Text),
