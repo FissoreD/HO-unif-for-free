@@ -450,10 +450,8 @@ shorten fo.{ (==o) }.
 typeabbrev scope (list ho.tm).
 
 kind linkctx type.
-% type link-fo-align list ho.tm -> nat -> nat -> nat -> link.
 type link-eta ho.tm -> ho.tm -> linkctx.
-% [link-fo-align Beta HeadVar PFvars NPFvars]
-type link-fo-align address -> address -> scope -> scope -> linkctx.
+type link-beta ho.tm -> ho.tm -> linkctx.
 
 typeabbrev linkabs (ho.inctx linkctx).
 
@@ -482,7 +480,7 @@ ppmappings Map Str :- forall2 ppmapping Map Str.
 type pplinkabs linkabs -> string -> o.
 pplinkabs (ho.abs F) S :- pi x\ std.any->string x N, pplinkabs (F x) S1, S is N ^ " " ^ S1.
 pplinkabs (ho.val (link-eta A B)) S :- S is "|- " ^ {ho.pp A} ^ " =η= " ^ {ho.pp B}.
-pplinkabs (ho.val (link-fo-align _ _ _ _)) S :- S is "TODO pp fi align".
+pplinkabs (ho.val (link-beta A B)) S :- S is "|- " ^ {ho.pp A} ^ " =β= " ^ {ho.pp B}.
 
 % [maybe-eta N T L] takes a name N a term T and a list of binder.
 % return if T could be an eta expansion, possible cases:
@@ -496,14 +494,28 @@ maybe-eta _ (fo.fapp [_ |Args]) L :-                      % Head is rigid -> to 
   last-n {len L} Args R, 
   forall2 (x\y\ maybe-eta y x [y]) R {std.rev L}.
 
+% type not-reduce-to-name fo.fm -> o.
+% not-reduce-to-name (fo.fcon _).
+% not-reduce-to-name 
+
+% type maybe-beta fo.fm -> o.
+% maybe-beta (fo.flam x\ B) :- pi x\ maybe-beta (B x).
+% maybe-beta (fo.fapp [fo.fuva V | L]) :- exists (x\ not (name x)).
+
 type locale ho.tm -> o.
+type get-scope-aux ho.tm -> list ho.tm -> o.
+get-scope-aux (ho.con _) [].
+get-scope-aux (ho.uva _ L) L1 :- fold (x\y\r\ sigma R\ get-scope-aux x R, std.append y R r) L [] L1.
+get-scope-aux (ho.lam B) L1 :- pi x\ locale x => get-scope-aux (B x) L1.
+get-scope-aux (ho.app L) L1 :- fold (x\y\r\ sigma R\ get-scope-aux x R, std.append y R r) L [] L1.
+get-scope-aux X [X] :- name X, not (locale X).
+get-scope-aux X [] :- name X, (locale X).
+
 type get-scope ho.tm -> list ho.tm -> o.
-get-scope (ho.con _) [].
-get-scope (ho.uva _ L) L1 :- fold (x\y\r\ sigma R\ get-scope x R, std.append y R r) L [] L1.
-get-scope (ho.lam B) L1 :- pi x\ locale x => get-scope (B x) L1.
-get-scope (ho.app L) L1 :- fold (x\y\r\ sigma R\ get-scope x R, std.append y R r) L [] L1.
-get-scope X [X] :- name X, not (locale X).
-get-scope X [] :- name X, (locale X).
+get-scope T Scope :-
+  names N,
+  get-scope-aux T ScopeDuplicata,
+  std.filter N (mem ScopeDuplicata) Scope.
 
 type close-links (ho.tm -> links) -> links -> o.
 close-links (_\[]) [].
@@ -524,9 +536,7 @@ comp (fo.flam F) (ho.uva E0 Scope) Mappings1 Mappings2  L L2 S S2 :-
   std.do![
     mem.new S E0 S1,
     comp-lam F F1 Mappings1 Mappings2 L L1 S1 S2,
-    names N,
-    (pi x\ locale x => get-scope (F1 x) ScopeDuplicata), 
-    std.filter N (mem ScopeDuplicata) Scope,
+    (pi x\ locale x => get-scope (F1 x) Scope), 
     % hack
     % (
     %   (F1 = (x\ho.uva _ [V1,x]), Scope = [V1]) ;
@@ -543,17 +553,17 @@ comp (fo.flam F) (ho.uva E0 Scope) Mappings1 Mappings2  L L2 S S2 :-
 
 comp (fo.flam F) (ho.lam F1) Mappings1 Mappings2 L L2 S S1 :- comp-lam F F1 Mappings1 Mappings2 L L2 S S1.
 comp (fo.fuva N)              (ho.uva M []) Mappings Mappings1 L L S S1 :- alloc Mappings Mappings1 (fv N) (hv M (arity z)) S S1.
-comp (fo.fapp [fo.fuva N|Ag]) (ho.uva MM PF1) Mappings1 Mappings3 L L3 S S4 :- !,
+comp (fo.fapp [fo.fuva N|Ag]) TTT Mappings1 Mappings3 L L1 S S3 :- !,
   split-pf Ag PF NPF,
   fold6 comp PF PF1 Mappings1 Mappings1 L L S S1,                                 % Note : PF is a list of names -> Mappings1 and L not change
-  fold6 comp NPF NPF1 Mappings1 Mappings2 L L1 S1 S2,
-  len PF Len,
-  alloc Mappings2 Mappings3 (fv N) (hv M (arity Len)) S2 S3, % mem.new S2 M S3,
+  fold6 comp NPF NPF1 Mappings1 Mappings2 L L1 S1 S2,  
+  alloc Mappings2 Mappings3 (fv N) (hv M (arity {len Ag})) S2 S3, % mem.new S2 M S3,
   % TODO: NYI NPF1 can contain non-closed terms (i.e. local vars...)
-  if (NPF = []) (L3 = L1, S3 = S4, MM = M) 
-    ( mem.new S3 MM S4,
-      L3 = [link-abs(ho.val(link-fo-align MM M PF1 NPF1)) | L1])
-  .
+  % names N,
+  % (pi x\ locale x => get-scope (F1 x) ScopeDuplicata), 
+  % std.filter N (mem ScopeDuplicata) Scope,
+  % TTT1 = ho.uva M Scope,
+  ho.beta (ho.uva M PF1) NPF1 TTT.
 comp (fo.fapp A)              (ho.app A1) Mappings1 Mappings2 L L1 S S1 :- fold6 comp A A1 Mappings1 Mappings2 L L1 S S1.
 
 type put-abs-uva nat -> address -> list ho.tm -> ho.assignment -> o.
@@ -654,20 +664,20 @@ solve-link-abs (ho.val (link-eta A B) as L) Keep S S1 :- !,
   progress-eta-link A B S S1 R,
   if (R = tt) (Keep = some L) (Keep = none).
   % print "finish progress". % TODO: remove link if L is no more an eta
-% solve-link-abs (ho.val (link-fo-align Beta Head PF NPF) as L) (some L) S S1 :- 
+% solve-link-abs (ho.val (link-beta Beta Head PF NPF) as L) (some L) S S1 :- 
 %   ho.deref S (ho.uva Head {std.append PF NPF}) BetaHead,  rigid-head BetaHead, !,
 %   ho.deref S (ho.uva Beta {std.append PF NPF}) BetaAss, ho.unif BetaHead BetaAss S S1.
 
 solve-link-abs L _ _ _ :- fatal "solve-link-abs" L.
 % % classic beta: the head of the application is rigid
-% solve-links [link-fo-align V Hd_ T|L1] L2 S S2 :-
+% solve-links [link-beta V Hd_ T|L1] L2 S S2 :-
 %   % if Hd is set then beta (note assmt-deref does the beta-redex)
 %   ho.assmt-deref S T Ass2,  rigid-head Ass2, !,
 %   print "Solve link beta",
 %   if (mem.set? V S Ass1) (print "ass1 is" Ass2, my-unif-assignment Ass1 Ass2 S S1) (mem.assign V S Ass2 S1),
 %   solve-links L1 L2 S1 S2.
 
-% solve-links [link-fo-align V Hd_ T|L1] L2 S S2 :-
+% solve-links [link-beta V Hd_ T|L1] L2 S S2 :-
 %   % TODO: if Hd is not set, the we do Fo-approx
 %   ho.assmt-deref S T Ass2, (not (rigid-head Ass2)), !,
 %   print "In second link fo align" Ass1 "et" Ass2,
@@ -691,7 +701,7 @@ link-occur-check [link-abs A|L] Links H H2 :-
 
 type link-abs-occur-check linkabs -> links -> ho.subst -> ho.subst -> o.
 link-abs-occur-check (ho.abs L) Links H H1 :- pi x\ (pi s\ ho.deref s x x :- !) => ho.copy x x => (pi h\ ho.unif x x h h) => link-abs-occur-check (L x) Links H H1.
-link-abs-occur-check (ho.val (link-fo-align _ _ _ _)) _ H H.
+link-abs-occur-check (ho.val (link-beta _ _)) _ H H.
 link-abs-occur-check (ho.val (link-eta(ho.uva N0 S0) T)) Links H H1 :-
   ho.deref H (ho.uva N0 S0) (ho.uva N S), !,
   print "test OC" N0 "->" N "on" T "and" H,
@@ -734,7 +744,7 @@ type deref-link-abs ho.subst -> linkabs -> linkabs -> o.
 deref-link-abs H (ho.abs F) (ho.abs G) :- pi x\ deref-link-abs H (F x) (G x).
 deref-link-abs H (ho.val (link-eta A B)) (ho.val (link-eta A1 B1)) :-
   ho.deref H A A1, ho.deref H B B1.
-deref-link-abs _ (ho.val (link-fo-align A B C D)) (ho.val (link-fo-align A B C D)).
+deref-link-abs _ (ho.val (link-beta A B)) (ho.val (link-beta A B)).
 
 % We test forall linked var of the ML, that they have the same assignment
 type solve-links-fixpoint links -> links -> ho.subst -> ho.subst -> o.
