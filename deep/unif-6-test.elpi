@@ -1,7 +1,7 @@
-macro @X :- try6.fo.fuva z.
-macro @Y :- try6.fo.fuva (s z).
-macro @Z :- try6.fo.fuva (s (s z)).
-macro @W :- try6.fo.fuva (s (s (s z))).
+macro @X :- try6.fo.fuva (addr z).
+macro @Y :- try6.fo.fuva (addr (s z)).
+macro @Z :- try6.fo.fuva (addr (s (s z))).
+macro @W :- try6.fo.fuva (addr (s (s (s z)))).
 macro @f :- try6.fo.fcon "f".
 macro @g :- try6.fo.fcon "g".
 macro @h :- try6.fo.fcon "h".
@@ -203,7 +203,7 @@ macro @kol N X :- declare-test xtest ptest (test N (pr X none)).
 
 @ok 9  (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@f, y]) [@lam x\ @f].
 @ok 90  (@lam x\ @lam y\ @app [@X, y, x]) (@lam x\ @f) [@lam c0 \ @lam c1 \ @app [@f, c0]].
-@ok 10 @X (@lam x\ @lam y\ @app [@X, y, x]) [@lam x\ @lam y\ @Z].
+@ok 10 @X (@lam x\ @lam y\ @app [@X, y, x]) [@lam x\ @lam y\ Y].
 @okl 100 [
   triple ok (@lam x\ @lam y\ @app [@f, y, x]) (@lam x\ @lam y\ @app [@X, y, x]),
  ].

@@ -21,7 +21,7 @@ kind fm type.
 type fapp list fm -> fm.
 type flam (fm -> fm) -> fm.
 type fcon string -> fm.
-type fuva  nat -> fm.
+type fuva  addr -> fm.
 
 type pp fm -> string -> o.
 pp X "_" :- var X.
@@ -32,17 +32,18 @@ pp (fuva N) S :- !, ppuva N S.
 pp X S :- name X, !, std.any->string X S.
 pp _ "ERROR".
 
-type ppuva nat -> string -> o.
-ppuva N S :- ppnat N X, S is "C" ^ X.
+type ppuva addr -> string -> o.
+ppuva N S :- ppaddr N X, S is "C" ^ X.
 
 typeabbrev subst list (option fm).
 
 type ppsubst subst -> list string -> o.
 ppsubst L S :- ppsubst.aux z L S.
+
 type ppsubst.aux nat -> subst -> list string -> o.
 ppsubst.aux _ [] [].
-ppsubst.aux N [some X|XS] [L|LS] :- L is {ppuva N} ^ " := " ^ {pp X}, ppsubst.aux (s N) XS LS.
-ppsubst.aux N [none|XS] [L|LS] :- L is {ppuva N} ^ " := _", ppsubst.aux (s N) XS LS.
+ppsubst.aux N [some X|XS] [L|LS] :- L is {ppuva (addr N)} ^ " := " ^ {pp X}, ppsubst.aux (s N) XS LS.
+ppsubst.aux N [none|XS] [L|LS] :- L is {ppuva (addr N)} ^ " := _", ppsubst.aux (s N) XS LS.
 
 type deref subst -> fm -> fm -> o.
 deref _ X _ :- var X, fatal "flex deref".
@@ -71,16 +72,10 @@ T ==o fapp [flam X | TL] :- beta (flam X) TL T', T ==o T'.
 % [extend-subst T S S'] forall fuva N in T, extends S with none at pos N
 % this is used only in test to build the subst-map before running it
 type extend-subst fm -> subst -> subst -> o.
-extend-subst (fuva N) S S' :- extend-nat N S S'.
+extend-subst (fuva N) S S' :- mem-alloc N S S'.
 extend-subst (flam F) S S' :- pi x\ (pi S\extend-subst x S S) => extend-subst (F x) S S'.
 extend-subst (fcon _) S S.
 extend-subst (fapp L) S S1 :- fold extend-subst L S S1.
-
-% aux function for extend-subst
-type extend-nat nat -> subst -> subst -> o.
-extend-nat z X Y :- std.append X [none] Y.
-extend-nat (s N) [] [none | M] :- extend-nat N [] M.
-extend-nat (s N) [X | L] [X | M] :- extend-nat N L M.
 
 type beta fm -> list fm -> fm -> o.
 beta A [] A.
@@ -88,11 +83,6 @@ beta (flam Bo) [H | L] R :- beta (Bo H) L R.
 beta (fapp A) L (fapp X) :- std.append A L X.
 beta (fuva N) L (fapp [fuva N | L]).
 beta (fcon H) L (fapp [fcon H | L]).
-
-% [new S N S'] returns a new free variable N in S' = S @ [none]
-type new subst -> nat -> subst -> o.
-new [] z [none].
-new [X|XS] (s N) [X|YS] :- new XS N YS.
 
 type mk-app fm -> list fm -> fm -> o.
 mk-app T L S :- beta T L S.
@@ -130,7 +120,7 @@ kind tm  type.
 type app list tm -> tm.
 type lam (tm -> tm) -> tm.
 type con string -> tm.
-type uva  nat -> list tm -> tm.
+type uva  addr -> list tm -> tm.
 
 type pp tm -> string -> o.
 pp (app L) S :- !, std.string.concat " " {std.map L pp} X, S is "(" ^ X ^ ")".
@@ -140,15 +130,15 @@ pp (uva N L) S :- !, std.string.concat " " {std.map L pp} X, !, S is {ppuva N} ^
 pp X S :- name X, !, std.any->string X S.
 pp _ "ERROR".
 
-type ppuva nat -> string -> o.
-ppuva N S :- S is "X" ^ {ppnat N}.
+type ppuva addr -> string -> o.
+ppuva N S :- S is "X" ^ {ppaddr N}.
 
 type ppsubst subst -> list string -> o.
 ppsubst L S :- ppsubst.aux z L S.
 type ppsubst.aux nat -> subst -> list string -> o.
 ppsubst.aux _ [] [].
-ppsubst.aux N [some X|XS] [L|LS] :- L is {ppuva N} ^ " " ^ {ppass X}, ppsubst.aux (s N) XS LS.
-ppsubst.aux N [none|XS] [L|LS] :- L is {ppuva N} ^ " := _", ppsubst.aux (s N) XS LS.
+ppsubst.aux N [some X|XS] [L|LS] :- L is {ppuva (addr N)} ^ " " ^ {ppass X}, ppsubst.aux (s N) XS LS.
+ppsubst.aux N [none|XS] [L|LS] :- L is {ppuva (addr N)} ^ " := _", ppsubst.aux (s N) XS LS.
 
 type ppass assignment -> string -> o.
 ppass (abs F) S :- pi x\ std.any->string x N, ppass (F x) S1, S is N ^ " " ^ S1.
@@ -175,14 +165,14 @@ unif (uva N Args1) (uva N Args2) S S2 :- % same var
   unset? N S,
   std.assert!(len Args1 Len, len Args2 Len) "Not typechecking", !, % the length of args must be the same
   pattern-fragment Args1, pattern-fragment Args2, 
-  std.do![new S W S1, prune-same-variable W Args1 Args2 Ass, 
+  std.do![mem-new S W S1, prune-same-variable W Args1 Args2 Ass, 
   assign N S1 Ass S2],
   print "Assigning in uva N Args1" N {ppsubst S1} "+" {ppass Ass} "=>" {ppsubst S2}. 
 unif (uva N Args1) (uva M Args2) S S3 :- % Args with diff length
   unset? N S, unset? M S, !,
   print "Unifying" {pp (uva N Args1)} "and" {pp (uva M Args2)},
   pattern-fragment Args1, pattern-fragment Args2, 
-  new S W S1, (prune-smart W Args1 Args2 Ass1 Ass2), 
+  mem-new S W S1, (prune-smart W Args1 Args2 Ass1 Ass2), 
   std.do![
   assign N S1 Ass1 S2,
   (N = M; assign M S2 Ass2 S3)]
@@ -203,25 +193,25 @@ unif T (uva N Args) S S1 :-
 % Note: eta & beta for unification is not allowed in ML over terms of the OL
 
 % prune in the case of same argumets for the two vars (e.g. uv X L and uv Y L)
-type prune-same-args nat -> list tm -> list tm -> assignment -> o.
+type prune-same-args addr -> list tm -> list tm -> assignment -> o.
 prune-same-args N [] Acc (val (uva N Args)) :- std.rev Acc Args.
 prune-same-args N [_ | B] L (abs T) :- pi x\ prune-same-args N B [x | L] (T x).
 
 % prune in the case of vars with args of same length (e.g. uv X L1, uv Y L2, len L1 = len L2)
-type prune-same-variable nat -> list tm -> list tm -> assignment -> o.
+type prune-same-variable addr -> list tm -> list tm -> assignment -> o.
 prune-same-variable N A1 A2 T :- prune-same-variable-aux N A1 A2 [] T.
 
-type prune-same-variable-aux nat -> list tm -> list tm -> list tm -> assignment -> o.
+type prune-same-variable-aux addr -> list tm -> list tm -> list tm -> assignment -> o.
 prune-same-variable-aux N [] [] ACC (val (uva N Args)) :- std.rev ACC Args.
 prune-same-variable-aux N [X|XS] [X|YS] ACC (abs F) :- pi x\ prune-same-variable-aux N XS YS [x|ACC] (F x).
 prune-same-variable-aux N [_|XS] [_|YS] ACC (abs F) :- pi x\ prune-same-variable-aux N XS YS ACC (F x).
 
-type prune-diff-length-aux nat -> list tm -> list tm -> assignment -> o.
+type prune-diff-length-aux addr -> list tm -> list tm -> assignment -> o.
 prune-diff-length-aux N [] Acc (val (uva N Acc)).
 prune-diff-length-aux N [_|L] Acc (abs T) :- pi x\ prune-diff-length-aux N L Acc (T x).
 
 % res = argomenti dell'altro se li vedo anche io (nell'ordine dell'altro)
-type prune-diff-length nat -> list tm -> list tm -> list tm -> assignment -> assignment -> o.
+type prune-diff-length addr -> list tm -> list tm -> list tm -> assignment -> assignment -> o.
 prune-diff-length N [] Args2 Acc (val (uva N Args)) Ass2 :-  !,
   std.rev Acc Args, prune-diff-length-aux N Args2 Args Ass2.
 prune-diff-length N Args1 [] Acc Ass1 (val (uva N Args)) :- !,
@@ -234,7 +224,7 @@ type keep list A -> A -> bool -> o.
 keep L A tt :- mem L A, !.
 keep _ _ ff.
 
-type prune-build-ass1 nat -> list tm -> list bool -> assignment -> o.
+type prune-build-ass1 addr -> list tm -> list bool -> assignment -> o.
 prune-build-ass1 N Acc [] (ho.val (uva N Args)) :- std.rev Acc Args.
 prune-build-ass1 N Acc [tt|L] (ho.abs T) :- pi x\ prune-build-ass1 N [x|Acc] L (T x).
 prune-build-ass1 N Acc [ff|L] (ho.abs T) :- pi x\ prune-build-ass1 N Acc L (T x).
@@ -255,12 +245,12 @@ type build-order list nat -> list tm -> list tm -> o.
 build-order L T R :-
   len L Len, list-init Len z (p\r\ sigma Index Elt\ index L p Index, nth Index T r) R.
 
-type prune-build-ass2 nat -> list tm -> list bool -> list nat -> assignment -> o.
+type prune-build-ass2 addr -> list tm -> list bool -> list nat -> assignment -> o.
 prune-build-ass2 N Acc [] Pos (ho.val (uva N Args)) :- std.rev Acc Acc', build-order Pos Acc' Args.
 prune-build-ass2 N Acc [tt|L] Pos (ho.abs T) :- pi x\ prune-build-ass2 N [x|Acc] L Pos (T x).
 prune-build-ass2 N Acc [ff|L] Pos (ho.abs T) :- pi x\ prune-build-ass2 N Acc L Pos (T x).
 
-type prune-smart nat -> list tm -> list tm -> assignment -> assignment -> o.
+type prune-smart addr -> list tm -> list tm -> assignment -> assignment -> o.
 prune-smart N Args1 Args2 Ass1 Ass2 :-
   std.do![std.map Args1 (keep Args2) Bits1, prune-build-ass1 N [] Bits1 Ass1,
   std.map Args2 (keep Args1) Bits2, 
@@ -293,15 +283,15 @@ beta (app A) L (app X) :- std.append A L X.
 beta (uva N A) L (uva N A') :- std.append A L A'.
 beta (con H) L (app [con H | L]).
 
-type not_occ_aux nat -> subst -> tm -> o.
-not_occ_aux N S (uva M _) :- std.do![unset? M S, diff N M].
+type not_occ_aux addr -> subst -> tm -> o.
+not_occ_aux N S (uva M _) :- std.do![unset? M S, not (N = M)].
 not_occ_aux N S (uva M Args) :- std.do![set? M S F, move F Args T, not_occ_aux N S T].
 not_occ_aux N S (app L) :- forall1 (not_occ_aux N S) L.
 not_occ_aux N S (lam F) :- pi x\ /*not_occ_aux N S x =>*/ not_occ_aux N S (F x).
 not_occ_aux _ _ (con _).
 not_occ_aux _ _ X :- name X.
  
-type not_occ  nat -> subst -> tm -> o.
+type not_occ  addr -> subst -> tm -> o.
 % not_occ N S T :- print "not occ" N S T, fail.
 not_occ N _ (uva N _).
 not_occ N S (uva M Args) :- set? M S F, move F Args T, not_occ N S T.
@@ -320,14 +310,9 @@ copy N N :- not(scope-check), name N.
 
 type scope-check o.
 
-
 type bind tm -> list tm -> assignment -> o.
 bind T [] (val T') :- scope-check => copy T T'.
 bind T [X | TL] (abs T') :- pi x\ copy X x => bind T TL (T' x).
-
-type new subst -> nat -> subst -> o.
-new [] z [none].
-new [X|XS] (s N) [X|YS] :- new XS N YS.
 
 type unif-assignment assignment -> assignment -> subst -> subst -> o.
 unif-assignment (val T1) (val T2) H H1 :- unif T1 T2 H H1.
@@ -373,37 +358,37 @@ type test-unif-4 o.
 type test-unif-5 o.
 type test-unif-6 o.
 test-unif-1 :- pi x\
-  unif (uva z [x]) (uva (s z) []) [none, none] L,
+  unif (uva (addr z) [x]) (uva (addr (s z)) []) [none, none] L,
   Z = (abs x\ val (uva X [])),
   SZ = val (uva X []),
   L = [some Z, some SZ|_].
 
 test-unif-2 :- pi x y\
-  unif (uva z [x, y]) (uva (s z) [y]) [none, none] L,
+  unif (uva (addr z) [x, y]) (uva (addr (s z)) [y]) [none, none] L,
   Z = (abs x\ abs y\ val (uva X [y])),
   SZ = (abs x\ val (uva X [x])),
   L = [some Z, some SZ|_].
 
 test-unif-3 :- pi x y w\
-  unif (uva z [x, y]) (uva (s z) [x, w, y]) [none, none] L,
+  unif (uva (addr z) [x, y]) (uva (addr (s z)) [x, w, y]) [none, none] L,
   Z = (abs x\ abs y\ val (uva X [x, y])),
   SZ = (abs x\ abs y\ abs z\ val (uva X [x, z])),
   L = [some Z, some SZ|_].
 
 test-unif-4 :- pi x y\ 
-  unif (uva z [x, y]) (uva (s z) [y, x]) [none, none] L,
+  unif (uva (addr z) [x, y]) (uva (addr (s z)) [y, x]) [none, none] L,
   Z = (abs x\ abs y\ val (uva X [x, y])),
   SZ = (abs x\ abs y\ val (uva X [y, x])),
   L = [some Z, some SZ|_].
 
 test-unif-5 :- pi x y zz w\
-  unif (uva z [x, w, y]) (uva (s z) [y, zz, w]) [none, none] L,
+  unif (uva (addr z) [x, w, y]) (uva (addr (s z)) [y, zz, w]) [none, none] L,
   Z = (abs c0\ abs c1\ abs c2\ val (uva X [c1, c2])),
   SZ = (abs c0\ abs c1\ abs c2\ val (uva X [c2, c0])),
   L = [some Z, some SZ|_].
 
 test-unif-6 :- pi x y zz w\
-  unif (uva (s z) [y, zz, w]) (uva z [x, w, y]) [none, none] L,
+  unif (uva (addr (s z)) [y, zz, w]) (uva (addr z) [x, w, y]) [none, none] L,
   Z = (abs c0\ abs c1\ abs c2\ val (uva X [c2, c1])),
   SZ = (abs c0\ abs c1\ abs c2\ val (uva X [c0, c2])),
   L = [some Z, some SZ|_].
@@ -411,14 +396,17 @@ test-unif-6 :- pi x y zz w\
 
 namespace comp {
 
-kind objectVar type.
-type obj nat -> objectVar.
+kind arity type.
+type arity nat -> arity.
 
-kind metaVar type.
-type meta nat -> metaVar.
+kind fvariable type.
+type fv addr -> fvariable.
+
+kind hvariable type.
+type hv addr -> arity -> hvariable.
 
 kind mapping type.
-type mapping objectVar -> metaVar -> nat -> mapping.
+type mapping fvariable -> hvariable -> mapping.
 typeabbrev mappings (list mapping).
 
 shorten fo.{ (==o) }.
@@ -429,7 +417,7 @@ kind linkctx type.
 % type link-fo-align list ho.tm -> nat -> nat -> nat -> link.
 type link-eta ho.tm -> ho.tm -> linkctx.
 % [link-fo-align Beta HeadVar PFvars NPFvars]
-type link-fo-align nat -> nat -> scope -> scope -> linkctx.
+type link-fo-align addr -> addr -> scope -> scope -> linkctx.
 
 typeabbrev linkabs (ho.inctx linkctx).
 
@@ -449,8 +437,8 @@ pplink (link-abs A) S :-
   pplinkabs A S.
 
 type ppmapping mapping -> string -> o.
-ppmapping (mapping (obj N) (meta M) Len) S :-
-  S is {fo.ppuva  N} ^ " -> " ^ {ho.ppuva M} ^ " (" ^ {ppnat Len} ^ ")".
+ppmapping (mapping (fv N) (hv M (arity Len))) S :-
+  S is {fo.ppuva N} ^ " -> " ^ {ho.ppuva M} ^ " (" ^ {ppnat Len} ^ ")".
 
 type ppmappings mappings -> list string -> o.
 ppmappings Map Str :- forall2 ppmapping Map Str.
@@ -498,7 +486,7 @@ comp (fo.flam F) (ho.uva E0 Scope) Mappings1 Mappings2  L L2 S S2 :-
   (pi x\ not (F x = x), (maybe-eta x (F x)) [x]), !,
   % (pi x\ print {fo.pp (F x)} "is maybe eta"),
   std.do![
-    ho.new S E0 S1,
+    mem-new S E0 S1,
     comp-lam F F1 Mappings1 Mappings2 L L1 S1 S2,
     names N,
     (pi x\ locale x => get-scope (F1 x) ScopeDuplicata), 
@@ -518,45 +506,45 @@ comp (fo.flam F) (ho.uva E0 Scope) Mappings1 Mappings2  L L2 S S2 :-
   % print "----------------------------------------------".
 
 comp (fo.flam F) (ho.lam F1) Mappings1 Mappings2 L L2 S S1 :- comp-lam F F1 Mappings1 Mappings2 L L2 S S1.
-comp (fo.fuva N)              (ho.uva M []) Mappings Mappings1 L L S S1 :- alloc Mappings Mappings1 (obj N) (meta M) z S S1.
+comp (fo.fuva N)              (ho.uva M []) Mappings Mappings1 L L S S1 :- alloc Mappings Mappings1 (fv N) (hv M (arity z)) S S1.
 comp (fo.fapp [fo.fuva N|Ag]) (ho.uva MM PF1) Mappings1 Mappings3 L L3 S S4 :- !,
   split-pf Ag PF NPF,
   fold6 comp PF PF1 Mappings1 Mappings1 L L S S1,                                 % Note : PF is a list of names -> Mappings1 and L not change
   fold6 comp NPF NPF1 Mappings1 Mappings2 L L1 S1 S2,
   len PF Len,
-  alloc Mappings2 Mappings3 (obj N) (meta M) Len S2 S3, % ho.new S2 M S3,
+  alloc Mappings2 Mappings3 (fv N) (hv M (arity Len)) S2 S3, % mem-new S2 M S3,
   % TODO: NYI NPF1 can contain non-closed terms (i.e. local vars...)
   if (NPF = []) (L3 = L1, S3 = S4, MM = M) 
-    ( ho.new S3 MM S4,
+    ( mem-new S3 MM S4,
       L3 = [link-abs(ho.val(link-fo-align MM M PF1 NPF1)) | L1])
   .
 comp (fo.fapp A)              (ho.app A1) Mappings1 Mappings2 L L1 S S1 :- fold6 comp A A1 Mappings1 Mappings2 L L1 S S1.
 
-type put-abs-uva nat -> metaVar -> list ho.tm -> ho.assignment -> o.
-put-abs-uva z (meta M) L (ho.val (ho.uva M L1)) :- std.rev L L1.
+type put-abs-uva nat -> addr -> list ho.tm -> ho.assignment -> o.
+put-abs-uva z Ad L (ho.val (ho.uva Ad L1)) :- std.rev L L1.
 put-abs-uva (s N) MV L (ho.abs B) :- pi x\ put-abs-uva N MV [x|L] (B x).
 
 type post-comp mappings -> mappings -> ho.subst -> ho.subst -> links -> links -> o.
 post-comp [] [] H H L L.
-% Same obj-variable, with same arity appearing twice: the first is removed and
-% the two meta-vars are unified
-post-comp [mapping (obj O) (meta M1) Arity | Map1] Map2 H1 H3 L1 L2 :- 
-  mem Map1 (mapping (obj O) (meta M2) Arity), !,
-  put-abs-uva Arity (meta M1) [] Ass1,
-  put-abs-uva Arity (meta M2) [] Ass2,
+% Same fv-variable, with same arity appearing twice: the first is removed and
+% the two hv-vars are unified
+post-comp [mapping (fv O) (hv M1 (arity Arity)) | Map1] Map2 H1 H3 L1 L2 :- 
+  mem Map1 (mapping (fv O) (hv M2 (arity Arity))), !,
+  put-abs-uva Arity M1 [] Ass1,
+  put-abs-uva Arity M2 [] Ass2,
   ho.unif-assignment Ass1 Ass2 H1 H2,
   post-comp Map1 Map2 H2 H3 L1 L2.
-post-comp [(mapping (obj O) (meta M) LenM as X1) | Map1] Map2 H1 H2 L1 L3 :-
-  take-list Map1 (mapping (obj O) (meta M') LenM') _, LenM' >n LenM, !, std.do! [
-    print "arity-fix links:" {ppmapping X1} "~<~" {ppmapping (mapping (obj O) (meta M') LenM')}, 
+post-comp [(mapping (fv O) (hv M (arity LenM)) as X1) | Map1] Map2 H1 H2 L1 L3 :-
+  take-list Map1 (mapping (fv O) (hv M' (arity LenM'))) _, LenM' >n LenM, !, std.do! [
+    print "arity-fix links:" {ppmapping X1} "~<~" {ppmapping (mapping (fv O) (hv M' (arity LenM')))}, 
     make-eta-link LenM' LenM M M' [] New,
     print "new eta link" {pplinkabs New},
     L2 = [link-abs New | L1],
     post-comp Map1 Map2 H1 H2 L2 L3
   ].
-post-comp [(mapping (obj O) (meta M) LenM as X1) | Map1] Map2 H1 H2 L1 L3 :-
-  take-list Map1 (mapping (obj O) (meta M') LenM') _, LenM >n LenM', !, std.do! [
-    print "arity-fix links:" {ppmapping X1} "~<~" {ppmapping (mapping (obj O) (meta M') LenM')}, 
+post-comp [(mapping (fv O) (hv M (arity LenM)) as X1) | Map1] Map2 H1 H2 L1 L3 :-
+  take-list Map1 (mapping (fv O) (hv M' (arity LenM'))) _, LenM >n LenM', !, std.do! [
+    print "arity-fix links:" {ppmapping X1} "~<~" {ppmapping (mapping (fv O) (hv M' (arity LenM')))}, 
     make-eta-link LenM LenM' M' M [] New,
     print "new eta link" {pplinkabs New},
     L2 = [link-abs New | L1],
@@ -565,9 +553,9 @@ post-comp [(mapping (obj O) (meta M) LenM as X1) | Map1] Map2 H1 H2 L1 L3 :-
 post-comp [A|As] [A|Bs] H1 H2 L1 L2 :- post-comp As Bs H1 H2 L1 L2, !.
 post-comp [A|_] _ H _ _ _ :- halt {ppmapping A} {ho.ppsubst H}.
 
-type alloc mappings -> mappings -> objectVar -> metaVar -> nat -> ho.subst -> ho.subst -> o.
-alloc Map Map N M Len H H :- std.mem Map (mapping N M Len), !.
-alloc Map [mapping (obj N) (meta M) Len|Map] (obj N) (meta M) Len H H1 :- ho.new H M H1.
+type alloc mappings -> mappings -> fvariable -> hvariable -> ho.subst -> ho.subst -> o.
+alloc Map Map N M H H :- std.mem Map (mapping N M), !.
+alloc Map [mapping (fv N) (hv M Arity)|Map] (fv N) (hv M Arity) H H1 :- mem-new H M H1.
   
 
 type eta-contract-ass ho.assignment -> ho.assignment -> o.
@@ -676,7 +664,7 @@ link-abs-occur-check (ho.val (link-eta(ho.uva N0 S0) T)) Links H H1 :-
   (lam-occur-check N Links T1 H T2, print "OC, progress", ho.unif {eta-expand (ho.uva N []) {len S}} T2 H H1) ; true. %TODO: in case OF fails we should fail
 link-abs-occur-check (ho.val (link-eta N _)) _ H H :- print "OC skip" N.
 
-type lam-occur-check nat -> links -> ho.tm -> ho.subst -> ho.tm -> o.
+type lam-occur-check addr -> links -> ho.tm -> ho.subst -> ho.tm -> o.
 lam-occur-check _ _ (ho.con X) _ (ho.con X).
 % lam-occur-check N Links (ho.app L) H H1 :- fold ... L.
 lam-occur-check N Links (ho.lam F) H (ho.lam F1) :- pi x\ lam-occur-check N Links (F x) H (F1 x).
@@ -684,14 +672,14 @@ lam-occur-check N _Links (ho.uva N S) _H (ho.uva N S) :- !.
 lam-occur-check N Links (ho.uva M S) H T :-
   exists (l\deref-link-occur-check l Links M S N H T) Links.
 
-type deref-link-occur-check link -> links -> nat -> list ho.tm -> nat -> ho.subst -> ho.tm -> o.
+type deref-link-occur-check link -> links -> addr -> list ho.tm -> addr -> ho.subst -> ho.tm -> o.
 % deref-link-occur-check (link M X LenX) Links M S N H T :-
 %   if (LenX = s _) (halt "len" S) true,
 %   lam-occur-check N Links (ho.uva X []) H T.
 deref-link-occur-check (link-abs A) Links M S N H T :-
   deref-link-abs-occur-check A Links M S N H T.
 
-type deref-link-abs-occur-check linkabs -> links -> nat -> list ho.tm -> nat -> ho.subst -> ho.tm -> o.
+type deref-link-abs-occur-check linkabs -> links -> addr -> list ho.tm -> addr -> ho.subst -> ho.tm -> o.
 deref-link-abs-occur-check (ho.abs A) Links M [V|S] N H T :- deref-link-abs-occur-check (A V) Links M S N H T.
 deref-link-abs-occur-check (ho.val (link-eta (ho.uva M _) T)) Links M S N H T3 :- !,
   print "OC follow " link-eta M "->" T,
@@ -724,7 +712,7 @@ solve-links-fixpoint L0 L2 H H2 :- std.do! [
      (print "end fixpoint", deref-links H L L2 , H2 = H)
      (print "## Subst is" {ho.ppsubst H1}, print "## Links are" {pplinks {deref-links H1 L1}}, !, solve-links-fixpoint L1 L2 H1 H2)
 ].
-type make-eta-link nat -> nat -> nat -> nat -> list ho.tm -> linkabs -> o.
+type make-eta-link nat -> nat -> addr -> addr -> list ho.tm -> linkabs -> o.
 make-eta-link (s  X) z     M' M Vars L :- std.rev Vars Scope, eta-expand (ho.uva M Scope) (s X) T, make-eta-link.aux (s X) M' T Vars L.
 make-eta-link (s  X) (s Y) M' M Vars L :- make-eta-link X Y M M' Vars L.
 %make-eta-link (s  X) (s Y) M' M Vars (ho.abs x\ L x) :- pi x\ make-eta-link X Y M M' [x|Vars] (L x).
@@ -775,7 +763,7 @@ same-assign-aux _ _ T R HO HO2 :-
   hope-for-eta HO R Re,
   my-unif-assignment Te Re HO HO2.
  
-type same-assign nat -> nat -> nat -> nat -> nat -> ho.subst -> ho.subst -> o.
+type same-assign addr -> addr -> nat -> nat -> addr -> ho.subst -> ho.subst -> o.
 same-assign M N LenM LenN W HO HO2 :- set? M HO AM, set? N HO AN, !, W = M,
   same-assign-aux LenM LenN AM AN HO HO2.
 same-assign M N LenM LenN W HO HO2 :- set? M HO AM, unset? N HO,  W = M, eta LenN N [] AN, print "Eta for" N "is" AN,
@@ -883,7 +871,7 @@ hope-contract.aux L (ho.val V) (ho.val T) :- std.do! [
 ].
 
 % [eta Arity VarName Acc Ass]
-type eta nat -> nat -> list ho.tm -> ho.assignment -> o.
+type eta nat -> addr -> list ho.tm -> ho.assignment -> o.
 eta z     N Acc (ho.val (ho.uva N Acc')) :- std.rev Acc Acc'.
 eta (s M) N Acc (ho.abs F) :- pi x\ eta M N [x | Acc] (F x).
 
@@ -917,12 +905,12 @@ put-abs (s N) T (ho.abs B) :- pi x\ sigma T'\ ho.beta T [x] T', put-abs N T' (B 
 type decompl-mapping mappings -> mappings -> ho.subst -> fo.subst -> fo.subst -> o.
 decompl-mapping _ [A|_] _ _ _ :- print "Solving" {ppmapping A}, fail.
 decompl-mapping _ [] _ F F.
-decompl-mapping Map [mapping (obj VO) (meta VM) _Arity|Tl] H F F2 :- set? VM H T, !, % TODO: is the res of set? always a val?
+decompl-mapping Map [mapping (fv VO) (hv VM _)|Tl] H F F2 :- set? VM H T, !, % TODO: is the res of set? always a val?
   print {ho.ppsubst H} {ho.ppass T},
   std.assert!((ho.assmt-deref H T TTT)) "Should not fail",
   abs->lam TTT T', decomp Map T' T1, fo.eta-contract T1 T2, assign VO F T2 F1,
   decompl-mapping Map Tl H F1 F2. 
-decompl-mapping Map [mapping _ (meta VM) _|Tl] H F F2 :- unset? VM H, decompl-mapping Map Tl H F F2.
+decompl-mapping Map [mapping _ (hv VM _)|Tl] H F F2 :- unset? VM H, decompl-mapping Map Tl H F F2.
 decompl-mapping _ [L|_] H _ _ :- halt "Decompl mapping: failed on" {ppmapping L} {ho.ppsubst H}.
 
 type decomp mappings -> ho.tm -> fo.fm -> o.
@@ -933,7 +921,7 @@ decomp L (ho.app L1) T :-
   fo.mk-app Hd Tl T.
 decomp L (ho.uva VM TL) T :-
   forall2 (decomp L) TL T1,
-  std.assert! (len {std.findall (mem L (mapping (obj VO) (meta VM) _))} (s z)) "Sanity check decompl1",
+  std.assert! (len {std.findall (mem L (mapping (fv VO) (hv VM _)))} (s z)) "Sanity check decompl1",
   fo.mk-app (fo.fuva VO) T1 T.
 decomp L H _ :- halt "Fail in decomp" {ppmappings L} {ho.pp H}.
 
@@ -942,14 +930,14 @@ add-new-links-aux _ [] _ [] S S.
 add-new-links-aux H [T|Ts] L L2 S S2 :- add-new-link H T L L1 S S1, add-new-links-aux H Ts L1 L2 S1 S2.
 
 type add-new-link ho.subst -> ho.tm -> mappings -> mappings ->  fo.subst -> fo.subst -> o.
-add-new-link _ (ho.uva N _) Links [] F1 F1 :- mem Links (mapping _ (meta N) _), !.
+add-new-link _ (ho.uva N _) Links [] F1 F1 :- mem Links (mapping _ (hv N _)), !.
 add-new-link H (ho.uva N Args) Links Links2 F1 F3 :- set? N H T, !,      % Deref
   ho.move-ass T Args T1a,
   abs->lam T1a T1,
   add-new-link H T1 Links Links2 F1 F3.
 add-new-link H (ho.uva N L) Links [Link1 | Links1] F1 F3 :-              % Build new link
-  fo.new F1 M F2,
-  len L Arity, Link1 = mapping (obj M) (meta N) Arity,
+  mem-new F1 M F2,
+  len L Arity, Link1 = mapping (fv M) (hv N (arity Arity)),
   add-new-link H (ho.app L) [Link1 | Links] Links1 F2 F3.
 add-new-link H (ho.lam B) Links NewLinks F1 F2 :- pi x\ add-new-link H (B x) Links NewLinks F1 F2.
 add-new-link H (ho.app L) Links NewLinks F1 F3 :- add-new-links-aux H L Links NewLinks F1 F3.
@@ -971,7 +959,7 @@ complete-link H [some T | Tl] L1 L3 F1 F3 :-
 type decompl mappings -> links -> ho.subst -> fo.subst -> fo.subst -> o.
 decompl Map1 L HO FO FO2 :- std.do! [
   decompl-eta L L1_ HO HO1,                                                          % L1 conaints no link-eta (it may contain beta)
-  print "# After decompl-eta, subst is" {ho.ppsubst HO1} "with links" {pplinks L},
+  print "# After decompl-eta, subst is" {ho.ppsubst HO1} "with links" {pplinks L1_},
   complete-link HO1 HO1 Map1 Map2 FO FO1,                                            % Foreach VM not mapped to OL, we build a link
   print "# After complete-link, mappings are" {ppmappings Map2} "with ho-subst" {ho.ppsubst HO1}, 
   decompl-mapping Map2 Map2 HO1 FO1 FO2,
@@ -987,12 +975,12 @@ test-hope-eta-1 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.app[ho.con"f"
                                    (ho.abs x\           ho.val (ho.app[ho.con"f",ho.app[ho.con"g",x]  ])).
 test-hope-eta-2 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.app[ho.con"f",ho.app[ho.con"g",y],x]))
                                    (          ho.abs y\ ho.val (ho.app[ho.con"f",ho.app[ho.con"g",y]  ])).
-test-hope-eta-3 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.uva z [y]))
-                                   (ho.abs x\           ho.val (ho.uva z [])).
-test-hope-eta-4 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.uva z [x]))
-                                   (          ho.abs y\ ho.val (ho.uva z [])).
-test-hope-eta-5 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.uva z [x, y]))
-                                   (ho.val (ho.uva z [])).
-test-hope-eta-6 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.uva z [y, x]))
-                                   (ho.abs x\ ho.abs y\ ho.val (ho.uva z [y, x])).
+test-hope-eta-3 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.uva (addr z) [y]))
+                                   (ho.abs x\           ho.val (ho.uva (addr z) [])).
+test-hope-eta-4 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.uva (addr z) [x]))
+                                   (          ho.abs y\ ho.val (ho.uva (addr z) [])).
+test-hope-eta-5 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.uva (addr z) [x, y]))
+                                   (ho.val (ho.uva (addr z) [])).
+test-hope-eta-6 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.uva (addr z) [y, x]))
+                                   (ho.abs x\ ho.abs y\ ho.val (ho.uva (addr z) [y, x])).
 }}

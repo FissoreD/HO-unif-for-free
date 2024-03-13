@@ -27,16 +27,41 @@ kind option type -> type.
 type some A -> option A.
 type none option A.
 
-type set? nat -> list (option A) -> A -> o.
-set? z (some Y :: _) Y.
-set? (s N) (_ :: L) X :- set? N L X.
-type unset? nat -> list (option A) -> o.
-unset? z (none :: _).
-unset? (s N) (_ :: L) :- unset? N L.
+kind addr type.
+type addr nat -> addr.
 
-type assign nat -> list (option A) -> A -> list (option A) -> o.
-assign z (none :: L) Y (some Y :: L).
-assign (s N) (X :: L) Y (X :: L1) :- assign N L Y L1.
+type mem-lookup nat -> list (option A) -> A -> o.
+mem-lookup z (some Y :: _) Y.
+mem-lookup (s N) (_ :: L) X :- mem-lookup N L X.
+
+type mem-alloc-aux nat -> list (option A) -> list (option A) -> o.
+mem-alloc-aux z [] [none] :- !.
+mem-alloc-aux z L L. % No need for exted: the mem is enough
+mem-alloc-aux (s N) [] [none | M] :- mem-alloc-aux N [] M.
+mem-alloc-aux (s N) [X | L] [X | M] :- mem-alloc-aux N L M.
+
+type mem-alloc addr -> list (option A) -> list (option A) -> o.
+mem-alloc (addr A as Ad) Mem1 Mem2 :- unset? Ad Mem1, mem-alloc-aux A Mem1 Mem2.
+
+type mem-new-aux list (option A) -> nat -> list (option A) -> o.
+mem-new-aux [] z [none].
+mem-new-aux [A | As] (s N) [A | Bs] :- mem-new-aux As N Bs.
+
+type mem-new list (option A) -> addr -> list (option A) -> o.
+mem-new Mem1 (addr Ad) Mem2 :- mem-new-aux Mem1 Ad Mem2.
+
+type set? addr -> list (option A) -> A -> o.
+set? (addr A) Mem Val :- mem-lookup A Mem Val.
+
+type unset? addr -> list (option A) -> o.
+unset? Addr Mem :- not (set? Addr Mem _).
+
+type assign-aux nat -> list (option A) -> A -> list (option A) -> o.
+assign-aux z (none :: L) Y (some Y :: L).
+assign-aux (s N) (X :: L) Y (X :: L1) :- assign-aux N L Y L1.
+
+type assign addr -> list (option A) -> A -> list (option A) -> o.
+assign (addr A) Mem1 Val Mem2 :- assign-aux A Mem1 Val Mem2.
 
 type nth nat -> list A -> A -> o.
 nth z (X :: _) Y  :- X = Y.
@@ -170,3 +195,6 @@ ppnat-aux (s N) M :- ppnat-aux N M1, M is M1 + 1.
 type ppnat nat -> string -> o.
 ppnat X _ :- var X, halt "ppnat".
 ppnat N S :- ppnat-aux N M, std.any->string M S.
+
+type ppaddr addr -> string -> o.
+ppaddr (addr A) S :- ppnat A S.
