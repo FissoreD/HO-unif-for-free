@@ -50,15 +50,14 @@ prolog [triple ok L R|Us] Links Links2 H H3 D :- !, std.do! [
   !,
   printC "next problem?",
   prolog Us Links1 Links2 H2 H3 D.
-prolog [_|_] L L H H (error "xx").
-prolog [triple (error "unif") L R|_] Links Links H H1 (error "stop") :-
-  print "## unif (error)" L "=" R,
+prolog [triple (error "unif") L R|_] Links Links H H2 D :-
+  print "## unif (error)" {ho.pp L} "=" {ho.pp R},
   if (ho.unif L R H H1)
-     (print "## After unif" L "=" R "subst is" {ho.ppsubst H1},
-      print "## Links are" {comp.pplinks Links},
+     (print "## After unif" {ho.pp L} "=" {ho.pp R} "subst is" {ho.ppsubst H1},
+      print "## Links are" {comp.pplinks {comp.deref-links H1 Links}},
       printC "solve links?",
-      not(comp.solve-links-fixpoint Links _ H1 _))
-     (H1 = H).
+      if (comp.solve-links-fixpoint Links _ H1 H2) (print "\n\n\nXXXXXXXXXXXXXX LATE FAILURE? XXXXXXXXXXXXXXXXXXXXX\n\n\n", D = ok) (D = error "stop"))
+     (H2 = H, D = error "stop").
 
 type decompile-subst
   comp.mappings -> 
@@ -193,8 +192,8 @@ macro @kol N X :- declare-test xtest ptest (test N (pr X none)).
 % @ok 2 (@app [@X, @a]) (@app [@f, @a]) [@f].                                           % here two solutions for X: fun _ => a, fun x => x
 % @ok 3 (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, @a]) [@f].
 
-@ko 4 (@app [@f, @X]) @X.
-@ko 5 (@app [@f, @X, @X]) (@app [@f, @a, @b]).
+@kol 4 [ triple (error "unif") (@app [@f, @X]) @X].
+@kol 5 [ triple (error "unif") (@app [@f, @X, @X]) (@app [@f, @a, @b])].
 @ok 6 (@app [@f, @X, @Y, @X]) (@app [@f, (@app [@f, @Y]), @b, (@app [@f, @b])]) [@app [@f, @b], @b].
 @ok 7 (@lam x\ (@app [@f, @X])) (@lam x\ (@app [@f, @a])) [@a].
 
