@@ -11,7 +11,7 @@ macro @c :- fo.fcon "c".
 macro @app L :- fo.fapp L.
 macro @lam L :- fo.flam L.
 
-shorten fo.{(==o)}.
+shorten fo.{(==o) , parse, parse-eq}.
 
 macro @read :- input_line std_in _.
 
@@ -182,13 +182,21 @@ xtest (test N (pr LR Sol) as Test) :- std.do![
 
 ].
 
+type parse-triple pair diagnostic string -> triple diagnostic fo.fm fo.fm -> o.
+parse-triple (pr D S) (triple D A B) :- parse-eq S A B.
+
 macro @ok N X Y S :- declare-test xtest ptest (test N (pr [triple ok X Y] (some S))).
+macro @sok N SE SS :- (declare-test xtest ptest (test N (pr [triple ok X Y] (some S))) :- parse-eq SE X Y, std.map SS parse S).
 macro @ko N X Y :- declare-test xtest ptest (test N (pr [triple (error _) X Y] none)).
+macro @sko N SX SY :- (declare-test xtest ptest (test N (pr [triple (error _) X Y] none)) :-
+  parse SX X, parse SY Y).
 
 macro @okl N X S:- declare-test xtest ptest (test N (pr X (some S))).
+macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :-
+  std.map SX parse-triple X, std.map SS parse S).
 macro @kol N X :- declare-test xtest ptest (test N (pr X none)).
 
-@ok 1 (@app [@f, @X]) (@app [@f, @a]) [@a].
+@sok 1 "f X = f a" ["a"].
 % @ok 2 (@app [@X, @a]) (@app [@f, @a]) [@f].                                           % here two solutions for X: fun _ => a, fun x => x
 % @ok 3 (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, @a]) [@f].
 
@@ -201,10 +209,8 @@ macro @kol N X :- declare-test xtest ptest (test N (pr X none)).
 
 @ok 9  (@lam x\ @lam y\ @app [@X, x, y]) (@lam x\ @lam y\ @app [@f, y]) [@lam x\ @f].
 @ok 90  (@lam x\ @lam y\ @app [@X, y, x]) (@lam x\ @f) [@lam c0 \ @lam c1 \ @app [@f, c0]].
-@ok 10 @X (@lam x\ @lam y\ @app [@X, y, x]) [@lam x\ @lam y\ Y_].
-@okl 100 [
-  triple ok (@lam x\ @lam y\ @app [@f, y, x]) (@lam x\ @lam y\ @app [@X, y, x]),
- ] [@f].
+@sok 10 "X = λx.λy.(X y x)" ["λx.λy.Y"].
+@sokl 100 [ pr ok "λx.λy.(f y x) = λx.λy.(X y x)" ] ["f"].
 @okl 1000 [
   triple ok (@lam x\ @lam y\ @app [@f, @app[@Y, y], @app[@Z, x, y]]) (@lam x\ @lam y\ @app [@X, y, x]),
   triple ok @Z (@lam x\ @lam y\ y),
@@ -218,52 +224,52 @@ macro @kol N X :- declare-test xtest ptest (test N (pr X none)).
 @ok 11 (@lam x\ @app [@X, x]) (@lam x\ @app [@f, x, x, @a]) [@lam x\ @app [@f, x, x, @a]].
 % @ok 12 (@lam x\ @app [@X, x, @a]) (@lam x\ @app [@f, x, x, @a]) [@lam x\ @app [@f, x, x]].                 % here two solutions for X: fun x _ => f x x a, fun x y => f x x y
 
-@okl 13 [
-  (triple ok (@lam x\ @app [@X, x]) (@lam x\ @app [@f, x])), 
-  (triple ok @f @X)] [@f].
+@sokl 13 [
+  pr ok "λx.(X x) = λx.(f x)", 
+  pr ok "f = X"
+] ["f"].
 
 
-@okl 131 [
-   (triple ok (@lam x\ @app [@X, x]) @f), % ci costringe a bucare il lambda, ci puo' essere una eta 
-   (triple ok @f @X)]
-   [@f]
-   .
+@sokl 131 [
+   pr ok "λx.(X x) = f", % ci costringe a bucare il lambda, ci puo' essere una eta 
+   pr ok "f = X"
+] ["f"].
 
-@okl 132 [
-  (triple ok (@lam x\ @app [@X, x]) (@lam x\ @app[@f, x, x])),  % visto che buchiamo a sx, la link deve usare il PF sotto il lambda
-  (triple ok @X (@lam y\@app[@f,y,y]))]
-  [(@lam y\@app[@f,y,y])]
-  .
+@sokl 132 [
+  pr ok "λx.(X x) = λx.(f x x)",  % visto che buchiamo a sx, la link deve usare il PF sotto il lambda
+  pr ok "X = λy.(f y y)"
+] ["λy.(f y y)"] .
 
-@okl 15 [
-  (triple ok @X (@lam x\ @app [@f, @app[@Y,x]])), 
-  (triple (error "unif") @g @X)] []. % we fail early for the wrong reason
+@sokl 15 [
+  pr ok "X = λx.(f (Y x))", 
+  pr (error "unif") "g = X"
+] []. % we fail early for the wrong reason
 
-@okl 16 [
-(triple ok (@X) (@lam x\ @app [@f, @app[@Y,x]])), 
-(triple ok @f @X)
-] [@f, @lam x\x].
+@sokl 16 [
+  pr ok "X = λx.(f (Y x))",
+  pr ok "f = X",
+] ["f", "λx.x"].
 
-@okl 160 [
-  (triple ok (@X) (@lam x\ @app [@f, @app[@Y,x]])), 
-  (triple ok (@Y) (@lam x\ x)), 
-] [@f, @lam x\x].
+@sokl 160 [
+  pr ok "X = λx.(f (Y x))", 
+  pr ok "Y = λx.x", 
+] ["f", "λx.x"].
 
-@okl 1600 [
-  (triple ok (@f) (@lam x\ @app [@f, @app[@X,x]])), 
-  (triple ok (@app [@f, @lam x\x]) (@app [@f, @X])),
-] [@lam x\x].
+@sokl 1600 [
+  pr ok "f = λx.(f (X x))", 
+  pr ok "f (λx.x) = f X",
+] ["λx.x"].
 
-@okl 17 [
-  (triple ok @X (@lam x\ x)),
+@sokl 17 [
+  pr ok "X = λx.x",
   % (triple ok (@app [@X, @a]) (@a)),
-  (triple ok (@app [@X, @a]) (@Y))
-] [(@lam x\x), @a]. % beta redex
+  pr ok "X a = Y"
+] ["λx.x", "a"]. % beta redex
 
-@okl 170 [
-  (triple ok @X (@lam x\ x)),
-  (triple ok (@app [@X, @a]) @a),
-] [(@lam x\x)]. % beta redex
+@sokl 170 [
+  pr ok "X = λx.x",
+  pr ok "X a = a",
+] ["λx.x"]. % beta redex
 
 % @okl 18 [
 %   (triple ok (@lam x\ @app[@X, x, @a]) (@lam x\ @app[@f, x, @a]))
