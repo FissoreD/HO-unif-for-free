@@ -314,11 +314,11 @@ macro @kol N X :- declare-test xtest ptest (test N (pr X none)).
   triple ok @Y (@lam x\ @app[@f, @app[@X, x]]),
 ].
 
-@okl 25 [
+@okl1 25 [
   triple ok (@lam x\ @app[@f, @app[@X, x]]) @Y,
   triple ok @X (@lam x\ x),
   triple ok @Y @f
-].
+] [(@lam x\x), @f].
 
 /*
   C = lam xy.y

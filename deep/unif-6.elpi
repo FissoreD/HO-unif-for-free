@@ -91,7 +91,7 @@ ppuva N S :- mem.ppaddr N X, S is "C" ^ X.
 typeabbrev subst mem fm.
 
 type ppsubst subst -> list string -> o.
-ppsubst L S :- mem.pp L "C" pp S.
+ppsubst L S :- mem.pp L "C" (x\s\sigma y\pp x y, s is ":= " ^ y)  S.
 
 type deref subst -> fm -> fm -> o.
 deref _ X _ :- var X, fatal "flex deref".
@@ -186,7 +186,7 @@ ppsubst L S :- mem.pp L "X" ppass S.
 
 type ppass assignment -> string -> o.
 ppass (abs F) S :- pi x\ std.any->string x N, ppass (F x) S1, S is N ^ " " ^ S1.
-ppass (val T) S :- S is " := " ^ {pp T}.
+ppass (val T) S :- S is ":= " ^ {pp T}.
 
 % [unif T1 T2 SOld SNew] check if T1 and T2 unify looking into SOld. SNew is the final substution
 type unif tm -> tm -> subst -> subst ->  o.
