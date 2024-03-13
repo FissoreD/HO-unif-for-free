@@ -774,13 +774,12 @@ solve-links [] [] X X :- print "end solve links".
 %   solve-links [link N W LenM|L1] LR HO2 HO1,
 % ].
 
-solve-links [link-abs A|L1] [link-abs A|L3] S S2 :- take-link-abs A L1 B L2, !, std.do! [
+solve-links [link-abs A0|L1] [link-abs A|L3] S S2 :- deref-link-abs S A0 A, take-link-abs A {deref-links S L1} B L2, !, std.do! [
   print "deduplicating links:" {pplinkabs A} "===" {pplinkabs B}, 
   same-link-abs A B S S1, 
   solve-links L2 L3 S1 S2,
 ].
-
-solve-links [link-abs L|L1] L3 S S2 :-
+solve-links [link-abs L0|L1] L3 S S2 :- deref-link-abs S L0 L,
   print "considering link for progress:" {pplinkabs L},
   (solve-link-abs L R S S1), !,
   if (R = some L')
