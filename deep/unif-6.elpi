@@ -11,6 +11,61 @@ internal-test ho.test-unif-4.
 internal-test ho.test-unif-5.
 internal-test ho.test-unif-6.
 
+namespace mem {
+  kind address type.
+  type addr nat -> address.
+
+  typeabbrev (mem A) (list (option A)).
+
+  type get nat -> mem A -> A -> o.
+  get z (some Y :: _) Y.
+  get (s N) (_ :: L) X :- get N L X.
+
+  type alloc-aux nat -> mem A -> mem A -> o.
+  alloc-aux z [] [none] :- !.
+  alloc-aux z L L. % No need for exted: the mem is enough
+  alloc-aux (s N) [] [none | M] :- alloc-aux N [] M.
+  alloc-aux (s N) [X | L] [X | M] :- alloc-aux N L M.
+
+  type alloc address -> mem A -> mem A -> o.
+  alloc (addr A as Ad) Mem1 Mem2 :- unset? Ad Mem1, alloc-aux A Mem1 Mem2.
+
+  type new-aux mem A -> nat -> mem A -> o.
+  new-aux [] z [none].
+  new-aux [A | As] (s N) [A | Bs] :- new-aux As N Bs.
+
+  type new mem A -> address -> mem A -> o.
+  new Mem1 (addr Ad) Mem2 :- new-aux Mem1 Ad Mem2.
+
+  type set? address -> mem A -> A -> o.
+  set? (addr A) Mem Val :- get A Mem Val.
+
+  type unset? address -> mem A -> o.
+  unset? Addr Mem :- not (set? Addr Mem _).
+
+  type assign-aux nat -> mem A -> A -> mem A -> o.
+  assign-aux z (none :: L) Y (some Y :: L).
+  assign-aux (s N) (X :: L) Y (X :: L1) :- assign-aux N L Y L1.
+
+  type assign address -> mem A -> A -> mem A -> o.
+  assign (addr A) Mem1 Val Mem2 :- assign-aux A Mem1 Val Mem2.
+
+  type ppaddr address -> string -> o.
+  ppaddr (addr A) S :- ppnat A S.
+
+  type pp mem A -> string -> (A -> string -> o) -> list string -> o.
+  pp L Pref PP S :- ppmem.aux z Pref PP L S.
+
+  type ppmem.aux nat -> string -> (A -> string -> o) -> mem A -> list string -> o.
+  ppmem.aux _ _ _ [] [].
+  ppmem.aux N Pref PP [some X|XS] [L|LS] :- PP X Cnt, L is Pref ^ {ppnat N} ^ " " ^ Cnt, ppmem.aux (s N) Pref PP XS LS.
+  ppmem.aux N Pref PP [none|XS] [L|LS] :- L is Pref ^ {ppnat N} ^ " := _", ppmem.aux (s N) Pref PP XS LS.
+}
+
+typeabbrev (mem A) (mem.mem A).
+typeabbrev address mem.address.
+typeabbrev addr mem.addr.
+
 %%%%%%%%%%%%%%%%%%% the OL %%%%%%%%%%%%%%%%%%%%%
 namespace fo {
 
@@ -19,7 +74,7 @@ kind fm type.
 type fapp list fm -> fm.
 type flam (fm -> fm) -> fm.
 type fcon string -> fm.
-type fuva  addr -> fm.
+type fuva  address -> fm.
 
 type pp fm -> string -> o.
 pp X "_" :- var X.
@@ -30,23 +85,18 @@ pp (fuva N) S :- !, ppuva N S.
 pp X S :- name X, !, std.any->string X S.
 pp _ "ERROR".
 
-type ppuva addr -> string -> o.
-ppuva N S :- ppaddr N X, S is "C" ^ X.
+type ppuva address -> string -> o.
+ppuva N S :- mem.ppaddr N X, S is "C" ^ X.
 
-typeabbrev subst list (option fm).
+typeabbrev subst mem fm.
 
 type ppsubst subst -> list string -> o.
-ppsubst L S :- ppsubst.aux z L S.
-
-type ppsubst.aux nat -> subst -> list string -> o.
-ppsubst.aux _ [] [].
-ppsubst.aux N [some X|XS] [L|LS] :- L is {ppuva (addr N)} ^ " := " ^ {pp X}, ppsubst.aux (s N) XS LS.
-ppsubst.aux N [none|XS] [L|LS] :- L is {ppuva (addr N)} ^ " := _", ppsubst.aux (s N) XS LS.
+ppsubst L S :- mem.pp L "C" pp S.
 
 type deref subst -> fm -> fm -> o.
 deref _ X _ :- var X, fatal "flex deref".
-deref S (fuva N) T1 :- set? N S T, deref S T T1.
-deref S (fapp [fuva N|L]) R :- set? N S T, !, beta T L R', deref S R' R.
+deref S (fuva N) T1 :- mem.set? N S T, deref S T T1.
+deref S (fapp [fuva N|L]) R :- mem.set? N S T, !, beta T L R', deref S R' R.
 deref S (fapp L1) (fapp L2) :- forall2 (deref S) L1 L2.
 deref S (flam F1) (flam F2) :- pi x\ deref S x x => deref S (F1 x) (F2 x).
 deref _ (fcon X) (fcon X).
@@ -70,7 +120,7 @@ T ==o fapp [flam X | TL] :- beta (flam X) TL T', T ==o T'.
 % [extend-subst T S S'] forall fuva N in T, extends S with none at pos N
 % this is used only in test to build the subst-map before running it
 type extend-subst fm -> subst -> subst -> o.
-extend-subst (fuva N) S S' :- mem-alloc N S S'.
+extend-subst (fuva N) S S' :- mem.alloc N S S'.
 extend-subst (flam F) S S' :- pi x\ (pi S\extend-subst x S S) => extend-subst (F x) S S'.
 extend-subst (fcon _) S S.
 extend-subst (fapp L) S S1 :- fold extend-subst L S S1.
@@ -118,7 +168,7 @@ kind tm  type.
 type app list tm -> tm.
 type lam (tm -> tm) -> tm.
 type con string -> tm.
-type uva  addr -> list tm -> tm.
+type uva  address -> list tm -> tm.
 
 type pp tm -> string -> o.
 pp (app L) S :- !, std.string.concat " " {std.map L pp} X, S is "(" ^ X ^ ")".
@@ -128,15 +178,11 @@ pp (uva N L) S :- !, std.string.concat " " {std.map L pp} X, !, S is {ppuva N} ^
 pp X S :- name X, !, std.any->string X S.
 pp _ "ERROR".
 
-type ppuva addr -> string -> o.
-ppuva N S :- S is "X" ^ {ppaddr N}.
+type ppuva address -> string -> o.
+ppuva N S :- S is "X" ^ {mem.ppaddr N}.
 
 type ppsubst subst -> list string -> o.
-ppsubst L S :- ppsubst.aux z L S.
-type ppsubst.aux nat -> subst -> list string -> o.
-ppsubst.aux _ [] [].
-ppsubst.aux N [some X|XS] [L|LS] :- L is {ppuva (addr N)} ^ " " ^ {ppass X}, ppsubst.aux (s N) XS LS.
-ppsubst.aux N [none|XS] [L|LS] :- L is {ppuva (addr N)} ^ " := _", ppsubst.aux (s N) XS LS.
+ppsubst L S :- mem.pp L "X" ppass S.
 
 type ppass assignment -> string -> o.
 ppass (abs F) S :- pi x\ std.any->string x N, ppass (F x) S1, S is N ^ " " ^ S1.
@@ -152,64 +198,64 @@ unif (lam F1) (lam F2) S S1 :-
 unif (con X) (con X) S S.
 % Assigned variables
 unif (uva N Args) T S S1 :- 
-  set? N S F,!, move F Args T1, unif T1 T S S1.
+  mem.set? N S F,!, move F Args T1, unif T1 T S S1.
 unif T (uva N Args) S S1 :- 
-  set? N S F,!, move F Args T1, unif T T1 S S1.
+  mem.set? N S F,!, move F Args T1, unif T T1 S S1.
 % Not assigned vars
 unif (uva N A) (uva N A) S S :- !, pattern-fragment A.
 unif (uva V A) (uva U A) S1 S2 :- !, pattern-fragment A,
-  prune-same-args V A [] Ass, assign U S1 Ass S2.
+  prune-same-args V A [] Ass, mem.assign U S1 Ass S2.
 unif (uva N Args1) (uva N Args2) S S2 :- % same var 
-  unset? N S,
+  mem.unset? N S,
   std.assert!(len Args1 Len, len Args2 Len) "Not typechecking", !, % the length of args must be the same
   pattern-fragment Args1, pattern-fragment Args2, 
-  std.do![mem-new S W S1, prune-same-variable W Args1 Args2 Ass, 
-  assign N S1 Ass S2],
+  std.do![mem.new S W S1, prune-same-variable W Args1 Args2 Ass, 
+  mem.assign N S1 Ass S2],
   print "Assigning in uva N Args1" N {ppsubst S1} "+" {ppass Ass} "=>" {ppsubst S2}. 
 unif (uva N Args1) (uva M Args2) S S3 :- % Args with diff length
-  unset? N S, unset? M S, !,
+  mem.unset? N S, mem.unset? M S, !,
   print "Unifying" {pp (uva N Args1)} "and" {pp (uva M Args2)},
   pattern-fragment Args1, pattern-fragment Args2, 
-  mem-new S W S1, (prune-smart W Args1 Args2 Ass1 Ass2), 
+  mem.new S W S1, (prune-smart W Args1 Args2 Ass1 Ass2), 
   std.do![
-  assign N S1 Ass1 S2,
-  (N = M; assign M S2 Ass2 S3)]
+  mem.assign N S1 Ass1 S2,
+  (N = M; mem.assign M S2 Ass2 S3)]
   % print "Assigning in uva with diff len" N M S1 "with solution" Ass1 "and" Ass2 "in subst" S3
   . 
 unif (uva N Args) T S S1 :- 
   not (T = uva _ _), not_occ N S T, pattern-fragment Args, 
   bind T Args T1,
   print "Binding args" {std.map Args pp} "in" {pp T} "gives" {ppuva N} {ppass T1},
-  assign N S T1 S1.
+  mem.assign N S T1 S1.
 % TODO: we could unify (f c0) with X, this does not work since c0 is a name
 unif T (uva N Args) S S1 :- 
   not (T = uva _ _), not_occ N S T, pattern-fragment Args, 
   bind T Args T1,
   print "Binding args" {std.map Args pp} "in" {pp T} "gives" {ppuva N} {ppass T1},
-  assign N S T1 S1.
+  mem.assign N S T1 S1.
 
 % Note: eta & beta for unification is not allowed in ML over terms of the OL
 
 % prune in the case of same argumets for the two vars (e.g. uv X L and uv Y L)
-type prune-same-args addr -> list tm -> list tm -> assignment -> o.
+type prune-same-args address -> list tm -> list tm -> assignment -> o.
 prune-same-args N [] Acc (val (uva N Args)) :- std.rev Acc Args.
 prune-same-args N [_ | B] L (abs T) :- pi x\ prune-same-args N B [x | L] (T x).
 
 % prune in the case of vars with args of same length (e.g. uv X L1, uv Y L2, len L1 = len L2)
-type prune-same-variable addr -> list tm -> list tm -> assignment -> o.
+type prune-same-variable address -> list tm -> list tm -> assignment -> o.
 prune-same-variable N A1 A2 T :- prune-same-variable-aux N A1 A2 [] T.
 
-type prune-same-variable-aux addr -> list tm -> list tm -> list tm -> assignment -> o.
+type prune-same-variable-aux address -> list tm -> list tm -> list tm -> assignment -> o.
 prune-same-variable-aux N [] [] ACC (val (uva N Args)) :- std.rev ACC Args.
 prune-same-variable-aux N [X|XS] [X|YS] ACC (abs F) :- pi x\ prune-same-variable-aux N XS YS [x|ACC] (F x).
 prune-same-variable-aux N [_|XS] [_|YS] ACC (abs F) :- pi x\ prune-same-variable-aux N XS YS ACC (F x).
 
-type prune-diff-length-aux addr -> list tm -> list tm -> assignment -> o.
+type prune-diff-length-aux address -> list tm -> list tm -> assignment -> o.
 prune-diff-length-aux N [] Acc (val (uva N Acc)).
 prune-diff-length-aux N [_|L] Acc (abs T) :- pi x\ prune-diff-length-aux N L Acc (T x).
 
 % res = argomenti dell'altro se li vedo anche io (nell'ordine dell'altro)
-type prune-diff-length addr -> list tm -> list tm -> list tm -> assignment -> assignment -> o.
+type prune-diff-length address -> list tm -> list tm -> list tm -> assignment -> assignment -> o.
 prune-diff-length N [] Args2 Acc (val (uva N Args)) Ass2 :-  !,
   std.rev Acc Args, prune-diff-length-aux N Args2 Args Ass2.
 prune-diff-length N Args1 [] Acc Ass1 (val (uva N Args)) :- !,
@@ -222,7 +268,7 @@ type keep list A -> A -> bool -> o.
 keep L A tt :- mem L A, !.
 keep _ _ ff.
 
-type prune-build-ass1 addr -> list tm -> list bool -> assignment -> o.
+type prune-build-ass1 address -> list tm -> list bool -> assignment -> o.
 prune-build-ass1 N Acc [] (ho.val (uva N Args)) :- std.rev Acc Args.
 prune-build-ass1 N Acc [tt|L] (ho.abs T) :- pi x\ prune-build-ass1 N [x|Acc] L (T x).
 prune-build-ass1 N Acc [ff|L] (ho.abs T) :- pi x\ prune-build-ass1 N Acc L (T x).
@@ -243,12 +289,12 @@ type build-order list nat -> list tm -> list tm -> o.
 build-order L T R :-
   len L Len, list-init Len z (p\r\ sigma Index Elt\ index L p Index, nth Index T r) R.
 
-type prune-build-ass2 addr -> list tm -> list bool -> list nat -> assignment -> o.
+type prune-build-ass2 address -> list tm -> list bool -> list nat -> assignment -> o.
 prune-build-ass2 N Acc [] Pos (ho.val (uva N Args)) :- std.rev Acc Acc', build-order Pos Acc' Args.
 prune-build-ass2 N Acc [tt|L] Pos (ho.abs T) :- pi x\ prune-build-ass2 N [x|Acc] L Pos (T x).
 prune-build-ass2 N Acc [ff|L] Pos (ho.abs T) :- pi x\ prune-build-ass2 N Acc L Pos (T x).
 
-type prune-smart addr -> list tm -> list tm -> assignment -> assignment -> o.
+type prune-smart address -> list tm -> list tm -> assignment -> assignment -> o.
 prune-smart N Args1 Args2 Ass1 Ass2 :-
   std.do![std.map Args1 (keep Args2) Bits1, prune-build-ass1 N [] Bits1 Ass1,
   std.map Args2 (keep Args1) Bits2, 
@@ -273,19 +319,19 @@ beta (app A) L (app X) :- std.append A L X.
 beta (uva N A) L (uva N A') :- std.append A L A'.
 beta (con H) L (app [con H | L]).
 
-type not_occ_aux addr -> subst -> tm -> o.
-not_occ_aux N S (uva M _) :- std.do![unset? M S, not (N = M)].
-not_occ_aux N S (uva M Args) :- std.do![set? M S F, move F Args T, not_occ_aux N S T].
+type not_occ_aux address -> subst -> tm -> o.
+not_occ_aux N S (uva M _) :- std.do![mem.unset? M S, not (N = M)].
+not_occ_aux N S (uva M Args) :- std.do![mem.set? M S F, move F Args T, not_occ_aux N S T].
 not_occ_aux N S (app L) :- forall1 (not_occ_aux N S) L.
 not_occ_aux N S (lam F) :- pi x\ /*not_occ_aux N S x =>*/ not_occ_aux N S (F x).
 not_occ_aux _ _ (con _).
 not_occ_aux _ _ X :- name X.
  
-type not_occ  addr -> subst -> tm -> o.
+type not_occ  address -> subst -> tm -> o.
 % not_occ N S T :- print "not occ" N S T, fail.
 not_occ N _ (uva N _).
-not_occ N S (uva M Args) :- set? M S F, move F Args T, not_occ N S T.
-not_occ N S (uva M Args) :- unset? M S, std.forall Args (not_occ_aux N S).
+not_occ N S (uva M Args) :- mem.set? M S F, move F Args T, not_occ N S T.
+not_occ N S (uva M Args) :- mem.unset? M S, std.forall Args (not_occ_aux N S).
 not_occ _ _ (con _).
 not_occ N S (app L) :- not_occ_aux N S (app L).
 not_occ N S (lam L) :- pi x\ not_occ N S (L x).
@@ -309,10 +355,10 @@ unif-assignment (val T1) (val T2) H H1 :- unif T1 T2 H H1.
 unif-assignment (abs F1) (abs F2) H H1 :- pi x\ (pi S\ unif x x S S) => ho.copy x x => unif-assignment (F1 x) (F2 x) H H1.
 
 type deref subst -> tm -> tm -> o.
-deref H (uva N L)  X         :- set? N H T, move T L X', !, deref H X' X.
+deref H (uva N L)  X         :- mem.set? N H T, move T L X', !, deref H X' X.
 deref H (app L)   (app L1)   :- forall2 (deref H) L L1.
 deref _ (con X)   (con X).
-deref H (uva X L) (uva X L1) :- unset? X H, forall2 (deref H) L L1.
+deref H (uva X L) (uva X L1) :- mem.unset? X H, forall2 (deref H) L L1.
 deref H (lam F)   (lam G)    :- pi x\ deref H (F x) (G x).
 deref _ N         N          :- name N.
 % deref A B V :- var V, fatal "This is should be an error" B A.
@@ -348,37 +394,37 @@ type test-unif-4 o.
 type test-unif-5 o.
 type test-unif-6 o.
 test-unif-1 :- pi x\
-  unif (uva (addr z) [x]) (uva (addr (s z)) []) [none, none] L,
+  unif (uva (mem.addr z) [x]) (uva (mem.addr (s z)) []) [none, none] L,
   Z = (abs x\ val (uva X [])),
   SZ = val (uva X []),
   L = [some Z, some SZ|_].
 
 test-unif-2 :- pi x y\
-  unif (uva (addr z) [x, y]) (uva (addr (s z)) [y]) [none, none] L,
+  unif (uva (mem.addr z) [x, y]) (uva (mem.addr (s z)) [y]) [none, none] L,
   Z = (abs x\ abs y\ val (uva X [y])),
   SZ = (abs x\ val (uva X [x])),
   L = [some Z, some SZ|_].
 
 test-unif-3 :- pi x y w\
-  unif (uva (addr z) [x, y]) (uva (addr (s z)) [x, w, y]) [none, none] L,
+  unif (uva (mem.addr z) [x, y]) (uva (mem.addr (s z)) [x, w, y]) [none, none] L,
   Z = (abs x\ abs y\ val (uva X [x, y])),
   SZ = (abs x\ abs y\ abs z\ val (uva X [x, z])),
   L = [some Z, some SZ|_].
 
 test-unif-4 :- pi x y\ 
-  unif (uva (addr z) [x, y]) (uva (addr (s z)) [y, x]) [none, none] L,
+  unif (uva (mem.addr z) [x, y]) (uva (mem.addr (s z)) [y, x]) [none, none] L,
   Z = (abs x\ abs y\ val (uva X [x, y])),
   SZ = (abs x\ abs y\ val (uva X [y, x])),
   L = [some Z, some SZ|_].
 
 test-unif-5 :- pi x y zz w\
-  unif (uva (addr z) [x, w, y]) (uva (addr (s z)) [y, zz, w]) [none, none] L,
+  unif (uva (mem.addr z) [x, w, y]) (uva (mem.addr (s z)) [y, zz, w]) [none, none] L,
   Z = (abs c0\ abs c1\ abs c2\ val (uva X [c1, c2])),
   SZ = (abs c0\ abs c1\ abs c2\ val (uva X [c2, c0])),
   L = [some Z, some SZ|_].
 
 test-unif-6 :- pi x y zz w\
-  unif (uva (addr (s z)) [y, zz, w]) (uva (addr z) [x, w, y]) [none, none] L,
+  unif (uva (mem.addr (s z)) [y, zz, w]) (uva (mem.addr z) [x, w, y]) [none, none] L,
   Z = (abs c0\ abs c1\ abs c2\ val (uva X [c2, c1])),
   SZ = (abs c0\ abs c1\ abs c2\ val (uva X [c0, c2])),
   L = [some Z, some SZ|_].
@@ -390,10 +436,10 @@ kind arity type.
 type arity nat -> arity.
 
 kind fvariable type.
-type fv addr -> fvariable.
+type fv address -> fvariable.
 
 kind hvariable type.
-type hv addr -> arity -> hvariable.
+type hv address -> arity -> hvariable.
 
 kind mapping type.
 type mapping fvariable -> hvariable -> mapping.
@@ -407,7 +453,7 @@ kind linkctx type.
 % type link-fo-align list ho.tm -> nat -> nat -> nat -> link.
 type link-eta ho.tm -> ho.tm -> linkctx.
 % [link-fo-align Beta HeadVar PFvars NPFvars]
-type link-fo-align addr -> addr -> scope -> scope -> linkctx.
+type link-fo-align address -> address -> scope -> scope -> linkctx.
 
 typeabbrev linkabs (ho.inctx linkctx).
 
@@ -476,7 +522,7 @@ comp (fo.flam F) (ho.uva E0 Scope) Mappings1 Mappings2  L L2 S S2 :-
   (pi x\ not (F x = x), (maybe-eta x (F x)) [x]), !,
   % (pi x\ print {fo.pp (F x)} "is maybe eta"),
   std.do![
-    mem-new S E0 S1,
+    mem.new S E0 S1,
     comp-lam F F1 Mappings1 Mappings2 L L1 S1 S2,
     names N,
     (pi x\ locale x => get-scope (F1 x) ScopeDuplicata), 
@@ -502,15 +548,15 @@ comp (fo.fapp [fo.fuva N|Ag]) (ho.uva MM PF1) Mappings1 Mappings3 L L3 S S4 :- !
   fold6 comp PF PF1 Mappings1 Mappings1 L L S S1,                                 % Note : PF is a list of names -> Mappings1 and L not change
   fold6 comp NPF NPF1 Mappings1 Mappings2 L L1 S1 S2,
   len PF Len,
-  alloc Mappings2 Mappings3 (fv N) (hv M (arity Len)) S2 S3, % mem-new S2 M S3,
+  alloc Mappings2 Mappings3 (fv N) (hv M (arity Len)) S2 S3, % mem.new S2 M S3,
   % TODO: NYI NPF1 can contain non-closed terms (i.e. local vars...)
   if (NPF = []) (L3 = L1, S3 = S4, MM = M) 
-    ( mem-new S3 MM S4,
+    ( mem.new S3 MM S4,
       L3 = [link-abs(ho.val(link-fo-align MM M PF1 NPF1)) | L1])
   .
 comp (fo.fapp A)              (ho.app A1) Mappings1 Mappings2 L L1 S S1 :- fold6 comp A A1 Mappings1 Mappings2 L L1 S S1.
 
-type put-abs-uva nat -> addr -> list ho.tm -> ho.assignment -> o.
+type put-abs-uva nat -> address -> list ho.tm -> ho.assignment -> o.
 put-abs-uva z Ad L (ho.val (ho.uva Ad L1)) :- std.rev L L1.
 put-abs-uva (s N) MV L (ho.abs B) :- pi x\ put-abs-uva N MV [x|L] (B x).
 
@@ -545,7 +591,7 @@ post-comp [A|_] _ H _ _ _ :- halt {ppmapping A} {ho.ppsubst H}.
 
 type alloc mappings -> mappings -> fvariable -> hvariable -> ho.subst -> ho.subst -> o.
 alloc Map Map N M H H :- std.mem Map (mapping N M), !.
-alloc Map [mapping (fv N) (hv M Arity)|Map] (fv N) (hv M Arity) H H1 :- mem-new H M H1.
+alloc Map [mapping (fv N) (hv M Arity)|Map] (fv N) (hv M Arity) H H1 :- mem.new H M H1.
   
 
 type eta-contract-ass ho.assignment -> ho.assignment -> o.
@@ -618,17 +664,17 @@ solve-link-abs L _ _ _ :- fatal "solve-link-abs" L.
 %   % if Hd is set then beta (note assmt-deref does the beta-redex)
 %   ho.assmt-deref S T Ass2,  rigid-head Ass2, !,
 %   print "Solve link beta",
-%   if (set? V S Ass1) (print "ass1 is" Ass2, my-unif-assignment Ass1 Ass2 S S1) (assign V S Ass2 S1),
+%   if (mem.set? V S Ass1) (print "ass1 is" Ass2, my-unif-assignment Ass1 Ass2 S S1) (mem.assign V S Ass2 S1),
 %   solve-links L1 L2 S1 S2.
 
 % solve-links [link-fo-align V Hd_ T|L1] L2 S S2 :-
 %   % TODO: if Hd is not set, the we do Fo-approx
 %   ho.assmt-deref S T Ass2, (not (rigid-head Ass2)), !,
 %   print "In second link fo align" Ass1 "et" Ass2,
-%   % set? is always true, since before we have done a unif
-%   if (set? V S Ass1) (
+%   % mem.set? is always true, since before we have done a unif
+%   if (mem.set? V S Ass1) (
 %     fo-align Ass2 Ass1 [] S S1
-%   ) (print "It is not assigned?", assign V S Ass2 S1),
+%   ) (print "It is not assigned?", mem.assign V S Ass2 S1),
 %   solve-links L1 L2 S1 S2.
 
 % type solve-links links -> links -> ho.subst -> ho.subst -> o.
@@ -654,7 +700,7 @@ link-abs-occur-check (ho.val (link-eta(ho.uva N0 S0) T)) Links H H1 :-
   (lam-occur-check N Links T1 H T2, print "OC, progress", ho.unif {eta-expand (ho.uva N []) {len S}} T2 H H1) ; true. %TODO: in case OF fails we should fail
 link-abs-occur-check (ho.val (link-eta N _)) _ H H :- print "OC skip" N.
 
-type lam-occur-check addr -> links -> ho.tm -> ho.subst -> ho.tm -> o.
+type lam-occur-check address -> links -> ho.tm -> ho.subst -> ho.tm -> o.
 lam-occur-check _ _ (ho.con X) _ (ho.con X).
 % lam-occur-check N Links (ho.app L) H H1 :- fold ... L.
 lam-occur-check N Links (ho.lam F) H (ho.lam F1) :- pi x\ lam-occur-check N Links (F x) H (F1 x).
@@ -662,14 +708,14 @@ lam-occur-check N _Links (ho.uva N S) _H (ho.uva N S) :- !.
 lam-occur-check N Links (ho.uva M S) H T :-
   exists (l\deref-link-occur-check l Links M S N H T) Links.
 
-type deref-link-occur-check link -> links -> addr -> list ho.tm -> addr -> ho.subst -> ho.tm -> o.
+type deref-link-occur-check link -> links -> address -> list ho.tm -> address -> ho.subst -> ho.tm -> o.
 % deref-link-occur-check (link M X LenX) Links M S N H T :-
 %   if (LenX = s _) (halt "len" S) true,
 %   lam-occur-check N Links (ho.uva X []) H T.
 deref-link-occur-check (link-abs A) Links M S N H T :-
   deref-link-abs-occur-check A Links M S N H T.
 
-type deref-link-abs-occur-check linkabs -> links -> addr -> list ho.tm -> addr -> ho.subst -> ho.tm -> o.
+type deref-link-abs-occur-check linkabs -> links -> address -> list ho.tm -> address -> ho.subst -> ho.tm -> o.
 deref-link-abs-occur-check (ho.abs A) Links M [V|S] N H T :- deref-link-abs-occur-check (A V) Links M S N H T.
 deref-link-abs-occur-check (ho.val (link-eta (ho.uva M _) T)) Links M S N H T3 :- !,
   print "OC follow " link-eta M "->" T,
@@ -702,7 +748,7 @@ solve-links-fixpoint L0 L2 H H2 :- std.do! [
      (print "end fixpoint", deref-links H L L2 , H2 = H)
      (print "## Subst is" {ho.ppsubst H1}, print "## Links are" {pplinks {deref-links H1 L1}}, !, solve-links-fixpoint L1 L2 H1 H2)
 ].
-type make-eta-link nat -> nat -> addr -> addr -> list ho.tm -> linkabs -> o.
+type make-eta-link nat -> nat -> address -> address -> list ho.tm -> linkabs -> o.
 make-eta-link (s  X) z     M' M Vars L :- std.rev Vars Scope, eta-expand (ho.uva M Scope) (s X) T, make-eta-link.aux (s X) M' T Vars L.
 make-eta-link (s  X) (s Y) M' M Vars L :- make-eta-link X Y M M' Vars L.
 %make-eta-link (s  X) (s Y) M' M Vars (ho.abs x\ L x) :- pi x\ make-eta-link X Y M M' [x|Vars] (L x).
@@ -714,7 +760,7 @@ type solve-links links -> links -> ho.subst -> ho.subst -> o.
 solve-links [] [] X X :- print "end solve links".
 
 % TODO: THIS IS TO CHECK BETTER
-% solve-links [(link N M LenM as X)|L] LR HO HO1 :- take-list L (link N M' LenM') L1, not (unset? M HO, unset? M' HO), !, std.do! [
+% solve-links [(link N M LenM as X)|L] LR HO HO1 :- take-list L (link N M' LenM') L1, not (mem.unset? M HO, mem.unset? M' HO), !, std.do! [
 %   print "deduplicating links:" {pplink X} "===" {pplink (link N M' LenM')}, 
 %   same-assign M M' LenM LenM' W HO HO2,
 %   solve-links [link N W LenM|L1] LR HO2 HO1,
@@ -753,14 +799,14 @@ same-assign-aux _ _ T R HO HO2 :-
   hope-for-eta HO R Re,
   my-unif-assignment Te Re HO HO2.
  
-type same-assign addr -> addr -> nat -> nat -> addr -> ho.subst -> ho.subst -> o.
-same-assign M N LenM LenN W HO HO2 :- set? M HO AM, set? N HO AN, !, W = M,
+type same-assign address -> address -> nat -> nat -> address -> ho.subst -> ho.subst -> o.
+same-assign M N LenM LenN W HO HO2 :- mem.set? M HO AM, mem.set? N HO AN, !, W = M,
   same-assign-aux LenM LenN AM AN HO HO2.
-same-assign M N LenM LenN W HO HO2 :- set? M HO AM, unset? N HO,  W = M, eta LenN N [] AN, print "Eta for" N "is" AN,
+same-assign M N LenM LenN W HO HO2 :- mem.set? M HO AM, mem.unset? N HO,  W = M, eta LenN N [] AN, print "Eta for" N "is" AN,
   same-assign-aux LenM LenN AM AN HO HO2.
-same-assign M N LenM LenN W HO HO2 :- unset? M HO, set? N HO AN,  W = N, eta LenM M [] AM, print "Eta for" M "is" AM,
+same-assign M N LenM LenN W HO HO2 :- mem.unset? M HO, mem.set? N HO AN,  W = N, eta LenM M [] AM, print "Eta for" M "is" AM,
   same-assign-aux LenM LenN AM AN HO HO2.
-% same-assign M N LenM LenN W HO HO2 :- unset? M HO, unset? N HO,   W = M, eta LenN N [] AN, eta LenM M [] AM, print "Eta for" M "is" AM, print "Eta for" N "is" AN,
+% same-assign M N LenM LenN W HO HO2 :- mem.unset? M HO, mem.unset? N HO,   W = M, eta LenN N [] AN, eta LenM M [] AM, print "Eta for" M "is" AM, print "Eta for" N "is" AN,
 %   same-assign-aux LenM LenN AM AN HO HO2.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -861,7 +907,7 @@ hope-contract.aux L (ho.val V) (ho.val T) :- std.do! [
 ].
 
 % [eta Arity VarName Acc Ass]
-type eta nat -> addr -> list ho.tm -> ho.assignment -> o.
+type eta nat -> address -> list ho.tm -> ho.assignment -> o.
 eta z     N Acc (ho.val (ho.uva N Acc')) :- std.rev Acc Acc'.
 eta (s M) N Acc (ho.abs F) :- pi x\ eta M N [x | Acc] (F x).
 
@@ -895,12 +941,12 @@ put-abs (s N) T (ho.abs B) :- pi x\ sigma T'\ ho.beta T [x] T', put-abs N T' (B 
 type decompl-mapping mappings -> mappings -> ho.subst -> fo.subst -> fo.subst -> o.
 decompl-mapping _ [A|_] _ _ _ :- print "Solving" {ppmapping A}, fail.
 decompl-mapping _ [] _ F F.
-decompl-mapping Map [mapping (fv VO) (hv VM _)|Tl] H F F2 :- set? VM H T, !, % TODO: is the res of set? always a val?
+decompl-mapping Map [mapping (fv VO) (hv VM _)|Tl] H F F2 :- mem.set? VM H T, !, % TODO: is the res of mem.set? always a val?
   print {ho.ppsubst H} {ho.ppass T},
-  std.assert!((ho.assmt-deref H T TTT)) "Should not fail",
-  abs->lam TTT T', decomp Map T' T1, fo.eta-contract T1 T2, assign VO F T2 F1,
+  std.assert!(ho.assmt-deref H T TTT) "Should not fail",
+  abs->lam TTT T', decomp Map T' T1, fo.eta-contract T1 T2, mem.assign VO F T2 F1,
   decompl-mapping Map Tl H F1 F2. 
-decompl-mapping Map [mapping _ (hv VM _)|Tl] H F F2 :- unset? VM H, decompl-mapping Map Tl H F F2.
+decompl-mapping Map [mapping _ (hv VM _)|Tl] H F F2 :- mem.unset? VM H, decompl-mapping Map Tl H F F2.
 decompl-mapping _ [L|_] H _ _ :- halt "Decompl mapping: failed on" {ppmapping L} {ho.ppsubst H}.
 
 type decomp mappings -> ho.tm -> fo.fm -> o.
@@ -922,7 +968,7 @@ add-new-links-aux H [T|Ts] L L2 S S2 :- add-new-link H T L L1 S S1, add-new-link
 type add-new-link ho.subst -> ho.tm -> mappings -> mappings ->  fo.subst -> fo.subst -> o.
 add-new-link _ (ho.uva N _) Links [] F1 F1 :- mem Links (mapping _ (hv N _)), !.
 add-new-link H (ho.uva N L) Links [Link1 | Links1] F1 F3 :-              % Build new link
-  mem-new F1 M F2,
+  mem.new F1 M F2,
   len L Arity, Link1 = mapping (fv M) (hv N (arity Arity)),
   add-new-link H (ho.app L) [Link1 | Links] Links1 F2 F3.
 add-new-link H (ho.lam B) Links NewLinks F1 F2 :- pi x\ add-new-link H (B x) Links NewLinks F1 F2.
@@ -962,12 +1008,12 @@ test-hope-eta-1 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.app[ho.con"f"
                                    (ho.abs x\           ho.val (ho.app[ho.con"f",ho.app[ho.con"g",x]  ])).
 test-hope-eta-2 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.app[ho.con"f",ho.app[ho.con"g",y],x]))
                                    (          ho.abs y\ ho.val (ho.app[ho.con"f",ho.app[ho.con"g",y]  ])).
-test-hope-eta-3 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.uva (addr z) [y]))
-                                   (ho.abs x\           ho.val (ho.uva (addr z) [])).
-test-hope-eta-4 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.uva (addr z) [x]))
-                                   (          ho.abs y\ ho.val (ho.uva (addr z) [])).
-test-hope-eta-5 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.uva (addr z) [x, y]))
-                                   (ho.val (ho.uva (addr z) [])).
-test-hope-eta-6 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.uva (addr z) [y, x]))
-                                   (ho.abs x\ ho.abs y\ ho.val (ho.uva (addr z) [y, x])).
+test-hope-eta-3 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.uva (mem.addr z) [y]))
+                                   (ho.abs x\           ho.val (ho.uva (mem.addr z) [])).
+test-hope-eta-4 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.uva (mem.addr z) [x]))
+                                   (          ho.abs y\ ho.val (ho.uva (mem.addr z) [])).
+test-hope-eta-5 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.uva (mem.addr z) [x, y]))
+                                   (ho.val (ho.uva (mem.addr z) [])).
+test-hope-eta-6 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.uva (mem.addr z) [y, x]))
+                                   (ho.abs x\ ho.abs y\ ho.val (ho.uva (mem.addr z) [y, x])).
 }
