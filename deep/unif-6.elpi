@@ -1,17 +1,15 @@
-internal-test try6.comp.test-hope-eta-1.
-internal-test try6.comp.test-hope-eta-2.
-% internal-test try6.comp.test-hope-eta-3.
-% internal-test try6.comp.test-hope-eta-4.
-% internal-test try6.comp.test-hope-eta-5.
-% internal-test try6.comp.test-hope-eta-6.
-internal-test try6.ho.test-unif-1.
-internal-test try6.ho.test-unif-2.
-internal-test try6.ho.test-unif-3.
-internal-test try6.ho.test-unif-4.
-internal-test try6.ho.test-unif-5.
-internal-test try6.ho.test-unif-6.
-
-namespace try6 {
+internal-test comp.test-hope-eta-1.
+internal-test comp.test-hope-eta-2.
+% internal-test comp.test-hope-eta-3.
+% internal-test comp.test-hope-eta-4.
+% internal-test comp.test-hope-eta-5.
+% internal-test comp.test-hope-eta-6.
+internal-test ho.test-unif-1.
+internal-test ho.test-unif-2.
+internal-test ho.test-unif-3.
+internal-test ho.test-unif-4.
+internal-test ho.test-unif-5.
+internal-test ho.test-unif-6.
 
 %%%%%%%%%%%%%%%%%%% the OL %%%%%%%%%%%%%%%%%%%%%
 namespace fo {
@@ -983,4 +981,4 @@ test-hope-eta-5 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.uva (addr z) 
                                    (ho.val (ho.uva (addr z) [])).
 test-hope-eta-6 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.uva (addr z) [y, x]))
                                    (ho.abs x\ ho.abs y\ ho.val (ho.uva (addr z) [y, x])).
-}}
+}
