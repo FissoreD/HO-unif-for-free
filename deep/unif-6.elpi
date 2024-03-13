@@ -528,42 +528,29 @@ comp-lam F F1 Mappings1 Mappings2 L L2 S S1 :-
 
 type comp fo.fm -> ho.tm -> mappings -> mappings -> links -> links -> ho.subst -> ho.subst -> o.
 comp (fo.fcon X)              (ho.con X) Mappings Mappings L L S S.
-% TODO: this is wrong, since we should pass something in the scope of W
 comp (fo.flam F) (ho.uva E0 Scope) Mappings1 Mappings2  L L2 S S2 :-
-  %print "## comp eta" {fo.pp (fo.flam F)},
   (pi x\ not (F x = x), (maybe-eta x (F x)) [x]), !,
-  % (pi x\ print {fo.pp (F x)} "is maybe eta"),
   std.do![
     mem.new S E0 S1,
     comp-lam F F1 Mappings1 Mappings2 L L1 S1 S2,
     (pi x\ locale x => get-scope (F1 x) Scope), 
-    % hack
-    % (
-    %   (F1 = (x\ho.uva _ [V1,x]), Scope = [V1]) ;
-    %   (F1 = (x\ho.uva _ [V1,V2,x]), Scope = [V1,V2]) ;
-    %   (F1 = (x\ho.uva _ [x, V1]), Scope = [V1]) ; % TODO this is needed for test 10
-    %   % (F1 = (x\ho.app[ho.con _,uva ...V1,V2,x]), Scope = [V1,V2]) ;
-    %   Scope = []),
     NewLink = link-abs (ho.val(link-eta (ho.uva E0 Scope) (ho.lam F1))),
   ], L2 = [NewLink| L1].
-  % , % TODO save Scope in E0, somehow
-  % print "------------------ END ETA -------------------",
-  % print "with new link:" {pplinks [NewLink]},
-  % print "----------------------------------------------".
 
 comp (fo.flam F) (ho.lam F1) Mappings1 Mappings2 L L2 S S1 :- comp-lam F F1 Mappings1 Mappings2 L L2 S S1.
 comp (fo.fuva N)              (ho.uva M []) Mappings Mappings1 L L S S1 :- alloc Mappings Mappings1 (fv N) (hv M (arity z)) S S1.
-comp (fo.fapp [fo.fuva N|Ag]) TTT Mappings1 Mappings3 L L1 S S3 :- !,
+comp (fo.fapp [fo.fuva N|Ag]) (ho.uva M' Scope) Mappings1 Mappings3 L L2 S S4 :- !,
   split-pf Ag PF NPF,
   fold6 comp PF PF1 Mappings1 Mappings1 L L S S1,                                 % Note : PF is a list of names -> Mappings1 and L not change
-  fold6 comp NPF NPF1 Mappings1 Mappings2 L L1 S1 S2,  
-  alloc Mappings2 Mappings3 (fv N) (hv M (arity {len Ag})) S2 S3, % mem.new S2 M S3,
-  % TODO: NYI NPF1 can contain non-closed terms (i.e. local vars...)
-  % names N,
-  % (pi x\ locale x => get-scope (F1 x) ScopeDuplicata), 
-  % std.filter N (mem ScopeDuplicata) Scope,
-  % TTT1 = ho.uva M Scope,
-  ho.beta (ho.uva M PF1) NPF1 TTT.
+  fold6 comp NPF NPF1 Mappings1 Mappings2 L L1 S1 S2,
+  len Ag Arity, 
+  alloc Mappings2 Mappings3 (fv N) (hv M (arity Arity)) S2 S3, % mem.new S2 M S3,
+  if (NPF = []) 
+    (Scope = PF1, M' = M, S3 = S4, L1 = L2)
+    (get-scope (ho.app {std.append PF1 NPF1}) Scope,
+      mem.new S3 M' S4,
+      L2 = [link-abs(ho.val(link-beta (ho.uva M' Scope) (ho.app[ho.uva M PF1 | NPF1]))) | L1],
+      true).
 comp (fo.fapp A)              (ho.app A1) Mappings1 Mappings2 L L1 S S1 :- fold6 comp A A1 Mappings1 Mappings2 L L1 S S1.
 
 type put-abs-uva nat -> address -> list ho.tm -> ho.assignment -> o.
@@ -653,20 +640,31 @@ progress-eta-link (ho.lam _ as T) T1 H H1 ff :- !, print "progress 3", ho.unif T
 progress-eta-link (ho.uva _ _ as X) T H H1 ff :- contract-rigid [] T T1, !, print "progress 4", ho.unif X T1 H H1. % TODO remove this link from Links
 progress-eta-link _ _ H H tt :- print "no progress". % NO PROGRESS
 
+type progress-beta-link ho.tm -> ho.tm -> ho.subst -> ho.subst -> bool -> o.
+progress-beta-link T1 (ho.app [ho.uva V Ag|L]) S1 S2 tt :-
+  ho.deref S1 (ho.uva V {std.append Ag L}) T2Deref, % TODO: I need to fully apply V to make deref work
+  rigid-head T2Deref, !,
+  ho.unif T1 T2Deref S1 S2.
+
+% progress-beta-link T1 T2 S1 S2 tt :- HERE FO-approx: deref of T2 is flex, deref of T1 is rigid, then align
+
+progress-beta-link _ _ S1 S1 ff.
+
 type solve-link-abs linkabs -> option linkabs -> ho.subst -> ho.subst -> o.
 solve-link-abs (ho.abs X) R H H1 :- 
-  % print "solve-link-abs under abs",
   pi x\ (pi S\ ho.unif x x S S) => ho.copy x x => (pi S\ ho.deref S x x) => solve-link-abs (X x) (R' x) H H1,
-  if ((R' x) = some (R'' x)) (R = some (ho.abs R'')) (R = none)
-  .
+  if ((R' x) = some (R'' x)) (R = some (ho.abs R'')) (R = none).
+
+% Link eta
 solve-link-abs (ho.val (link-eta A B) as L) Keep S S1 :- !,
   print "In progress eta link for" {ho.pp A} {ho.pp B},
   progress-eta-link A B S S1 R,
   if (R = tt) (Keep = some L) (Keep = none).
-  % print "finish progress". % TODO: remove link if L is no more an eta
-% solve-link-abs (ho.val (link-beta Beta Head PF NPF) as L) (some L) S S1 :- 
-%   ho.deref S (ho.uva Head {std.append PF NPF}) BetaHead,  rigid-head BetaHead, !,
-%   ho.deref S (ho.uva Beta {std.append PF NPF}) BetaAss, ho.unif BetaHead BetaAss S S1.
+
+solve-link-abs (ho.val (link-beta A B) as L) Keep S S1 :- !,
+  print "In progress beta link for" {ho.pp A} {ho.pp B},
+  progress-beta-link A B S S1 R,
+  if (R = tt) (Keep = some L) (Keep = none).
 
 solve-link-abs L _ _ _ :- fatal "solve-link-abs" L.
 % % classic beta: the head of the application is rigid

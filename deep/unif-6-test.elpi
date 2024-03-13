@@ -186,7 +186,6 @@ xtest (test N (pr LR Sol) as Test) :- std.do![
 macro @ok N X Y S :- declare-test xtest ptest (test N (pr [triple ok X Y] (some S))).
 macro @ko N X Y :- declare-test xtest ptest (test N (pr [triple (error _) X Y] none)).
 
-% macro @okl N X :- declare-test xtest ptest (test N (pr X none)).
 macro @okl N X S:- declare-test xtest ptest (test N (pr X (some S))).
 macro @kol N X :- declare-test xtest ptest (test N (pr X none)).
 
@@ -253,15 +252,19 @@ macro @kol N X :- declare-test xtest ptest (test N (pr X none)).
 
 @okl 1600 [
   (triple ok (@f) (@lam x\ @app [@f, @app[@X,x]])), 
-  % (triple ok (@app [@f, @a]) (@app [@f, @app[@X,@a]])),
   (triple ok (@app [@f, @lam x\x]) (@app [@f, @X])),
 ] [@lam x\x].
 
-% @okl 17 [
-%   (triple ok @X (@lam x\ x)),
-%   % (triple ok (@app [@X, @a]) (@a)),
-%   (triple ok (@app [@X, @a]) (@Y))
-% ] []. % beta redex
+@okl 17 [
+  (triple ok @X (@lam x\ x)),
+  % (triple ok (@app [@X, @a]) (@a)),
+  (triple ok (@app [@X, @a]) (@Y))
+] [(@lam x\x), @a]. % beta redex
+
+@okl 170 [
+  (triple ok @X (@lam x\ x)),
+  (triple ok (@app [@X, @a]) @a),
+] [(@lam x\x)]. % beta redex
 
 % @okl 18 [
 %   (triple ok (@lam x\ @app[@X, x, @a]) (@lam x\ @app[@f, x, @a]))
@@ -342,6 +345,6 @@ macro @kol N X :- declare-test xtest ptest (test N (pr X none)).
   (x\y\ f (A x) (B x y)) = f.
 */
 
-% @okl 27 [
-%   triple ok (@lam x\ @lam y\ @app[@X, x, @app[@Y, y]]) (@lam x\ @lam y\ @app[@f, @a, @b])
-% ] [].
+@okl 27 [
+  triple ok (@lam x\ @lam y\ @app[@X, x, @app[@Y, y]]) (@lam x\ @lam y\ @app[@f, @a, @b])
+] [].
