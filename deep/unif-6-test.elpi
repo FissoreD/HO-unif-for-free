@@ -288,32 +288,11 @@ macro @kol N X :- declare-test xtest ptest (test N (pr X none)).
   triple ok (@lam x\ @lam y\ @app[@X, y, x]) @Y
 ] [_, @lam x\ @lam y\ @app[@X, y, x]].
 
-/*
-main :- not t1, t2, not t3.
-
-t1 :-
-  f = a\b\f b a.
-
-t2 :- std.spy-do! [
-    X0 = X3,
-    (g X3) = X4,
-    (g f) = X4,
-    X0 = (a\X1 a),
-    (pi a\ X1 a = (b\X2 b a)),
-  ]. 
-
-t3 :- std.spy-do! [
-    X0 = X3,
-    (g X3) = X4,
-    (g f) = X4,
-    X0 = (a b\X1 b a),
-  ]. 
-*/
-@kol 22001 [
+@okl 22001 [
   triple ok (@lam x\ @lam y\ @app[@Y, y, x]) @Z,
   triple ok (@app[@g, @Z]) @X,
-  triple (error "unif") (@app[@g, @f]) @X,
-].
+  triple ok (@app[@g, @f]) @X,
+] [(@app [@g, @f]), (@lam c0 \ @lam c1 \ @app [@f, c1, c0]), (@f)].
 
 @okl 22000 [
   triple ok (@app[@g, (@lam x\ @lam y\ @app[@Y, y, x])]) @X,
