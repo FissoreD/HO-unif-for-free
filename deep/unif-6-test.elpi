@@ -104,7 +104,7 @@ validate-solution [] _.
 validate-solution [triple ok L R|Goals] FS :- 
   std.do![fo.deref FS L L', fo.deref FS R R',
   %  (L' ==o R'),
-  std.assert! (L' ==o R') "Invalid solution",
+  if (L' ==o R') true (halt "Invalid solution:" {fo.pp L'} "=/=" {fo.pp R'}),
   validate-solution Goals FS].
 validate-solution [triple (error _) _ _|_] _.
 
