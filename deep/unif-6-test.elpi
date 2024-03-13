@@ -365,6 +365,23 @@ t3 :- std.spy-do! [
   (x\y\ f (A x) (B x y)) = f.
 */
 
-@okl 27 [
-  triple ok (@lam x\ @lam y\ @app[@X, x, @app[@Y, y]]) (@lam x\ @lam y\ @app[@f, @a, @b])
-] [].
+% @okl 27 [
+%   triple ok (@lam x\ @lam y\ @app[@X, x, @app[@Y, y]]) (@lam x\ @lam y\ @app[@f, @a, @b])
+% ] [].
+
+@okl 28 [
+  triple ok @X (@lam x\ @lam y\ y),
+  triple ok @Y (@lam x\ x),
+  triple ok @Z (@lam x\ @lam y\ @app[@Z, @app[@Y, x], @app[@X, x, y]])
+] [(@lam x\ @lam y\ y), (@lam x\ x), fo.fuva (mem.addr (s (s (s _))))].
+
+@okl 29 [
+  triple ok @X (@lam x\ @lam y\ y),
+  triple ok @Y (@lam x\ x),
+  triple ok @Z (@lam x\ @lam y\ @app[@Z, @app[@Y, x], @app[@X, x, x]])
+] [(@lam x\ @lam y\ y), (@lam x\ x), @lam x\ @lam y\ @app[_, x]].
+
+@okl 30 [
+    triple ok @X (@lam x\ @lam y\ @a),
+    triple ok (@lam x\ @a) (@lam x\ @app [@X, x, x]),
+] [(@lam x\ @lam y\ @a)].
