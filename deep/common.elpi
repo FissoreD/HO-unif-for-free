@@ -102,7 +102,7 @@ type split-pf-aux list A -> list A -> list A -> list A -> o.
 split-pf-aux [] _ [] [].
 split-pf-aux [X | L] ACC [X | PF] NPF :- name X, not-in X ACC, !, 
   split-pf-aux L [X | ACC] PF NPF.
-split-pf-aux L _ [] L :- std.forall L (x\ not (name x)).
+split-pf-aux L _ [] L.
 
 type split-pf list A -> list A -> list A -> o.
 split-pf L PF NPF :- split-pf-aux L [] PF NPF.
