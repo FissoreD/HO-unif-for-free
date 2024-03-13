@@ -266,14 +266,6 @@ move (val (uva N A)) L     (uva N X) :- std.append A L X.
  move (abs A)         []    _ :- !, fatal "Invalid move call: too few args for abs" A.
  move A               L    _ :- !, fatal "Invalid move call:" A L.
 
-type move-ass assignment -> list tm -> assignment -> o.
-move-ass (abs Bo)        [H|L] R :- move-ass (Bo H) L R.
-move-ass (abs Bo)        []    (abs Bo).
-move-ass (val A)         []    (val A).
-move-ass (val (app A))   L     (val (app X)) :- std.append A L X.
-move-ass (val (uva N A)) L     (val (uva N X)) :- std.append A L X.
-move-ass (val (con H))   L     (val (app [con H | L])).
-
 type beta tm -> list tm -> tm -> o.
 beta A [] A.
 beta (lam Bo) [H | L] R :- beta (Bo H) L R.
