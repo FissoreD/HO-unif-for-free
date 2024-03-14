@@ -136,7 +136,7 @@ xtest (test N (pr LR Sol) as Test) :- std.do![
   printC "run test?",
   build-fo-subst LR [] FO_Subst,
   compile-terms LR Uproblems [] Map1 Links [] HO_Subst,
-  comp.post-comp Map1 Map2 HO_Subst HO_Subst1 Links Links2,                % TODO: refactor compile-terms so that it also does post processing 
+  comp.deduplicate-mappings Map1 Map2 HO_Subst HO_Subst1 Links Links2,                % TODO: refactor compile-terms so that it also does post processing 
   print "## After compilation the terms are" {std.map Uproblems pppbsc},
   print "## After compilation the links are" {comp.pplinks Links2},
   print "## After compilation the mappings are" {comp.ppmappings Map2},
@@ -339,6 +339,25 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- pri
     pr ok "X = λx. λy. a",
     pr ok "λx. a = λx. (X  x  x)",
 ] ["λx. λy. a"].
+
+@sokl 31 [
+    pr ok "λx.f = X a",
+    pr ok "X = λx. λy.f",
+] ["λx.λy. f"].
+
+@sokl 32 [
+    pr ok "λx.Y = X a",
+    pr ok "X = λx.λy. f",
+] ["λx. λy. f", "f"].
+
+% @sokl 33 [
+%     pr ok "f = X a",
+% ] ["λx.(Y x)"].
+
+@sokl 34 [
+    pr ok "X = λx.λy.λz.y",
+    pr ok "λx.λy.(X x a y) = λx.λy.a",
+] ["λx.λy.λz.y"].
 
 % @okl 22300 [
 %   pr ok ((g , (λx. λy. (Y  y  x])]) X 

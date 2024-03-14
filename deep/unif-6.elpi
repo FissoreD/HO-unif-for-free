@@ -232,6 +232,9 @@ type con string -> tm.
 type uva  address -> list tm -> tm.
 
 type pp tm -> string -> o.
+pp (app [lam F|L]) S :- !,
+  pp (lam F) H,
+  std.string.concat " " {std.map L pp} X, S is "((" ^ H ^ ") " ^ X ^ ")".
 pp (app L) S :- !, std.string.concat " " {std.map L pp} X, S is "(" ^ X ^ ")".
 pp (con S) S :- !.
 pp (lam F) S :- !, pi x\ std.any->string x N, pp (F x) S1, S is N ^ "\\ " ^ S1.
@@ -367,11 +370,9 @@ prune-smart N Args1 Args2 Ass1 Ass2 :-
 type move assignment -> list tm -> tm -> o.
 move (abs Bo)        [H|L] R :- move (Bo H) L R.
 move (val A)         []    A :- !.
-% move (val (app A))   L     (app X) :- std.append A L X.
 move (val (uva N A)) L     (uva N X) :- std.append A L X.
-% move (val (con H))   L     (app [con H | L]).
- move (abs A)         []    _ :- !, fatal "Invalid move call: too few args for abs" A.
- move A               L    _ :- !, fatal "Invalid move call:" A L.
+move (abs A)         []    _ :- !, fatal "Invalid move call: too few args for abs" A.
+move A               L    _ :- !, fatal "Invalid move call:" A L.
 
 type beta tm -> list tm -> tm -> o.
 beta A [] A.
@@ -548,12 +549,33 @@ pplinkabs (ho.val (link-beta A B)) S :- S is "|- " ^ {ho.pp A} ^ " =β= " ^ {ho.
 %  - T = uva seing N (N is also the last of L)
 %  - T = app L such that the last args of L are maybe-eta wrt L
 type maybe-eta fo.fm -> fo.fm -> list fo.fm -> o.
-maybe-eta N N _.
 maybe-eta N (fo.fapp[fo.fuva _|Args]) _ :- !, mem Args N. % Head is flex -> if N is in Args, we can have eta
 maybe-eta N (fo.flam B) L :- !, pi x\ maybe-eta N (B x) [x | L].
-maybe-eta _ (fo.fapp [_ |Args]) L :-                      % Head is rigid -> to be an eta we consider also L
-  last-n {len L} Args R, 
-  forall2 (x\y\ maybe-eta y x [y]) R {std.rev L}.
+maybe-eta _ (fo.fapp [fo.fcon _|Args]) L :-                      % Head is rigid -> to be an eta we consider also L
+  last-n {len L} Args R,
+   maybe-equal R {std.rev L}.
+
+type maybe-eta-of fo.fm -> fo.fm -> list fo.fm -> o.
+maybe-eta-of N (fo.fapp[fo.fuva _|Args]) L :- !, forall1 (mem Args) [N|L]. % Head is flex -> if N is in Args, we can have eta
+maybe-eta-of N (fo.flam B) L :- !, pi x\ maybe-eta-of N (B x) [x | L].
+maybe-eta-of N (fo.fapp [N|Args]) L :-                      % Head is rigid -> to be an eta we consider also L
+  last-n {len L} Args R,
+  maybe-equal R {std.rev L}.
+
+type maybe-equal list fo.fm -> list fo.fm -> o.
+maybe-equal [] [].
+maybe-equal [N|L1] [N|L2] :- !, maybe-equal L1 L2.
+maybe-equal [fo.fapp [fo.fuva _|Scope]|L1] [N|L2] :- mem Scope N, !, maybe-equal L1 L2.
+maybe-equal [T|L1] [N|L2] :- maybe-eta-of N T [], maybe-equal L1 L2.
+
+% if there exists a subst s such that contract-rigid st t', then
+% maybe-eta t must scucceed
+type contract-rigid list ho.tm -> ho.tm -> ho.tm -> o.
+contract-rigid L (ho.lam F) T :- 
+  pi x\ contract-rigid [x|L] (F x) T. % also checks H Prefix does not see x
+contract-rigid L (ho.app [H|Args]) T :- 
+  std.rev L LRev, std.appendR Prefix LRev Args,
+  if (Prefix = []) (T = H) (T = ho.app [H|Prefix]).
 
 % type not-reduce-to-name fo.fm -> o.
 % not-reduce-to-name (fo.fcon _).
@@ -590,7 +612,7 @@ comp-lam F F1 Mappings1 Mappings2 L L2 S S1 :-
 type comp fo.fm -> ho.tm -> mappings -> mappings -> links -> links -> ho.subst -> ho.subst -> o.
 comp (fo.fcon X)              (ho.con X) Mappings Mappings L L S S.
 comp (fo.flam F) (ho.uva E0 Scope) Mappings1 Mappings2  L L2 S S2 :-
-  (pi x\ not (F x = x), (maybe-eta x (F x)) [x]), !,
+  (pi x\ maybe-eta x (F x) [x]), !,
   std.do![
     mem.new S E0 S1,
     comp-lam F F1 Mappings1 Mappings2 L L1 S1 S2,
@@ -604,7 +626,7 @@ comp (fo.fapp [fo.fuva N|Ag]) (ho.uva M' Scope) Mappings1 Mappings3 L L2 S S4 :-
   split-pf Ag PF NPF,
   fold6 comp PF PF1 Mappings1 Mappings1 L L S S1,                                 % Note : PF is a list of names -> Mappings1 and L not change
   fold6 comp NPF NPF1 Mappings1 Mappings2 L L1 S1 S2,
-  len Ag Arity, 
+  len PF Arity, 
   alloc Mappings2 Mappings3 (fv N) (hv M (arity Arity)) S2 S3, % mem.new S2 M S3,
   if (NPF = []) 
     (Scope = PF1, M' = M, S3 = S4, L1 = L2)
@@ -614,38 +636,26 @@ comp (fo.fapp [fo.fuva N|Ag]) (ho.uva M' Scope) Mappings1 Mappings3 L L2 S S4 :-
       true).
 comp (fo.fapp A)              (ho.app A1) Mappings1 Mappings2 L L1 S S1 :- fold6 comp A A1 Mappings1 Mappings2 L L1 S S1.
 
-type put-abs-uva nat -> address -> list ho.tm -> ho.assignment -> o.
-put-abs-uva z Ad L (ho.val (ho.uva Ad L1)) :- std.rev L L1.
-put-abs-uva (s N) MV L (ho.abs B) :- pi x\ put-abs-uva N MV [x|L] (B x).
-
-type post-comp mappings -> mappings -> ho.subst -> ho.subst -> links -> links -> o.
-post-comp [] [] H H L L.
-% Same fv-variable, with same arity appearing twice: the first is removed and
-% the two hv-vars are unified
-post-comp [mapping (fv O) (hv M1 (arity Arity)) | Map1] Map2 H1 H3 L1 L2 :- 
-  mem Map1 (mapping (fv O) (hv M2 (arity Arity))), !,
-  put-abs-uva Arity M1 [] Ass1,
-  put-abs-uva Arity M2 [] Ass2,
-  ho.unif-assignment Ass1 Ass2 H1 H2,
-  post-comp Map1 Map2 H2 H3 L1 L2.
-post-comp [(mapping (fv O) (hv M (arity LenM)) as X1) | Map1] Map2 H1 H2 L1 L3 :-
+type deduplicate-mappings mappings -> mappings -> ho.subst -> ho.subst -> links -> links -> o.
+deduplicate-mappings [] [] H H L L.
+deduplicate-mappings [(mapping (fv O) (hv M (arity LenM)) as X1) | Map1] Map2 H1 H2 L1 L3 :-
   take-list Map1 (mapping (fv O) (hv M' (arity LenM'))) _, LenM' >n LenM, !, std.do! [
     print "arity-fix links:" {ppmapping X1} "~<~" {ppmapping (mapping (fv O) (hv M' (arity LenM')))}, 
     make-eta-link LenM' LenM M M' [] New,
     print "new eta link" {pplinkabs New},
     L2 = [link-abs New | L1],
-    post-comp Map1 Map2 H1 H2 L2 L3
+    deduplicate-mappings Map1 Map2 H1 H2 L2 L3
   ].
-post-comp [(mapping (fv O) (hv M (arity LenM)) as X1) | Map1] Map2 H1 H2 L1 L3 :-
+deduplicate-mappings [(mapping (fv O) (hv M (arity LenM)) as X1) | Map1] Map2 H1 H2 L1 L3 :-
   take-list Map1 (mapping (fv O) (hv M' (arity LenM'))) _, LenM >n LenM', !, std.do! [
-    print "arity-fix links:" {ppmapping X1} "~<~" {ppmapping (mapping (fv O) (hv M' (arity LenM')))}, 
+    print "arity-fix links:" {ppmapping X1} "~>~" {ppmapping (mapping (fv O) (hv M' (arity LenM')))}, 
     make-eta-link LenM LenM' M' M [] New,
     print "new eta link" {pplinkabs New},
     L2 = [link-abs New | L1],
-    post-comp Map1 Map2 H1 H2 L2 L3
+    deduplicate-mappings Map1 Map2 H1 H2 L2 L3
   ].
-post-comp [A|As] [A|Bs] H1 H2 L1 L2 :- post-comp As Bs H1 H2 L1 L2, !.
-post-comp [A|_] _ H _ _ _ :- halt {ppmapping A} {ho.ppsubst H}.
+deduplicate-mappings [A|As] [A|Bs] H1 H2 L1 L2 :- deduplicate-mappings As Bs H1 H2 L1 L2, !.
+deduplicate-mappings [A|_] _ H _ _ _ :- halt {ppmapping A} {ho.ppsubst H}.
 
 type alloc mappings -> mappings -> fvariable -> hvariable -> ho.subst -> ho.subst -> o.
 alloc Map Map N M H H :- std.mem Map (mapping N M), !.
@@ -679,38 +689,38 @@ eta-expand T (s N) (ho.lam R2) :- pi x\ unif-mk-app T x (R1 x), eta-expand (R1 x
 
 macro @one :- s z.
 
-type contract-rigid list ho.tm -> ho.tm -> ho.tm -> o.
-contract-rigid L (ho.lam F) T :- 
-  pi x\ contract-rigid [x|L] (F x) T. % also checks H Prefix does not see x
-contract-rigid L (ho.app [H|Args]) T :- 
-  std.rev L LRev, std.appendR Prefix LRev Args,
-  if (Prefix = []) (T = H) (T = ho.app [H|Prefix]).
-
 
 % invariante: a sx non c'è mai una eta espansione, a destra c'è una lam, altrimenti il link eta è buttato via
 type progress-eta-link ho.tm -> ho.tm -> ho.subst -> ho.subst -> bool -> o.
-progress-eta-link (ho.app _ as T) (ho.lam x\ _ as T1) H H1 ff :- !, print "progress 1", ho.unif {eta-expand T @one} T1 H H1.
-progress-eta-link (ho.con _ as T) (ho.lam x\ _ as T1) H H1 ff :- !, print "progress 2", std.spy(ho.unif {eta-expand T @one} T1 H H1).
-progress-eta-link (ho.lam _ as T) T1 H H1 ff :- !, print "progress 3", ho.unif T T1 H H1.
-
-% progress-eta-link (ho.con _ as T) (ho.uva _ _ as T1) H H1 :- !, print "progrss 2.1", std.assert!(ho.unif T T1 H H1) "WHY?".
-% progress-eta-link (ho.lam B) (ho.lam C) H H1 :- !, print "progress 3", pi x\ (pi S\ ho.unif x x S S) => ho.copy x x => progress-eta-link (B x) (C x) H H1. % fatal "progress eta lam".
-
-
-% todo: guardare lo scope della uva di dx e allinearlo con quello di sx
-progress-eta-link (ho.uva _ _ as X) T H H1 ff :- contract-rigid [] T T1, !, print "progress 4", ho.unif X T1 H H1. % TODO remove this link from Links
-progress-eta-link _ _ H H tt :- print "no progress". % NO PROGRESS
+progress-eta-link (ho.app _ as T) (ho.lam x\ _ as T1) H H1 ff :- !, print "progress η app left", ho.unif {eta-expand T @one} T1 H H1.
+progress-eta-link (ho.con _ as T) (ho.lam x\ _ as T1) H H1 ff :- !, print "progress η con left", ho.unif {eta-expand T @one} T1 H H1.
+progress-eta-link (ho.lam _ as T) T1 H H1 ff :- !, print "progress η lam left", ho.unif T T1 H H1.
+progress-eta-link (ho.uva _ _ as X) T H H1 ff :- contract-rigid [] T T1, !, print "progress η app right", ho.unif X T1 H H1. % TODO remove this link from Links
+progress-eta-link _ _ H H tt :- print "no progress η".
 
 type progress-beta-link ho.tm -> ho.tm -> ho.subst -> ho.subst -> bool -> o.
-progress-beta-link T1 (ho.app [ho.uva V Ag|L]) S1 S2 ff :-
-  ho.deref S1 (ho.uva V {std.append Ag L}) T2Deref, % TODO: I need to fully apply V to make deref work
-  rigid-head T2Deref, !,
-  print "Beta progress 1",
-  ho.unif T1 T2Deref S1 S2.
+progress-beta-link T1 (ho.app [ho.lam F|L]) S1 S2 ff :- !,
+  print "progress β",
+  ho.beta (ho.lam F) L T,
+  print "redex" {ho.pp T},
+  ho.unif T1 T S1 S2. % TODO: only if not again a maybe-beta
 
-% progress-beta-link T1 T2 S1 S2 tt :- HERE FO-approx: deref of T2 is flex, deref of T1 is rigid, then align
 
-progress-beta-link _ _ S1 S1 tt :- print "No beta progress".
+% as above
+% progress-beta-link T1 (ho.app [ho.con _|L]) S1 S2 ff :- !,
+% progress-beta-link T1 (ho.app [ho.app _|L]) S1 S2 ff :- !,
+
+
+% maybe force lambda
+% progress-beta-link (ho.con _ as T1) (ho.app [ho.uva _|L]) S1 S2 ff :- !,
+
+% FO heuristic
+% progress-beta-link (ho.app _ as T1) (ho.app [ho.uva _|L]) S1 S2 ff :- !,
+
+% maybe force lambda
+% progress-beta-link (ho.lam _ as T1) (ho.app [ho.uva _|L]) S1 S2 ff :- !,
+
+progress-beta-link _ _ S1 S1 tt.
 
 type solve-link-abs linkabs -> option linkabs -> ho.subst -> ho.subst -> o.
 solve-link-abs (ho.abs X) R H H1 :- 
@@ -804,7 +814,8 @@ type deref-link-abs ho.subst -> linkabs -> linkabs -> o.
 deref-link-abs H (ho.abs F) (ho.abs G) :- pi x\ deref-link-abs H (F x) (G x).
 deref-link-abs H (ho.val (link-eta A B)) (ho.val (link-eta A1 B1)) :-
   ho.deref H A A1, ho.deref H B B1.
-deref-link-abs _ (ho.val (link-beta A B)) (ho.val (link-beta A B)).
+deref-link-abs H (ho.val (link-beta A B)) (ho.val (link-beta A1 B1)) :-
+  ho.deref H A A1, ho.deref H B B1.
 
 % We test forall linked var of the ML, that they have the same assignment
 type solve-links-fixpoint links -> links -> ho.subst -> ho.subst -> o.
@@ -1001,10 +1012,6 @@ type decompl-eta links -> links -> ho.subst -> ho.subst -> o.
 decompl-eta [] [] H H.
 decompl-eta [link-abs Abs| Links] L H H2 :- decompl-eta-aux Abs H H1 [], !, decompl-eta Links L H1 H2.
 decompl-eta [Hd | Tl] [Hd | L] H H1 :- decompl-eta Tl L H H1.
-
-type put-abs nat -> ho.tm -> ho.assignment -> o.
-put-abs z T (ho.val T).
-put-abs (s N) T (ho.abs B) :- pi x\ sigma T'\ ho.beta T [x] T', put-abs N T' (B x).
 
 % Invariant: links are only on the form (link VO VM Arity), each VO appears once and each VM appears once
 type decompl-mapping mappings -> mappings -> ho.subst -> fo.subst -> fo.subst -> o.
