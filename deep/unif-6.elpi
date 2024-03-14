@@ -630,24 +630,38 @@ comp (fo.fapp [fo.fuva N|Ag]) (ho.uva M' Scope) Mappings1 Mappings3 L L2 S S4 :-
       true).
 comp (fo.fapp A)              (ho.app A1) Mappings1 Mappings2 L L1 S S1 :- fold6 comp A A1 Mappings1 Mappings2 L L1 S S1.
 
+% Ad1 is the variable with smaller arity, Ad2 is eta expanded N times
+type make-eta-link-aux nat -> address -> address -> list ho.tm -> linkabs -> o.
+make-eta-link-aux N Ad1 Ad2 Vars (ho.val (link-eta (ho.uva Ad1 Scope) T1)) :-
+  std.rev Vars Scope, eta-expand (ho.uva Ad2 Scope) N T1.
+
+% [make-eta-link ArityAd1, ArityAd2, Ad1, Ad2 Vars, Link]
+% as long as the arities are > 0, we eat one arity by putting a variable in the ctx
+% in the base case we return the link-eta eta-extending N times the variable with higher arity.
+type make-eta-link nat -> nat -> address -> address -> list ho.tm -> linkabs -> o.
+make-eta-link N z Ad1 Ad2 Vars L :- make-eta-link-aux N Ad2 Ad1 Vars L.
+make-eta-link z N Ad1 Ad2 Vars L :- make-eta-link-aux N Ad1 Ad2 Vars L.
+make-eta-link (s N) (s M) Ad1 Ad2 Vars (ho.abs L) :-
+  pi x\ make-eta-link N M Ad1 Ad2 [x|Vars] (L x).
+
+% if there exists two mappings on the form:
+%   ==> C0 -> X4 (2) ~!~ C0 -> X1 (1)
+% we remove one of the two mappings and add an eta relation between 
+% the two variables, so that they are fully applied.
+% in the example above, the new link will be 
+%   ==> c0 |- `X1 c0' =η= c1\ `X4 c0 c1'
+% where: 
+%  - they share a common variable from the context (i.e. c0),
+%  - X4 is the eta-expanded once to be fully applied
 type deduplicate-mappings mappings -> mappings -> ho.subst -> ho.subst -> links -> links -> o.
 deduplicate-mappings [] [] H H L L.
 deduplicate-mappings [(mapping (fv O) (hv M (arity LenM)) as X1) | Map1] Map2 H1 H2 L1 L3 :-
-  take-list Map1 (mapping (fv O) (hv M' (arity LenM'))) _, LenM' >n LenM, !, std.do! [
-    print "arity-fix links:" {ppmapping X1} "~<~" {ppmapping (mapping (fv O) (hv M' (arity LenM')))}, 
-    make-eta-link LenM' LenM M M' [] New,
-    print "new eta link" {pplinkabs New},
-    L2 = [link-abs New | L1],
-    deduplicate-mappings Map1 Map2 H1 H2 L2 L3
-  ].
-deduplicate-mappings [(mapping (fv O) (hv M (arity LenM)) as X1) | Map1] Map2 H1 H2 L1 L3 :-
-  take-list Map1 (mapping (fv O) (hv M' (arity LenM'))) _, LenM >n LenM', !, std.do! [
-    print "arity-fix links:" {ppmapping X1} "~>~" {ppmapping (mapping (fv O) (hv M' (arity LenM')))}, 
-    make-eta-link LenM LenM' M' M [] New,
-    print "new eta link" {pplinkabs New},
-    L2 = [link-abs New | L1],
-    deduplicate-mappings Map1 Map2 H1 H2 L2 L3
-  ].
+  take-list Map1 (mapping (fv O) (hv M' (arity LenM'))) _, !,
+  print "arity-fix links:" {ppmapping X1} "~!~" {ppmapping (mapping (fv O) (hv M' (arity LenM')))}, 
+  make-eta-link LenM LenM' M M' [] New,
+  print "new eta link" {pplinkabs New},
+  L2 = [link-abs New | L1],
+  deduplicate-mappings Map1 Map2 H1 H2 L2 L3.
 deduplicate-mappings [A|As] [A|Bs] H1 H2 L1 L2 :- deduplicate-mappings As Bs H1 H2 L1 L2, !.
 deduplicate-mappings [A|_] _ H _ _ _ :- halt {ppmapping A} {ho.ppsubst H}.
 
@@ -841,13 +855,6 @@ solve-links-fixpoint L0 L2 H H2 :- std.do! [
      (print "end fixpoint", deref-links H L L2 , H2 = H)
      (print "## Subst is" {ho.ppsubst H1}, print "## Links are" {pplinks {deref-links H1 L1}}, !, solve-links-fixpoint L1 L2 H1 H2)
 ].
-type make-eta-link nat -> nat -> address -> address -> list ho.tm -> linkabs -> o.
-make-eta-link (s  X) z     M' M Vars L :- std.rev Vars Scope, eta-expand (ho.uva M Scope) (s X) T, make-eta-link.aux (s X) M' T Vars L.
-make-eta-link (s  X) (s Y) M' M Vars L :- make-eta-link X Y M M' Vars L.
-%make-eta-link (s  X) (s Y) M' M Vars (ho.abs x\ L x) :- pi x\ make-eta-link X Y M M' [x|Vars] (L x).
-make-eta-link.aux z     M' T Vars (ho.val (link-eta (ho.uva M' Scope) T)) :- std.rev Vars Scope.
-make-eta-link.aux (s X) M' T Vars L :- make-eta-link.aux X M' T Vars L.
-% make-eta-link.aux (s X) M' T Vars (ho.abs L) :- pi x\ make-eta-link.aux X M' T [x|Vars] (L x).
 
 type solve-links links -> links -> ho.subst -> ho.subst -> o.
 solve-links [] [] X X :- print "end solve links".
@@ -1017,7 +1024,7 @@ link-abs-same-lhs A (ho.abs G) :- pi x\ link-abs-same-lhs A (G x).
 link-abs-same-lhs (ho.val (link-eta (ho.uva N _) _)) (ho.val (link-eta (ho.uva N _) _)).
 
 type decompl-eta-aux linkabs -> ho.subst -> ho.subst -> list ho.tm -> o.
-decompl-eta-aux (ho.val (link-eta T1 T2)) H H1 _ :- ho.unif T1 T2 H H1.
+decompl-eta-aux (ho.val (link-eta T1 T2)) H H1 _ :- print "Start decompl of" {ho.pp T1} "and" {ho.pp T2} "in" {ho.ppsubst H}, ho.unif T1 T2 H H1.
 decompl-eta-aux (ho.abs B) H H1 L :- pi x\ decompl-eta-aux (B x) H H1 [x|L].
 
 type decompl-eta links -> links -> ho.subst -> ho.subst -> o.
