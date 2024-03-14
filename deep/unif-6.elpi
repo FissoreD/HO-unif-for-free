@@ -90,7 +90,7 @@ type ppuva address -> string -> o.
 ppuva N S :- mem.ppaddr N X, S is "C" ^ X.
 
 type parse string -> fm -> o.
-parse S T :- rex.split "" S L, utf8-norm L L1, parse-aux L1 T.
+parse S T :- rex.split "" S L, utf8-norm L L1, if (parse-aux L1 T) true (halt "Error parse" S).
 
 type parse-aux list string -> fm -> o.
 parse-aux L1 T :- ll L1 [] T, !.
@@ -98,7 +98,7 @@ parse-aux L1 T :- llapp L1 [] [] A, T = fapp A, !.
 parse-aux L1 _ :- std.string.concat "" L1 S, halt "parse error:" S. 
 
 type parse-eq string -> fm -> fm -> o.
-parse-eq S A B  :- rex.split "" S L, utf8-norm L L1, parse-eq-aux L1 A B.
+parse-eq S A B  :- rex.split "" S L, utf8-norm L L1, if (parse-eq-aux L1 A B) true (halt "Error parse-eq" S).
 
 type parse-eq-aux list string -> fm -> fm -> o.
 parse-eq-aux L1 A B :-
