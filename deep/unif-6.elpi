@@ -116,6 +116,7 @@ ll ["g"|L] L (fcon "g").
 ll ["a"|L] L (fcon "a").
 ll ["b"|L] L (fcon "b").
 ll ["c"|L] L (fcon "c").
+ll ["_"|L] L (fcon "_").
 ll ["C","0"|L] L (fuva (mem.addr z)).
 ll ["C","1"|L] L (fuva (mem.addr (s z))).
 ll ["C","2"|L] L (fuva (mem.addr (s (s z)))).
