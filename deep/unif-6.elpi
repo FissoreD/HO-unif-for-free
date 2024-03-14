@@ -111,11 +111,7 @@ ee ["="|L] L.
 ee [" "|L] L1 :- ee L L1.
 
 type ll list string -> list string -> fm -> o.
-ll ["f"|L] L (fcon "f").
-ll ["g"|L] L (fcon "g").
-ll ["a"|L] L (fcon "a").
-ll ["b"|L] L (fcon "b").
-ll ["c"|L] L (fcon "c").
+ll [C|L] L (fcon C) :- rex.match "[a-z]" C.
 ll ["_"|L] L (fcon "_").
 ll ["C","0"|L] L (fuva (mem.addr z)).
 ll ["C","1"|L] L (fuva (mem.addr (s z))).
