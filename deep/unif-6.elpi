@@ -700,12 +700,12 @@ arity (ho.con _) z.
 arity (ho.app L) A :- len L A.
 
 type progress-beta-link ho.tm -> ho.tm -> ho.subst -> ho.subst -> bool -> o.
-% progress-beta-link T (ho.app[ho.uva V Scope | L]) S S2 tt :- 
-%   arity T Arity, len L ArgsNb, ArgsNb >n Arity, !,
-%   minus ArgsNb Arity Diff, mem.new S V1 S1,
-%   eta-expand (ho.uva V1 Scope) Diff T1,
-%   ho.unif (ho.uva V Scope) T1 S1 S2,
-%   print "progress β big arity" {ho.pp T} "unified with" {ho.pp T1} "->" {ho.ppsubst S2}.
+progress-beta-link T (ho.app[ho.uva V Scope | L]) S S2 tt :- 
+  arity T Arity, len L ArgsNb, ArgsNb >n Arity, !,
+  minus ArgsNb Arity Diff, mem.new S V1 S1,
+  eta-expand (ho.uva V1 Scope) Diff T1,
+  ho.unif (ho.uva V Scope) T1 S1 S2,
+  print "progress β big arity" {ho.pp T} "unified with" {ho.pp T1} "->" {ho.ppsubst S2}.
 
 % FO Heuristic
 % progress-beta-link T (ho.app[ho.uva V Scope | L]) S S tt :- !.
@@ -713,10 +713,12 @@ type progress-beta-link ho.tm -> ho.tm -> ho.subst -> ho.subst -> bool -> o.
 % Altri casi
 progress-beta-link _ (ho.app[ho.uva _ _ | _]) S S tt :- !.
 
-progress-beta-link T1 (ho.app[Hd|Tl]) S1 S2 ff :- !, % Hd is rigid by invariant -> Warning: Unif is not good, since T2 can be not in L-λ
-  ho.beta Hd Tl T2,
-  print "progress β not uva",
-  std.spy(ho.unif T1 T2 S1 S2). % TODO: only if not again a maybe-beta
+progress-beta-link T1 (ho.app[Hd|Tl]) S1 S2 ff :- % Hd is rigid by invariant -> Warning: Unif is not good, since T2 can be not in L-λ
+  std.do![ho.beta Hd Tl T2, not (maybe-beta T2)], !, 
+  print "progress β not uva with" {ho.pp T1} "and" {ho.pp T2},
+  std.assert!(ho.unif T1 T2 S1 S2) "Should not fail". % TODO: only if not again a maybe-beta
+
+progress-beta-link _ _ S S tt :- !.
 
 % maybe force lambda
 % progress-beta-link (ho.con _ as T1) (ho.app [ho.uva _|L]) S1 S2 ff :- !,
