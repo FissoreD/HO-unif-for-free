@@ -250,7 +250,7 @@ ppass (val T) S :- S is ":= " ^ {pp T}.
 
 % [unif T1 T2 SOld SNew] check if T1 and T2 unify looking into SOld. SNew is the final substution
 type unif tm -> tm -> subst -> subst ->  o.
-unif A B _ _ :- (var A; var B), halt "Passed var to unif".
+unif A B C _ :- (var A; var B; var C), halt "Passed var to unif".
 %unif A B _ _ :- print "## unif" {pp A} "=?=" {pp B}, fail.
 % Base cases
 unif (app L1) (app L2) S S1 :- fold2 unif L1 L2 S S1.
@@ -578,10 +578,6 @@ contract-rigid L (ho.app [H|Args]) T :-
 % not-reduce-to-name (fo.fcon _).
 % not-reduce-to-name 
 
-% type maybe-beta fo.fm -> o.
-% maybe-beta (fo.flam x\ B) :- pi x\ maybe-beta (B x).
-% maybe-beta (fo.fapp [fo.fuva V | L]) :- exists (x\ not (name x)).
-
 type locale ho.tm -> o.
 type get-scope-aux ho.tm -> list ho.tm -> o.
 get-scope-aux (ho.con _) [].
@@ -699,17 +695,28 @@ type maybe-beta ho.tm -> o.
 maybe-beta (ho.lam B) :- pi x\ maybe-beta (B x).
 maybe-beta (ho.uva _ Scope) :- split-pf Scope _ [_|_].
 
+type arity ho.tm -> nat -> o.
+arity (ho.con _) z.
+arity (ho.app L) A :- len L A.
+
 type progress-beta-link ho.tm -> ho.tm -> ho.subst -> ho.subst -> bool -> o.
-progress-beta-link _ (ho.uva _ _) S1 S1 tt :- !.
-progress-beta-link T1 T2 S1 S2 ff :- !,
-  print "progress β",
-  ho.unif T1 T2 S1 S2. % TODO: only if not again a maybe-beta
+% progress-beta-link T (ho.app[ho.uva V Scope | L]) S S2 tt :- 
+%   arity T Arity, len L ArgsNb, ArgsNb >n Arity, !,
+%   minus ArgsNb Arity Diff, mem.new S V1 S1,
+%   eta-expand (ho.uva V1 Scope) Diff T1,
+%   ho.unif (ho.uva V Scope) T1 S1 S2,
+%   print "progress β big arity" {ho.pp T} "unified with" {ho.pp T1} "->" {ho.ppsubst S2}.
 
+% FO Heuristic
+% progress-beta-link T (ho.app[ho.uva V Scope | L]) S S tt :- !.
 
-% as above
-% progress-beta-link T1 (ho.app [ho.con _|L]) S1 S2 ff :- !,
-% progress-beta-link T1 (ho.app [ho.app _|L]) S1 S2 ff :- !,
+% Altri casi
+progress-beta-link _ (ho.app[ho.uva _ _ | _]) S S tt :- !.
 
+progress-beta-link T1 (ho.app[Hd|Tl]) S1 S2 ff :- !, % Hd is rigid by invariant -> Warning: Unif is not good, since T2 can be not in L-λ
+  ho.beta Hd Tl T2,
+  print "progress β not uva",
+  std.spy(ho.unif T1 T2 S1 S2). % TODO: only if not again a maybe-beta
 
 % maybe force lambda
 % progress-beta-link (ho.con _ as T1) (ho.app [ho.uva _|L]) S1 S2 ff :- !,
@@ -732,8 +739,7 @@ solve-link-abs (ho.val (link-eta A B) as L) Keep S S1 :- !,
   progress-eta-link A B S S1 R,
   if (R = tt) (Keep = some L) (Keep = none).
 
-solve-link-abs (ho.val (link-beta A (ho.app [Hd|Tl])) as L) Keep S S1 :- !,
-  ho.beta Hd Tl B,
+solve-link-abs (ho.val (link-beta A B) as L) Keep S S1 :- !,
   print "In progress beta link for" {ho.pp A} {ho.pp B},
   progress-beta-link A B S S1 R,
   if (R = tt) (Keep = some L) (Keep = none).
