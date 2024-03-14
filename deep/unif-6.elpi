@@ -234,7 +234,8 @@ pp (app [lam F|L]) S :- !,
 pp (app L) S :- !, std.string.concat " " {std.map L pp} X, S is "(" ^ X ^ ")".
 pp (con S) S :- !.
 pp (lam F) S :- !, pi x\ std.any->string x N, pp (F x) S1, S is N ^ "\\ " ^ S1.
-pp (uva N L) S :- !, std.string.concat " " {std.map L pp} X, !, S is {ppuva N} ^ " " ^ X.
+pp (uva N []) S :- !, S is {ppuva N}.
+pp (uva N L) S :- !, std.string.concat " " {std.map L pp} X, !, S is "`" ^ {ppuva N} ^ " " ^ X ^ "'".
 pp X S :- name X, !, std.any->string X S.
 pp _ "ERROR".
 
