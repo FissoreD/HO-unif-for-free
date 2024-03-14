@@ -359,6 +359,16 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- pri
     pr ok "λx.λy.(X x a y) = λx.λy.a",
 ] ["λx.λy.λz.y"].
 
+@sokl 35 [
+    pr ok "X = λx.λy.λz.x",
+    pr ok "X a = Y"
+] ["λx.λy.λz.x", "λx.λy.a"].
+
+@sokl 35 [
+    pr ok "X = λx.λy.λz.x",
+    pr ok "X f g h a b = Y"
+] ["λx.λy.λz.x", "f a b"].
+
 % @okl 22300 [
 %   pr ok ((g , (λx. λy. (Y  y  x])]) X 
 %   % pr ok ((g , f]) X 
