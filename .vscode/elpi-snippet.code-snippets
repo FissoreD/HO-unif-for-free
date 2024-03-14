@@ -1,0 +1,26 @@
+{
+	"lambda": {
+		"scope": "elpi",
+		"prefix": "lambda",
+		"body": [
+			"λ"
+		],
+		"description": "lambda"
+	},
+	"beta": {
+		"scope": "elpi",
+		"prefix": "beta",
+		"body": [
+			"β"
+		],
+		"description": "beta"
+	},
+	"eta": {
+		"scope": "elpi",
+		"prefix": "eta",
+		"body": [
+			"η"
+		],
+		"description": "eta"
+	}
+}
