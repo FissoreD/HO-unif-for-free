@@ -194,6 +194,7 @@ type mk-app fm -> list fm -> fm -> o.
 mk-app T L S :- beta T L S.
 
 type eta-contract fm -> fm -> o.
+eta-contract X _ :- var X, halt "Eta-contract first args is flexible".
 eta-contract (fcon X) (fcon X).
 eta-contract (fapp L) (fapp L1) :- forall2 eta-contract L L1.
 eta-contract (flam F) T :- contract [] (flam F) T.
@@ -434,6 +435,7 @@ assmt-deref S (val T) (val R) :-
 
 
 type eta-contract tm -> tm -> o.
+eta-contract X _ :- var X, halt "Eta contract first arg is flexible".
 eta-contract (con X)   (con X).
 eta-contract (app L)   (app L1)   :- forall2 eta-contract L L1.
 eta-contract (lam F)   T          :- contract [] (lam F) T.
