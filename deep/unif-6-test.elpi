@@ -37,14 +37,14 @@ prolog [triple ok L R|Us] Links Links2 H H3 D :- !, std.do! [
   !,
   printC "next problem?",
   prolog Us Links1 Links2 H2 H3 D.
-prolog [triple (error "unif") L R|_] Links Links H H2 D :-
+prolog [triple (error X) L R|_] Links Links H H2 D :-
   print "## unif (error)" {ho.pp L} "=" {ho.pp R},
   if (ho.unif L R H H1)
      (print "## After unif" {ho.pp L} "=" {ho.pp R} "subst is" {ho.ppsubst H1},
       print "## Links are" {comp.pplinks {comp.deref-links H1 Links}},
       printC "solve links?",
-      if (comp.solve-links-fixpoint Links _ H1 H2) (print "\n\n\nXXXXXXXXXXXXXX LATE FAILURE? XXXXXXXXXXXXXXXXXXXXX\n\n\n", D = ok) (D = error "stop"))
-     (H2 = H, D = error "stop").
+      if (comp.solve-links-fixpoint Links _ H1 H2) (print "\n\n\nXXXXXXXXXXXXXX LATE FAILURE? XXXXXXXXXXXXXXXXXXXXX\n\n\n", D = error X) (D = error X))
+     (H2 = H, D = error X).
 
 type decompile-subst
   comp.mappings -> 
@@ -94,7 +94,7 @@ type do-read o.
 do-read.
 
 type printC string -> o.
-printC A :- X = "@@@@@@@@@@@@@@@@@@@@@@@@@", print X A X, (not do-read; @read).
+printC A :- X = "@@@@@@@@@@@@@@@@@@@@@@@@@", print X A X, (not do-read; @read), !.
 
 type ptest test fo.fm -> string -> o.
 ptest (test _ (pr Pbs (some Sol))) S :-
@@ -126,7 +126,7 @@ xtest (test N (pr LR Sol) as Test) :- std.do![
   print "## After compilation the mappings are" {comp.ppmappings Map2},
   printC "continue to prolog?",
   prolog Uproblems Links2 Links1 HO_Subst1 HO_Subst2 D,
-  if (D = ok) (
+  if2 (D = ok) (
     print "## After prolog HO subst is" {ho.ppsubst HO_Subst2},
     print "## After prolog links are" {comp.pplinks Links1},
     print "## After prolog mappings are" {comp.ppmappings Map2},
@@ -137,7 +137,10 @@ xtest (test N (pr LR Sol) as Test) :- std.do![
     validate-solution LR Sol1,
     printC "continue to check solution vs expected?",
     check-sol Sol Sol1
-  ) (print "Prolog failed at the expected step"),
+  )  
+    (D = error "decompl")
+    (not (decompile-subst Map2 Links1 HO_Subst2 FO_Subst Sol1), print "Fail at decomp as expected")
+    (print "Prolog failed at the expected step"),
 
 ].
 
@@ -145,7 +148,7 @@ type parse-triple pair diagnostic string -> triple diagnostic fo.fm fo.fm -> o.
 parse-triple (pr D S) (triple D A B) :- parse-eq S A B.
 
 macro @sok N SE SS :- (declare-test xtest ptest (test N (pr [triple ok X Y] (some S))) :- print N, parse-eq SE X Y, std.map SS parse S).
-macro @sko N SE :- (declare-test xtest ptest (test N (pr [triple (error _) X Y] none)) :- print N, parse-eq SE X Y).
+macro @sko N SE :- (declare-test xtest ptest (test N (pr [triple (error "unif") X Y] none)) :- print N, parse-eq SE X Y).
 macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- print N, std.map SX parse-triple X, std.map SS parse S).
 % macro @okl N E S :- (declare-test xtest ptest (test N (pr E (some S)))).
 
@@ -379,16 +382,16 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- pri
 
 @sokl 40 [
   pr ok "λy.(X y a b) = λy.a",
-  pr (error _) "X = a",
+  pr (error "unif") "X = a",
 ] ["λx.λy.λz.y"].
 
 @sokl 41 [
-  pr (error _) "Y = (λx.(Y x)) a"
+  pr (error "unif") "Y = (λx.(Y x)) a"
 ] [].
 
-% @sokl 410 [
-%   pr (error _) "λx.(X b x) = λx.(X a x)"
-% ] [].
+@sokl 410 [
+  pr (error "decompl") "λx.(X b x) = λx.(X a x)"
+] [].
 
 @sokl 42 [
   pr ok "λy.(X y) = λx. λy.(X y x)"
