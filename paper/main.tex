@@ -398,25 +398,28 @@ and we assume that the unification of our meta language is correct:
 \end{gather}
 
 \newcommand{\C}[4]{\ensuremath{\langle #1 \rangle}\mapsto(#2,#3,#4)}
-\newcommand{\D}[3]{\ensuremath{\langle #1,#2 \rangle^{-1}\mapsto #3}}
+\newcommand{\D}[4]{\ensuremath{\langle #1,#2,#3 \rangle^{-1}\mapsto #4}}
 
 We illustrate a compilation $\C{s}{t}{m}{l}$ that
 maps a term $s$ in \Fo{} to a term $t$ in \Ho, a variable mapping $m$ and
 list of links $l$.
 The variable map connects unification variables in \Ho with variables
 in \Fo{} and is used to ``decompile'' the assignment,
-$\D{\sigma}{m}{\rho}$. Links represent problematic sub-terms which
+$\D{\sigma}{m}{l}{\rho}$. Links represent problematic sub-terms which
 are linked to the unification variable that stands in their place in the
 compiled term. These links are checked for or progress XXX improve....
 
-We represent a logic program run for a goal g as
-a list steps $p$ of length $\mathcal{N}$ each made of a unification problem
-between terms $\mathcal{S}_{p_l}$ and $\mathcal{S}_{p_r}$
-taken from the set of all terms $\mathcal{S}$.
-If a rule is used
-twice in a run we make two copies of the terms (the predicates)
-occurring in the head or premises. So a run is the conjunction of all
-unification problems, where $\rho_0$ is the empty substitution
+We represent a logic program \emph{run} in \Fo as
+a list \emph{steps} $p$ of length $\mathcal{N}$. Each made of a
+unification problem between terms $\mathcal{S}_{p_l}$ and
+$\mathcal{S}_{p_r}$ taken from the set of all terms $\mathcal{S}$.
+The composition of these steps starting from the
+empty substitution $\rho_0$ produces the final
+substitution $\rho_\mathcal{N}$.
+\footnote{If the same rule is used multiple time in a run we
+just consider as many copies as needed of the terms composing the
+rules, with fresh unification variables each time}
+The initial here $\rho_0$ is the empty substitution
 %
 \newcommand{\solve}{\ensuremath{\mathrm{check}}}
 \newcommand{\fstep}{\ensuremath{\mathrm{fstep}}}
@@ -424,40 +427,60 @@ unification problems, where $\rho_0$ is the empty substitution
 \newcommand{\frun}{\ensuremath{\mathrm{frun}}}
 \newcommand{\hrun}{\ensuremath{\mathrm{hrun}}}
 \newcommand{\stepF}[4]{\ensuremath{\fstep(#1,#2,#3) \mapsto #4}}
+\newcommand{\stepFD}[5]{%
+\ensuremath{#3 #1_{#2_l} \Uo #3 #1_{#2_r} \mapsto #4 \land #5 = #3 \cup #4}}
 \newcommand{\stepH}[5]{\ensuremath{\hstep(#1,#2,#3,#4) \mapsto #5}}
-\newcommand{\stepFD}[4]{\ensuremath{#3 #1_{#2_l} \Uo #3 #1_{#2_r} \mapsto #4}}
 \newcommand{\stepHD}[6]{\ensuremath{%
-#3 #1_{#2_l} \Ue #3 #1_{#2_r} \mapsto #4 \land \solve(#6,#4) \mapsto #5}}
+#3 #1_{#2_l} \Ue #3 #1_{#2_r} \mapsto #4 \land \solve(#6,#3 \cup #4) \mapsto #5}}
 \newcommand{\runF}[3]{\ensuremath{\frun(#1,#2) \mapsto #3_{#2}}}
+\newcommand{\runFD}[2]{\ensuremath{%
+\bigwedge_{p = 1}^{#2} \stepF{#1}{p}{\rho_{p-1}}{\rho_{p}}}}
 \newcommand{\runH}[3]{\ensuremath{\hrun(#1,#2) \mapsto #3_{#2}}}
-\newcommand{\runFD}[2]{\ensuremath{\bigwedge_{p = 1}^{#2} \stepF{#1}{p}{\rho_{p-1}}{\rho_{p}}}}
-\newcommand{\runHD}[3]{\ensuremath{\bigwedge_{p = 1}^{#2} \stepH{#1}{p}{\sigma_{p-1}}{\sigma'}{\sigma_{p}}{#3}}}
+\newcommand{\runHD}[3]{\ensuremath{%
+\bigwedge_{p = 1}^{#2} \stepH{#1}{p}{\sigma_{p-1}}{#3}{\sigma_{p}}}}
 \newcommand{\deff}{\ensuremath{\stackrel{{\scriptscriptstyle def}}{=\!=\!\!\!=}}}
 $$
 \begin{array}{l}
-\stepF{\mathcal{S}}{p}{\rho}{\rho'}
+\stepF{\mathcal{S}}{p}{\rho}{\rho''}
 \deff
-\stepFD{\mathcal{S}}{p}{\rho}{\rho'}\\
+\stepFD{\mathcal{S}}{p}{\rho}{\rho'}{\rho'}\\
 \runF{\mathcal{S}}{\mathcal{N}}{\rho}
 \deff
 \runFD{\mathcal{S}}{\mathcal{N}}
 \end{array}
 $$
 
-We simulate this run as where $\sigma_0$ is the empty substitution
+We simulate each run in \Fo with a run in \Ho as follows.
+Note that $\sigma_0$ is the empty substitution.
 $$
 \begin{array}{l}
 \stepH{\mathcal{T}}{p}{\sigma}{\mathbb{L}}{\sigma''} \deff\\
   \qquad\stepHD{\mathcal{T}}{p}{\sigma}{\sigma'}{\sigma''}{\mathbb{L}}\\
 \runH{\mathcal{S}}{\mathcal{N}}{\rho} \deff \\
   \qquad \mathcal{T} \times \mathbb{M} \times \mathbb{L} = \{ (t_j,m_j,l_j) | s_j \in \mathcal{S}, \C{s_j}{t_j}{m_j}{l_j} \}\\
-  \qquad \runFD{\mathcal{S}}{\mathcal{N}}{\mathbb{L}}\\
-  \qquad \D{\sigma_{\mathcal{N}}}{\mathbb{M}}{\rho_{\mathcal{N}}}
+  \qquad \runHD{\mathcal{T}}{\mathcal{N}}{\mathbb{L}}\\
+  \qquad \D{\sigma_{\mathcal{N}}}{\mathbb{M}}{\mathbb{L}}{\rho_{\mathcal{N}}}
 \end{array}
 $$
 
+\noindent
+Here \hstep is made of two sub-steps: a call to \Ue (on the compiled
+terms) and a call to \solve on the set of links. We claim the following:
+
+\begin{proposition}[Simulation]\label{prop:sumul}
+$\forall \mathcal{S}, \forall \mathcal{N}$
+$$
+  \runF{\mathcal{S}}{\mathcal{N}}{\rho}
+  \Leftrightarrow
+  \runH{\mathcal{S}}{\mathcal{N}}{\rho}
+$$
+\end{proposition}
+
+\noindent
+That is, the two executions give the same result. Moreover:
+
 \begin{proposition}[Simulation fidelity]\label{prop:fidelity}
-In the context of \hrun, we have that
+In the context of~ \hrun, we have that
 $\forall p \in 1 \ldots \mathcal{N}$
 $$
 \stepF{\mathcal{S}}{p}{\rho_{p-1}}{\rho_p}
@@ -465,14 +488,19 @@ $$
 \stepH{\mathcal{T}}{p}{\sigma_{p-1}}{\mathbb{L}}{\sigma_p}
 $$
 \end{proposition}
+\noindent
+Note that this property guarantees that a failure in the \Fo run
+is matched by a failure
+in \Ho
+\emph{at the same step}.
 
-\newcommand{\maybebeta}{\ensuremath{\stackrel{?}{\beta}}\xspace}
+\newcommand{\maybebeta}{\ensuremath{\beta}\xspace}
 \begin{definition}[\maybebeta]
   $t$ is in \maybebeta if it contains a subterm matching the
   pattern \elpiIn{app[uva _ _|_]}
 \end{definition}
 
-\newcommand{\maybeeta}{\ensuremath{\stackrel{?}{\eta}}\xspace}
+\newcommand{\maybeeta}{\ensuremath{\eta}\xspace}
 \begin{definition}[\maybeeta]
   $t$ is in \maybeeta if it contains a subterm matching the
   pattern \elpiIn{lam x\ .. lam y\ app[con _,x, ...,uva _ [y]]}\\
@@ -486,25 +514,34 @@ $$
 
 We write $\sigma\mathcal{T} = \{ \sigma t_i | t_i \in \mathcal{T}\}$.
 
-\begin{proposition}[Normal form preservation]
+\begin{proposition}[Normal form preservation]\label{prop:nf}
   $norm(\sigma\mathcal{T}) \land \mathrm{step'}(p,\sigma) \mapsto \sigma'
   \Rightarrow norm(\sigma\mathcal{T})$   
 \end{proposition}
 
+TODO: check if this is also true for $\rho$ after decomp.
+In particular this guaarantees that is we start from normal terms
+we never introduce eta-long or non-beta-normal terms. This is required in
+order to show the fidelity, since there terms would not be considered
+as equal by \Ue.
+
 If we focus on a single unification problem, that is
-$\mathcal{S} = \{ s_1, s_2 \}$ and 
-$\C{s_1}{t_1}{m_1}{l_1}$ and $\C{s_2}{t_2}{m_2}{l_2}$ we write
+$\mathcal{S} = \{ s_1, s_2 \}$ we can define \Uo as follows:
 $$
 \begin{array}{l}
-s_1 \Uo s_2 \mapsto \rho \stackrel{def}{=}\\
+s_1 \Uo s_2 \mapsto \rho \deff\\
+\quad\C{s_1}{t_1}{m_1}{l_1} \land \C{s_2}{t_2}{m_2}{l_2}\\
 \quad    t_1 \Ue t_2 \mapsto \sigma' \land
-    \solve~(\{l_1,l_2\},\sigma') \mapsto \sigma'' \land
-    \D{\sigma''}{\{l_1,l_2\}}{\rho}
+    \solve~(\{l_1,l_2\},\sigma') \mapsto \sigma'' \land\\
+\quad \D{\sigma''}{\{m_1,m_2\}}{\{l_1,l_2\}}{\rho}
 \end{array}
 $$
 \noindent
-We write $s \in \llambda$ if all unif variables in
-$s$ are applied to distinct bound variables.
+Note that proposition \ref{prop:nf} does not hold in this case since
+decompilation can introduce terms in \maybebeta or \maybebeta. Nevertheless
+\Uo has the following properties (where we
+write $s \in \llambda$ if all unif variables in
+$s$ are applied to distinct bound variables):
 
 \begin{proposition}[Properties of \Uo{}]
 \begin{gather}
@@ -552,14 +589,33 @@ Property \ref{prop:fidelity} is also relevant to use \Uo for logic programming.
 In particular we want failures to occur as early as possible, so want
 the check phase to take place immediately after \Ue, and fail if need be.
 
-\paragraph{The intuition} is that a term s is compiled in a term t where any
-``problematic'' sp is replaced by a hole hp and an accessory
-(suspended) unification problem tp \Ue hp (called link) where
-tp is the compiled of sp. 
-On t \Ue is well behaved (captures \Eo), and check solves links when it can by
-using \Ue or keeps them suspended until the decompilation phase.
-check also detects occur checks trough the suspended unif problems
+\subsection{The intuition in a nutshell}
+A term $s$ is compiled in a term $t$ where any
+``problematic'' subterm $tp$ is replaced by a unification variable
+$hp$ and an accessory
+(suspended) unification problem $(hp \Ue tp) \in \mathcal{L}$.
+Since $t \in \llambda$, \Ue is well behaved (captures \Eo).
+
+Problematic terms are terms where the head constructor may
+change if instantiated, that is, they are in \maybebeta or \maybeeta.
+On these terms \Ue is weak/incorrect.
+\begin{itemize}
+\item \elpiIn{app[F,con "a"]} may be \Eo to \elpiIn{con "a"}
+\item \elpiIn{lam x\lam y\app[F,y,x]} may be \Eo to \elpiIn{con "f"} 
+\end{itemize}
+
+\noindent
+\solve{} solves links when they are no more ``problematic'', for example
+in the examples above if \elpiIn{F} materializes, or if the
+other side of the link forces a commit. EXPLAIN.
+In these cases the problems are ``resumed'' by using \Ue,
+otherwise they are kept suspended until the
+decompilation phase.
+\solve also detects occur checks trough the suspended unif problems
 in order to grant \cref{prop:fidelity}.
+
+Note tha the first case is outside $\llambda$ but is frequent in practice
+so we handle it. It is also what prop 5 is about.
 
 \section{Alternative encodings and related work}
 
