@@ -443,18 +443,22 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- pri
   pr (error "unif") "X = Y X",
 ] [].
 
+% NOTE: here we fail by occur check between eta and beta
 @sokl 49 [
   pr (error "unif") "λx.(X x) = Y X",
 ] [].
 
+% NOTE: here the beta is forced in the decompl
 @sokl 53 [
   pr ok "X = Y Z"
 ] ["(Y Z)"].
 
+% NOTE: here we have eta = beta
 @sokl 530 [
   pr ok "λx.(X x) = Y Z"
 ] ["(Y Z)"].
 
+% NOTE: here X is deduced by beta reducing Y and Z set in the next unif pb
 @sokl 54 [
   pr ok "X = Y Z",
   pr ok "Y = λx.x",
@@ -469,15 +473,3 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- pri
 
 /* Non passa in elpi (x\ X x) = A B */
 /*     Passa in elpi X = A B        */
-
-% @okl 22300 [
-%   pr ok ((g , (λx. λy. (Y  y  x])]) X 
-%   % pr ok ((g , f]) X 
-% ].
-% (x\y\Y y x) = Z, g Z = X.
-% X = g c0 \ c1 \ Y c1 c0
-% Z = c0 \ c1 \ Y c1 c0
-% @okl 22001 [
-%   pr ok (λx. λy. (X  y  x]) Y 
-%   pr ok ((g , @Y]) Z,
-% ].
