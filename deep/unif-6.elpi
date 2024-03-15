@@ -718,6 +718,25 @@ type arity ho.tm -> nat -> o.
 arity (ho.con _) z.
 arity (ho.app L) A :- len L A.
 
+type occur-check-err ho.tm -> ho.tm -> ho.subst -> o.
+occur-check-err A _ _ :- var A, halt "Invalid call to occur-check-err".
+occur-check-err (ho.con _) _ _ :- !.
+occur-check-err (ho.app _) _ _ :- !.
+occur-check-err (ho.lam _) _ _ :- !.
+occur-check-err (ho.uva Ad _) T S :-
+  not (ho.not_occ Ad S T),
+  print "progress β fail of occur-check between" T T2.
+
+type progress-beta-link-aux ho.tm -> ho.tm -> ho.subst -> ho.subst -> bool -> o.
+progress-beta-link-aux (ho.uva Ad _ as T) T2 S1 S1 _ :- occur-check-err T T2 S1, !, fail.
+progress-beta-link-aux T1 T2 S1 S2 ff :- 
+  not (maybe-beta T2), !, % TODO: maybe-beta is not very well implemented
+  print "progress β not uva with" {ho.pp T1} "and" {ho.pp T2},
+  ho.unif T1 T2 S1 S2.
+progress-beta-link-aux _ _ S S tt :- !, print "No β progress2".
+
+% a sx non c'è mai un app[uva _ _ | _] per costruzione
+% a dx abbiamo sempre app[uva _ N | L] dove N è nel PF e L no
 type progress-beta-link ho.tm -> ho.tm -> ho.subst -> ho.subst -> bool -> o.
 progress-beta-link T (ho.app[ho.uva V Scope | L]) S S2 tt :- 
   arity T Arity, len L ArgsNb, ArgsNb >n Arity, !,
@@ -726,28 +745,16 @@ progress-beta-link T (ho.app[ho.uva V Scope | L]) S S2 tt :-
   ho.unif (ho.uva V Scope) T1 S1 S2,
   print "progress β big arity" {ho.pp T} "unified with" {ho.pp T1} "->" {ho.ppsubst S2}.
 
-% FO Heuristic
-% progress-beta-link T (ho.app[ho.uva V Scope | L]) S S tt :- !.
+% se a dx, abbiamo una uva allora la beta non si abblica: potremmo anche fallire 
+% direttamente, è quello che coq e elpi farebbero (coq farebbe la FO approx)
+progress-beta-link (ho.uva Ad _ as T) (ho.app[ho.uva _ _ | _] as T2) S1 _ _ :-
+  occur-check-err T T2 S1, !, fail.
 
-% Altri casi
-progress-beta-link _ (ho.app[ho.uva _ _ | _]) S S tt :- !, print "No β progress".
+progress-beta-link _ (ho.app[ho.uva _ _ | _]) H H tt :- !, print "No β progress1".
 
-progress-beta-link T1 (ho.app[Hd|Tl]) S1 S2 ff :- % Hd is rigid by invariant -> Warning: Unif is not good, since T2 can be not in L-λ
-  std.do![ho.beta Hd Tl T2, not (maybe-beta T2)], !, 
-  print "progress β not uva with" {ho.pp T1} "and" {ho.pp T2},
-  std.assert!(ho.unif T1 T2 S1 S2) "Should not fail". % TODO: only if not again a maybe-beta
-
-progress-beta-link _ _ S S tt :- !, print "No β progress".
-
-% maybe force lambda
-% progress-beta-link (ho.con _ as T1) (ho.app [ho.uva _|L]) S1 S2 ff :- !,
-
-% FO heuristic
-% progress-beta-link (ho.app _ as T1) (ho.app [ho.uva _|L]) S1 S2 ff :- !,
-
-% maybe force lambda
-% progress-beta-link (ho.lam _ as T1) (ho.app [ho.uva _|L]) S1 S2 ff :- !,
-
+% Note: Hd is rigid by construction
+progress-beta-link T1 (ho.app[Hd|Tl]) S1 S2 B :- 
+  ho.beta Hd Tl T2, progress-beta-link-aux T1 T2 S1 S2 B.
 
 type solve-link-abs linkabs -> option linkabs -> ho.subst -> ho.subst -> o.
 solve-link-abs (ho.abs X) R H H1 :- 
@@ -768,7 +775,6 @@ solve-link-abs (ho.val (link-beta A B) as L) Keep S S1 :- !,
 solve-link-abs (ho.val (link-beta _ T)) _ _ _ :- !,
   halt "Error beta" T.
 
-solve-link-abs L _ _ _ :- fatal "solve-link-abs" L.
 % % classic beta: the head of the application is rigid
 % solve-links [link-beta V Hd_ T|L1] L2 S S2 :-
 %   % if Hd is set then beta (note assmt-deref does the beta-redex)

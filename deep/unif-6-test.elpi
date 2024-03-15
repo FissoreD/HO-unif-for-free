@@ -409,8 +409,42 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- pri
   pr ok "λy.(X y) = λx. λy.(X x y)"
 ] ["Y"].
 
+@sokl 50 [
+  pr ok "λx.(X x) = Y Z",
+  pr ok "X = a",
+  pr ok "Y = λx.Z"
+] ["a", "λx.a", "a"].
+
+@sokl 51 [
+  pr ok "Y = λx.Z",
+  pr ok "X = a",
+  pr ok "λx.(X x) = Y Z", % Note: in decompl, the list of link is empty
+] ["a", "λx.a", "a"].
+
 @sokl 44 [
   pr (error "unif") "X = λx.(f X (Y x))"
+] [].
+
+@sokl 45 [
+  pr (error "unif") "λx.(X x) = λx.λy.(f X (Y x) y)"
+] [].
+
+@sokl 46 [
+  pr ok             "λx.(X x) = Y",
+  pr (error "unif") "Y = λx.λy.(f X (Y x) y)"
+] [].
+
+@sokl 47 [
+  pr ok "λx.(X x) = Y",
+  pr ok "Y = λx.λy.(X y x)"
+] ["λx.λy.Z", "λx.λy.Z"].
+
+@sokl 48 [
+  pr (error "unif") "X = Y X",
+] [].
+
+@sokl 49 [
+  pr (error "unif") "λx.(X x) = Y X",
 ] [].
 
 % @okl 22300 [
