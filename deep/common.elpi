@@ -133,10 +133,17 @@ type declare-test (test A -> o) -> (test A -> string -> o) -> test A -> o.
 kind triple type -> type -> type -> type.
 type triple A -> B -> C -> triple A B C.
 
+type no-duplicated-test int -> list o -> o.
+no-duplicated-test N L :-
+  mem L (declare-test _ _ (test N _)),
+  halt "Duplicated test with index" N.
+no-duplicated-test _ _.
+
 type runtests list o -> list int -> o.
 runtests [] [] :- print "ALL GOOD!".
 runtests [] F :- print "SOME TEST FAIL:" F, fail.
 runtests [declare-test F PP (test N _ as T) |TS] ERR :- print "\n-----" N "-------\n\n\n",
+  no-duplicated-test N TS,
   PP T Tstr,
   if (F T) (print "ok" Tstr, runtests TS ERR)
            (print "\n<<<<<\nko" Tstr "\n>>>>>\n", runtests TS [N|ERR]).
