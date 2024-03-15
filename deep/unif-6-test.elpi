@@ -447,6 +447,25 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- pri
   pr (error "unif") "λx.(X x) = Y X",
 ] [].
 
+@sokl 53 [
+  pr ok "X = Y Z"
+] ["(Y Z)"].
+
+@sokl 54 [
+  pr ok "X = Y Z",
+  pr ok "Y = λx.x",
+  pr ok "Z = a",
+] ["a", "λx.x", "a"].
+
+@sokl 55 [
+  pr ok "λx.(X x) = Y Z",
+  pr ok "Y = λx.x",
+  pr ok "Z = a",
+] ["a", "λx.x", "a"].
+
+/* Non passa in elpi (x\ X x) = A B */
+/*     Passa in elpi X = A B        */
+
 % @okl 22300 [
 %   pr ok ((g , (λx. λy. (Y  y  x])]) X 
 %   % pr ok ((g , f]) X 
