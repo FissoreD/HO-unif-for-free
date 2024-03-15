@@ -387,7 +387,7 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- pri
 ] [].
 
 % @sokl 410 [
-%   pr (ok) "λx.(X b x) = λx.(X a x)"
+%   pr (error _) "λx.(X b x) = λx.(X a x)"
 % ] [].
 
 @sokl 42 [
