@@ -122,7 +122,7 @@ ll ["X"|L] L (fuva (mem.addr z)).
 ll ["Y"|L] L (fuva (mem.addr (s z))).
 ll ["Z"|L] L (fuva (mem.addr (s (s z)))).
 ll ["W"|L] L (fuva (mem.addr (s (s (s z))))).
-ll [ C |_] L _ :- rex.match "[A-Z]" C, halt "Parser:" C "is not parsed as a knwon variable".
+ll [ C |_] _ _ :- rex.match "[A-Z]" C, halt "Parser:" C "is not parsed as a knwon variable".
 ll ["(","@"|L] L1 T :- !, llapp L L1 [] A, if (A = [T]) true (T = fapp A).
 ll ["("|L] L1 T :- llapp L L1 [] A, if (A = [T]) true (T = fapp A).
 ll ["λ",V,"."|L] L1 (flam X) :- pi x\ (pi L\ ll [V|L] L x :- !) => ll L L1 (X x).
