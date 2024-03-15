@@ -55,23 +55,7 @@ type decompile-subst
   o.
 decompile-subst Mappings Links H F F1 :-
   comp.decompl Mappings Links H F F1.
-
-
-type is-nf fo.fm -> o.
-is-nf (fo.fcon _).
-is-nf (fo.fuva _).
-is-nf (fo.fapp [fo.flam _ | _]) :-
-  halt "There is a beta expansion in the input".
-is-nf (fo.fapp L) :- std.forall L is-nf.
-is-nf (fo.flam B) :- 
-  pi x\ sigma L\ fo.fapp L = B x, std.appendR _ [x] L, 
-  halt "There is an eta exapansion in the input".
-is-nf (fo.flam B) :- pi x\ is-nf x => is-nf (B x).
-
-type is-nf-goal list (triple diagnostic fo.fm fo.fm) -> o.
-is-nf-goal [].
-is-nf-goal [triple _ A B | TL] :-
-  is-nf A, is-nf B, is-nf-goal TL.
+decompile-subst _ _ _ _ _ :- !, print "Fail decompl-subst", fail.
 
 type build-fo-subst list (triple diagnostic fo.fm fo.fm) -> fo.subst -> fo.subst -> o.
 build-fo-subst [] L L.
@@ -401,6 +385,10 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- pri
 @sokl 41 [
   pr (error _) "Y = (λx.(Y x)) a"
 ] [].
+
+% @sokl 410 [
+%   pr (ok) "λx.(X b x) = λx.(X a x)"
+% ] [].
 
 @sokl 42 [
   pr ok "λy.(X y) = λx. λy.(X y x)"

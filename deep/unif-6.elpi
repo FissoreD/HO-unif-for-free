@@ -726,14 +726,14 @@ progress-beta-link T (ho.app[ho.uva V Scope | L]) S S2 tt :-
 % progress-beta-link T (ho.app[ho.uva V Scope | L]) S S tt :- !.
 
 % Altri casi
-progress-beta-link _ (ho.app[ho.uva _ _ | _]) S S tt :- !.
+progress-beta-link _ (ho.app[ho.uva _ _ | _]) S S tt :- !, print "No β progress".
 
 progress-beta-link T1 (ho.app[Hd|Tl]) S1 S2 ff :- % Hd is rigid by invariant -> Warning: Unif is not good, since T2 can be not in L-λ
   std.do![ho.beta Hd Tl T2, not (maybe-beta T2)], !, 
   print "progress β not uva with" {ho.pp T1} "and" {ho.pp T2},
   std.assert!(ho.unif T1 T2 S1 S2) "Should not fail". % TODO: only if not again a maybe-beta
 
-progress-beta-link _ _ S S tt :- !.
+progress-beta-link _ _ S S tt :- !, print "No β progress".
 
 % maybe force lambda
 % progress-beta-link (ho.con _ as T1) (ho.app [ho.uva _|L]) S1 S2 ff :- !,
@@ -1023,14 +1023,15 @@ link-abs-same-lhs (ho.abs F) B :- pi x\ link-abs-same-lhs (F x) B.
 link-abs-same-lhs A (ho.abs G) :- pi x\ link-abs-same-lhs A (G x).
 link-abs-same-lhs (ho.val (link-eta (ho.uva N _) _)) (ho.val (link-eta (ho.uva N _) _)).
 
-type decompl-eta-aux linkabs -> ho.subst -> ho.subst -> list ho.tm -> o.
-decompl-eta-aux (ho.val (link-eta T1 T2)) H H1 _ :- print "Start decompl of" {ho.pp T1} "and" {ho.pp T2} "in" {ho.ppsubst H}, ho.unif T1 T2 H H1.
-decompl-eta-aux (ho.abs B) H H1 L :- pi x\ decompl-eta-aux (B x) H H1 [x|L].
+type decompl-links-aux linkabs -> ho.subst -> ho.subst -> list ho.tm -> o.
+decompl-links-aux (ho.val (link-eta T1 T2)) H H1 _ :- print "Start decompl-η of" {ho.pp T1} "and" {ho.pp T2} "in" {ho.ppsubst H}, ho.unif T1 T2 H H1.
+decompl-links-aux (ho.val (link-beta T1 T2)) H H1 _ :- print "Remaining β link in links :- unif fails", fail.
+decompl-links-aux (ho.abs B) H H1 L :- pi x\ decompl-links-aux (B x) H H1 [x|L].
 
-type decompl-eta links -> links -> ho.subst -> ho.subst -> o.
-decompl-eta [] [] H H.
-decompl-eta [link-abs Abs| Links] L H H2 :- decompl-eta-aux Abs H H1 [], !, decompl-eta Links L H1 H2.
-decompl-eta [Hd | Tl] [Hd | L] H H1 :- decompl-eta Tl L H H1.
+type decompl-links links -> links -> ho.subst -> ho.subst -> o.
+decompl-links [] [] H H.
+decompl-links [link-abs Abs| Links] L H H2 :- decompl-links-aux Abs H H1 [], !, decompl-links Links L H1 H2.
+% decompl-links [Hd | Tl] [Hd | L] H H1 :- decompl-links Tl L H H1.
 
 % Invariant: links are only on the form (link VO VM Arity), each VO appears once and each VM appears once
 type decompl-mapping mappings -> mappings -> ho.subst -> fo.subst -> fo.subst -> o.
@@ -1086,12 +1087,13 @@ complete-link H [some T0 | Tl] L1 L3 F1 F3 :-
 
 type decompl mappings -> links -> ho.subst -> fo.subst -> fo.subst -> o.
 decompl Map1 L HO FO FO2 :- std.do! [
-  decompl-eta L L1_ HO HO1,                                                          % L1 conaints no link-eta (it may contain beta)
+  decompl-links L L1_ HO HO1, !,                                                          % L1 conaints no link-eta (it may contain beta),
   print "# After decompl-eta, subst is" {ho.ppsubst HO1} "with links" {pplinks L1_},
   complete-link HO1 HO1 Map1 Map2 FO FO1,                                            % Foreach VM not mapped to OL, we build a link
   print "# After complete-link, mappings are" {ppmappings Map2} "with ho-subst" {ho.ppsubst HO1}, 
   decompl-mapping Map2 Map2 HO1 FO1 FO2,
 ].
+decompl _ _ _ _ _ :- !, print "Fail decompl", fail.
 
 type test-hope-eta-1 o.
 type test-hope-eta-2 o.
