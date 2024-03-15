@@ -419,38 +419,51 @@ occurring in the head or premises. So a run is the conjunction of all
 unification problems, where $\rho_0$ is the empty substitution
 %
 \newcommand{\solve}{\ensuremath{\mathrm{check}}}
-\newcommand{\step}[4]{\ensuremath{\mathrm{step}(#1,#2,#3) \mapsto #4}}
-\newcommand{\stepD}[4]{\ensuremath{#3 #1_{#2_l} \Uo #3 #1_{#2_r} \mapsto #4}}
-\newcommand{\runD}[2]{\ensuremath{\bigwedge_{p = 1 \ldots #2} \step{#1}{p}{\rho_{(p-1)}}{\rho_{p}}}}
-\newcommand{\run}[2]{\ensuremath{\mathrm{run}(#1,#2)}}
+\newcommand{\fstep}{\ensuremath{\mathrm{fstep}}}
+\newcommand{\hstep}{\ensuremath{\mathrm{hstep}}}
+\newcommand{\frun}{\ensuremath{\mathrm{frun}}}
+\newcommand{\hrun}{\ensuremath{\mathrm{hrun}}}
+\newcommand{\stepF}[4]{\ensuremath{\fstep(#1,#2,#3) \mapsto #4}}
+\newcommand{\stepH}[5]{\ensuremath{\hstep(#1,#2,#3,#4) \mapsto #5}}
+\newcommand{\stepFD}[4]{\ensuremath{#3 #1_{#2_l} \Uo #3 #1_{#2_r} \mapsto #4}}
+\newcommand{\stepHD}[6]{\ensuremath{%
+#3 #1_{#2_l} \Ue #3 #1_{#2_r} \mapsto #4 \land \solve(#6,#4) \mapsto #5}}
+\newcommand{\runF}[3]{\ensuremath{\frun(#1,#2) \mapsto #3_{#2}}}
+\newcommand{\runH}[3]{\ensuremath{\hrun(#1,#2) \mapsto #3_{#2}}}
+\newcommand{\runFD}[2]{\ensuremath{\bigwedge_{p = 1}^{#2} \stepF{#1}{p}{\rho_{p-1}}{\rho_{p}}}}
+\newcommand{\runHD}[3]{\ensuremath{\bigwedge_{p = 1}^{#2} \stepH{#1}{p}{\sigma_{p-1}}{\sigma'}{\sigma_{p}}{#3}}}
+\newcommand{\deff}{\ensuremath{\stackrel{{\scriptscriptstyle def}}{=\!=\!\!\!=}}}
 $$
-\step{\mathcal{S}}{p}{\rho}{\rho'} := \stepD{\mathcal{S}}{p}{\rho}{\rho'}
-$$
-$$
-\run{\mathcal{S}}{\mathcal{N}} := \runD{\mathcal{S}}{\mathcal{N}}
-$$
-$$
-\bigwedge_{p = 1 \ldots \mathcal{N}}
-\underbrace{
-  \rho_{(p-1)}\mathcal{S}_{p_l} \Uo \rho_{(p-1)}\mathcal{S}_{p_l} \mapsto \rho_p
-}_\mathrm{step}
+\begin{array}{l}
+\stepF{\mathcal{S}}{p}{\rho}{\rho'}
+\deff
+\stepFD{\mathcal{S}}{p}{\rho}{\rho'}\\
+\runF{\mathcal{S}}{\mathcal{N}}{\rho}
+\deff
+\runFD{\mathcal{S}}{\mathcal{N}}
+\end{array}
 $$
 
 We simulate this run as where $\sigma_0$ is the empty substitution
-%
-\begin{gather*}
-\mathcal{T} \times \mathbb{M} \times \mathbb{L} = \{ (t_j,m_j,l_j) | s_j \in \mathcal{S}, \C{s_j}{t_j}{m_j}{l_j} \}\\
-\bigwedge_{p = 1 \ldots \mathcal{N}}
- \underbrace{
-  \sigma_{(p-1)}\mathcal{T}_{p_l} \Ue \sigma_{(p-1)}\mathcal{T}_{p_r} \mapsto \sigma_p' \land
-  \solve~(\mathbb{L},\sigma_p')\mapsto \sigma_p
- }_\mathrm{step'}\\
-\D{\sigma_{\mathcal{N}}}{\mathbb{L}}{\rho_{\mathcal{N}}}
-\end{gather*}
+$$
+\begin{array}{l}
+\stepH{\mathcal{T}}{p}{\sigma}{\mathbb{L}}{\sigma''} \deff\\
+  \qquad\stepHD{\mathcal{T}}{p}{\sigma}{\sigma'}{\sigma''}{\mathbb{L}}\\
+\runH{\mathcal{S}}{\mathcal{N}}{\rho} \deff \\
+  \qquad \mathcal{T} \times \mathbb{M} \times \mathbb{L} = \{ (t_j,m_j,l_j) | s_j \in \mathcal{S}, \C{s_j}{t_j}{m_j}{l_j} \}\\
+  \qquad \runFD{\mathcal{S}}{\mathcal{N}}{\mathbb{L}}\\
+  \qquad \D{\sigma_{\mathcal{N}}}{\mathbb{M}}{\rho_{\mathcal{N}}}
+\end{array}
+$$
 
 \begin{proposition}[Simulation fidelity]\label{prop:fidelity}
-  $\forall p, \mathrm{step}(p,\rho) \mapsto \rho' \Leftrightarrow
-              \mathrm{step'}(p,\sigma) \mapsto \sigma'$
+In the context of \hrun, we have that
+$\forall p \in 1 \ldots \mathcal{N}$
+$$
+\stepF{\mathcal{S}}{p}{\rho_{p-1}}{\rho_p}
+\Leftrightarrow
+\stepH{\mathcal{T}}{p}{\sigma_{p-1}}{\mathbb{L}}{\sigma_p}
+$$
 \end{proposition}
 
 \newcommand{\maybebeta}{\ensuremath{\stackrel{?}{\beta}}\xspace}
