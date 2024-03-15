@@ -725,10 +725,10 @@ occur-check-err (ho.app _) _ _ :- !.
 occur-check-err (ho.lam _) _ _ :- !.
 occur-check-err (ho.uva Ad _) T S :-
   not (ho.not_occ Ad S T),
-  print "progress β fail of occur-check between" T T2.
+  print "progress β fail of occur-check between".
 
 type progress-beta-link-aux ho.tm -> ho.tm -> ho.subst -> ho.subst -> bool -> o.
-progress-beta-link-aux (ho.uva Ad _ as T) T2 S1 S1 _ :- occur-check-err T T2 S1, !, fail.
+progress-beta-link-aux (ho.uva _ _ as T) T2 S1 S1 _ :- occur-check-err T T2 S1, !, fail.
 progress-beta-link-aux T1 T2 S1 S2 ff :- 
   not (maybe-beta T2), !, % TODO: maybe-beta is not very well implemented
   print "progress β not uva with" {ho.pp T1} "and" {ho.pp T2},
@@ -747,7 +747,7 @@ progress-beta-link T (ho.app[ho.uva V Scope | L]) S S2 tt :-
 
 % se a dx, abbiamo una uva allora la beta non si abblica: potremmo anche fallire 
 % direttamente, è quello che coq e elpi farebbero (coq farebbe la FO approx)
-progress-beta-link (ho.uva Ad _ as T) (ho.app[ho.uva _ _ | _] as T2) S1 _ _ :-
+progress-beta-link (ho.uva _ _ as T) (ho.app[ho.uva _ _ | _] as T2) S1 _ _ :-
   occur-check-err T T2 S1, !, fail.
 
 progress-beta-link _ (ho.app[ho.uva _ _ | _]) H H tt :- !, print "No β progress1".
@@ -774,31 +774,6 @@ solve-link-abs (ho.val (link-beta A B) as L) Keep S S1 :- !,
 
 solve-link-abs (ho.val (link-beta _ T)) _ _ _ :- !,
   halt "Error beta" T.
-
-% % classic beta: the head of the application is rigid
-% solve-links [link-beta V Hd_ T|L1] L2 S S2 :-
-%   % if Hd is set then beta (note assmt-deref does the beta-redex)
-%   ho.assmt-deref S T Ass2,  rigid-head Ass2, !,
-%   print "Solve link beta",
-%   if (mem.set? V S Ass1) (print "ass1 is" Ass2, my-unif-assignment Ass1 Ass2 S S1) (mem.assign V S Ass2 S1),
-%   solve-links L1 L2 S1 S2.
-
-% solve-links [link-beta V Hd_ T|L1] L2 S S2 :-
-%   % TODO: if Hd is not set, the we do Fo-approx
-%   ho.assmt-deref S T Ass2, (not (rigid-head Ass2)), !,
-%   print "In second link fo align" Ass1 "et" Ass2,
-%   % mem.set? is always true, since before we have done a unif
-%   if (mem.set? V S Ass1) (
-%     fo-align Ass2 Ass1 [] S S1
-%   ) (print "It is not assigned?", mem.assign V S Ass2 S1),
-%   solve-links L1 L2 S1 S2.
-
-% type solve-links links -> links -> ho.subst -> ho.subst -> o.
-% solve-links [] [] S S.
-% solve-links [A|As] Bs S S2 :-
-%   solve-links A S S1,
-%   solve-links As Bs S1 S2.
-% solve-links [A|As] [A|Bs] S S1 :- solve-links As Bs S S1.
 
 type link-occur-check links -> links -> ho.subst -> ho.subst -> o.
 link-occur-check [] _ H H.
