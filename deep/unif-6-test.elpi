@@ -17,6 +17,12 @@ compile-terms [triple D S1 S2|Src] [triple D T1 T2|PS] Map0 MapS LS H0 H3 :-
   compile-terms Src PS Map2 MapS Links2 H2 H3,
   std.append L2 Links2 LS.
 
+type valid-error string -> o.
+valid-error uvar :- !, halt "Message error should not be flexible".
+valid-error "unif" :- !.
+valid-error "decompl" :- !.
+valid-error H :- halt "Invalid message error" H.
+
 type prolog 
   list (triple diagnostic ho.tm ho.tm) -> 
   comp.links -> comp.links ->
@@ -37,14 +43,16 @@ prolog [triple ok L R|Us] Links Links2 H H3 D :- !, std.do! [
   !,
   printC "next problem?",
   prolog Us Links1 Links2 H2 H3 D.
-prolog [triple (error X) L R|_] Links Links H H2 D :-
+prolog [triple (error X as E) L R|_] Links Links H H2 E :-
+  valid-error X,
   print "## unif (error)" {ho.pp L} "=" {ho.pp R},
   if (ho.unif L R H H1)
      (print "## After unif" {ho.pp L} "=" {ho.pp R} "subst is" {ho.ppsubst H1},
       print "## Links are" {comp.pplinks {comp.deref-links H1 Links}},
       printC "solve links?",
-      if (comp.solve-links-fixpoint Links _ H1 H2) (print "\n\n\nXXXXXXXXXXXXXX LATE FAILURE? XXXXXXXXXXXXXXXXXXXXX\n\n\n", D = error X) (D = error X))
-     (H2 = H, D = error X).
+      % if solve-link has success, then the error is decompl else 
+      if (comp.solve-links-fixpoint Links _ H1 H2) (X = "decompl") (X = "unif"))
+     (H2 = H).
 
 type decompile-subst
   comp.mappings -> 
@@ -402,7 +410,7 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- pri
 ] ["Y"].
 
 @sokl 44 [
-  pr (error _) "X = λx.(f X (Y x))"
+  pr (error "unif") "X = λx.(f X (Y x))"
 ] [].
 
 % @okl 22300 [
