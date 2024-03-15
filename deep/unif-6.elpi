@@ -1009,7 +1009,7 @@ link-abs-same-lhs (ho.val (link-eta (ho.uva N _) _)) (ho.val (link-eta (ho.uva N
 
 type decompl-links-aux linkabs -> ho.subst -> ho.subst -> list ho.tm -> o.
 decompl-links-aux (ho.val (link-eta T1 T2)) H H1 _ :- print "Start decompl-η of" {ho.pp T1} "and" {ho.pp T2} "in" {ho.ppsubst H}, ho.unif T1 T2 H H1.
-decompl-links-aux (ho.val (link-beta T1 T2)) H1 H2 _ :- print "Start decompl-β of" {ho.pp T1} "and" {ho.pp T2}, ho.unif T1 T2 H H1.
+decompl-links-aux (ho.val (link-beta T1 T2)) H1 H2 _ :- print "Start decompl-β of" {ho.pp T1} "and" {ho.pp T2}, ho.unif T1 T2 H1 H2.
 decompl-links-aux (ho.abs B) H H1 L :- pi x\ decompl-links-aux (B x) H H1 [x|L].
 
 type decompl-links links -> links -> ho.subst -> ho.subst -> o.
