@@ -122,6 +122,7 @@ ll ["X"|L] L (fuva (mem.addr z)).
 ll ["Y"|L] L (fuva (mem.addr (s z))).
 ll ["Z"|L] L (fuva (mem.addr (s (s z)))).
 ll ["W"|L] L (fuva (mem.addr (s (s (s z))))).
+ll [ C |_] L _ :- rex.match "[A-Z]" C, halt "Parser:" C "is not parsed as a knwon variable".
 ll ["(","@"|L] L1 T :- !, llapp L L1 [] A, if (A = [T]) true (T = fapp A).
 ll ["("|L] L1 T :- llapp L L1 [] A, if (A = [T]) true (T = fapp A).
 ll ["λ",V,"."|L] L1 (flam X) :- pi x\ (pi L\ ll [V|L] L x :- !) => ll L L1 (X x).
@@ -833,7 +834,6 @@ deref-link-abs-occur-check (ho.val (link-eta (ho.uva M _) T)) Links M S N H T3 :
 :index(_ 1)
 type deref-links ho.subst -> links -> links -> o.
 deref-links _ [] [].
-% deref-links H [link N M L|XS] [link N M L|YS] :- deref-links H XS YS.
 deref-links H [link-abs A|XS] [link-abs A1|YS] :- std.assert! (deref-link-abs H A A1) "bug deref links", deref-links H XS YS.
 
 type deref-link-abs ho.subst -> linkabs -> linkabs -> o.
@@ -1093,7 +1093,6 @@ decompl Map1 L HO FO FO2 :- std.do! [
   print "# After complete-link, mappings are" {ppmappings Map2} "with ho-subst" {ho.ppsubst HO1}, 
   decompl-mapping Map2 Map2 HO1 FO1 FO2,
 ].
-decompl _ _ _ _ _ :- !, print "Fail decompl", fail.
 
 type test-hope-eta-1 o.
 type test-hope-eta-2 o.
