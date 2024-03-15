@@ -451,6 +451,10 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- pri
   pr ok "X = Y Z"
 ] ["(Y Z)"].
 
+@sokl 530 [
+  pr ok "λx.(X x) = Y Z"
+] ["(Y Z)"].
+
 @sokl 54 [
   pr ok "X = Y Z",
   pr ok "Y = λx.x",
