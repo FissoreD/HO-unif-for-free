@@ -519,10 +519,7 @@ kind linkctx type.
 type link-eta ho.tm -> ho.tm -> linkctx.
 type link-beta ho.tm -> ho.tm -> linkctx.
 
-typeabbrev linkabs (ho.inctx linkctx).
-
-kind link type.
-type link-abs linkabs -> link.
+typeabbrev link (ho.inctx linkctx).
 
 typeabbrev links (list link).
 
@@ -532,10 +529,6 @@ pplinks [L|Links] [S|PS] :-
   pplink L S,
   pplinks Links PS.
 
-type pplink link -> string -> o.
-pplink (link-abs A) S :-
-  pplinkabs A S.
-
 type ppmapping mapping -> string -> o.
 ppmapping (mapping (fv N) (hv M (arity Len))) S :-
   S is {fo.ppuva N} ^ " -> " ^ {ho.ppuva M} ^ " (" ^ {ppnat Len} ^ ")".
@@ -543,10 +536,10 @@ ppmapping (mapping (fv N) (hv M (arity Len))) S :-
 type ppmappings mappings -> list string -> o.
 ppmappings Map Str :- forall2 ppmapping Map Str.
 
-type pplinkabs linkabs -> string -> o.
-pplinkabs (ho.abs F) S :- pi x\ std.any->string x N, pplinkabs (F x) S1, S is N ^ " " ^ S1.
-pplinkabs (ho.val (link-eta A B)) S :- S is "|- " ^ {ho.pp A} ^ " =η= " ^ {ho.pp B}.
-pplinkabs (ho.val (link-beta A B)) S :- S is "|- " ^ {ho.pp A} ^ " =β= " ^ {ho.pp B}.
+type pplink link -> string -> o.
+pplink (ho.abs F) S :- pi x\ std.any->string x N, pplink (F x) S1, S is N ^ " " ^ S1.
+pplink (ho.val (link-eta A B)) S :- S is "|- " ^ {ho.pp A} ^ " =η= " ^ {ho.pp B}.
+pplink (ho.val (link-beta A B)) S :- S is "|- " ^ {ho.pp A} ^ " =β= " ^ {ho.pp B}.
 
 % [maybe-eta N T L] takes a name N a term T and a list of binder.
 % return if T could be an eta expansion, possible cases:
@@ -602,8 +595,8 @@ get-scope T Scope :-
 
 type close-links (ho.tm -> links) -> links -> o.
 close-links (_\[]) [].
-close-links (v\[link-abs L|XS v]) [link-abs L|YS] :- !, close-links XS YS.
-close-links (v\[link-abs(L v)|XS v]) [link-abs(ho.abs L)|YS] :- !, close-links XS YS.
+close-links (v\[L|XS v]) [L|YS] :- !, close-links XS YS.
+close-links (v\[(L v)|XS v]) [ho.abs L|YS] :- !, close-links XS YS.
 
 type comp-lam (fo.fm -> fo.fm) -> (ho.tm -> ho.tm) -> mappings -> mappings -> links -> links -> ho.subst -> ho.subst -> o.
 comp-lam F F1 Mappings1 Mappings2 L L2 S S1 :-
@@ -617,7 +610,7 @@ comp (fo.flam F) (ho.uva E0 Scope) Mappings1 Mappings2  L L2 S S2 :-
     mem.new S E0 S1,
     comp-lam F F1 Mappings1 Mappings2 L L1 S1 S2,
     (pi x\ locale x => get-scope (F1 x) Scope), 
-    NewLink = link-abs (ho.val(link-eta (ho.uva E0 Scope) (ho.lam F1))),
+    NewLink = ho.val(link-eta (ho.uva E0 Scope) (ho.lam F1)),
   ], L2 = [NewLink| L1].
 
 comp (fo.flam F) (ho.lam F1) Mappings1 Mappings2 L L2 S S1 :- comp-lam F F1 Mappings1 Mappings2 L L2 S S1.
@@ -632,19 +625,19 @@ comp (fo.fapp [fo.fuva N|Ag]) (ho.uva M' Scope) Mappings1 Mappings3 L L2 S S4 :-
     (Scope = PF1, M' = M, S3 = S4, L1 = L2)
     (get-scope (ho.app {std.append PF1 NPF1}) Scope,
       mem.new S3 M' S4,
-      L2 = [link-abs(ho.val(link-beta (ho.uva M' Scope) (ho.app[ho.uva M PF1 | NPF1]))) | L1],
+      L2 = [ho.val (link-beta (ho.uva M' Scope) (ho.app[ho.uva M PF1 | NPF1])) | L1],
       true).
 comp (fo.fapp A)              (ho.app A1) Mappings1 Mappings2 L L1 S S1 :- fold6 comp A A1 Mappings1 Mappings2 L L1 S S1.
 
 % Ad1 is the variable with smaller arity, Ad2 is eta expanded N times
-type make-eta-link-aux nat -> address -> address -> list ho.tm -> linkabs -> o.
+type make-eta-link-aux nat -> address -> address -> list ho.tm -> link -> o.
 make-eta-link-aux N Ad1 Ad2 Vars (ho.val (link-eta (ho.uva Ad1 Scope) T1)) :-
   std.rev Vars Scope, eta-expand (ho.uva Ad2 Scope) N T1.
 
 % [make-eta-link ArityAd1, ArityAd2, Ad1, Ad2 Vars, Link]
 % as long as the arities are > 0, we eat one arity by putting a variable in the ctx
 % in the base case we return the link-eta eta-extending N times the variable with higher arity.
-type make-eta-link nat -> nat -> address -> address -> list ho.tm -> linkabs -> o.
+type make-eta-link nat -> nat -> address -> address -> list ho.tm -> link -> o.
 make-eta-link N z Ad1 Ad2 Vars L :- make-eta-link-aux N Ad2 Ad1 Vars L.
 make-eta-link z N Ad1 Ad2 Vars L :- make-eta-link-aux N Ad1 Ad2 Vars L.
 make-eta-link (s N) (s M) Ad1 Ad2 Vars (ho.abs L) :-
@@ -665,8 +658,8 @@ deduplicate-mappings [(mapping (fv O) (hv M (arity LenM)) as X1) | Map1] Map2 H1
   take-list Map1 (mapping (fv O) (hv M' (arity LenM'))) _, !,
   print "arity-fix links:" {ppmapping X1} "~!~" {ppmapping (mapping (fv O) (hv M' (arity LenM')))}, 
   make-eta-link LenM LenM' M M' [] New,
-  print "new eta link" {pplinkabs New},
-  L2 = [link-abs New | L1],
+  print "new eta link" {pplink New},
+  L2 = [New | L1],
   deduplicate-mappings Map1 Map2 H1 H2 L2 L3.
 deduplicate-mappings [A|As] [A|Bs] H1 H2 L1 L2 :- deduplicate-mappings As Bs H1 H2 L1 L2, !.
 deduplicate-mappings [A|_] _ H _ _ _ :- halt {ppmapping A} {ho.ppsubst H}.
@@ -759,7 +752,7 @@ progress-beta-link _ (ho.app[ho.uva _ _ | _]) H H tt :- !, print "No β progress
 progress-beta-link T1 (ho.app[Hd|Tl]) S1 S2 B :- 
   ho.beta Hd Tl T2, progress-beta-link-aux T1 T2 S1 S2 B.
 
-type solve-link-abs linkabs -> option linkabs -> ho.subst -> ho.subst -> o.
+type solve-link-abs link -> option link -> ho.subst -> ho.subst -> o.
 solve-link-abs (ho.abs X) R H H1 :- 
   pi x\ (pi S\ ho.unif x x S S) => ho.copy x x => (pi S\ ho.deref S x x) => solve-link-abs (X x) (R' x) H H1,
   if ((R' x) = some (R'' x)) (R = some (ho.abs R'')) (R = none).
@@ -780,10 +773,10 @@ solve-link-abs (ho.val (link-beta _ T)) _ _ _ :- !,
 
 type link-occur-check links -> links -> ho.subst -> ho.subst -> o.
 link-occur-check [] _ H H.
-link-occur-check [link-abs A|L] Links H H2 :-
+link-occur-check [A|L] Links H H2 :-
   link-abs-occur-check A Links H H1, link-occur-check L Links H1 H2.
 
-type link-abs-occur-check linkabs -> links -> ho.subst -> ho.subst -> o.
+type link-abs-occur-check link -> links -> ho.subst -> ho.subst -> o.
 link-abs-occur-check (ho.abs L) Links H H1 :- pi x\ (pi s\ ho.deref s x x :- !) => ho.copy x x => (pi h\ ho.unif x x h h) => link-abs-occur-check (L x) Links H H1.
 link-abs-occur-check (ho.val (link-beta _ _)) _ H H.
 link-abs-occur-check (ho.val (link-eta(ho.uva N0 S0) T)) Links H H1 :-
@@ -800,16 +793,9 @@ lam-occur-check _ _ (ho.con X) _ (ho.con X).
 lam-occur-check N Links (ho.lam F) H (ho.lam F1) :- pi x\ lam-occur-check N Links (F x) H (F1 x).
 lam-occur-check N _Links (ho.uva N S) _H (ho.uva N S) :- !.
 lam-occur-check N Links (ho.uva M S) H T :-
-  exists (l\deref-link-occur-check l Links M S N H T) Links.
+  exists (l\deref-link-abs-occur-check l Links M S N H T) Links.
 
-type deref-link-occur-check link -> links -> address -> list ho.tm -> address -> ho.subst -> ho.tm -> o.
-% deref-link-occur-check (link M X LenX) Links M S N H T :-
-%   if (LenX = s _) (halt "len" S) true,
-%   lam-occur-check N Links (ho.uva X []) H T.
-deref-link-occur-check (link-abs A) Links M S N H T :-
-  deref-link-abs-occur-check A Links M S N H T.
-
-type deref-link-abs-occur-check linkabs -> links -> address -> list ho.tm -> address -> ho.subst -> ho.tm -> o.
+type deref-link-abs-occur-check link -> links -> address -> list ho.tm -> address -> ho.subst -> ho.tm -> o.
 deref-link-abs-occur-check (ho.abs A) Links M [V|S] N H T :- deref-link-abs-occur-check (A V) Links M S N H T.
 deref-link-abs-occur-check (ho.val (link-eta (ho.uva M _) T)) Links M S N H T3 :- !,
   print "OC follow " link-eta M "->" T,
@@ -820,14 +806,13 @@ deref-link-abs-occur-check (ho.val (link-eta (ho.uva M _) T)) Links M S N H T3 :
 
 :index(_ 1)
 type deref-links ho.subst -> links -> links -> o.
-deref-links _ [] [].
-deref-links H [link-abs A|XS] [link-abs A1|YS] :- std.assert! (deref-link-abs H A A1) "bug deref links", deref-links H XS YS.
+deref-links H L1 L2 :- forall2 (x\r\ std.assert! (deref-link H x r) "bug deref links") L1 L2.
 
-type deref-link-abs ho.subst -> linkabs -> linkabs -> o.
-deref-link-abs H (ho.abs F) (ho.abs G) :- pi x\ deref-link-abs H (F x) (G x).
-deref-link-abs H (ho.val (link-eta A B)) (ho.val (link-eta A1 B1)) :-
+type deref-link ho.subst -> link -> link -> o.
+deref-link H (ho.abs F) (ho.abs G) :- pi x\ deref-link H (F x) (G x).
+deref-link H (ho.val (link-eta A B)) (ho.val (link-eta A1 B1)) :-
   ho.deref H A A1, ho.deref H B B1.
-deref-link-abs H (ho.val (link-beta A B)) (ho.val (link-beta A1 B1)) :-
+deref-link H (ho.val (link-beta A B)) (ho.val (link-beta A1 B1)) :-
   ho.deref H A A1, ho.deref H B B1.
 
 % We test forall linked var of the ML, that they have the same assignment
@@ -853,19 +838,19 @@ solve-links [] [] X X :- print "end solve links".
 %   solve-links [link N W LenM|L1] LR HO2 HO1,
 % ].
 
-solve-links [link-abs A0|L1] [link-abs A|L3] S S2 :- deref-link-abs S A0 A, take-link-abs A {deref-links S L1} B L2, !, std.do! [
-  print "deduplicating links:" {pplinkabs A} "===" {pplinkabs B}, 
+solve-links [A0|L1] [A|L3] S S2 :- deref-link S A0 A, take-link A {deref-links S L1} B L2, !, std.do! [
+  print "deduplicating links:" {pplink A} "===" {pplink B}, 
   same-link-eta A B S S1, 
   solve-links L2 L3 S1 S2,
 ].
-solve-links [link-abs L0|L1] L3 S S2 :- deref-link-abs S L0 L,
-  print "considering link for progress:" {pplinkabs L},
+solve-links [L0|L1] L3 S S2 :- deref-link S L0 L,
+  print "considering link for progress:" {pplink L},
   (solve-link-abs L R S S1), !,
   if (R = some L')
-     (solve-links L1 L2 S1 S2, L3 = [link-abs L'|L2])
-     (print {pplinkabs L} "is removed", solve-links L1 L3 S1 S2) .
+     (solve-links L1 L2 S1 S2, L3 = [L'|L2])
+     (print {pplink L} "is removed", solve-links L1 L3 S1 S2) .
 
-type same-link-eta linkabs -> linkabs -> ho.subst -> ho.subst -> o.
+type same-link-eta link -> link -> ho.subst -> ho.subst -> o.
 same-link-eta (ho.abs F) B H H1 :- !, pi x\ same-link-eta (F x) B H H1.
 same-link-eta A (ho.abs G) H H1 :- !, pi x\ same-link-eta A (G x) H H1.
 same-link-eta (ho.val (link-eta (ho.uva N S1) A))
@@ -1001,23 +986,23 @@ type take-list list A -> A -> list A -> o.
 take-list [L|XS] L XS.
 take-list [L|XS] L' [L|YS] :- not(L = L'), take-list XS L' YS.
 
-type take-link-abs linkabs -> links -> linkabs -> links -> o.
-take-link-abs A [link-abs B|XS] B XS :- link-abs-same-lhs A B, !.
-take-link-abs A [L|XS] B [L|YS] :- take-link-abs A XS B YS.
+type take-link link -> links -> link -> links -> o.
+take-link A [B|XS] B XS :- link-abs-same-lhs A B, !.
+take-link A [L|XS] B [L|YS] :- take-link A XS B YS.
 
-type link-abs-same-lhs linkabs -> linkabs -> o.
+type link-abs-same-lhs link -> link -> o.
 link-abs-same-lhs (ho.abs F) B :- pi x\ link-abs-same-lhs (F x) B.
 link-abs-same-lhs A (ho.abs G) :- pi x\ link-abs-same-lhs A (G x).
 link-abs-same-lhs (ho.val (link-eta (ho.uva N _) _)) (ho.val (link-eta (ho.uva N _) _)).
 
-type decompl-links-aux linkabs -> ho.subst -> ho.subst -> list ho.tm -> o.
+type decompl-links-aux link -> ho.subst -> ho.subst -> list ho.tm -> o.
 decompl-links-aux (ho.val (link-eta T1 T2)) H H1 _ :- print "Start decompl-η of" {ho.pp T1} "and" {ho.pp T2} "in" {ho.ppsubst H}, ho.unif T1 T2 H H1.
 decompl-links-aux (ho.val (link-beta T1 T2)) H1 H2 _ :- print "Start decompl-β of" {ho.pp T1} "and" {ho.pp T2}, ho.unif T1 T2 H1 H2.
 decompl-links-aux (ho.abs B) H H1 L :- pi x\ decompl-links-aux (B x) H H1 [x|L].
 
 type decompl-links links -> links -> ho.subst -> ho.subst -> o.
 decompl-links [] [] H H.
-decompl-links [link-abs Abs| Links] L H H2 :- decompl-links-aux Abs H H1 [], !, decompl-links Links L H1 H2.
+decompl-links [Abs| Links] L H H2 :- decompl-links-aux Abs H H1 [], !, decompl-links Links L H1 H2.
 % decompl-links [Hd | Tl] [Hd | L] H H1 :- decompl-links Tl L H H1.
 
 % Invariant: links are only on the form (link VO VM Arity), each VO appears once and each VM appears once
