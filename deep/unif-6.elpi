@@ -152,7 +152,7 @@ type ppsubst subst -> list string -> o.
 ppsubst L S :- mem.pp L "C" (x\s\sigma y\pp x y, s is ":= " ^ y)  S.
 
 type deref subst -> fm -> fm -> o.
-deref _ X _ :- var X, fatal "flex deref".
+deref S X _ :- (var S; var X), fatal "flex deref".
 deref S (fuva N) T1 :- mem.set? N S T, deref S T T1.
 deref S (fapp [fuva N|L]) R :- mem.set? N S T, !, beta T L R', deref S R' R.
 deref S (fapp L1) (fapp L2) :- forall2 (deref S) L1 L2.
@@ -419,6 +419,7 @@ unif-assignment (val T1) (val T2) H H1 :- unif T1 T2 H H1.
 unif-assignment (abs F1) (abs F2) H H1 :- pi x\ (pi S\ unif x x S S) => ho.copy x x => unif-assignment (F1 x) (F2 x) H H1.
 
 type deref subst -> tm -> tm -> o.
+deref S X _ :- (var S; var X), halt "flex deref".
 deref H (uva N L)  X         :- mem.set? N H T, move T L X', !, deref H X' X.
 deref H (app L)   (app L1)   :- forall2 (deref H) L L1.
 deref _ (con X)   (con X).
