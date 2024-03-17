@@ -477,5 +477,16 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- pri
   pr ok "W = λx.λy.λz.(Y y x z)",
 ] ["λx.λy.(C1 y x)", "_", "C1", "λx.λy.(C1 y x)"].
 
+@sokl 57 [
+  pr ok "λx.(X x) = Y Z",
+  pr ok "λx.(X x) = λx.λy.(Y y x)",
+  pr ok "a = a"
+] [].
+
+@sokl 58 [
+  pr ok "λx.λy.(X y x) = λx.(f (W x))",
+  pr (error "unif") "λx.λy.(X y x) = λx.(g (W x))",
+] [].
+
 /* Non passa in elpi (x\ X x) = A B */
 /*     Passa in elpi X = A B        */
