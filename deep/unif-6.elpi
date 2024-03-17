@@ -702,7 +702,8 @@ type progress-eta-link ho.tm -> ho.tm -> ho.subst -> ho.subst -> bool -> o.
 progress-eta-link (ho.app _ as T) (ho.lam x\ _ as T1) H H1 ff :- !, print "progress η app left", ho.unif {eta-expand T @one} T1 H H1.
 progress-eta-link (ho.con _ as T) (ho.lam x\ _ as T1) H H1 ff :- !, print "progress η con left", ho.unif {eta-expand T @one} T1 H H1.
 progress-eta-link (ho.lam _ as T) T1 H H1 ff :- !, print "progress η lam left", ho.unif T T1 H H1.
-progress-eta-link (ho.uva _ _ as X) T H H1 ff :- contract-rigid [] T T1, !, print "progress η app right", ho.unif X T1 H H1. % TODO remove this link from Links
+progress-eta-link (ho.uva _ _ as X) T H H1 ff :- contract-rigid [] T T1, !, print "progress η app right", ho.unif X T1 H H1.
+% an example of the following OC error is `f X = λx.(X x)`
 progress-eta-link (ho.uva Ad _) T2 H H tt :- !, if (ho.not_occ Ad H T2) (print "no progress η") (print "progress η fail of occur-check", fail).
 progress-eta-link T _ _ _ _ :- halt "Error in progress-eta link: unreachable branch" T.
 
@@ -724,7 +725,7 @@ occur-check-err (ho.uva Ad _) T S :-
   print "progress β fail of occur-check between".
 
 type progress-beta-link-aux ho.tm -> ho.tm -> ho.subst -> ho.subst -> bool -> o.
-progress-beta-link-aux (ho.uva _ _ as T) T2 S1 S1 _ :- occur-check-err T T2 S1, !, fail.
+% progress-beta-link-aux (ho.uva _ _ as T) T2 S1 S1 _ :- occur-check-err T T2 S1, !, halt, fail.
 progress-beta-link-aux T1 T2 S1 S2 ff :- 
   not (maybe-beta T2), !, % TODO: maybe-beta is not very well implemented
   print "progress β not uva with" {ho.pp T1} "and" {ho.pp T2},
@@ -741,8 +742,7 @@ progress-beta-link T (ho.app[ho.uva V Scope | L]) S S2 tt :-
   ho.unif (ho.uva V Scope) T1 S1 S2,
   print "progress β big arity" {ho.pp T} "unified with" {ho.pp T1} "->" {ho.ppsubst S2}.
 
-% se a dx, abbiamo una uva allora la beta non si abblica: potremmo anche fallire 
-% direttamente, è quello che coq e elpi farebbero (coq farebbe la FO approx)
+% an of the following OC error is `X = Y X`
 progress-beta-link (ho.uva _ _ as T) (ho.app[ho.uva _ _ | _] as T2) S1 _ _ :-
   occur-check-err T T2 S1, !, fail.
 
