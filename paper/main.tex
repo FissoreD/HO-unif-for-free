@@ -443,29 +443,29 @@ $$
 \begin{array}{l}
 \stepF{\mathcal{S}}{p}{\rho}{\rho''}
 \deff
-\stepFD{\mathcal{S}}{p}{\rho}{\rho'}{\rho'}\\
+\stepFD{\mathcal{S}}{p}{\rho}{\rho'}{\rho''}\vspace{2pt}\\
 \runF{\mathcal{S}}{\mathcal{N}}{\rho}
 \deff
 \runFD{\mathcal{S}}{\mathcal{N}}
 \end{array}
 $$
 
-We simulate each run in \Fo with a run in \Ho as follows.
+We simulate each run in \Fo{} with a run in \Ho as follows.
 Note that $\sigma_0$ is the empty substitution.
 $$
 \begin{array}{l}
-\stepH{\mathcal{T}}{p}{\sigma}{\mathbb{L}}{\sigma''} \deff\\
-  \qquad\stepHD{\mathcal{T}}{p}{\sigma}{\sigma'}{\sigma''}{\mathbb{L}}\\
-\runH{\mathcal{S}}{\mathcal{N}}{\rho} \deff \\
-  \qquad \mathcal{T} \times \mathbb{M} \times \mathbb{L} = \{ (t_j,m_j,l_j) | s_j \in \mathcal{S}, \C{s_j}{t_j}{m_j}{l_j} \}\\
-  \qquad \runHD{\mathcal{T}}{\mathcal{N}}{\mathbb{L}}\\
+\stepH{\mathcal{T}}{p}{\sigma}{\mathbb{L}}{\sigma''} \deff\vspace{2pt}\\
+  \qquad\stepHD{\mathcal{T}}{p}{\sigma}{\sigma'}{\sigma''}{\mathbb{L}}\vspace{2pt}\\
+\runH{\mathcal{S}}{\mathcal{N}}{\rho} \deff \vspace{2pt}\\
+  \qquad \mathcal{T} \times \mathbb{M} \times \mathbb{L} = \{ (t_j,m_j,l_j) | s_j \in \mathcal{S}, \C{s_j}{t_j}{m_j}{l_j} \}\vspace{2pt}\\
+  \qquad \runHD{\mathcal{T}}{\mathcal{N}}{\mathbb{L}}\vspace{2pt}\\
   \qquad \D{\sigma_{\mathcal{N}}}{\mathbb{M}}{\mathbb{L}}{\rho_{\mathcal{N}}}
 \end{array}
 $$
 
 \noindent
-Here \hstep is made of two sub-steps: a call to \Ue (on the compiled
-terms) and a call to \solve on the set of links. We claim the following:
+Here \hstep{} is made of two sub-steps: a call to \Ue (on the compiled
+terms) and a call to \solve{} on the set of links. We claim the following:
 
 \begin{proposition}[Simulation]\label{prop:sumul}
 $\forall \mathcal{S}, \forall \mathcal{N}$
@@ -489,59 +489,25 @@ $$
 $$
 \end{proposition}
 \noindent
-Note that this property guarantees that a failure in the \Fo run
-is matched by a failure
-in \Ho
-\emph{at the same step}.
+In particular this property guarantees that a \emph{failure} in the \Fo{} run
+is matched by a failure in \Ho{} \emph{at the same step}. We consider this
+property very important from a practical point of view since it guarantees
+that the execution traces are strongly related and in turn this enables a user
+to debug a logic program in \Fo{} by looking at its execution trace in
+\Ho{}.
 
-\newcommand{\maybebeta}{\ensuremath{\beta}\xspace}
-\begin{definition}[\maybebeta]
-  $t$ is in \maybebeta if it contains a subterm matching the
-  pattern \elpiIn{app[uva _ _|_]}
-\end{definition}
-
-\newcommand{\maybeeta}{\ensuremath{\eta}\xspace}
-\begin{definition}[\maybeeta]
-  $t$ is in \maybeeta if it contains a subterm matching the
-  pattern \elpiIn{lam x\ .. lam y\ app[con _,x, ...,uva _ [y]]}\\
-   or
-  \elpiIn{lam x\lam y\uva _ [y,x]}
-\end{definition}
-
-\begin{definition}[Normal form]
-  We write $norm(\mathcal{T})$ when $\mathcal{T} \cap (\maybebeta \cup \maybeeta) = \emptyset$
-\end{definition}
-
-We write $\sigma\mathcal{T} = \{ \sigma t_i | t_i \in \mathcal{T}\}$.
-
-\begin{proposition}[Normal form preservation]\label{prop:nf}
-  $norm(\sigma\mathcal{T}) \land \mathrm{step'}(p,\sigma) \mapsto \sigma'
-  \Rightarrow norm(\sigma\mathcal{T})$   
-\end{proposition}
-
-TODO: check if this is also true for $\rho$ after decomp.
-In particular this guaarantees that is we start from normal terms
-we never introduce eta-long or non-beta-normal terms. This is required in
-order to show the fidelity, since there terms would not be considered
-as equal by \Ue.
-
-If we focus on a single unification problem, that is
-$\mathcal{S} = \{ s_1, s_2 \}$ we can define \Uo as follows:
+We can define $s_1 \Uo{} s_2$ by specializing the code of \hrun{} to
+$\mathcal{S} = \{ s_1, s_2 \}$ as follows:
+%
 $$
 \begin{array}{l}
-s_1 \Uo s_2 \mapsto \rho \deff\\
-\quad\C{s_1}{t_1}{m_1}{l_1} \land \C{s_2}{t_2}{m_2}{l_2}\\
+s_1 \Uo s_2 \mapsto \rho \deff \vspace{2pt}\\
+\quad\C{s_1}{t_1}{m_1}{l_1} \land \C{s_2}{t_2}{m_2}{l_2}\vspace{2pt}\\
 \quad    t_1 \Ue t_2 \mapsto \sigma' \land
-    \solve~(\{l_1,l_2\},\sigma') \mapsto \sigma'' \land\\
+    \solve~(\{l_1,l_2\},\sigma') \mapsto \sigma'' \land\vspace{2pt}\\
 \quad \D{\sigma''}{\{m_1,m_2\}}{\{l_1,l_2\}}{\rho}
 \end{array}
 $$
-\noindent
-Note that proposition \ref{prop:nf} does not hold in this case since
-decompilation can introduce terms in \maybebeta or \maybebeta. Nevertheless
-\Uo has the following properties (where we
-write $s \in \llambda$ if all unif variables in
-$s$ are applied to distinct bound variables):
 
 \begin{proposition}[Properties of \Uo{}]
 \begin{gather}
@@ -559,35 +525,23 @@ Properties \ref{prop:correct} and \ref{prop:complete} state, respectively, that
 in \llambda the implementation of \Uo is correct, complete and returns the most
 general unifier.
 
-Property \ref{prop:simulation} states that \Uo is resilient to problems outside
-\llambda if a third party provides a (partial) solution for its problem. Since
-we are interested in using \Uo in a proof search procedure, made of a sequence
-of unification problems, not necessarily in \llambda. In practice it is often
-the case the order in which these problems are stated matters. A Typical example
-is the following problem
+Property \ref{prop:simulation} states that \Uo, hence our compilation scheme,
+is resilient to unification problems outside \llambda solved by
+a third party. We believe this property is of practical interest since we
+want the user to be able to add heuristics via hand written rules
+to the ones obtained by our compilation scheme. A Typical example
+is the following problem \ref{problem:q} that is outside \llambda:
 
 \begin{elpicode}
-app [F, con"a"] = app[con"f", con"a", con"a"]
+app [F, con"a"] = app[con"f", con"a", con"a"]   ~\customlabel{problem:q}{(q)}~
+F = lam x\ app[con"f",x,x]                      ~\customlabel{heuristic:h}{(h)}~
 \end{elpicode}
 
 \noindent
-preceded by 
+Instead of rejecting it our scheme accepts it and guarantees that if
+\ref{heuristic:h} is given (after the compilation part of the scheme, as
+a run time hint) then ...
 
-\begin{elpicode}
-F = lam x\ app[con"f",x,x]
-\end{elpicode}
-
-\noindent
-becomes solvable in DTT trivially, since the term is ground (hence in \llambda),
-but if one substitutes \elpiIn{F} in the LHS does not find,
-structurally, the RHS
-hence \Ue would fail (since \Ue does not know about the $\beta$ rule of DTT).
-Our compiler takes care of making property \ref{prop:simulation} hold, see
-section XXX.
-
-Property \ref{prop:fidelity} is also relevant to use \Uo for logic programming.
-In particular we want failures to occur as early as possible, so want
-the check phase to take place immediately after \Ue, and fail if need be.
 
 \subsection{The intuition in a nutshell}
 A term $s$ is compiled in a term $t$ where any
@@ -595,6 +549,54 @@ A term $s$ is compiled in a term $t$ where any
 $hp$ and an accessory
 (suspended) unification problem $(hp \Ue tp) \in \mathcal{L}$.
 Since $t \in \llambda$, \Ue is well behaved (captures \Eo).
+
+\newcommand{\maybeeta}{\ensuremath{\Diamond\eta}\xspace}
+\newcommand{\maybebeta}{\ensuremath{\Diamond\beta}\xspace}
+\begin{definition}[\maybeeta]
+  $\maybeeta = \{ t | \exists \rho, \rho t ~\mathrm{is~an~eta~expansion} \}$
+\end{definition}
+
+\noindent
+An example of term $t$ in \maybeeta{} is
+$\lambda x.\lambda y.F~y~x$
+since the substitution
+$\rho = \{ F \mapsto \lambda a.\lambda b.fba\}$
+makes $\rho t = \lambda x.\lambda y.f x y$
+that is the eta long form of $f$.
+
+\begin{definition}[\maybebeta]
+  $t$ is in \maybebeta if it contains a subterm matching the
+  pattern \elpiIn{app[uva _ _|_]}
+\end{definition}
+
+\newcommand{\normal}{\ensuremath{\mathrm{normal}}}
+\begin{definition}[Normal form]
+Given a set of terms $X \subseteq \Ho{}$,
+$$
+\normal(X) =
+X \cap (\maybebeta{} ~\cup~ \maybeeta{}) = \emptyset
+$$
+\end{definition}
+
+\noindent
+We write $\sigma X = \{ \sigma t_i | t_i \in X\}$.
+
+\begin{proposition}[Normal form preservation]\label{prop:nf}
+$\forall \mathcal{T}, \forall \mathbb{L}, \forall p,$
+$$
+\normal(\sigma\mathcal{T}) \land
+\stepH{\mathcal{T}}{p}{\sigma}{\mathbb{L}}{\sigma'}
+\Rightarrow \normal(\sigma'\mathcal{T})
+$$
+\end{proposition}
+
+TODO: check if this is also true for $\rho$ after decomp.
+In particular this guaarantees that is we start from normal terms
+we never introduce eta-long or non-beta-normal terms. This is required in
+order to show the fidelity, since there terms would not be considered
+as equal by \Ue.
+
+
 
 Problematic terms are terms where the head constructor may
 change if instantiated, that is, they are in \maybebeta or \maybeeta.
@@ -617,6 +619,8 @@ in order to grant \cref{prop:fidelity}.
 Note tha the first case is outside $\llambda$ but is frequent in practice
 so we handle it. It is also what prop 5 is about.
 
+Note that proposition \ref{prop:nf} does not hold in this case since
+decompilation can introduce terms in \maybebeta or \maybebeta.
 \section{Alternative encodings and related work}
 
 Paper \cite{10.1145/2966268.2966272} introduces semi-shallow.
@@ -716,8 +720,7 @@ We say that the unification variable \elpiIn{uva N L} is in \llambda iff
 \begin{elpicode}
 type distinct list A -> o.
 distinct [].
-distinct [X|XS] :- name X, not(mem X XS),
-  distinct XS.
+distinct [X|XS] :- name X, not(mem X XS), distinct XS.
 \end{elpicode}
 
 \noindent
@@ -821,11 +824,9 @@ deref _ (con C) (con C).
 deref S (uva N A) R :- set? N S F, move F A T, deref S T R.
 deref S (uva N A) (uva N B) :- unset? N S, map (deref S) A B.
 type move assignment -> list tm -> tm -> o.
-move (abs F) [X | L] R :- move (F X) L R.
-move (val A)         [] A :- !.
-move (val (app A))   L (app X) :- append A L X.
-move (val (uva N A)) L (uva N X) :- append A L X.
-move (val (con H))   L (app [con H | L]).
+move (abs Bo)        [H|L] R :- move (Bo H) L R.
+move (val A)         []    A :- !.
+move (val (uva N A)) L     (uva N X) :- std.append A L X.
 \end{elpicode}
 
 \noindent
