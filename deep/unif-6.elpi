@@ -318,18 +318,18 @@ prune-diff-length N [_|XS] [_|YS] ACC (abs F) (abs G):- pi x\ prune-diff-length 
 prune-diff-length A B C D _ _:- fatal "Prune error" A B C D.
 
 type prune-build-ass1 address -> list tm -> list bool -> assignment -> o.
-prune-build-ass1 N Acc [] (ho.val (uva N Args)) :- std.rev Acc Args.
-prune-build-ass1 N Acc [tt|L] (ho.abs T) :- pi x\ prune-build-ass1 N [x|Acc] L (T x).
-prune-build-ass1 N Acc [ff|L] (ho.abs T) :- pi x\ prune-build-ass1 N Acc L (T x).
+prune-build-ass1 N Acc [] (val (uva N Args)) :- std.rev Acc Args.
+prune-build-ass1 N Acc [tt|L] (abs T) :- pi x\ prune-build-ass1 N [x|Acc] L (T x).
+prune-build-ass1 N Acc [ff|L] (abs T) :- pi x\ prune-build-ass1 N Acc L (T x).
 
 type build-order list nat -> list tm -> list tm -> o.
 build-order L T R :-
   len L Len, list-init Len z (p\r\ sigma Index Elt\ index L p Index, nth Index T r) R.
 
 type prune-build-ass2 address -> list tm -> list bool -> list nat -> assignment -> o.
-prune-build-ass2 N Acc [] Pos (ho.val (uva N Args)) :- std.rev Acc Acc', build-order Pos Acc' Args.
-prune-build-ass2 N Acc [tt|L] Pos (ho.abs T) :- pi x\ prune-build-ass2 N [x|Acc] L Pos (T x).
-prune-build-ass2 N Acc [ff|L] Pos (ho.abs T) :- pi x\ prune-build-ass2 N Acc L Pos (T x).
+prune-build-ass2 N Acc [] Pos (val (uva N Args)) :- std.rev Acc Acc', build-order Pos Acc' Args.
+prune-build-ass2 N Acc [tt|L] Pos (abs T) :- pi x\ prune-build-ass2 N [x|Acc] L Pos (T x).
+prune-build-ass2 N Acc [ff|L] Pos (abs T) :- pi x\ prune-build-ass2 N Acc L Pos (T x).
 
 type keep list A -> A -> bool -> o.
 keep L A tt :- mem L A, !.
@@ -526,7 +526,7 @@ maybe-eta _ (fo.fapp [fo.fcon _|Args]) L :-                                     
 
 type maybe-eta-of fo.fm -> fo.fm -> list fo.fm -> o.
 maybe-eta-of N N _ :- !.
-% TODO: not sure of this
+% TODO: not sure of this (why mem and not maybe-eta-of)
 maybe-eta-of N (fo.fapp[fo.fuva _|Args]) L :- !, forall1 (mem Args) [N|L]. % Head is flex -> if N is in Args, we can have eta
 maybe-eta-of N (fo.flam B) L :- !, pi x\ maybe-eta-of N (B x) [x | L].
 maybe-eta-of N (fo.fapp [N|Args]) L :-                      % Head is rigid -> to be an eta we consider also L
@@ -593,13 +593,13 @@ comp (fo.fapp [fo.fuva N|Ag]) (ho.uva M' Scope) Mappings1 Mappings3 L L2 S S4 :-
     (Scope = PF1, M' = M, S3 = S4, L1 = L2)
     (get-scope (ho.app {std.append PF1 NPF1}) Scope,
       mem.new S3 M' S4,
-      L2 = [ho.val (link-beta (ho.uva M' Scope) (ho.app[ho.uva M PF1 | NPF1])) | L1],
+      L2 = [@val-link-beta (ho.uva M' Scope) (ho.app[ho.uva M PF1 | NPF1]) | L1],
       true).
 comp (fo.fapp A)              (ho.app A1) Mappings1 Mappings2 L L1 S S1 :- fold6 comp A A1 Mappings1 Mappings2 L L1 S S1.
 
 % Ad1 is the variable with smaller arity, Ad2 is eta expanded N times
 type make-eta-link-aux nat -> address -> address -> list ho.tm -> link -> o.
-make-eta-link-aux N Ad1 Ad2 Vars (ho.val (link-eta (ho.uva Ad1 Scope) T1)) :-
+make-eta-link-aux N Ad1 Ad2 Vars (@val-link-eta (ho.uva Ad1 Scope) T1) :-
   std.rev Vars Scope, eta-expand (ho.uva Ad2 Scope) N T1.
 
 % [make-eta-link ArityAd1, ArityAd2, Ad1, Ad2 Vars, Link]
@@ -636,10 +636,6 @@ type alloc mappings -> mappings -> fvariable -> hvariable -> ho.subst -> ho.subs
 alloc Map Map N M H H :- std.mem Map (mapping N M), !.
 alloc Map [mapping (fv N) (hv M Arity)|Map] (fv N) (hv M Arity) H H1 :- mem.new H M H1.
 
-type count->lam ho.tm -> nat -> o.
-count->lam (ho.lam B) (s X) :- !, pi x\ count->lam (B x) X.
-count->lam _ z.
-
 type unif-mk-app ho.tm -> ho.tm -> ho.tm -> o.
 unif-mk-app (ho.uva N L) T (ho.uva N R) :- appendR L [T] R.
 unif-mk-app (ho.con C) T (ho.app [ho.con C, T]).
@@ -661,7 +657,7 @@ progress-eta-link (ho.uva _ _ as X) T H H1 [] :- contract-rigid [] T T1, !, prin
 progress-eta-link (ho.uva Ad _ as T1) T2 H H [@val-link-eta T1 T2] :- !, if (ho.not_occ Ad H T2) (print "no progress η") (print "progress η fail of occur-check", fail).
 progress-eta-link T _ _ _ _ :- halt "Error in progress-eta link: unreachable branch" T.
 
-type is-in-pf ho.tm -> o. % same as the term is ground
+type is-in-pf ho.tm -> o.
 is-in-pf uvar :- halt "passed var to is-in-pf".
 is-in-pf (ho.app [ho.uva _ _ | _]) :- !, fail.
 is-in-pf (ho.lam B) :- !, pi x\ is-in-pf (B x).
@@ -751,16 +747,13 @@ deref-links H L1 L2 :- forall2 (x\r\ std.assert! (deref-link H x r) "bug deref l
 
 type deref-link ho.subst -> link -> link -> o.
 deref-link H (ho.abs F) (ho.abs G) :- pi x\ deref-link H (F x) (G x).
-deref-link H (@val-link-eta A B) (@val-link-eta A1 B1) :-
-  ho.deref H A A1, ho.deref H B B1.
-deref-link H (@val-link-beta A B) (@val-link-beta A1 B1) :-
-  ho.deref H A A1, ho.deref H B B1.
+deref-link H (@val-link-eta A B) (@val-link-eta A1 B1) :- ho.deref H A A1, ho.deref H B B1.
+deref-link H (@val-link-beta A B) (@val-link-beta A1 B1) :- ho.deref H A A1, ho.deref H B B1.
 
 type get-head-link link -> address -> ho.tm -> o.
-get-head-link (ho.val (link-eta (ho.uva Ad _) T)) Ad T :- !.
-get-head-link (ho.val (link-beta (ho.uva Ad _) T)) Ad T :- !.
-get-head-link (ho.abs B) Ad (ho.lam T) :- !,
-  pi x\ get-head-link (B x) Ad (T x).
+get-head-link (@val-link-eta (ho.uva Ad _) T) Ad T :- !.
+get-head-link (@val-link-beta (ho.uva Ad _) T) Ad T :- !.
+get-head-link (ho.abs B) Ad (ho.lam T) :- !, pi x\ get-head-link (B x) Ad (T x).
 get-head-link Link _ _ :- halt "BUG: Invalid left side for" {pplink Link}.
 
 type find-link-by-var address -> links -> links -> list ho.tm -> list links -> o.
@@ -775,13 +768,12 @@ find-link-by-var Ad Prefix [Hd | L1] L2 LL :- !,
 type not_occ_links_aux address -> links -> ho.tm -> o.
 not_occ_links_aux Ad _ (ho.uva Ad _) :- !, fail.
 not_occ_links_aux Ad L (ho.uva Ad1 _) :- !, 
-  (find-link-by-var Ad1 [] L Terms Links),
+  find-link-by-var Ad1 [] L Terms Links,
   forall2 (not_occ_links_aux Ad) Links Terms.
 not_occ_links_aux _ _ (ho.con _) :- !.
 not_occ_links_aux _ _ N :- name N, !.
 not_occ_links_aux Ad L (ho.lam B) :- !, pi x\ not_occ_links_aux Ad L (B x).
-not_occ_links_aux Ad L (ho.app B) :- !,
-  forall1 (not_occ_links_aux Ad L) B.
+not_occ_links_aux Ad L (ho.app B) :- !, forall1 (not_occ_links_aux Ad L) B.
 
 type not_occ_links address -> ho.tm -> links -> o.
 not_occ_links _ (ho.con _) _.
@@ -803,20 +795,20 @@ occur-check-links S [Hd | Tl] :-
   print "Ok occur check for" {ho.pp (ho.uva Ad [])},
   occur-check-links S Tl.
 
+% Invariant: links received in entry have already been dereferenced
 type solve-links links -> links -> ho.subst -> ho.subst -> o.
 solve-links [] [] X X :- print "end solve links".
 
-solve-links [A0|L1] [A|L3] S S2 :- deref-link S A0 A, take-link A {deref-links S L1} B L2, !, std.do! [
+solve-links [A|L1] [A|L3] S S2 :- take-link A L1 B L2, !, std.do! [
   print "deduplicating links:" {pplink A} "===" {pplink B}, 
   same-link-eta A B S S1, 
   solve-links L2 L3 S1 S2,
 ].
 solve-links [L0|L1] L3 S S2 :- deref-link S L0 L,
   print "considering link for progress:" {pplink L},
-  (solve-link-abs L R S S1), !,
-  if (R = [_|_])
-     (solve-links L1 L2 S1 S2, std.append R L2 L3)
-     (print {pplink L} "is removed", solve-links L1 L3 S1 S2) .
+  solve-link-abs L R S S1, !,
+  if (R = []) (print {pplink L} "is removed") true,
+  solve-links L1 L2 S1 S2, std.append R L2 L3.
 
 % We test forall linked var of the ML, that they have the same assignment
 type solve-links-fixpoint links -> links -> ho.subst -> ho.subst -> o.
@@ -833,8 +825,8 @@ solve-links-fixpoint L0 L2 H H2 :- std.do! [
 type same-link-eta link -> link -> ho.subst -> ho.subst -> o.
 same-link-eta (ho.abs F) B H H1 :- !, pi x\ same-link-eta (F x) B H H1.
 same-link-eta A (ho.abs G) H H1 :- !, pi x\ same-link-eta A (G x) H H1.
-same-link-eta (ho.val (link-eta (ho.uva N S1) A))
-              (ho.val (link-eta (ho.uva N S2) B)) H H1 :- std.do! [
+same-link-eta (@val-link-eta (ho.uva N S1) A)
+              (@val-link-eta (ho.uva N S2) B) H H1 :- std.do! [
   std.assert! (std.length S1 {std.length S2}) "no same scope",
   std.map2 S1 S2 (x\y\r\ r = ho.copy x y) Perm,
   Perm => ho.copy A A',
@@ -845,10 +837,6 @@ type abs->lam ho.assignment -> ho.tm -> o.
 abs->lam (ho.abs T) (ho.lam R)  :- !, pi x\ abs->lam (T x) (R x).
 abs->lam (ho.val A) A.
 
-type take-list list A -> A -> list A -> o.
-take-list [L|XS] L XS.
-take-list [L|XS] L' [L|YS] :- not(L = L'), take-list XS L' YS.
-
 type take-link link -> links -> link -> links -> o.
 take-link A [B|XS] B XS :- link-abs-same-lhs A B, !.
 take-link A [L|XS] B [L|YS] :- take-link A XS B YS.
@@ -856,7 +844,7 @@ take-link A [L|XS] B [L|YS] :- take-link A XS B YS.
 type link-abs-same-lhs link -> link -> o.
 link-abs-same-lhs (ho.abs F) B :- pi x\ link-abs-same-lhs (F x) B.
 link-abs-same-lhs A (ho.abs G) :- pi x\ link-abs-same-lhs A (G x).
-link-abs-same-lhs (ho.val (link-eta (ho.uva N _) _)) (ho.val (link-eta (ho.uva N _) _)).
+link-abs-same-lhs (@val-link-eta (ho.uva N _) _) (@val-link-eta (ho.uva N _) _).
 
 type decompl-links-aux link -> ho.subst -> ho.subst -> o.
 decompl-links-aux (@val-link-eta T1 T2) H1 H2 :- 

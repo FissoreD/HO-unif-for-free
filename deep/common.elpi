@@ -43,6 +43,10 @@ type index list A -> A -> nat -> o.
 index [A|_] A z :- !.
 index [_|TL] A (s P) :- index TL A P.
 
+type take-list list A -> A -> list A -> o.
+take-list [L|XS] L XS.
+take-list [L|XS] L' [L|YS] :- not(L = L'), take-list XS L' YS.
+
 type not-in A -> list A -> o.
 not-in _ [].
 not-in T [X | TL] :- not (X = T), not-in T TL.
