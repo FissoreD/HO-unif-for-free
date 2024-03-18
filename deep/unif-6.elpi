@@ -395,7 +395,7 @@ not_occ_aux _ _ X :- name X.
  
 type not_occ  address -> subst -> tm -> o.
 % not_occ N S T :- print "not occ" N S T, fail.
-not_occ_aux N H T :- (var N; var H; var T), halt "Invalid call to not_occ". 
+not_occ N H T :- (var N; var H; var T), halt "Invalid call to not_occ". 
 not_occ N _ (uva N _).
 not_occ N S (uva M Args) :- mem.set? M S F, move F Args T, not_occ N S T.
 not_occ N S (uva M Args) :- mem.unset? M S, std.forall Args (not_occ_aux N S).
@@ -844,14 +844,60 @@ deref-link H (ho.val (link-eta A B)) (ho.val (link-eta A1 B1)) :-
 deref-link H (ho.val (link-beta A B)) (ho.val (link-beta A1 B1)) :-
   ho.deref H A A1, ho.deref H B B1.
 
+type get-head-link link -> address -> ho.tm -> o.
+get-head-link (ho.val (link-eta (ho.uva Ad _) T)) Ad T :- !.
+get-head-link (ho.val (link-beta (ho.uva Ad _) T)) Ad T :- !.
+get-head-link (ho.abs B) Ad (ho.lam T) :- !,
+  pi x\ get-head-link (B x) Ad (T x).
+get-head-link Link _ _ :- halt "BUG: Invalid left side for" {pplink Link}.
+
+type find-link-by-var address -> links -> list ho.tm -> o.
+find-link-by-var _ [] [].
+find-link-by-var Ad [Hd | L1] [T | L2] :-
+  std.assert! (get-head-link Hd Ad1 T) "get head should not fail", Ad = Ad1, !,
+  find-link-by-var Ad1 L1 L2.
+find-link-by-var Ad [_ | L1] L2 :- !,
+  find-link-by-var Ad L1 L2.
+
+type not_occ_links_aux address -> links -> ho.tm -> o.
+% not_occ_links_aux A B C :- print {mem.ppaddr A} {pplinks B} {ho.pp C}, fail.
+not_occ_links_aux Ad _ (ho.uva Ad _) :- !, fail.
+not_occ_links_aux Ad L (ho.uva Ad1 _) :- !, 
+  std.spy(find-link-by-var Ad1 L Terms),
+  forall1 (not_occ_links_aux Ad L) Terms.
+not_occ_links_aux _ _ (ho.con _) :- !.
+not_occ_links_aux _ _ N :- name N, !.
+not_occ_links_aux Ad L (ho.lam B) :- !, pi x\ not_occ_links_aux Ad L (B x).
+not_occ_links_aux Ad L (ho.app B) :- !,
+  forall1 (not_occ_links_aux Ad L) B.
+
+type not_occ_links address -> ho.tm -> links -> o.
+not_occ_links _ (ho.con _) _.
+not_occ_links Ad (ho.lam B) L :- pi x\ not_occ_links Ad (B x) L.
+not_occ_links Ad (ho.uva Ad _) _ :- !.
+not_occ_links Ad1 (ho.uva Ad2 _) L :- 
+  find-link-by-var Ad2 L Terms,
+  forall1 (not_occ_links_aux Ad1 L) Terms.
+not_occ_links Ad (ho.app L) Links :-
+  not_occ_links_aux Ad Links (ho.app L).
+not_occ_links _ N _ :- name N.
+
+type occur-check-links ho.subst -> links -> o.
+occur-check-links _ [].
+occur-check-links S [Hd | Tl] :-
+  std.assert! (get-head-link Hd Ad Term) "get-head-link should not fail",
+  print "## Occur check for" {pplink Hd} "in" {pplinks Tl}, 
+  not_occ_links Ad Term Tl,
+  print "Ok occur check for" {ho.pp (ho.uva Ad [])},
+  occur-check-links S Tl.
+
 % We test forall linked var of the ML, that they have the same assignment
 type solve-links-fixpoint links -> links -> ho.subst -> ho.subst -> o.
 solve-links-fixpoint L0 L2 H H2 :- std.do! [
   deref-links H L0 L, !,
   print "\nfixpoint iteration on:" {pplinks L}, !,
   solve-links L L1 H H1, !,
-  %H1 = H0,
-  %link-occur-check L1 L1 H0 H1, !,
+  if (occur-check-links H1 L1) true (print "fail by oc in solve-link-fixpoint", fail),
   if (L = L1, H = H1)
      (print "end fixpoint", deref-links H L L2 , H2 = H)
      (print "## Subst is" {ho.ppsubst H1}, print "## Links are" {pplinks {deref-links H1 L1}}, !, solve-links-fixpoint L1 L2 H1 H2)
