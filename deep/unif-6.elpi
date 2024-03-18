@@ -1,9 +1,3 @@
-internal-test comp.test-hope-eta-1.
-internal-test comp.test-hope-eta-2.
-% internal-test comp.test-hope-eta-3.
-% internal-test comp.test-hope-eta-4.
-% internal-test comp.test-hope-eta-5.
-% internal-test comp.test-hope-eta-6.
 internal-test ho.test-unif-1.
 internal-test ho.test-unif-2.
 internal-test ho.test-unif-3.
@@ -667,34 +661,24 @@ type alloc mappings -> mappings -> fvariable -> hvariable -> ho.subst -> ho.subs
 alloc Map Map N M H H :- std.mem Map (mapping N M), !.
 alloc Map [mapping (fv N) (hv M Arity)|Map] (fv N) (hv M Arity) H H1 :- mem.new H M H1.
   
-
-type eta-contract-ass ho.assignment -> ho.assignment -> o.
-eta-contract-ass (ho.abs F) (ho.abs G) :- pi x\ eta-contract-ass (F x) (G x).
-eta-contract-ass (ho.val T) (ho.val T1) :- ho.eta-contract T T1.
-
 type rigid-head ho.tm -> o.
 rigid-head (ho.lam X) :- !, pi x\ rigid-head (X x).
 rigid-head T :- not (T = ho.uva _ _).
 
-type fo-align ho.assignment -> ho.assignment -> list ho.tm -> ho.subst -> ho.subst -> o.
-fo-align (ho.val(ho.uva N Args1)) (ho.val(ho.app Args2)) L_ S S1 :-
-  appendR [Hd|Tl] Args1 Args2,
-  ho.beta Hd Tl T,
-  my-unif-assignment (ho.val (ho.uva N [])) (ho.val T) S S1.
-fo-align (ho.abs X) (ho.abs Y) L S S1 :- pi x\
-  (pi S\ ho.unif x x S S) => fo-align (X x) (Y x) [x|L] S S1.
-fo-align A B S _ _ :- fatal "FO_align" A B S.
-
 type count->lam ho.tm -> nat -> o.
 count->lam (ho.lam B) (s X) :- !, pi x\ count->lam (B x) X.
 count->lam _ z.
+
+type unif-mk-app ho.tm -> ho.tm -> ho.tm -> o.
+unif-mk-app (ho.uva N L) T (ho.uva N R) :- appendR L [T] R.
+unif-mk-app (ho.con C) T (ho.app [ho.con C, T]).
+unif-mk-app (ho.app L) T (ho.app R) :- appendR L [T] R.
 
 type eta-expand ho.tm -> nat -> ho.tm -> o.
 eta-expand T z T.
 eta-expand T (s N) (ho.lam R2) :- pi x\ unif-mk-app T x (R1 x), eta-expand (R1 x) N (R2 x). 
 
 macro @one :- s z.
-
 
 % invariante: a sx non c'è mai una eta espansione, a destra c'è una lam, altrimenti il link eta è buttato via
 type progress-eta-link ho.tm -> ho.tm -> ho.subst -> ho.subst -> links -> o.
@@ -733,7 +717,6 @@ beta-reduce (ho.app [ho.lam B | L]) T2 :- !, ho.beta (ho.lam B) L T1, beta-reduc
 beta-reduce A A.
 
 type progress-beta-link-aux ho.tm -> ho.tm -> ho.subst -> ho.subst -> links -> o.
-% progress-beta-link-aux (ho.uva _ _ as T) T2 S1 S1 _ :- occur-check-err T T2 S1, !, halt, fail.
 progress-beta-link-aux T1 T2 S1 S2 [] :- 
   is-in-pf T2, !,
   print "progress β not uva with" {ho.pp T1} "and" {ho.pp T2},
@@ -796,39 +779,6 @@ solve-link-abs (ho.val (link-beta A B)) NewLinks S S1 :- !,
 solve-link-abs (ho.val (link-beta _ T)) _ _ _ :- !,
   halt "Error beta" T.
 
-type link-occur-check links -> links -> ho.subst -> ho.subst -> o.
-link-occur-check [] _ H H.
-link-occur-check [A|L] Links H H2 :-
-  link-abs-occur-check A Links H H1, link-occur-check L Links H1 H2.
-
-type link-abs-occur-check link -> links -> ho.subst -> ho.subst -> o.
-link-abs-occur-check (ho.abs L) Links H H1 :- pi x\ (pi s\ ho.deref s x x :- !) => ho.copy x x => (pi h\ ho.unif x x h h) => link-abs-occur-check (L x) Links H H1.
-link-abs-occur-check (ho.val (link-beta _ _)) _ H H.
-link-abs-occur-check (ho.val (link-eta(ho.uva N0 S0) T)) Links H H1 :-
-  ho.deref H (ho.uva N0 S0) (ho.uva N S), !,
-  print "test OC" N0 "->" N "on" T "and" H,
-  ho.deref H T T1, !,
-%  ((lam-occur-check N Links T1 H, print "OC, no problem with" N, H1 = H) ; (print "OC error, force progress", force-progress (link-eta N S T1) H H1)).
-  (lam-occur-check N Links T1 H T2, print "OC, progress", ho.unif {eta-expand (ho.uva N []) {len S}} T2 H H1) ; true. %TODO: in case OF fails we should fail
-link-abs-occur-check (ho.val (link-eta N _)) _ H H :- print "OC skip" N.
-
-type lam-occur-check address -> links -> ho.tm -> ho.subst -> ho.tm -> o.
-lam-occur-check _ _ (ho.con X) _ (ho.con X).
-% lam-occur-check N Links (ho.app L) H H1 :- fold ... L.
-lam-occur-check N Links (ho.lam F) H (ho.lam F1) :- pi x\ lam-occur-check N Links (F x) H (F1 x).
-lam-occur-check N _Links (ho.uva N S) _H (ho.uva N S) :- !.
-lam-occur-check N Links (ho.uva M S) H T :-
-  exists (l\deref-link-abs-occur-check l Links M S N H T) Links.
-
-type deref-link-abs-occur-check link -> links -> address -> list ho.tm -> address -> ho.subst -> ho.tm -> o.
-deref-link-abs-occur-check (ho.abs A) Links M [V|S] N H T :- deref-link-abs-occur-check (A V) Links M S N H T.
-deref-link-abs-occur-check (ho.val (link-eta (ho.uva M _) T)) Links M S N H T3 :- !,
-  print "OC follow " link-eta M "->" T,
-  ho.deref H T T1,
-  ho.beta T1 S T2,
-  print "OC rec on" T2,
-  lam-occur-check N Links T2 H T3.
-
 :index(_ 1)
 type deref-links ho.subst -> links -> links -> o.
 deref-links H L1 L2 :- forall2 (x\r\ std.assert! (deref-link H x r) "bug deref links") L1 L2.
@@ -857,7 +807,6 @@ find-link-by-var Ad Prefix [Hd | L1] L2 LL :- !,
   find-link-by-var Ad [Hd | Prefix] L1 L2 LL.
 
 type not_occ_links_aux address -> links -> ho.tm -> o.
-% not_occ_links_aux A B C :- print {mem.ppaddr A} {pplinks B} {ho.pp C}, fail.
 not_occ_links_aux Ad _ (ho.uva Ad _) :- !, fail.
 not_occ_links_aux Ad L (ho.uva Ad1 _) :- !, 
   (find-link-by-var Ad1 [] L Terms Links),
@@ -888,27 +837,8 @@ occur-check-links S [Hd | Tl] :-
   print "Ok occur check for" {ho.pp (ho.uva Ad [])},
   occur-check-links S Tl.
 
-% We test forall linked var of the ML, that they have the same assignment
-type solve-links-fixpoint links -> links -> ho.subst -> ho.subst -> o.
-solve-links-fixpoint L0 L2 H H2 :- std.do! [
-  deref-links H L0 L, !,
-  print "\nfixpoint iteration on:" {pplinks L}, !,
-  solve-links L L1 H H1, !,
-  if (occur-check-links H1 L1) true (print "fail by oc in solve-link-fixpoint", fail),
-  if (L = L1, H = H1)
-     (print "end fixpoint", deref-links H L L2 , H2 = H)
-     (print "## Subst is" {ho.ppsubst H1}, print "## Links are" {pplinks {deref-links H1 L1}}, !, solve-links-fixpoint L1 L2 H1 H2)
-].
-
 type solve-links links -> links -> ho.subst -> ho.subst -> o.
 solve-links [] [] X X :- print "end solve links".
-
-% TODO: THIS IS TO CHECK BETTER
-% solve-links [(link N M LenM as X)|L] LR HO HO1 :- take-list L (link N M' LenM') L1, not (mem.unset? M HO, mem.unset? M' HO), !, std.do! [
-%   print "deduplicating links:" {pplink X} "===" {pplink (link N M' LenM')}, 
-%   same-assign M M' LenM LenM' W HO HO2,
-%   solve-links [link N W LenM|L1] LR HO2 HO1,
-% ].
 
 solve-links [A0|L1] [A|L3] S S2 :- deref-link S A0 A, take-link A {deref-links S L1} B L2, !, std.do! [
   print "deduplicating links:" {pplink A} "===" {pplink B}, 
@@ -922,6 +852,18 @@ solve-links [L0|L1] L3 S S2 :- deref-link S L0 L,
      (solve-links L1 L2 S1 S2, std.append R L2 L3)
      (print {pplink L} "is removed", solve-links L1 L3 S1 S2) .
 
+% We test forall linked var of the ML, that they have the same assignment
+type solve-links-fixpoint links -> links -> ho.subst -> ho.subst -> o.
+solve-links-fixpoint L0 L2 H H2 :- std.do! [
+  deref-links H L0 L, !,
+  print "\nfixpoint iteration on:" {pplinks L}, !,
+  solve-links L L1 H H1, !,
+  if (occur-check-links H1 L1) true (print "fail by oc in solve-link-fixpoint", fail),
+  if (L = L1, H = H1)
+     (print "end fixpoint", deref-links H L L2 , H2 = H)
+     (print "## Subst is" {ho.ppsubst H1}, print "## Links are" {pplinks {deref-links H1 L1}}, !, solve-links-fixpoint L1 L2 H1 H2)
+].
+
 type same-link-eta link -> link -> ho.subst -> ho.subst -> o.
 same-link-eta (ho.abs F) B H H1 :- !, pi x\ same-link-eta (F x) B H H1.
 same-link-eta A (ho.abs G) H H1 :- !, pi x\ same-link-eta A (G x) H H1.
@@ -934,120 +876,9 @@ same-link-eta (ho.val (link-eta (ho.uva N S1) A))
   ho.unif A' B H H1,
 ].
 
-% TODO:
-type same-assign-aux nat -> nat -> ho.assignment -> ho.assignment -> ho.subst -> ho.subst -> o.
-same-assign-aux L L T R HO HO2 :- !, my-unif-assignment T R HO HO2.
-same-assign-aux _ _ T R HO HO2 :- 
-  hope-for-eta HO T Te,
-  hope-for-eta HO R Re,
-  my-unif-assignment Te Re HO HO2.
- 
-type same-assign address -> address -> nat -> nat -> address -> ho.subst -> ho.subst -> o.
-same-assign M N LenM LenN W HO HO2 :- mem.set? M HO AM, mem.set? N HO AN, !, W = M,
-  same-assign-aux LenM LenN AM AN HO HO2.
-same-assign M N LenM LenN W HO HO2 :- mem.set? M HO AM, mem.unset? N HO,  W = M, eta LenN N [] AN, print "Eta for" N "is" AN,
-  same-assign-aux LenM LenN AM AN HO HO2.
-same-assign M N LenM LenN W HO HO2 :- mem.unset? M HO, mem.set? N HO AN,  W = N, eta LenM M [] AM, print "Eta for" M "is" AM,
-  same-assign-aux LenM LenN AM AN HO HO2.
-% same-assign M N LenM LenN W HO HO2 :- mem.unset? M HO, mem.unset? N HO,   W = M, eta LenN N [] AN, eta LenM M [] AM, print "Eta for" M "is" AM, print "Eta for" N "is" AN,
-%   same-assign-aux LenM LenN AM AN HO HO2.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%
-%%% nel test 15 abbiamo
-%%%   Len=1  x\ app[f,Y x]
-%%%   Len=0  X
-%%%
-%%% il codice sotto (my-unif-assignment) fa X = a\ app[f,Y a]
-%%% e cambia arietà a X che non va bene
-%%%
-%%% T = x\ app[f,Y x] deve essere di arità zero
-%%% allora o il T coq è (lam x\ app[f,Y x]) oppure f
-%%%
-%%% sempre nel test 15, dopo con'è g = X
-%%% ora falliamo perche g != (lam x\ app[f,Y x])
-%%% penso che dire Y x = x non sia "il più generale"
-%%%
-%%% ora mi sa che fallisce perchè g != lam
-%%% che è "sbagliato" (forse) perchè potrebbe anche avere
-%%% successo assegnado Y (in quel momento, ma non lo possiamo
-%%% fare prima, nelle varie link...)
-%%%
-%%% in pratica mi pare che o perdiamo generalità (e assegnamo Y presto)
-%%% o ritardiamo, restiamo corretti, ma sequenza di successi/fallimenti
-%%% non è fedele.
-%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Invariant, the assmt in entry are never on the form `ho.val (ho.abs _)`
-type my-unif-assignment-aux ho.assignment -> ho.assignment -> ho.subst -> ho.subst -> o.
-
-my-unif-assignment-aux (ho.val T1) (ho.val T2) H H1 :- 
-  print "@@@ Start unif between T1 and T2" T1 T2 "in" H, 
-  (ho.unif T1 T2 H H1), 
-  print "After unif" H H1.
-my-unif-assignment-aux (ho.abs F1) (ho.abs F2) H H1 :- 
-  pi x\ (pi S\ ho.unif x x S S) => ho.copy x x => my-unif-assignment-aux (F1 x) (F2 x) H H1.
-
-my-unif-assignment-aux (ho.val T) (ho.abs F2) H H1 :-
-  print "Enter aa",
-  pi x\ sigma R\ unif-mk-app T x R, 
-  (pi S\ ho.unif x x S S) => ho.copy x x => my-unif-assignment-aux (ho.val R) (F2 x) H H1,
-  print "exit bb".
-
-my-unif-assignment-aux (ho.abs F2) (ho.val T) H H1 :-
-  pi x\ sigma R\ unif-mk-app T x R, 
-  (pi S\ ho.unif x x S S) => ho.copy x x => my-unif-assignment-aux (F2 x) (ho.val R) H H1.
-
-type lam->abs ho.assignment -> ho.assignment -> o.
-lam->abs (ho.val (ho.lam T)) (ho.abs R) :- !, pi x\ lam->abs (ho.val (T x)) (R x).
-lam->abs (ho.val A) (ho.val A).
-lam->abs (ho.abs T) (ho.abs R) :- pi x\ lam->abs (T x) (R x).
-
 type abs->lam ho.assignment -> ho.tm -> o.
 abs->lam (ho.abs T) (ho.lam R)  :- !, pi x\ abs->lam (T x) (R x).
 abs->lam (ho.val A) A.
-
-type unif-mk-app ho.tm -> ho.tm -> ho.tm -> o.
-unif-mk-app (ho.uva N L) T (ho.uva N R) :- appendR L [T] R.
-unif-mk-app (ho.con C) T (ho.app [ho.con C, T]).
-unif-mk-app (ho.app L) T (ho.app R) :- appendR L [T] R.
-
-type my-unif-assignment ho.assignment -> ho.assignment -> ho.subst -> ho.subst -> o.
-my-unif-assignment T R S1 S2 :-
-  ho.assmt-deref S1 T TDeref,
-  ho.assmt-deref S1 R RDeref,
-  % lam->abs TDeref TAbs,
-  % lam->abs RDeref RAbs,
-  TAbs = TDeref, RAbs = RDeref,
-  print "Start of unification aux between" TAbs "and" RAbs,
-  print "In substitution" S1,
-  (my-unif-assignment-aux TAbs RAbs S1 S2).
-
-type hope-for-eta  ho.subst -> ho.assignment -> ho.assignment -> o.
-hope-for-eta H A1 A2 :-
-  ho.assmt-deref H A1 A1Deref,
-  hope-for-eta1 A1Deref A2.
-
-% tries to eta contract at each "depth", not just at the top
-type hope-for-eta1 ho.assignment -> ho.assignment -> o.
-hope-for-eta1 (ho.abs _ as F) G :- hope-contract [] F G.
-hope-for-eta1 (ho.abs F) (ho.abs G) :- pi x\ hope-for-eta1 (F x) (G x).
-hope-for-eta1 (ho.val T) (ho.val T).
-
-% given x\y\z\... it tries to contract against xyz, then xy, then x
-type hope-contract list ho.tm -> ho.assignment -> ho.assignment -> o.
-hope-contract L (ho.abs F) T :- pi x\ hope-contract [x|L] (F x) T.
-hope-contract L (ho.abs F) T :- pi x\ hope-contract.aux [x|L] (F x) T.
-
-% checks if the term is xxx\ yyy\ app[...|xxx] -> yyy\ app[...]
-type hope-contract.aux list ho.tm -> ho.assignment -> ho.assignment -> o.
-hope-contract.aux L (ho.abs F) (ho.abs G) :- pi x\ hope-contract.aux L (F x) (G x).
-hope-contract.aux L (ho.val V) (ho.val T) :- std.do! [
-  V = ho.app[Hd|Args],
-  std.rev L LRev,
-  std.appendR Prefix LRev Args,
-  if (Prefix = []) (T = Hd) (T = ho.app [Hd|Prefix]),
-].
 
 % [eta Arity VarName Acc Ass]
 type eta nat -> address -> list ho.tm -> ho.assignment -> o.
@@ -1067,24 +898,19 @@ link-abs-same-lhs (ho.abs F) B :- pi x\ link-abs-same-lhs (F x) B.
 link-abs-same-lhs A (ho.abs G) :- pi x\ link-abs-same-lhs A (G x).
 link-abs-same-lhs (ho.val (link-eta (ho.uva N _) _)) (ho.val (link-eta (ho.uva N _) _)).
 
-type decompl-links-aux link -> ho.subst -> ho.subst -> list ho.tm -> o.
-decompl-links-aux (ho.val (link-eta T1 T2)) H1 H2 _ :- 
-  ho.deref H1 T1 T1',
-  ho.deref H1 T2 T2',
+type decompl-links-aux link -> ho.subst -> ho.subst -> o.
+decompl-links-aux (ho.val (link-eta T1 T2)) H1 H2 :- 
+  ho.deref H1 T1 T1', ho.deref H1 T2 T2',
   print "Start decompl-η of" {ho.pp T1'} "and" {ho.pp T2'} "in" {ho.ppsubst H1}, 
-  % ho.eta-contract T2 T3,
-  T3 = T2',
-  ho.unif T1' T3 H1 H2.
-decompl-links-aux (ho.val (link-beta T1 T2)) H1 H2 _ :- 
-  ho.deref H1 T1 T1',
-  ho.deref H1 T2 T2',
+  ho.unif T1' T2' H1 H2.
+decompl-links-aux (ho.val (link-beta T1 T2)) H1 H2 :- 
+  ho.deref H1 T1 T1', ho.deref H1 T2 T2',
   print "Start decompl-β of" {ho.pp T1'} "and" {ho.pp T2'}, ho.unif T1' T2' H1 H2.
-decompl-links-aux (ho.abs B) H H1 L :- pi x\ decompl-links-aux (B x) H H1 [x|L].
+decompl-links-aux (ho.abs B) H H1 :- pi x\ decompl-links-aux (B x) H H1.
 
 type decompl-links links -> links -> ho.subst -> ho.subst -> o.
 decompl-links [] [] H H.
-decompl-links [Abs| Links] L H H2 :- decompl-links-aux Abs H H1 [], !, decompl-links Links L H1 H2.
-% decompl-links [Hd | Tl] [Hd | L] H H1 :- decompl-links Tl L H H1.
+decompl-links [Abs| Links] L H H2 :- decompl-links-aux Abs H H1, !, decompl-links Links L H1 H2.
 
 % Invariant: links are only on the form (link VO VM Arity), each VO appears once and each VM appears once
 type decompl-mapping mappings -> mappings -> ho.subst -> fo.subst -> fo.subst -> o.
@@ -1146,26 +972,6 @@ decompl Map1 L HO FO FO2 :- std.do! [
   print "# After complete-link, mappings are" {ppmappings Map2} "with ho-subst" {ho.ppsubst HO1}, 
   decompl-mapping Map2 Map2 HO1 FO1 FO2,
 ].
-
-type test-hope-eta-1 o.
-type test-hope-eta-2 o.
-type test-hope-eta-3 o.
-type test-hope-eta-4 o.
-type test-hope-eta-5 o.
-type test-hope-eta-6 o.
-test-hope-eta-1 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.app[ho.con"f",ho.app[ho.con"g",x],y]))
-                                   (ho.abs x\           ho.val (ho.app[ho.con"f",ho.app[ho.con"g",x]  ])).
-test-hope-eta-2 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.app[ho.con"f",ho.app[ho.con"g",y],x]))
-                                   (          ho.abs y\ ho.val (ho.app[ho.con"f",ho.app[ho.con"g",y]  ])).
-test-hope-eta-3 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.uva (mem.addr z) [y]))
-                                   (ho.abs x\           ho.val (ho.uva (mem.addr z) [])).
-test-hope-eta-4 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.uva (mem.addr z) [x]))
-                                   (          ho.abs y\ ho.val (ho.uva (mem.addr z) [])).
-test-hope-eta-5 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.uva (mem.addr z) [x, y]))
-                                   (ho.val (ho.uva (mem.addr z) [])).
-test-hope-eta-6 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.uva (mem.addr z) [y, x]))
-                                   (ho.abs x\ ho.abs y\ ho.val (ho.uva (mem.addr z) [y, x])).
-
 
 type test-maybe-eta-1 o.
 type test-maybe-eta-2 o.
