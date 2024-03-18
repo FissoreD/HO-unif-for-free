@@ -32,8 +32,16 @@ int->nat 0 z.
 int->nat R (s N) :- R > 0, R' is R - 1, int->nat R' N.
 
 type nth nat -> list A -> A -> o.
-nth z (X :: _) Y  :- X = Y.
+nth z (X :: _) Y  :- !, X = Y.
 nth (s N) (_ :: L) X :- nth N L X.
+
+type list-init nat -> nat -> (nat -> A -> o) -> list A -> o.
+list-init Len Len _ [].
+list-init Len Pos F [A | TL] :- F Pos A, list-init Len (s Pos) F TL.
+
+type index list A -> A -> nat -> o.
+index [A|_] A z :- !.
+index [_|TL] A (s P) :- index TL A P.
 
 type not-in A -> list A -> o.
 not-in _ [].
