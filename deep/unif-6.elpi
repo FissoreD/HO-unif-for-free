@@ -4,6 +4,7 @@ internal-test ho.test-unif-3.
 internal-test ho.test-unif-4.
 internal-test ho.test-unif-5.
 internal-test ho.test-unif-6.
+internal-test ho.test-unif-7.
 internal-test fo.test-parse-1.
 internal-test comp.test-maybe-eta-1.
 internal-test comp.test-maybe-eta-2.
@@ -265,25 +266,17 @@ unif (uva V A) (uva U A) S1 S2 :- !, pattern-fragment A,
 unif (uva N Args1) (uva N Args2) S S2 :- % same var 
   std.assert!(len Args1 Len, len Args2 Len) "Not typechecking", !, % the length of args must be the same
   pattern-fragment Args1, pattern-fragment Args2, 
-  std.do![mem.new S W S1, prune-same-variable W Args1 Args2 Ass, 
-  mem.assign N S1 Ass S2],
-  print "Assigning in uva N Args1" N {ppsubst S1} "+" {ppass Ass} "=>" {ppsubst S2}. 
+  mem.new S W S1, prune-same-variable W Args1 Args2 Ass,
+  mem.assign N S1 Ass S2. 
 unif (uva N Args1) (uva M Args2) S S3 :- % Args with diff length
-  % print "Unifying" {pp (uva N Args1)} "and" {pp (uva M Args2)},
   pattern-fragment Args1, pattern-fragment Args2, 
-  mem.new S W S1, (prune-smart W Args1 Args2 Ass1 Ass2), 
+  mem.new S W S1, prune-smart W Args1 Args2 Ass1 Ass2, 
   mem.assign N S1 Ass1 S2,
   if (N = M) true (mem.assign M S2 Ass2 S3). 
-unif (uva N Args) T S S1 :- 
-  not (T = uva _ _), not_occ N S T, pattern-fragment Args, 
-  bind T Args T1,
-  % print "Binding args" {std.map Args pp} "in" {pp T} "gives" {ppuva N} {ppass T1},
-  mem.assign N S T1 S1.
-unif T (uva N Args) S S1 :- 
-  not (T = uva _ _), not_occ N S T, pattern-fragment Args, 
-  bind T Args T1,
-  print "Binding args" {std.map Args pp} "in" {pp T} "gives" {ppuva N} {ppass T1},
-  mem.assign N S T1 S1.
+unif (uva N Args) T S S1 :- not_occ N S T, pattern-fragment Args, 
+  bind T Args T1, mem.assign N S T1 S1.
+unif T (uva N Args) S S1 :- not_occ N S T, pattern-fragment Args, 
+  bind T Args T1, mem.assign N S T1 S1.
 
 % Note: eta & beta for unification is not allowed in ML over terms of the OL
 
@@ -295,20 +288,6 @@ type prune-same-variable-aux address -> list tm -> list tm -> list tm -> assignm
 prune-same-variable-aux N [] [] ACC (val (uva N Args)) :- std.rev ACC Args.
 prune-same-variable-aux N [X|XS] [X|YS] ACC (abs F) :- pi x\ prune-same-variable-aux N XS YS [x|ACC] (F x).
 prune-same-variable-aux N [_|XS] [_|YS] ACC (abs F) :- pi x\ prune-same-variable-aux N XS YS ACC (F x).
-
-type prune-diff-length-aux address -> list tm -> list tm -> assignment -> o.
-prune-diff-length-aux N [] Acc (val (uva N Acc)).
-prune-diff-length-aux N [_|L] Acc (abs T) :- pi x\ prune-diff-length-aux N L Acc (T x).
-
-% res = argomenti dell'altro se li vedo anche io (nell'ordine dell'altro)
-type prune-diff-length address -> list tm -> list tm -> list tm -> assignment -> assignment -> o.
-prune-diff-length N [] Args2 Acc (val (uva N Args)) Ass2 :-  !,
-  std.rev Acc Args, prune-diff-length-aux N Args2 Args Ass2.
-prune-diff-length N Args1 [] Acc Ass1 (val (uva N Args)) :- !,
-  std.rev Acc Args, prune-diff-length-aux N Args1 Args Ass1.
-prune-diff-length N [X|XS] [X|YS] ACC (abs F) (abs G) :- pi x\ prune-diff-length N XS YS [x|ACC] (F x) (G x).
-prune-diff-length N [_|XS] [_|YS] ACC (abs F) (abs G):- pi x\ prune-diff-length N XS YS ACC (F x) (G x).
-prune-diff-length A B C D _ _:- fatal "Prune error" A B C D.
 
 type prune-build-ass1 address -> list tm -> list bool -> assignment -> o.
 prune-build-ass1 N Acc [] (val (uva N Args)) :- std.rev Acc Args.
@@ -418,47 +397,55 @@ contract L (app [H|Args]) T :-
 contract L (uva H Args) (uva H Prefix) :- 
   std.rev L LRev, std.appendR Prefix LRev Args.
 
+macro @mem-uva N S :- uva (mem.addr N) S.
+
 type test-unif-1 o.
 type test-unif-2 o.
 type test-unif-3 o.
 type test-unif-4 o.
 type test-unif-5 o.
 type test-unif-6 o.
+type test-unif-7 o.
+
 test-unif-1 :- pi x\
-  unif (uva (mem.addr z) [x]) (uva (mem.addr (s z)) []) [none, none] L,
+  unif (@mem-uva z [x]) (@mem-uva (s z) []) [none, none] L,
   Z = (abs x\ val (uva X [])),
   SZ = val (uva X []),
   L = [some Z, some SZ|_].
 
 test-unif-2 :- pi x y\
-  unif (uva (mem.addr z) [x, y]) (uva (mem.addr (s z)) [y]) [none, none] L,
+  unif (@mem-uva z [x, y]) (@mem-uva (s z) [y]) [none, none] L,
   Z = (abs x\ abs y\ val (uva X [y])),
   SZ = (abs x\ val (uva X [x])),
   L = [some Z, some SZ|_].
 
 test-unif-3 :- pi x y w\
-  unif (uva (mem.addr z) [x, y]) (uva (mem.addr (s z)) [x, w, y]) [none, none] L,
+  unif (@mem-uva z [x, y]) (@mem-uva (s z) [x, w, y]) [none, none] L,
   Z = (abs x\ abs y\ val (uva X [x, y])),
   SZ = (abs x\ abs y\ abs z\ val (uva X [x, z])),
   L = [some Z, some SZ|_].
 
 test-unif-4 :- pi x y\ 
-  unif (uva (mem.addr z) [x, y]) (uva (mem.addr (s z)) [y, x]) [none, none] L,
+  unif (@mem-uva z [x, y]) (@mem-uva (s z) [y, x]) [none, none] L,
   Z = (abs x\ abs y\ val (uva X [x, y])),
   SZ = (abs x\ abs y\ val (uva X [y, x])),
   L = [some Z, some SZ|_].
 
 test-unif-5 :- pi x y zz w\
-  unif (uva (mem.addr z) [x, w, y]) (uva (mem.addr (s z)) [y, zz, w]) [none, none] L,
+  unif (@mem-uva z [x, w, y]) (@mem-uva (s z) [y, zz, w]) [none, none] L,
   Z = (abs c0\ abs c1\ abs c2\ val (uva X [c1, c2])),
   SZ = (abs c0\ abs c1\ abs c2\ val (uva X [c2, c0])),
   L = [some Z, some SZ|_].
 
 test-unif-6 :- pi x y zz w\
-  unif (uva (mem.addr (s z)) [y, zz, w]) (uva (mem.addr z) [x, w, y]) [none, none] L,
+  unif (@mem-uva (s z) [y, zz, w]) (@mem-uva z [x, w, y]) [none, none] L,
   Z = (abs c0\ abs c1\ abs c2\ val (uva X [c2, c1])),
   SZ = (abs c0\ abs c1\ abs c2\ val (uva X [c0, c2])),
   L = [some Z, some SZ|_].
+
+test-unif-7 :- pi x y w zz\
+  unif (@mem-uva z [x, y, w]) (@mem-uva z [zz, y, x]) [none] L,
+  L = [some (abs x\ abs y\ abs z\ val (uva _ [y])) | _].
 }
 
 namespace comp {
