@@ -441,6 +441,12 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- pri
   pr (error "unif") "Y = λx.(f X (Z x))",
 ] [].
 
+@sokl 4400 [
+  pr ok "X = λx.(f Y (W x))",
+  pr ok "Y = λx.(f Z (W x))",
+  pr (error "unif") "Z = λx.(f Y (W x))",
+] [].
+
 @sokl 45 [
   pr (error "unif") "λx.(X x) = λx.λy.(f X (Y x) y)"
 ] [].
@@ -495,7 +501,7 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- pri
 
 @sokl 57 [
   pr ok "λx.(X x) = Y Z",
-  pr ok "λx.(X x) = λx.λy.(Y y x)",
+  pr (error "decompl") "λx.(X x) = λx.λy.(Y y x)",
 ] [].
 
 @sokl 58 [

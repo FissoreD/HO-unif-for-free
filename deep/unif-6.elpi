@@ -115,11 +115,7 @@ ee [" "|L] L1 :- ee L L1.
 type ll list string -> list string -> fm -> o.
 ll [C|L] L (fcon C) :- rex.match "[a-z]" C.
 ll ["_"|L] L (fcon "_").
-ll ["C","0"|L] L (fuva (mem.addr z)).
-ll ["C","1"|L] L (fuva (mem.addr (s z))).
-ll ["C","2"|L] L (fuva (mem.addr (s (s z)))).
-ll ["C","3"|L] L (fuva (mem.addr (s (s (s z))))).
-ll ["C","4"|L] L (fuva (mem.addr (s (s (s (s z)))))).
+ll ["C",N|L] L (fuva (mem.addr R)) :- rex.match "[0-9]" N, N' is string_to_int N, int->nat N' R. 
 ll ["X"|L] L (fuva (mem.addr z)).
 ll ["Y"|L] L (fuva (mem.addr (s z))).
 ll ["Z"|L] L (fuva (mem.addr (s (s z)))).
@@ -851,20 +847,21 @@ get-head-link (ho.abs B) Ad (ho.lam T) :- !,
   pi x\ get-head-link (B x) Ad (T x).
 get-head-link Link _ _ :- halt "BUG: Invalid left side for" {pplink Link}.
 
-type find-link-by-var address -> links -> list ho.tm -> o.
-find-link-by-var _ [] [].
-find-link-by-var Ad [Hd | L1] [T | L2] :-
+type find-link-by-var address -> links -> links -> list ho.tm -> list links -> o.
+find-link-by-var _ _ [] [] [].
+find-link-by-var Ad Prefix [Hd | L1] [T | L2] [Hd1|LL] :-
+  std.append Prefix L1 Hd1,
   std.assert! (get-head-link Hd Ad1 T) "get head should not fail", Ad = Ad1, !,
-  find-link-by-var Ad1 L1 L2.
-find-link-by-var Ad [_ | L1] L2 :- !,
-  find-link-by-var Ad L1 L2.
+  find-link-by-var Ad1 [Hd|Prefix] L1 L2 LL.
+find-link-by-var Ad Prefix [Hd | L1] L2 LL :- !,
+  find-link-by-var Ad [Hd | Prefix] L1 L2 LL.
 
 type not_occ_links_aux address -> links -> ho.tm -> o.
 % not_occ_links_aux A B C :- print {mem.ppaddr A} {pplinks B} {ho.pp C}, fail.
 not_occ_links_aux Ad _ (ho.uva Ad _) :- !, fail.
 not_occ_links_aux Ad L (ho.uva Ad1 _) :- !, 
-  std.spy(find-link-by-var Ad1 L Terms),
-  forall1 (not_occ_links_aux Ad L) Terms.
+  (find-link-by-var Ad1 [] L Terms Links),
+  forall2 (not_occ_links_aux Ad) Links Terms.
 not_occ_links_aux _ _ (ho.con _) :- !.
 not_occ_links_aux _ _ N :- name N, !.
 not_occ_links_aux Ad L (ho.lam B) :- !, pi x\ not_occ_links_aux Ad L (B x).
@@ -876,8 +873,8 @@ not_occ_links _ (ho.con _) _.
 not_occ_links Ad (ho.lam B) L :- pi x\ not_occ_links Ad (B x) L.
 not_occ_links Ad (ho.uva Ad _) _ :- !.
 not_occ_links Ad1 (ho.uva Ad2 _) L :- 
-  find-link-by-var Ad2 L Terms,
-  forall1 (not_occ_links_aux Ad1 L) Terms.
+  find-link-by-var Ad2 [] L Terms Links,
+  forall2 (not_occ_links_aux Ad1) Links Terms.
 not_occ_links Ad (ho.app L) Links :-
   not_occ_links_aux Ad Links (ho.app L).
 not_occ_links _ N _ :- name N.

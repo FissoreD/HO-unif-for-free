@@ -27,6 +27,10 @@ kind option type -> type.
 type some A -> option A.
 type none option A.
 
+type int->nat int -> nat -> o.
+int->nat 0 z.
+int->nat R (s N) :- R > 0, R' is R - 1, int->nat R' N.
+
 type nth nat -> list A -> A -> o.
 nth z (X :: _) Y  :- X = Y.
 nth (s N) (_ :: L) X :- nth N L X.
