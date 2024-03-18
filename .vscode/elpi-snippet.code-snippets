@@ -1,7 +1,7 @@
 {
 	"lambda": {
 		"scope": "elpi",
-		"prefix": "lambda",
+		"prefix": ["lambda", "\\lambda"],
 		"body": [
 			"λ"
 		],
@@ -9,7 +9,7 @@
 	},
 	"beta": {
 		"scope": "elpi",
-		"prefix": "beta",
+		"prefix": ["beta","\\beta"],
 		"body": [
 			"β"
 		],
@@ -17,7 +17,7 @@
 	},
 	"eta": {
 		"scope": "elpi",
-		"prefix": "eta",
+		"prefix": ["eta","\\eta"],
 		"body": [
 			"η"
 		],
