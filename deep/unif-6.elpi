@@ -549,8 +549,6 @@ pplink (ho.val (link-beta A B)) S :- S is "|- " ^ {ho.pp A} ^ " =β= " ^ {ho.pp 
 %  - T = uva seing N (N is also the last of L)
 %  - T = app L such that the last args of L are maybe-eta wrt L
 type maybe-eta fo.fm -> fo.fm -> list fo.fm -> o.
-% maybe-eta A B C :- print "ETA1" A B C, fail.
-% maybe-eta N (fo.fapp[fo.fuva _|Args]) _ :- !, mem Args N. % Head is flex -> if N is in Args, we can have eta
 maybe-eta N (fo.fapp[fo.fuva _|Args]) _ :- !, exists (x\ maybe-eta-of N x []) Args, !. % Head is flex -> if N is in Args, we can have eta
 maybe-eta N (fo.flam B) L :- !, pi x\ maybe-eta N (B x) [x | L].
 maybe-eta _ (fo.fapp [fo.fcon _|Args]) L :-                      % Head is rigid -> to be an eta we consider also L
@@ -558,18 +556,20 @@ maybe-eta _ (fo.fapp [fo.fcon _|Args]) L :-                      % Head is rigid
    maybe-equal R {std.rev L}.
 
 type maybe-eta-of fo.fm -> fo.fm -> list fo.fm -> o.
-% maybe-eta-of A B C :- print "ETA2" A B C, fail.
 maybe-eta-of N N _ :- !.
+% TODO: not sure of this
 maybe-eta-of N (fo.fapp[fo.fuva _|Args]) L :- !, forall1 (mem Args) [N|L]. % Head is flex -> if N is in Args, we can have eta
 maybe-eta-of N (fo.flam B) L :- !, pi x\ maybe-eta-of N (B x) [x | L].
 maybe-eta-of N (fo.fapp [N|Args]) L :-                      % Head is rigid -> to be an eta we consider also L
   last-n {len L} Args R,
   maybe-equal R {std.rev L}.
 
+% takes a list of terms, for each 
 type maybe-equal list fo.fm -> list fo.fm -> o.
 maybe-equal [] [].
 maybe-equal [N|L1] [N|L2] :- !, maybe-equal L1 L2.
-maybe-equal [fo.fapp [fo.fuva _|Scope]|L1] [N|L2] :- mem Scope N, !, maybe-equal L1 L2.
+% TODO: not sure of this
+% maybe-equal [fo.fapp [fo.fuva _|Scope]|L1] [N|L2] :- mem Scope N, !, maybe-equal L1 L2.
 maybe-equal [T|L1] [N|L2] :- maybe-eta-of N T [], maybe-equal L1 L2.
 
 % if there exists a subst s such that contract-rigid st t', then
@@ -580,10 +580,6 @@ contract-rigid L (ho.lam F) T :-
 contract-rigid L (ho.app [H|Args]) T :- 
   std.rev L LRev, std.appendR Prefix LRev Args,
   if (Prefix = []) (T = H) (T = ho.app [H|Prefix]).
-
-% type not-reduce-to-name fo.fm -> o.
-% not-reduce-to-name (fo.fcon _).
-% not-reduce-to-name 
 
 type locale ho.tm -> o.
 type get-scope-aux ho.tm -> list ho.tm -> o.
