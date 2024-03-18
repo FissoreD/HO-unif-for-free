@@ -11,6 +11,8 @@ internal-test ho.test-unif-4.
 internal-test ho.test-unif-5.
 internal-test ho.test-unif-6.
 internal-test fo.test-parse-1.
+internal-test comp.test-maybe-eta-1.
+internal-test comp.test-maybe-eta-2.
 
 namespace mem {
   kind address type.
@@ -189,6 +191,7 @@ beta (flam Bo) [H | L] R :- beta (Bo H) L R.
 beta (fapp A) L (fapp X) :- std.append A L X.
 beta (fuva N) L (fapp [fuva N | L]).
 beta (fcon H) L (fapp [fcon H | L]).
+beta N L (fapp [N | L]) :- name N.
 
 type mk-app fm -> list fm -> fm -> o.
 mk-app T L S :- beta T L S.
@@ -546,13 +549,17 @@ pplink (ho.val (link-beta A B)) S :- S is "|- " ^ {ho.pp A} ^ " =β= " ^ {ho.pp 
 %  - T = uva seing N (N is also the last of L)
 %  - T = app L such that the last args of L are maybe-eta wrt L
 type maybe-eta fo.fm -> fo.fm -> list fo.fm -> o.
-maybe-eta N (fo.fapp[fo.fuva _|Args]) _ :- !, mem Args N. % Head is flex -> if N is in Args, we can have eta
+% maybe-eta A B C :- print "ETA1" A B C, fail.
+% maybe-eta N (fo.fapp[fo.fuva _|Args]) _ :- !, mem Args N. % Head is flex -> if N is in Args, we can have eta
+maybe-eta N (fo.fapp[fo.fuva _|Args]) _ :- !, exists (x\ maybe-eta-of N x []) Args, !. % Head is flex -> if N is in Args, we can have eta
 maybe-eta N (fo.flam B) L :- !, pi x\ maybe-eta N (B x) [x | L].
 maybe-eta _ (fo.fapp [fo.fcon _|Args]) L :-                      % Head is rigid -> to be an eta we consider also L
   last-n {len L} Args R,
    maybe-equal R {std.rev L}.
 
 type maybe-eta-of fo.fm -> fo.fm -> list fo.fm -> o.
+% maybe-eta-of A B C :- print "ETA2" A B C, fail.
+maybe-eta-of N N _ :- !.
 maybe-eta-of N (fo.fapp[fo.fuva _|Args]) L :- !, forall1 (mem Args) [N|L]. % Head is flex -> if N is in Args, we can have eta
 maybe-eta-of N (fo.flam B) L :- !, pi x\ maybe-eta-of N (B x) [x | L].
 maybe-eta-of N (fo.fapp [N|Args]) L :-                      % Head is rigid -> to be an eta we consider also L
@@ -707,9 +714,11 @@ progress-eta-link (ho.uva _ _ as X) T H H1 ff :- contract-rigid [] T T1, !, prin
 progress-eta-link (ho.uva Ad _) T2 H H tt :- !, if (ho.not_occ Ad H T2) (print "no progress η") (print "progress η fail of occur-check", fail).
 progress-eta-link T _ _ _ _ :- halt "Error in progress-eta link: unreachable branch" T.
 
-type maybe-beta ho.tm -> o.
-maybe-beta (ho.lam B) :- pi x\ maybe-beta (B x).
-maybe-beta (ho.uva _ Scope) :- split-pf Scope _ [_|_].
+type is-ground ho.tm -> o. % same as the term is ground
+is-ground (ho.lam B) :- !, pi x\ is-ground (B x).
+is-ground (ho.con _).
+is-ground (ho.app L) :- forall1 is-ground L.
+is-ground N :- name N.
 
 type arity ho.tm -> nat -> o.
 arity (ho.con _) z.
@@ -724,10 +733,14 @@ occur-check-err (ho.uva Ad _) T S :-
   not (ho.not_occ Ad S T),
   print "progress β fail of occur-check between".
 
+type beta-reduce ho.tm -> ho.tm -> o.
+beta-reduce (ho.app [ho.lam B | L]) T2 :- !, ho.beta (ho.lam B) L T1, beta-reduce T1 T2.
+beta-reduce A A.
+
 type progress-beta-link-aux ho.tm -> ho.tm -> ho.subst -> ho.subst -> bool -> o.
 % progress-beta-link-aux (ho.uva _ _ as T) T2 S1 S1 _ :- occur-check-err T T2 S1, !, halt, fail.
 progress-beta-link-aux T1 T2 S1 S2 ff :- 
-  not (maybe-beta T2), !, % TODO: maybe-beta is not very well implemented
+  is-ground T2, !, % TODO: is-ground is not very well implemented
   print "progress β not uva with" {ho.pp T1} "and" {ho.pp T2},
   ho.unif T1 T2 S1 S2.
 progress-beta-link-aux _ _ S S tt :- !, print "No β progress2".
@@ -746,18 +759,18 @@ progress-beta-link T (ho.app[ho.uva V Scope | L]) S S2 tt :-
 progress-beta-link (ho.uva _ _ as T) (ho.app[ho.uva _ _ | _] as T2) S1 _ _ :-
   occur-check-err T T2 S1, !, fail.
 
+% TODO: in (ho.app[ho.uva _ _ | L]) L, can be in PF
 progress-beta-link _ (ho.app[ho.uva _ _ | _]) H H tt :- !, print "No β progress1".
 
 % Note: Hd is rigid by construction
-progress-beta-link T1 (ho.app[Hd|Tl]) S1 S2 B :- 
-  ho.beta Hd Tl T2, progress-beta-link-aux T1 T2 S1 S2 B.
+progress-beta-link T1 T2 S1 S2 B :-
+  beta-reduce T2 T3, progress-beta-link-aux T1 T3 S1 S2 B.
 
 type solve-link-abs link -> option link -> ho.subst -> ho.subst -> o.
 solve-link-abs (ho.abs X) R H H1 :- 
   pi x\ (pi S\ ho.unif x x S S) => ho.copy x x => (pi S\ ho.deref S x x) => solve-link-abs (X x) (R' x) H H1,
   if ((R' x) = some (R'' x)) (R = some (ho.abs R'')) (R = none).
 
-% Link eta
 solve-link-abs (ho.val (link-eta A B) as L) Keep S S1 :- !,
   print "In progress eta link for" {ho.pp A} {ho.pp B},
   progress-eta-link A B S S1 R,
@@ -996,8 +1009,17 @@ link-abs-same-lhs A (ho.abs G) :- pi x\ link-abs-same-lhs A (G x).
 link-abs-same-lhs (ho.val (link-eta (ho.uva N _) _)) (ho.val (link-eta (ho.uva N _) _)).
 
 type decompl-links-aux link -> ho.subst -> ho.subst -> list ho.tm -> o.
-decompl-links-aux (ho.val (link-eta T1 T2)) H H1 _ :- print "Start decompl-η of" {ho.pp T1} "and" {ho.pp T2} "in" {ho.ppsubst H}, ho.unif T1 T2 H H1.
-decompl-links-aux (ho.val (link-beta T1 T2)) H1 H2 _ :- print "Start decompl-β of" {ho.pp T1} "and" {ho.pp T2}, ho.unif T1 T2 H1 H2.
+decompl-links-aux (ho.val (link-eta T1 T2)) H1 H2 _ :- 
+  ho.deref H1 T1 T1',
+  ho.deref H1 T2 T2',
+  print "Start decompl-η of" {ho.pp T1'} "and" {ho.pp T2'} "in" {ho.ppsubst H1}, 
+  % ho.eta-contract T2 T3,
+  T3 = T2',
+  ho.unif T1' T3 H1 H2.
+decompl-links-aux (ho.val (link-beta T1 T2)) H1 H2 _ :- 
+  ho.deref H1 T1 T1',
+  ho.deref H1 T2 T2',
+  print "Start decompl-β of" {ho.pp T1'} "and" {ho.pp T2'}, ho.unif T1' T2' H1 H2.
 decompl-links-aux (ho.abs B) H H1 L :- pi x\ decompl-links-aux (B x) H H1 [x|L].
 
 type decompl-links links -> links -> ho.subst -> ho.subst -> o.
@@ -1084,4 +1106,16 @@ test-hope-eta-5 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.uva (mem.addr
                                    (ho.val (ho.uva (mem.addr z) [])).
 test-hope-eta-6 :- hope-for-eta [] (ho.abs x\ ho.abs y\ ho.val (ho.uva (mem.addr z) [y, x]))
                                    (ho.abs x\ ho.abs y\ ho.val (ho.uva (mem.addr z) [y, x])).
+
+
+type test-maybe-eta-1 o.
+type test-maybe-eta-2 o.
+test-maybe-eta-1 :-
+  pi f\ sigma B\
+    fo.parse "λx.(X (Y x) f)" (fo.flam B),
+  pi x\ maybe-eta x (B x) [x].
+
+test-maybe-eta-2 :-
+  fo.parse "λx. λy. (Z (Y  x) (X  x  y))" (fo.flam B),
+  pi x\ maybe-eta x (B x) [x].
 }

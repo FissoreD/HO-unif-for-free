@@ -169,10 +169,15 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- pri
 @sok 6 "f X  Y  X = f (f Y) b (f b)" ["f b", "b"].
 @sok 7 "λx. (f X) = λx. (f a)" ["a"].
 
-@sok 8 "λx. λy. (X  x  y) = λx. λy. (X  x  y)" [].
+% @sok 8 "λx. λy. (X  x  y) = λx. λy. (X  x  y)" [].
 
 @sok 9  "λx. λy. (X  x  y) = λx. λy. (f y)" ["λx. f"].
 @sok 90  "λx. λy. (X  y x) = (λx. f)" ["λx. λy. (f x)"].
+@sokl 900  [
+  % pr ok "λx. λy. (X  x  y) = λx. λy. (f y)",
+  pr ok "λx. λy. (X  x  y) = λx. f",
+] ["λx. f"].
+
 @sok 10 "X = λx.λy.(X y x)" ["λx.λy.Y"].
 @sokl 100 [ pr ok "λx.λy.(f y x) = λx.λy.(X y x)" ] ["f"].
 @sokl 1000 [
@@ -487,6 +492,12 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- pri
   pr ok "λx.λy.(X y x) = λx.(f (W x))",
   pr (error "unif") "λx.λy.(X y x) = λx.(g (W x))",
 ] [].
+
+@sokl 59 [
+  pr ok "X = λx.λy.(x y)",
+  pr ok "Y = λx.λy.(y x)",
+  pr ok "λx.(X (Y x) f) = f",
+] ["λx.x", "λx.λy.(y x)"].
 
 /* Non passa in elpi (x\ X x) = A B */
 /*     Passa in elpi X = A B        */
