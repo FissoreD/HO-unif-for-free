@@ -755,6 +755,12 @@ progress-beta-link T (ho.app[ho.uva V Scope | L] as T2) S S2 [ho.val (link-beta 
   ho.unif (ho.uva V Scope) T1 S1 S2,
   print "progress β big arity" {ho.pp T} "unified with" {ho.pp T1} "->" {ho.ppsubst S2}.
 
+% this is for beta links of the form `link-beta T (app[uva N [], app[B, x] | ...])
+% and B is instantiated to (x\x)
+% In this case, the terms on the right becomes (app[uva N [], x | L])
+% We want to put the name x in the scope of N to make HO unif, therefore, we
+% build a new var N' of arity 1, eta-linked to N and the beta links is updated
+% New links will be: [link-beta T (app[uva N' [x] | L]), link-eta N (λx.ho.uva N' [x])]
 progress-beta-link (ho.uva _ _ as T) (ho.app[ho.uva Ad1 Scope1 | L1] as T1) S1 S2 NewLinks :-
   std.append Scope1 L1 Scope1L,
   split-pf Scope1L Scope2 L2,
