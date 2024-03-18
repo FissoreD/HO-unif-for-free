@@ -667,8 +667,9 @@ None of the encodings above provide a solution to our problem.
 In order to reason about unification we provide a description of the
 \Fo{} and \Ho languages where unification variables
 are first class terms, i.e. they have a concrete syntax. We keep these languages
-minimal, for example we omit the \elpiIn{all} quantifier of DTT we used
-in the example in Section~\ref{sec:intro}. 
+minimal, for example, we omit the \elpiIn{all} quantifier of DTT we used
+in the example in Section~\ref{sec:intro} together with the type notation of
+terms carried by the \elpiIn{lam} constructor. 
 %
 \setlength{\abovecaptionskip}{0pt}
 \setlength{\belowcaptionskip}{-13pt}
@@ -702,11 +703,10 @@ type uva nat -> list tm -> tm.
 
 \noindent
 In the case of \Fo{} unification variables \elpiIn{fuva} have no explicit scope:
-Unification variables standing for functions are applied their arguments
-via the \elpiIn{fapp} constructor.
-For example in the statement of the instance \coqIn{forall_dec} the
-term \coqIn{P x} is represented as \elpiIn{fapp[fuva N, x]}, where \elpiIn{N}
-is of type \elpiIn{nat} and \elpiIn{x} is a bound variable.
+the arguments of an higher order unification variable are via the \elpiIn{fapp}
+constructor. For example in the statement of the instance \coqIn{forall_dec} the
+term \coqIn{P x} is represented as \elpiIn{fapp[fuva N, x]}, where \elpiIn{N} is
+a memory address and \elpiIn{x} is a bound variable.
 
 In \Ho the representation of \coqIn{P x} is instead \elpiIn{uva N [x]}.
 We say that the unification variable \elpiIn{uva N L} is in \llambda iff
@@ -723,7 +723,7 @@ The \elpiIn{name} builtin predicate tests if a term is a bound variable.
 \footnote{one could always load name x for every x under a pi and get rid of the name builtin}
 The
 compiler~\ref{sec:xxx} needs to support terms outside \llambda for practical
-reasons, so we don't assume all out terms are in \llambda but rather test.
+reasons, so we don't assume all out terms are in \llambda but rather test. \textbf{\textcolor{red}{what?? }}
 
 In both languages unification variables are identified by a natural number,
 which can be seen as a memory address. The memory and its associated
@@ -828,6 +828,9 @@ move (val (uva N A)) L     (uva N X) :- std.append A L X.
 TODO: no need to napp, see the beta section.
 Note that when the substitution \elpiIn{S} maps a unification variable
 \elpiIn{N} to an assignment \elpiIn{F} we ....
+
+TODO: invariant: variables in subst are always fully applied, and length of scope is the
+arity of the HO variable. 
 
 Important!!!
 A different reasoning is to be addressed to the variables of the ML. Firstly, a
