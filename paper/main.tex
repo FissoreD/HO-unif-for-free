@@ -545,10 +545,10 @@ a run time hint) then ...
 
 \subsection{The intuition in a nutshell}
 A term $s$ is compiled in a term $t$ where any
-``problematic'' subterm $tp$ is replaced by a unification variable
-$hp$ and an accessory
-(suspended) unification problem $(hp \Ue tp) \in \mathcal{L}$.
-Since $t \in \llambda$, \Ue is well behaved (captures \Eo).
+``problematic'' subterm $tp$ is replaced by a unification variable $h$
+and an accessory link, that represent a suspended unification problem
+$h \Ue tp$. As a result \Ue is well behaved on $t$, that is it captures \Eo.
+We now define ``problematic'' formally.
 
 \newcommand{\maybeeta}{\ensuremath{\Diamond\eta}\xspace}
 \newcommand{\maybebeta}{\ensuremath{\Diamond\beta}\xspace}
@@ -565,62 +565,57 @@ makes $\rho t = \lambda x.\lambda y.f x y$
 that is the eta long form of $f$.
 
 \begin{definition}[\maybebeta]
-  $t$ is in \maybebeta if it contains a subterm matching the
-  pattern \elpiIn{app[uva _ _|_]}
+  $\maybebeta = \{ X t_1 \ldots t_n | t \not\in \llambda \}$.
 \end{definition}
 
+\noindent
+An example of $t$ in \maybebeta{} is $F a$ for a constant $a$. Note however tha
+an oracle could provide an assignment $\rho = \{ F \mapsto \lambda x.x\}$
+that makes the resulting term fall outside of \maybebeta. 
+
+\begin{definition}[Subterm $\mathcal{P}(t)$]
+$$
+\begin{array}{l}
+t \in \mathcal{P}(t)\\
+t = f t_1\ldots t_n \Rightarrow \mathcal{P}(t_i) \subseteq \mathcal{P}(t) \land f \in \mathcal{P}(t)\\
+t = \lambda x.t' \Rightarrow \mathcal{P}(t') \subseteq \mathcal{P}(t)\\
+\end{array}
+$$
+\end{definition}
+
+\noindent
+We write $\mathcal{P}(X) = \bigcup_{t\in X} \mathcal{P}(t)$.
+
+\marginpar{TODO: find better word}
 \newcommand{\normal}{\ensuremath{\mathrm{normal}}}
 \begin{definition}[Normal form]
 Given a set of terms $X \subseteq \Ho{}$,
 $$
 \normal(X) =
-X \cap (\maybebeta{} ~\cup~ \maybeeta{}) = \emptyset
+\mathcal{P}(X) \cap (\maybebeta{} ~\cup~ \maybeeta{}) = \emptyset
 $$
 \end{definition}
 
 \noindent
-We write $\sigma X = \{ \sigma t_i | t_i \in X\}$.
+We write $\sigma X = \{ \sigma t | t \in X\}$.
 
 \begin{proposition}[Normal form preservation]\label{prop:nf}
-$\forall \mathcal{T}, \forall \mathbb{L}, \forall p,$
+$\forall \mathcal{T}, \forall \mathbb{L}, \forall p, \forall \sigma, \forall \sigma'$
 $$
 \normal(\sigma\mathcal{T}) \land
 \stepH{\mathcal{T}}{p}{\sigma}{\mathbb{L}}{\sigma'}
-\Rightarrow \normal(\sigma'\mathcal{T})
+\Rightarrow \normal((\sigma \cup \sigma')\mathcal{T})
 $$
 \end{proposition}
 
-TODO: check if this is also true for $\rho$ after decomp.
-In particular this guaarantees that is we start from normal terms
-we never introduce eta-long or non-beta-normal terms. This is required in
-order to show the fidelity, since there terms would not be considered
-as equal by \Ue.
-
-
-
-Problematic terms are terms where the head constructor may
-change if instantiated, that is, they are in \maybebeta or \maybeeta.
-On these terms \Ue is weak/incorrect.
-\begin{itemize}
-\item \elpiIn{app[F,con "a"]} may be \Eo to \elpiIn{con "a"}
-\item \elpiIn{lam x\lam y\app[F,y,x]} may be \Eo to \elpiIn{con "f"} 
-\end{itemize}
-
 \noindent
-\solve{} solves links when they are no more ``problematic'', for example
-in the examples above if \elpiIn{F} materializes, or if the
-other side of the link forces a commit. EXPLAIN.
-In these cases the problems are ``resumed'' by using \Ue,
-otherwise they are kept suspended until the
-decompilation phase.
-\solve also detects occur checks trough the suspended unif problems
-in order to grant \cref{prop:fidelity}.
+In particular this guarantees that is we start from normal terms
+we never introduce eta-long or non-beta-normal terms in $\sigma'$.
 
-Note tha the first case is outside $\llambda$ but is frequent in practice
-so we handle it. It is also what prop 5 is about.
+Note that proposition \ref{prop:nf} does not hold for \Uo{} since
+decompilation can introduce (actually restore) terms in
+\maybeeta or \maybebeta.
 
-Note that proposition \ref{prop:nf} does not hold in this case since
-decompilation can introduce terms in \maybebeta or \maybebeta.
 \section{Alternative encodings and related work}
 
 Paper \cite{10.1145/2966268.2966272} introduces semi-shallow.
