@@ -180,5 +180,5 @@ ppnat-aux z 0.
 ppnat-aux (s N) M :- ppnat-aux N M1, M is M1 + 1.
 
 type ppnat nat -> string -> o.
-ppnat X _ :- var X, halt "ppnat".
+ppnat X _ :- var X, halt "ppnat: passed flexible arg".
 ppnat N S :- ppnat-aux N M, std.any->string M S.
