@@ -261,17 +261,15 @@ unif T (uva N Args) S S1 :-
 % Not assigned vars
 unif (uva N A) (uva N A) S S :- !, pattern-fragment A.
 unif (uva V A) (uva U A) S1 S2 :- !, pattern-fragment A,
-  prune-same-args V A [] Ass, mem.assign U S1 Ass S2.
+  bind (uva V A) A Ass, mem.assign U S1 Ass S2.
 unif (uva N Args1) (uva N Args2) S S2 :- % same var 
-  mem.unset? N S,
   std.assert!(len Args1 Len, len Args2 Len) "Not typechecking", !, % the length of args must be the same
   pattern-fragment Args1, pattern-fragment Args2, 
   std.do![mem.new S W S1, prune-same-variable W Args1 Args2 Ass, 
   mem.assign N S1 Ass S2],
   print "Assigning in uva N Args1" N {ppsubst S1} "+" {ppass Ass} "=>" {ppsubst S2}. 
 unif (uva N Args1) (uva M Args2) S S3 :- % Args with diff length
-  mem.unset? N S, mem.unset? M S, !,
-  print "Unifying" {pp (uva N Args1)} "and" {pp (uva M Args2)},
+  % print "Unifying" {pp (uva N Args1)} "and" {pp (uva M Args2)},
   pattern-fragment Args1, pattern-fragment Args2, 
   mem.new S W S1, (prune-smart W Args1 Args2 Ass1 Ass2), 
   mem.assign N S1 Ass1 S2,
@@ -288,11 +286,6 @@ unif T (uva N Args) S S1 :-
   mem.assign N S T1 S1.
 
 % Note: eta & beta for unification is not allowed in ML over terms of the OL
-
-% prune in the case of same argumets for the two vars (e.g. uv X L and uv Y L)
-type prune-same-args address -> list tm -> list tm -> assignment -> o.
-prune-same-args N [] Acc (val (uva N Args)) :- std.rev Acc Args.
-prune-same-args N [_ | B] L (abs T) :- pi x\ prune-same-args N B [x | L] (T x).
 
 % prune in the case of vars with args of same length (e.g. uv X L1, uv Y L2, len L1 = len L2)
 type prune-same-variable address -> list tm -> list tm -> assignment -> o.
