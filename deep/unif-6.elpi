@@ -714,11 +714,14 @@ progress-eta-link (ho.uva _ _ as X) T H H1 [] :- contract-rigid [] T T1, !, prin
 progress-eta-link (ho.uva Ad _ as T1) T2 H H [ho.val (link-eta T1 T2)] :- !, if (ho.not_occ Ad H T2) (print "no progress η") (print "progress η fail of occur-check", fail).
 progress-eta-link T _ _ _ _ :- halt "Error in progress-eta link: unreachable branch" T.
 
-type is-ground ho.tm -> o. % same as the term is ground
-is-ground (ho.lam B) :- !, pi x\ is-ground (B x).
-is-ground (ho.con _).
-is-ground (ho.app L) :- forall1 is-ground L.
-is-ground N :- name N.
+type is-in-pf ho.tm -> o. % same as the term is ground
+is-in-pf uvar :- halt "passed var to is-in-pf".
+is-in-pf (ho.app [ho.uva _ _ | _]) :- !, fail.
+is-in-pf (ho.lam B) :- !, pi x\ is-in-pf (B x).
+is-in-pf (ho.con _).
+is-in-pf (ho.app L) :- forall1 is-in-pf L.
+is-in-pf N :- name N.
+is-in-pf (ho.uva _ L) :- pattern-fragment L.
 
 type arity ho.tm -> nat -> o.
 arity (ho.con _) z.
@@ -740,7 +743,7 @@ beta-reduce A A.
 type progress-beta-link-aux ho.tm -> ho.tm -> ho.subst -> ho.subst -> links -> o.
 % progress-beta-link-aux (ho.uva _ _ as T) T2 S1 S1 _ :- occur-check-err T T2 S1, !, halt, fail.
 progress-beta-link-aux T1 T2 S1 S2 [] :- 
-  is-ground T2, !, % TODO: is-ground is not very well implemented
+  is-in-pf T2, !,
   print "progress β not uva with" {ho.pp T1} "and" {ho.pp T2},
   ho.unif T1 T2 S1 S2.
 progress-beta-link-aux T1 T2 S S [ho.val (link-beta T1 T2)] :- !, print "No β progress2".
