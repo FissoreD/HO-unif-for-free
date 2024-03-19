@@ -53,6 +53,9 @@
 \newcommand{\nEe}{\ensuremath{\nEqualRel_\lambda}\xspace}
 \newcommand{\llambda}{\ensuremath{\mathcal{L}_\lambda}\xspace}
 
+\newcommand{\linkbeta}{\texttt{link-}\ensuremath{\beta}\xspace}
+\newcommand{\linketa}{\texttt{link-}\ensuremath{\eta}\xspace}
+
 \newcommand{\Fo}{\ensuremath{\mathcal{F}_{\!o}\xspace}} % space non va
 \newcommand{\Ho}{\ensuremath{\mathcal{H}_o}\xspace}
 
@@ -1179,6 +1182,18 @@ sequenza)
 \otext{The snd unif pb, we have to unif \elpiIn{lam x\ lam y\ Y x y} with \elpiIn{lam x\ f}}
 \otext{It is not doable, with the same elpi var}
 
+Invarianti:
+A destra della eta abbiamo sempre un termine che comincia per $\lambda x. bla$
+
+
+La deduplicate eta:
+  - viene chiamata che della forma [variable] -> [eta1] e [variable] -> [eta2] (a destra non c'è mai un termine con testa rigida)
+  - i due termini a dx vengono unificati con la unif e uno dei due link viene buttato
+    -> si mettono più lambda 
+  - dopo l'unificazione rimane un link [variabile] -> [etaX] e quando
+    risolviamo un eta-link, allora dobbiamo eta-espandere qb il termine di sinistra per
+    poterlo  unifcare con quello di dx.
+
 \subsection{Problems with $\beta$}
 
 $\beta$-reduction problems (\maybebeta) appears any time we deal with a subterm $t
@@ -1197,7 +1212,54 @@ the problem $F a = G$ is solvable by \Ue, but the final result is that $G$ is
 assigned to $(\lambda x.x) a$ which breaks the invariant saying that the 
 substitution of the meta language always contain only terms in normal form.
 
+The solution to this problem is to modify the compiler such that any sub-term $t$
+considered as a potential $\beta$-redex is replaced with a hole $h$ and a new dedicated
+link, called \linkbeta.
 
+\begin{elpicode}
+  type link-beta tm -> tm -> link.
+\end{elpicode}
+  
+This link carries two terms, the former representing the variable $h$ for the
+new created hole and the latter containing the subterm $t$. As for the \linketa,
+we will call $h$ and $t$ respectively the left $lhs$ and the right $rhs$ hand
+side of the \linkbeta.
+
+At compile time, a subterm is \maybebeta, if it has the shape \elpiIn{fapp[fuva
+N | L]} and \elpiIn{distinct L} does not hold. In that case, \elpiIn{L} is split
+in two sublist \elpiIn{PF} and \elpiIn{NPF} such that former is the longest
+prefix of \elpiIn{L} such that \elpiIn{distinct PF} holds. \elpiIn{NPF} is the
+list such that \elpiIn{append PF NPF L}. The $lhs$ is set to a new variable
+named $M$ with \elpiIn{PF} in scope whereas the $rhs$ is given by the term
+\elpiIn{app[uva N' PF | NPF]} where the \Ho variable identified by \elpiIn{N'}
+is mapped to the \Fo variable named \elpiIn{N}.
+
+
+After its creation, a \linkbeta remain suspended until the head of $rhs$ is
+instantiated by the oracle (see \cref{prop:simulation}). In this case, $rhs$ is
+$\beta$-reduced to a new term, say $t'$. $t'$ is either a term in \llambda, in
+which case $t'$ is unified with the $lhs$, otherwise, the link remain suspended
+and no progress is performed. Another way to wake a \linkbeta up is when the
+$lhs$ is a term \elpiIn{T} and $rhs$ has the shape \elpiIn{app[uva N PF | NPF]}
+and some of the arguments in the \elpiIn{NPF} list become names. This is
+possible after the resolution of other links. In this case, the list \elpiIn{L}
+obtained by the concatenation between \elpiIn{PF} and \elpiIn{NPF} is split
+again in to lists \elpiIn{PF'} and \elpiIn{NPF'}. If \elpiIn{PF} is not that
+same as \elpiIn{PF'}, then we can 1) remove the current \linkbeta, 2) create a
+new \linkbeta between \elpiIn{T} and \elpiIn{app[uva N' PF' | NPF']} and 3)
+create a new \linketa between the variables \elpiIn{N} and \elpiIn{N'}.
+
+An example justifying this last link manipulation is given by the following
+unification problem:
+
+\begin{elpicode}
+  f = flam x\ flam y\ fapp[F, (X x), y] % $f = \lambda x.\lambda y.F (X x) y$
+\end{elpicode}
+
+\noindent
+from the subsitution $\rho = \{X \mapsto \lambda x.x\}$.
+
+\noindent
 \otext{The following goal: \elpiIn{X = lam x\ x, app[X, a] = a}}
 \otext{We use links-beta}
 
