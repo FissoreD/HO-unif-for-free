@@ -508,8 +508,8 @@ type maybe-eta fo.fm -> fo.fm -> list fo.fm -> o.
 maybe-eta N (fo.fapp[fo.fuva _|Args]) _ :- !, exists (x\ maybe-eta-of N x []) Args, !. % Head is flex -> if N is in Args, we can have eta
 maybe-eta N (fo.flam B) L :- !, pi x\ maybe-eta N (B x) [x | L].
 maybe-eta _ (fo.fapp [fo.fcon _|Args]) L :-                                            % Head is rigid -> to be an eta we consider also L
-  split-last-n {len L} Args First Last,
-  forall1 (x\ forall1 (y\ not (use-binder x y)) First) L,
+  split-last-n {len L} Args First_ Last,
+  % forall1 (x\ forall1 (y\ not (use-binder x y)) First) L,
    maybe-equal Last {std.rev L}.
 
 type maybe-eta-of fo.fm -> fo.fm -> list fo.fm -> o.
@@ -586,18 +586,23 @@ comp (fo.fapp [fo.fuva N|Ag]) (ho.uva M' Scope) Mappings1 Mappings3 L L2 S S4 :-
 comp (fo.fapp A)              (ho.app A1) Mappings1 Mappings2 L L1 S S1 :- fold6 comp A A1 Mappings1 Mappings2 L L1 S S1.
 
 % Ad1 is the variable with smaller arity, Ad2 is eta expanded N times
-type make-eta-link-aux nat -> address -> address -> list ho.tm -> link -> o.
-make-eta-link-aux N Ad1 Ad2 Vars (@val-link-eta (ho.uva Ad1 Scope) T1) :-
-  std.rev Vars Scope, eta-expand (ho.uva Ad2 Scope) N T1.
+type make-eta-link-aux nat -> address -> address -> list ho.tm -> links -> ho.subst -> ho.subst -> o.
+make-eta-link-aux z Ad1 Ad2 Scope1 [@val-link-eta (ho.uva Ad1 Scope) T1] H1 H1  :-
+  std.rev Scope1 Scope, eta-expand (ho.uva Ad2 Scope) @one T1.
+make-eta-link-aux (s N) Ad1 Ad2 Scope1 [@val-link-eta (ho.uva Ad1 Scope) T2 | L2] H1 H3 :-
+  std.rev Scope1 Scope, mem.new H1 Ad H2, eta-expand (ho.uva Ad Scope) @one T2,
+  (pi x\ make-eta-link-aux N Ad Ad2 [x|Scope1] (L1 x) H2 H3),
+  close-links L1 L2.
 
 % [make-eta-link ArityAd1, ArityAd2, Ad1, Ad2 Vars, Link]
 % as long as the arities are > 0, we eat one arity by putting a variable in the ctx
 % in the base case we return the link-eta eta-extending N times the variable with higher arity.
-type make-eta-link nat -> nat -> address -> address -> list ho.tm -> link -> o.
-make-eta-link N z Ad1 Ad2 Vars L :- make-eta-link-aux N Ad2 Ad1 Vars L.
-make-eta-link z N Ad1 Ad2 Vars L :- make-eta-link-aux N Ad1 Ad2 Vars L.
-make-eta-link (s N) (s M) Ad1 Ad2 Vars (ho.abs L) :-
-  pi x\ make-eta-link N M Ad1 Ad2 [x|Vars] (L x).
+type make-eta-link nat -> nat -> address -> address -> list ho.tm -> links -> ho.subst -> ho.subst -> o.
+make-eta-link (s N) z Ad1 Ad2 Vars L H H1 :- make-eta-link-aux N Ad2 Ad1 Vars L H H1.
+make-eta-link z (s N) Ad1 Ad2 Vars L H H1 :- make-eta-link-aux N Ad1 Ad2 Vars L H H1.
+make-eta-link (s N) (s M) Ad1 Ad2 Vars Links H H1 :-
+  (pi x\ make-eta-link N M Ad1 Ad2 [x|Vars] (L x) H H1),
+  close-links L Links.
 
 % if there exists two mappings on the form:
 %   ==> C0 -> X4 (2) ~!~ C0 -> X1 (1)
@@ -610,15 +615,16 @@ make-eta-link (s N) (s M) Ad1 Ad2 Vars (ho.abs L) :-
 %  - X4 is the eta-expanded once to be fully applied
 type deduplicate-mappings mappings -> mappings -> ho.subst -> ho.subst -> links -> links -> o.
 deduplicate-mappings [] [] H H L L.
-deduplicate-mappings [(mapping (fv O) (hv M (arity LenM)) as X1) | Map1] Map2 H1 H2 L1 L3 :-
+deduplicate-mappings [(mapping (fv O) (hv M (arity LenM)) as X1) | Map1] Map2 H1 H3 L1 L3 :-
   take-list Map1 (mapping (fv O) (hv M' (arity LenM'))) _, !,
+  std.assert! (not (LenM = LenM')) "Deduplicate mappings, there is a bug",
   print "arity-fix links:" {ppmapping X1} "~!~" {ppmapping (mapping (fv O) (hv M' (arity LenM')))}, 
-  make-eta-link LenM LenM' M M' [] New,
-  print "new eta link" {pplink New},
-  L2 = [New | L1],
-  deduplicate-mappings Map1 Map2 H1 H2 L2 L3.
+  make-eta-link LenM LenM' M M' [] New H1 H2,
+  print "new eta link" {pplinks New},
+  std.append New L1 L2,
+  deduplicate-mappings Map1 Map2 H2 H3 L2 L3.
 deduplicate-mappings [A|As] [A|Bs] H1 H2 L1 L2 :- deduplicate-mappings As Bs H1 H2 L1 L2, !.
-deduplicate-mappings [A|_] _ H _ _ _ :- halt {ppmapping A} {ho.ppsubst H}.
+deduplicate-mappings [A|_] _ H _ _ _ :- halt "deduplicating mapping error" {ppmapping A} {ho.ppsubst H}.
 
 type alloc mappings -> mappings -> fvariable -> hvariable -> ho.subst -> ho.subst -> o.
 alloc Map Map N M H H :- std.mem Map (mapping N M), !.
@@ -639,6 +645,10 @@ type is-not-eta list ho.tm -> ho.tm -> o.
 is-not-eta L (ho.lam B) :- pi x\ is-not-eta _ x => is-not-eta [x|L] (B x).
 is-not-eta _ (ho.con _).
 is-not-eta L (ho.uva _ Scope) :- forall1 (not-in Scope) L.
+
+type count-lambda ho.tm -> nat -> o.
+count-lambda (ho.lam T) (s N) :- !, pi x\ count-lambda (T x) N.
+count-lambda _ z.
 
 % invariante: a sx non c'è mai una eta espansione, a destra c'è una lam, altrimenti il link eta è buttato via
 type progress-eta-link ho.tm -> ho.tm -> ho.subst -> ho.subst -> links -> o.
@@ -698,7 +708,7 @@ progress-beta-link T (ho.app[ho.uva V Scope | L] as T2) S S2 [@val-link-beta T T
 % We want to put the name x in the scope of N to make HO unif, therefore, we
 % build a new var N' of arity 1, eta-linked to N and the beta links is updated
 % New links will be: [link-beta T (app[uva N' [x] | L]), link-eta N (λx.ho.uva N' [x])]
-progress-beta-link (ho.uva _ _ as T) (ho.app[ho.uva Ad1 Scope1 | L1] as T1) S1 S2 NewLinks :-
+progress-beta-link (ho.uva _ _ as T) (ho.app[ho.uva Ad1 Scope1 | L1] as T1) S1 S3 NewLinks :-
   std.append Scope1 L1 Scope1L,
   split-pf Scope1L Scope2 L2,
   print Scope2 L2,
@@ -706,9 +716,9 @@ progress-beta-link (ho.uva _ _ as T) (ho.app[ho.uva Ad1 Scope1 | L1] as T1) S1 S
   mem.new S1 Ad2 S2,
   len Scope1 Scope1Len,
   len Scope2 Scope2Len,
-  make-eta-link Scope1Len Scope2Len Ad1 Ad2 [] LinkEta,
+  make-eta-link Scope1Len Scope2Len Ad1 Ad2 [] LinkEta S2 S3,
   if (L2 = []) (T2 = ho.uva Ad2 Scope2) (T2 = ho.app [ho.uva Ad2 Scope2 | L2]),
-  NewLinks = [LinkEta, @val-link-beta T T2],
+  NewLinks = [@val-link-beta T T2 | LinkEta],
   print "progress β: refine" {pplink (@val-link-beta T T1)} "to" {pplinks NewLinks}.
 
 progress-beta-link (ho.uva _ _ as T) (ho.app[ho.uva _ _ | _] as T2) S1 _ _ :- occur-check-err T T2 S1, !, fail.
@@ -803,12 +813,56 @@ solve-links [L0|L1] L3 S S2 :- deref-link S L0 L,
   if (R = []) (print {pplink L} "is removed") true,
   solve-links L1 L2 S1 S2, std.append R L2 L3.
 
+% type use-binder1 ho.tm -> ho.tm -> o.
+% use-binder1 N N.
+% use-binder1 N (ho.app L) :- exists (use-binder1 N) L.
+% use-binder1 N (ho.lam B) :- pi x\ use-binder1 N (B x).
+
+% type correct-subst-eta ho.tm -> ho.tm -> list ho.tm -> o.
+% correct-subst-eta _ (ho.app [ho.uva _ _|_]) _ :- halt "app[uva _ _|_] in subst...".
+% correct-subst-eta N (ho.uva _ Args) _ :- !, exists (x\ correct-subst-eta-of N x []) Args, !. % Head is flex -> if N is in Args, we can have eta
+% correct-subst-eta N (ho.lam B) L :- !, pi x\ correct-subst-eta N (B x) [x | L].
+% correct-subst-eta _ (ho.app [ho.con _|Args]) L :-                                            % Head is rigid -> to be an eta we consider also L
+%   split-last-n {len L} Args First Last,
+%   forall1 (x\ forall1 (y\ not (use-binder1 x y)) First) L,
+%    correct-subst-eta-equal Last {std.rev L}.
+
+% type correct-subst-eta-of ho.tm -> ho.tm -> list ho.tm -> o.
+% correct-subst-eta-of _ (ho.app [ho.uva _ _|_]) _ :- halt "app[uva _ _|_] in subst...".
+% correct-subst-eta-of N N _ :- !.
+% % TODO: not sure of this (why mem and not correct-subst-eta-of)
+% correct-subst-eta-of N (ho.uva _ Args) L :- !, forall1 (mem Args) [N|L]. % Head is flex -> if N is in Args, we can have eta
+% correct-subst-eta-of N (ho.lam B) L :- !, pi x\ correct-subst-eta-of N (B x) [x | L].
+% correct-subst-eta-of N (ho.app [N|Args]) L :-                      % Head is rigid -> to be an eta we consider also L
+%   last-n {len L} Args R,
+%   correct-subst-eta-equal R {std.rev L}.
+
+% % takes two list of terms, for any pair of terms, it verifies if the second can reduce to the first
+% type correct-subst-eta-equal list ho.tm -> list ho.tm -> o.
+% correct-subst-eta-equal [] [].
+% correct-subst-eta-equal [T|L1] [N|L2] :- correct-subst-eta-of N T [], correct-subst-eta-equal L1 L2.
+
+% type correct-subst-aux ho.assignment -> o.
+% correct-subst-aux (ho.val (ho.lam T)) :- !, pi x\
+%   if (correct-subst-eta x (T x) [x]) (halt "Subst contains maybeeta") true.
+% correct-subst-aux (ho.val _) :- true.
+% correct-subst-aux (ho.abs B) :- pi x\ correct-subst-aux (B x).
+
+% type correct-subst ho.subst -> o.
+% correct-subst [].
+% correct-subst [some Ass | Tl] :- !,
+%   correct-subst-aux Ass,
+%   correct-subst Tl.
+% correct-subst [_| Tl] :- correct-subst Tl.
+
 % We test forall linked var of the ML, that they have the same assignment
 type solve-links-fixpoint links -> links -> ho.subst -> ho.subst -> o.
 solve-links-fixpoint L0 L2 H H2 :- std.do! [
   deref-links H L0 L, !,
   print "\nfixpoint iteration on:" {pplinks L}, !,
   solve-links L L1 H H1, !,
+  % print "Check correct subst of" {ho.ppsubst H1},
+  % if ((correct-subst H1)) true (halt "Invalid subst"),
   if (occur-check-links H1 L1) true (print "fail by oc in solve-link-fixpoint", fail),
   if (L = L1, H = H1)
      (print "end fixpoint", deref-links H L L2 , H2 = H)
