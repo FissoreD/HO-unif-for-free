@@ -515,5 +515,25 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- pri
   pr ok "λx.(X (Y x) f) = f",
 ] ["λx.x", "λx.λy.(y x)"].
 
+@sokl 60 [
+  pr ok "X = λx.(f x x)"
+] ["λx.(f x x)"].
+
+@sokl 61 [
+  pr ok "X = λx.(f (λy.(g x y)) x)"
+] ["λx.(f (g x) x)"].
+
+@sokl 62 [
+  pr ok "X = λx.(f (λy.(g x)) x)"
+] ["λx.(f (λy.(g x)) x)"].
+
+@sokl 63 [
+  pr ok "X = λx.(f (λy.(g x (Y y))) x)"
+] ["λx.(f (λy.(g x (Y y))) x)"].
+
+@sokl 64 [
+  pr ok "X = λx.(f (λy.(g x (Y y))) x)"
+] ["λx.(f (λy.(g x (Y y))) x)"].
+
 /* Non passa in elpi (x\ X x) = A B */
 /*     Passa in elpi X = A B        */

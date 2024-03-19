@@ -47,9 +47,9 @@ type take-list list A -> A -> list A -> o.
 take-list [L|XS] L XS.
 take-list [L|XS] L' [L|YS] :- not(L = L'), take-list XS L' YS.
 
-type not-in A -> list A -> o.
-not-in _ [].
-not-in T [X | TL] :- not (X = T), not-in T TL.
+type not-in list A -> A -> o.
+not-in [] _.
+not-in [X | TL] T :- not (X = T), not-in TL T.
 
 type exists (A -> o) -> list A -> o.
 exists F [X|XS] :- F X ; exists F XS.
@@ -116,7 +116,7 @@ len [_|L] (s X) :- len L X.
 % [split-pf L [] ]
 type split-pf-aux list A -> list A -> list A -> list A -> o.
 split-pf-aux [] _ [] [].
-split-pf-aux [X | L] ACC [X | PF] NPF :- name X, not-in X ACC, !, 
+split-pf-aux [X | L] ACC [X | PF] NPF :- name X, not-in ACC X, !, 
   split-pf-aux L [X | ACC] PF NPF.
 split-pf-aux L _ [] L.
 
@@ -141,6 +141,13 @@ drop-first-n (s N) [_|As] Bs :- drop-first-n N As Bs.
 
 type last-n nat -> list A -> list A -> o.
 last-n N L R :- minus {len L} N PrefLen, drop-first-n PrefLen L R.
+
+type split nat -> list A -> list A -> list A -> o.
+split z L [] L.
+split (s N) [A|As] [A|Bs] L :- split N As Bs L.
+
+type split-last-n nat -> list A -> list A -> list A -> o.
+split-last-n N L First Last :- minus {len L} N PrefLen, split PrefLen L First Last.
 
 kind test type -> type.
 type test int -> (pair (list (triple diagnostic A A)) (option(list A))) -> test A.
