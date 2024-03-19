@@ -63,7 +63,7 @@ type decompile-subst
   fo.subst ->
   o.
 decompile-subst Mappings Links H F F1 :-
-  comp.decompl Mappings Links H F F1.
+  comp.decompile Mappings Links H F F1.
 decompile-subst _ _ _ _ _ :- !, print "Fail decompl-subst", fail.
 
 type build-fo-subst list (triple diagnostic fo.fm fo.fm) -> fo.subst -> fo.subst -> o.

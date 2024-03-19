@@ -839,31 +839,31 @@ link-abs-same-lhs (ho.abs F) B :- pi x\ link-abs-same-lhs (F x) B.
 link-abs-same-lhs A (ho.abs G) :- pi x\ link-abs-same-lhs A (G x).
 link-abs-same-lhs (@val-link-eta (ho.uva N _) _) (@val-link-eta (ho.uva N _) _).
 
-type decompl-links-aux link -> ho.subst -> ho.subst -> o.
-decompl-links-aux (@val-link-eta T1 T2) H1 H2 :- 
+type commit-links-aux link -> ho.subst -> ho.subst -> o.
+commit-links-aux (@val-link-eta T1 T2) H1 H2 :- 
   ho.deref H1 T1 T1', ho.deref H1 T2 T2',
   print "Start decompl-η of" {ho.pp T1'} "and" {ho.pp T2'} "in" {ho.ppsubst H1}, 
   ho.unif T1' T2' H1 H2.
-decompl-links-aux (@val-link-beta T1 T2) H1 H2 :- 
+commit-links-aux (@val-link-beta T1 T2) H1 H2 :- 
   ho.deref H1 T1 T1', ho.deref H1 T2 T2',
   print "Start decompl-β of" {ho.pp T1'} "and" {ho.pp T2'}, ho.unif T1' T2' H1 H2.
-decompl-links-aux (ho.abs B) H H1 :- pi x\ decompl-links-aux (B x) H H1.
+commit-links-aux (ho.abs B) H H1 :- pi x\ commit-links-aux (B x) H H1.
 
-type decompl-links links -> links -> ho.subst -> ho.subst -> o.
-decompl-links [] [] H H.
-decompl-links [Abs| Links] L H H2 :- decompl-links-aux Abs H H1, !, decompl-links Links L H1 H2.
+type commit-links links -> links -> ho.subst -> ho.subst -> o.
+commit-links [] [] H H.
+commit-links [Abs| Links] L H H2 :- commit-links-aux Abs H H1, !, commit-links Links L H1 H2.
 
 % Invariant: links are only on the form (link VO VM Arity), each VO appears once and each VM appears once
-type decompl-mapping mappings -> mappings -> ho.subst -> fo.subst -> fo.subst -> o.
-decompl-mapping _ [A|_] _ _ _ :- print "Solving" {ppmapping A}, fail.
-decompl-mapping _ [] _ F F.
-decompl-mapping Map [mapping (fv VO) (hv VM _)|Tl] H F F2 :- mem.set? VM H T, !, % TODO: is the res of mem.set? always a val?
+type decompl-subst mappings -> mappings -> ho.subst -> fo.subst -> fo.subst -> o.
+decompl-subst _ [A|_] _ _ _ :- print "Solving" {ppmapping A}, fail.
+decompl-subst _ [] _ F F.
+decompl-subst Map [mapping (fv VO) (hv VM _)|Tl] H F F2 :- mem.set? VM H T, !, % TODO: is the res of mem.set? always a val?
   print {ho.ppsubst H} {ho.ppass T},
   std.assert!(ho.deref-assmt H T TTT) "Should not fail",
   abs->lam TTT T', decomp Map T' T1, fo.eta-contract T1 T2, mem.assign VO F T2 F1,
-  decompl-mapping Map Tl H F1 F2. 
-decompl-mapping Map [mapping _ (hv VM _)|Tl] H F F2 :- mem.unset? VM H, decompl-mapping Map Tl H F F2.
-decompl-mapping _ [L|_] H _ _ :- halt "Decompl mapping: failed on" {ppmapping L} {ho.ppsubst H}.
+  decompl-subst Map Tl H F1 F2. 
+decompl-subst Map [mapping _ (hv VM _)|Tl] H F F2 :- mem.unset? VM H, decompl-subst Map Tl H F F2.
+decompl-subst _ [L|_] H _ _ :- halt "Decompl mapping: failed on" {ppmapping L} {ho.ppsubst H}.
 
 type decomp mappings -> ho.tm -> fo.fm -> o.
 decomp _ (ho.con C)  (fo.fcon C).
@@ -896,22 +896,22 @@ type add-new-link-ass ho.subst -> ho.assignment -> mappings -> mappings ->  fo.s
 add-new-link-ass H (ho.val Val) Links1 Links2 F1 F2 :- add-new-link H Val Links1 Links2 F1 F2.
 add-new-link-ass H (ho.abs Abs) Links1 Links2 F1 F2 :- pi x\ add-new-link-ass H (Abs x) Links1 Links2 F1 F2.
 
-type complete-link ho.subst -> ho.subst -> mappings -> mappings -> fo.subst -> fo.subst -> o.
-complete-link _ [] L L F F.
-complete-link H [none | Tl] L1 L2 F1 F2 :- complete-link H Tl L1 L2 F1 F2.
-complete-link H [some T0 | Tl] L1 L3 F1 F3 :-
+type complete-mapping ho.subst -> ho.subst -> mappings -> mappings -> fo.subst -> fo.subst -> o.
+complete-mapping _ [] L L F F.
+complete-mapping H [none | Tl] L1 L2 F1 F2 :- complete-mapping H Tl L1 L2 F1 F2.
+complete-mapping H [some T0 | Tl] L1 L3 F1 F3 :-
   ho.deref-assmt H T0 T,
   add-new-link-ass H T L1 L2 F1 F2, 
   std.append L1 L2 LAll,
-  complete-link H Tl LAll L3 F2 F3.
+  complete-mapping H Tl LAll L3 F2 F3.
 
-type decompl mappings -> links -> ho.subst -> fo.subst -> fo.subst -> o.
-decompl Map1 L HO FO FO2 :- std.do! [
-  decompl-links L L1_ HO HO1, !,                                                          % L1 conaints no link-eta (it may contain beta),
+type decompile mappings -> links -> ho.subst -> fo.subst -> fo.subst -> o.
+decompile Map1 L HO FO FO2 :- std.do! [
+  commit-links L L1_ HO HO1, !,                                                          % L1 conaints no link-eta (it may contain beta),
   print "# After decompl-eta, subst is" {ho.ppsubst HO1} "with links" {pplinks L1_},
-  complete-link HO1 HO1 Map1 Map2 FO FO1,                                            % Foreach VM not mapped to OL, we build a link
-  print "# After complete-link, mappings are" {ppmappings Map2} "with ho-subst" {ho.ppsubst HO1}, 
-  decompl-mapping Map2 Map2 HO1 FO1 FO2,
+  complete-mapping HO1 HO1 Map1 Map2 FO FO1,                                            % Foreach VM not mapped to OL, we build a link
+  print "# After complete-mapping, mappings are" {ppmappings Map2} "with ho-subst" {ho.ppsubst HO1}, 
+  decompl-subst Map2 Map2 HO1 FO1 FO2,
 ].
 
 type test-maybe-eta-1 o.
