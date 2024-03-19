@@ -156,9 +156,9 @@ xtest (test N (pr LR Sol) as Test) :- std.do![
 type parse-triple pair diagnostic string -> triple diagnostic fo.fm fo.fm -> o.
 parse-triple (pr D S) (triple D A B) :- parse-eq S A B.
 
-macro @sok N SE SS :- (declare-test xtest ptest (test N (pr [triple ok X Y] (some S))) :- print N, parse-eq SE X Y, std.map SS parse S).
-macro @sko N SE :- (declare-test xtest ptest (test N (pr [triple (error "unif") X Y] none)) :- print N, parse-eq SE X Y).
-macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- print N, std.map SX parse-triple X, std.map SS parse S).
+macro @sok N SE SS :- (declare-test xtest ptest (test N (pr [triple ok X Y] (some S))) :- parse-eq SE X Y, std.map SS parse S).
+macro @sko N SE :- (declare-test xtest ptest (test N (pr [triple (error "unif") X Y] none)) :- parse-eq SE X Y).
+macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- std.map SX parse-triple X, std.map SS parse S).
 % macro @okl N E S :- (declare-test xtest ptest (test N (pr E (some S)))).
 
 @sok 1 "f X = f a" ["a"].
