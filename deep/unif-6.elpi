@@ -260,19 +260,9 @@ unif (uva N Args) T S S1 :-
 unif T (uva N Args) S S1 :- 
   mem.set? N S F,!, move F Args T1, unif T T1 S S1.
 % Not assigned vars
-unif (uva N A) (uva N A) S S :- !, pattern-fragment A.
-unif (uva V A) (uva U A) S1 S2 :- !, pattern-fragment A,
-  bind (uva V A) A Ass, mem.assign U S1 Ass S2.
-unif (uva N Args1) (uva N Args2) S S2 :- % same var 
-  std.assert!(len Args1 Len, len Args2 Len) "Not typechecking", !, % the length of args must be the same
-  pattern-fragment Args1, pattern-fragment Args2, 
-  mem.new S W S1, prune-same-variable W Args1 Args2 Ass,
-  mem.assign N S1 Ass S2. 
-unif (uva N Args1) (uva M Args2) S S3 :- % Args with diff length
-  pattern-fragment Args1, pattern-fragment Args2, 
-  mem.new S W S1, prune-smart W Args1 Args2 Ass1 Ass2, 
-  mem.assign N S1 Ass1 S2,
-  if (N = M) true (mem.assign M S2 Ass2 S3). 
+unif (uva M A1) (uva N A2) S1 S2 :- !, 
+  pattern-fragment A1, pattern-fragment A2, 
+  prune! M A1 N A2 S1 S2.
 unif (uva N Args) T S S1 :- not_occ N S T, pattern-fragment Args, 
   bind T Args T1, mem.assign N S T1 S1.
 unif T (uva N Args) S S1 :- not_occ N S T, pattern-fragment Args, 
@@ -280,14 +270,23 @@ unif T (uva N Args) S S1 :- not_occ N S T, pattern-fragment Args,
 
 % Note: eta & beta for unification is not allowed in ML over terms of the OL
 
-% prune in the case of vars with args of same length (e.g. uv X L1, uv Y L2, len L1 = len L2)
-type prune-same-variable address -> list tm -> list tm -> assignment -> o.
-prune-same-variable N A1 A2 T :- prune-same-variable-aux N A1 A2 [] T.
+% Note: We suppose the scopes to always be in PF
+type prune! address -> list ho.tm -> address -> list ho.tm -> subst -> subst -> o.
+prune! N A  N A  S S :- !.
+prune! M A  N A  S1 S2 :- !, bind (uva M A) A Ass, mem.assign N S1 Ass S2.
+prune! N A1 N A2 S1 S3 :- !,
+  std.assert!(len A1 {len A2}) "Not typechecking", !,
+  mem.new S1 W S2, prune-same-variable W A1 A2 [] Ass,
+  mem.assign N S2 Ass S3.
+prune! N A1 M A2 S1 S4 :- !,
+  mem.new S1 W S2, prune-smart W A1 A2 Ass1 Ass2, 
+  mem.assign N S2 Ass1 S3,
+  mem.assign M S3 Ass2 S4. 
 
-type prune-same-variable-aux address -> list tm -> list tm -> list tm -> assignment -> o.
-prune-same-variable-aux N [] [] ACC (val (uva N Args)) :- std.rev ACC Args.
-prune-same-variable-aux N [X|XS] [X|YS] ACC (abs F) :- pi x\ prune-same-variable-aux N XS YS [x|ACC] (F x).
-prune-same-variable-aux N [_|XS] [_|YS] ACC (abs F) :- pi x\ prune-same-variable-aux N XS YS ACC (F x).
+type prune-same-variable address -> list tm -> list tm -> list tm -> assignment -> o.
+prune-same-variable N [] [] ACC (val (uva N Args)) :- std.rev ACC Args.
+prune-same-variable N [X|XS] [X|YS] ACC (abs F) :- pi x\ prune-same-variable N XS YS [x|ACC] (F x).
+prune-same-variable N [_|XS] [_|YS] ACC (abs F) :- pi x\ prune-same-variable N XS YS ACC (F x).
 
 type prune-build-ass1 address -> list tm -> list bool -> assignment -> o.
 prune-build-ass1 N Acc [] (val (uva N Args)) :- std.rev Acc Args.
@@ -635,6 +634,11 @@ eta-expand T z T.
 eta-expand T (s N) (ho.lam R2) :- pi x\ unif-mk-app T x (R1 x), eta-expand (R1 x) N (R2 x). 
 
 macro @one :- s z.
+
+type is-not-eta list ho.tm -> ho.tm -> o.
+is-not-eta L (ho.lam B) :- pi x\ is-not-eta _ x => is-not-eta [x|L] (B x).
+is-not-eta _ (ho.con _).
+is-not-eta L (ho.uva _ Scope) :- forall1 (not-in Scope) L.
 
 % invariante: a sx non c'è mai una eta espansione, a destra c'è una lam, altrimenti il link eta è buttato via
 type progress-eta-link ho.tm -> ho.tm -> ho.subst -> ho.subst -> links -> o.
