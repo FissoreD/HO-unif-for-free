@@ -1,0 +1,119 @@
+\section*{Appendix}
+
+Note that \elpiIn{(a infix b) c d} de-sugars to \elpiIn{(infix) a b c d}.
+
+\begin{figure*}
+\begin{elpicode}
+~\PYG{k+kd}{type} \PYG{n+nf}{(\Eo)} \PYG{k+kt}{ftm -> ftm -> o}~.                           ~($\customlabel{pred:fequal}{\Eo}$)~
+fapp A ~\Eo~fapp B :- map ~(\Eo)~ A B.
+flam F ~\Eo~flam G :- pi x\ x ~\Eo~x => F x ~\Eo~G x.
+fcon C ~\Eo~fcon C.
+fuva N ~\Eo~fuva N.
+flam F ~\Eo~T :-                                       ~($\customlabel{clause:eta1}{\eta_l}$)~
+  pi x\ beta T [x] (R x), x ~\Eo~x => F x ~\Eo~R x.
+T ~\Eo~flam F :-                                       ~($\customlabel{clause:eta2}{\eta_r}$)~
+  pi x\ beta T [x] (R x), x ~\Eo~x => R x ~\Eo~F x.
+fapp [flam X | L] ~\Eo~T :- beta (flam X) L R, R ~\Eo~T. ~($\customlabel{clause:beta1}{\beta_l}$)~
+T ~\Eo~fapp [flam X | L] :- beta (flam X) L R, T ~\Eo~R. ~($\customlabel{clause:beta2}{\beta_r}$)~
+
+type beta fm -> list fm -> fm -> o.
+beta A [] A.
+beta (flam F) [H | L] R :- subst F H B,
+  beta B L R. % since F could be x\app[x|_] and H be lam _ 
+beta (fapp A) L (fapp X) :- append A L X.
+beta (fuva N) L (fapp [fuva N | L]).
+beta (fcon H) L (fapp [fcon H | L]).
+
+type subst (fm -> fm) -> fm -> fm -> o.
+subst F H B :- napp (F H) B. % since (F H) may generate (app[app _|_])
+
+type napp fm -> fm -> o.
+napp (fcon C) (fcon C).
+napp (flam F) (flam G) :- pi x\ napp x x => napp (F x) (G x).
+napp (fapp[fapp L|M]) R :- !, append L M N, napp (fapp N) R.
+napp (fapp[X]) R :- !, napp X R.
+napp (fapp A) (fapp B) :- map napp A B.
+napp (fuva N) (fuva N).
+\end{elpicode}
+\caption{Full implementation of the \Eo predicate for \Fo}
+\label{code:eo-pred}
+\Description[code:eo-pred]{code:eo-pred}
+\end{figure*}
+
+\begin{figure*}
+\begin{elpicode}
+~\PYG{k+kd}{type} \PYG{n+nf}{(\Ue)} \PYG{k+kt}{tm -> tm -> subst -> subst -> o}~.
+% Congruence
+(app A ~\Ue~app B) R S :- fold2 ~(\Ue)~A B R S.
+(lam F ~\Ue~lam G) R S :- pi x\ (pi S\ (x ~\Ue~x) S S) => (F x ~\Ue~G x) R S.
+~\Ue~(con C) (con C) S S.
+% deref
+(uva N A ~\Ue~T) R S :- set? N S F, move F A T1, (T1 ~\Ue~T) R S.
+(T ~\Ue~uva N A) R S :- set? N S F, move F A T1, (T ~\Ue~T1) R S.
+% flex-flex
+(uva N A ~\Ue~uva M B) S S3 :-  unset? M, unset? N,
+  distinct A, distinct B, 
+  new S W S1, prune W Args1 B Ass, 
+  assign N S1 Ass S2, assign M S2 Ass S3.
+% assignment
+(uva N A ~\Ue~T) R S :- distinct A, not (T = uva _ _), not_occ N S T,  
+  bind A T T1, assign N S T1 S1.
+(T ~\Ue~uva N A) R S :- distinct A, not (T = uva _ _), not_occ N S T, 
+  bind A T T1, assign N S T1 S1. 
+      
+type distinct list A -> o.
+distinct [].
+distinct [X|XS] :- name X, not(mem X XS),
+distinct XS.
+
+typeabbrev memory A (list (option A)).
+type set? nat -> memory A -> A -> o.
+set? N S T :- nth N S (some T).
+type unset? nat -> memory A -> o.
+unset? N S :- nth N S none.
+type assign nat -> memory A -> A -> memory A -> o.
+assign z [none|M] T [some T|M].
+assign (s N) [X|M] T [X|M1] :- assign N M T M1. 
+kind nat type.
+type z nat.
+type s nat -> nat.
+type nth nat -> list A -> A -> o.
+nth z [X|_] X.
+nth (s N) [_|L] X :- nth N L X.
+
+type new memory A -> nat -> memory A -> o.
+new [] z [none].
+new [X|XS] (s N) [X|YS] :- new XS N YS.
+
+type prune .
+type move .
+type beta.
+type bind.
+type not_occ.
+TODO
+
+type fold2 (A -> A1 -> B -> B -> o) -> list A -> list A1 -> B -> B -> o.
+fold2 _ [] [] A A.
+fold2 F [X|XS] [Y|YS] A A1 :- F X Y A A0, fold2 F XS YS A0 A1.
+
+\end{elpicode}
+\caption{Implementation of the \Ue predicate for \Ho}
+\label{code:ue-pred}
+\Description[code:ue-pred]{code:ue-pred}
+\end{figure*}
+
+\begin{figure*}
+\begin{elpicode}
+type fold4 (A -> A1 -> B -> B -> C -> C -> o) -> list A -> list A1 -> B -> B -> C -> C -> o.
+fold4 _ [] [] A A B B.
+fold4 F [X|XS] [Y|YS] A A1 B B1 :- F X Y A A0 B B0, fold4 F XS YS A0 A1 B0 B1.
+
+type len list A -> nat -> o.
+len [] z.
+len [_|L] (s X) :- len L X.
+
+\end{elpicode}
+\caption{Implementation of the compiler}
+\label{code:ue-pred}
+\Description[code:ue-pred]{code:ue-pred}
+\end{figure*}
