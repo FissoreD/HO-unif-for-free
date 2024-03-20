@@ -1,6 +1,9 @@
 accumulate common.
-accumulate unif-6.
-accumulate unif-6-test.
+accumulate mem.
+accumulate object_language.
+accumulate meta_language.
+accumulate comp.
+accumulate test.
 
 main [] :-
   internal-tests,

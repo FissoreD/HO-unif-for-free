@@ -1,0 +1,51 @@
+namespace mem {
+  kind address type.
+  type addr nat -> address.
+
+  typeabbrev (mem A) (list (option A)).
+
+  type get nat -> mem A -> A -> o.
+  get z (some Y :: _) Y.
+  get (s N) (_ :: L) X :- get N L X.
+
+  type alloc-aux nat -> mem A -> mem A -> o.
+  alloc-aux z [] [none] :- !.
+  alloc-aux z L L. % No need for exted: the mem is enough
+  alloc-aux (s N) [] [none | M] :- alloc-aux N [] M.
+  alloc-aux (s N) [X | L] [X | M] :- alloc-aux N L M.
+
+  type alloc address -> mem A -> mem A -> o.
+  alloc (addr A as Ad) Mem1 Mem2 :- unset? Ad Mem1, alloc-aux A Mem1 Mem2.
+
+  type new-aux mem A -> nat -> mem A -> o.
+  new-aux [] z [none].
+  new-aux [A | As] (s N) [A | Bs] :- new-aux As N Bs.
+
+  type new mem A -> address -> mem A -> o.
+  new Mem1 (addr Ad) Mem2 :- new-aux Mem1 Ad Mem2.
+
+  type set? address -> mem A -> A -> o.
+  set? (addr A) Mem Val :- get A Mem Val.
+
+  type unset? address -> mem A -> o.
+  unset? Addr Mem :- not (set? Addr Mem _).
+
+  type assign-aux nat -> mem A -> A -> mem A -> o.
+  assign-aux z (none :: L) Y (some Y :: L).
+  assign-aux (s N) (X :: L) Y (X :: L1) :- assign-aux N L Y L1.
+
+  type assign address -> mem A -> A -> mem A -> o.
+  assign (addr A) Mem1 Val Mem2 :- assign-aux A Mem1 Val Mem2.
+
+  type ppaddr address -> string -> o.
+  ppaddr (addr A) S :- ppnat A S.
+
+  type pp mem A -> string -> (A -> string -> o) -> list string -> o.
+  pp L Pref PP S :- ppmem.aux z Pref PP L S.
+
+  type ppmem.aux nat -> string -> (A -> string -> o) -> mem A -> list string -> o.
+  ppmem.aux _ _ _ [] [].
+  ppmem.aux N Pref PP [some X|XS] [L|LS] :- PP X Cnt, L is Pref ^ {ppnat N} ^ " " ^ Cnt, ppmem.aux (s N) Pref PP XS LS.
+  ppmem.aux N Pref PP [none|XS] [L|LS] :- L is Pref ^ {ppnat N} ^ " := _", ppmem.aux (s N) Pref PP XS LS.
+}
+
