@@ -200,15 +200,6 @@ eta-expand T (s N) (ho.lam R2) :- pi x\ unif-mk-app T x (R1 x), eta-expand (R1 x
 
 macro @one :- s z.
 
-type is-not-eta list ho.tm -> ho.tm -> o.
-is-not-eta L (ho.lam B) :- pi x\ is-not-eta _ x => is-not-eta [x|L] (B x).
-is-not-eta _ (ho.con _).
-is-not-eta L (ho.uva _ Scope) :- forall1 (not-in Scope) L.
-
-type count-lambda ho.tm -> nat -> o.
-count-lambda (ho.lam T) (s N) :- !, pi x\ count-lambda (T x) N.
-count-lambda _ z.
-
 % invariante: a sx non c'è mai una eta espansione, a destra c'è una lam, altrimenti il link eta è buttato via
 type progress-eta-link ho.tm -> ho.tm -> ho.subst -> ho.subst -> links -> o.
 progress-eta-link (ho.app _ as T) (ho.lam x\ _ as T1) H H1 [] :- !, print "progress η app left", ho.unif {eta-expand T @one} T1 H H1.
@@ -241,10 +232,6 @@ occur-check-err (ho.uva Ad _) T S :-
   not (ho.not_occ Ad S T),
   print "progress β fail of occur-check between".
 
-type beta-reduce ho.tm -> ho.tm -> o.
-beta-reduce (ho.app [ho.lam B | L]) T2 :- !, ho.beta (ho.lam B) L T1, beta-reduce T1 T2.
-beta-reduce A A.
-
 type progress-beta-link-aux ho.tm -> ho.tm -> ho.subst -> ho.subst -> links -> o.
 progress-beta-link-aux T1 T2 S1 S2 [] :-  is-in-pf T2, !,
   print "progress β not uva with" {ho.pp T1} "and" {ho.pp T2},
@@ -276,19 +263,19 @@ progress-beta-link (ho.uva _ _ as T) (ho.app[ho.uva Ad1 Scope1 | L1] as T1) S1 S
   len Scope1 Scope1Len,
   len Scope2 Scope2Len,
   make-eta-link Scope1Len Scope2Len Ad1 Ad2 [] LinkEta S2 S3,
-  if (L2 = []) (T2 = ho.uva Ad2 Scope2) (T2 = ho.app [ho.uva Ad2 Scope2 | L2]),
-  NewLinks = [@val-link-beta T T2 | LinkEta],
+  if (L2 = []) (NewLinks = LinkEta, T2 = ho.uva Ad2 Scope2) 
+    (T2 = ho.app [ho.uva Ad2 Scope2 | L2], NewLinks = [@val-link-beta T T2 | LinkEta]),
   print "progress β: refine" {pplink (@val-link-beta T T1)} "to" {pplinks NewLinks}.
 
 progress-beta-link T1 (ho.app[ho.uva _ _ | _] as T2) _ _ _ :- not (T1 = ho.uva _ _), !,
   print "unification outside PF for β:" {pplink (@val-link-beta T1 T2)}, fail.
 
 progress-beta-link (ho.uva _ _ as T) (ho.app[ho.uva _ _ | _] as T2) S1 _ _ :- occur-check-err T T2 S1, !, fail.
+
 progress-beta-link T1 (ho.app[ho.uva _ _ | _] as T2) H H [@val-link-beta T1 T2] :- !, print "No β progress1".
 
-% Note: Hd is rigid by construction
-progress-beta-link T1 T2 S1 S2 B :-
-  beta-reduce T2 T3, print "Progress β deep with" {ho.pp T3}, progress-beta-link-aux T1 T3 S1 S2 B.
+progress-beta-link T1 (ho.app [Hd | Tl]) S1 S2 B :- % Hd is rigid!
+  ho.beta Hd Tl T3, print "Progress β deep with" {ho.pp T3}, progress-beta-link-aux T1 T3 S1 S2 B.
 
 type solve-link-abs link -> links -> ho.subst -> ho.subst -> o.
 solve-link-abs (ho.abs X) R H H1 :- 
@@ -303,9 +290,6 @@ solve-link-abs (@val-link-beta A B) NewLinks S S1 :- !,
   print "In progress beta link for" {ho.pp A} {ho.pp B},
   progress-beta-link A B S S1 NewLinks.
 
-solve-link-abs (@val-link-beta _ T) _ _ _ :- !,
-  halt "Error beta" T.
-
 :index(_ 1)
 type deref-links ho.subst -> links -> links -> o.
 deref-links H L1 L2 :- forall2 (x\r\ std.assert! (deref-link H x r) "bug deref links") L1 L2.
@@ -319,7 +303,7 @@ type get-head-link link -> address -> ho.tm -> o.
 get-head-link (@val-link-eta (ho.uva Ad _) T) Ad T :- !.
 get-head-link (@val-link-beta (ho.uva Ad _) T) Ad T :- !.
 get-head-link (ho.abs B) Ad (ho.lam T) :- !, pi x\ get-head-link (B x) Ad (T x).
-get-head-link Link _ _ :- halt "BUG: Invalid left side for" {pplink Link}.
+get-head-link Link _ _ :- halt "get-head-link: should never fail" {pplink Link}.
 
 type find-link-by-var address -> links -> links -> list ho.tm -> list links -> o.
 find-link-by-var _ _ [] [] [].

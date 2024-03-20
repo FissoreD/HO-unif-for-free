@@ -10,7 +10,7 @@ namespace mem {
 
   type alloc-aux nat -> mem A -> mem A -> o.
   alloc-aux z [] [none] :- !.
-  alloc-aux z L L. % No need for exted: the mem is enough
+  alloc-aux z L L.
   alloc-aux (s N) [] [none | M] :- alloc-aux N [] M.
   alloc-aux (s N) [X | L] [X | M] :- alloc-aux N L M.
 
