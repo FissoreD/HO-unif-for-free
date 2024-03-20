@@ -1,6 +1,4 @@
-internal-test comp.test-maybe-eta-1.
-internal-test comp.test-maybe-eta-2.
-internal-test comp.test-maybe-eta-3.
+internal-test comp.test-maybe-eta.
 
 typeabbrev (mem A) (mem.mem A).
 typeabbrev address mem.address.
@@ -41,11 +39,19 @@ namespace comp {
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% AUXILIARY %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+  type mk-app ho.tm -> ho.tm -> ho.tm -> o.
+  mk-app (ho.uva N L) T (ho.uva N R) :- appendR L [T] R.
+  mk-app (ho.con C) T (ho.app [ho.con C, T]).
+  mk-app (ho.app L) T (ho.app R) :- appendR L [T] R.
+
   type eta-expand ho.tm -> nat -> ho.tm -> o.
   eta-expand T z T.
   eta-expand T (s N) (ho.lam R2) :- 
-    pi x\ unif-mk-app T x (R1 x), eta-expand (R1 x) N (R2 x). 
+    pi x\ mk-app T x (R1 x), eta-expand (R1 x) N (R2 x). 
 
+  type alloc mappings -> mappings -> fvariable -> hvariable -> ho.subst -> ho.subst -> o.
+  alloc Map Map N M H H :- std.mem Map (mapping N M), !.
+  alloc Map [mapping (fv N) (hv M Arity)|Map] (fv N) (hv M Arity) H H1 :- mem.new H M H1.
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% COMPILER %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -70,8 +76,8 @@ namespace comp {
   maybe-eta N (fo.flam B) L :- !, pi x\ maybe-eta N (B x) [x | L].
   maybe-eta _ (fo.fapp [fo.fcon _|Args]) L :-
     % Head is rigid -> to be an eta we consider also L
-    split-last-n {len L} Args First_ Last,
-    % forall1 (x\ forall1 (y\ not (use-binder x y)) First) L,
+    split-last-n {len L} Args First Last,
+    forall1 (x\ forall1 (y\ not (use-binder x y)) First) L,
     forall2 (maybe-eta-of []) {std.rev L} Last.
 
   % [maybe-eta-of N T L] answer T is a possible eta expansion of N (L is [] when called, and used for fapp)
@@ -109,23 +115,32 @@ namespace comp {
   type close-links (ho.tm -> links) -> links -> o.
   close-links (_\[]) [].
   close-links (v\[L|XS v]) [L|YS] :- !, close-links XS YS.
-  close-links (v\[(L v)|XS v]) [ho.abs L|YS] :- !, close-links XS YS.
+  close-links (v\[(L v)|XS v]) [ho.abs L|YS] :- !, 
+    close-links XS YS.
 
-  type comp-lam (fo.fm -> fo.fm) -> (ho.tm -> ho.tm) -> mappings -> mappings -> links -> links -> ho.subst -> ho.subst -> o.
+  type comp-lam (fo.fm -> fo.fm) -> (ho.tm -> ho.tm) -> 
+    mappings -> mappings -> links -> links -> ho.subst -> 
+      ho.subst -> o.
   comp-lam F F1 Mappings1 Mappings2 L L2 S S1 :-
-    pi x y\ (pi M L S\ comp x y M M L L S S) => comp (F x) (F1 y) Mappings1 Mappings2 L (L1 y) S S1, close-links L1 L2.
+    pi x y\ (pi M L S\ comp x y M M L L S S) => 
+      comp (F x) (F1 y) Mappings1 Mappings2 L (L1 y) S S1, 
+        close-links L1 L2.
 
-  type comp fo.fm -> ho.tm -> mappings -> mappings -> links -> links -> ho.subst -> ho.subst -> o.
+  type comp fo.fm -> ho.tm -> mappings -> mappings -> links -> 
+    links -> ho.subst -> ho.subst -> o.
   comp (fo.fcon X)              (ho.con X) Mappings Mappings L L S S.
   comp (fo.flam F) (ho.uva E0 Scope) Mappings1 Mappings2  L L2 S S2 :-
     (pi x\ maybe-eta x (F x) [x]), !,
     mem.new S E0 S1,
     comp-lam F F1 Mappings1 Mappings2 L L1 S1 S2,
     (pi x\ locale x => get-scope (F1 x) Scope), 
-    NewLink = ho.val(link-eta (ho.uva E0 Scope) (ho.lam F1)), L2 = [NewLink| L1].
+    NewLink = ho.val(link-eta (ho.uva E0 Scope) (ho.lam F1)), 
+    L2 = [NewLink| L1].
 
-  comp (fo.flam F) (ho.lam F1) Mappings1 Mappings2 L L2 S S1 :- comp-lam F F1 Mappings1 Mappings2 L L2 S S1.
-  comp (fo.fuva N)              (ho.uva M []) Mappings Mappings1 L L S S1 :- alloc Mappings Mappings1 (fv N) (hv M (arity z)) S S1.
+  comp (fo.flam F) (ho.lam F1) Mappings1 Mappings2 L L2 S S1 :- 
+    comp-lam F F1 Mappings1 Mappings2 L L2 S S1.
+  comp (fo.fuva N)              (ho.uva M []) Mappings Mappings1 L L S S1 :- 
+    alloc Mappings Mappings1 (fv N) (hv M (arity z)) S S1.
   comp (fo.fapp [fo.fuva N|Ag]) (ho.uva M' Scope) Mappings1 Mappings3 L L2 S S4 :- !,
     split-pf Ag PF NPF,
     fold6 comp PF PF1 Mappings1 Mappings1 L L S S1,                                 % Note : PF is a list of names -> Mappings1 and L not change
@@ -138,10 +153,12 @@ namespace comp {
         mem.new S3 M' S4,
         L2 = [@val-link-beta (ho.uva M' Scope) (ho.app[ho.uva M PF1 | NPF1]) | L1],
         true).
-  comp (fo.fapp A)              (ho.app A1) Mappings1 Mappings2 L L1 S S1 :- fold6 comp A A1 Mappings1 Mappings2 L L1 S S1.
+  comp (fo.fapp A)              (ho.app A1) Mappings1 Mappings2 L L1 S S1 :- 
+    fold6 comp A A1 Mappings1 Mappings2 L L1 S S1.
 
   % Ad1 is the variable with smaller arity, Ad2 is eta expanded N times
-  type make-eta-link-aux nat -> address -> address -> list ho.tm -> links -> ho.subst -> ho.subst -> o.
+  type make-eta-link-aux nat -> address -> address -> 
+    list ho.tm -> links -> ho.subst -> ho.subst -> o.
   make-eta-link-aux z Ad1 Ad2 Scope1 [@val-link-eta (ho.uva Ad1 Scope) T1] H1 H1  :-
     std.rev Scope1 Scope, eta-expand (ho.uva Ad2 Scope) @one T1.
   make-eta-link-aux (s N) Ad1 Ad2 Scope1 [@val-link-eta (ho.uva Ad1 Scope) T2 | L2] H1 H3 :-
@@ -180,15 +197,6 @@ namespace comp {
     deduplicate-mappings Map1 Map2 H2 H3 L2 L3.
   deduplicate-mappings [A|As] [A|Bs] H1 H2 L1 L2 :- deduplicate-mappings As Bs H1 H2 L1 L2, !.
   deduplicate-mappings [A|_] _ H _ _ _ :- halt "deduplicating mapping error" {ppmapping A} {ho.ppsubst H}.
-
-  type alloc mappings -> mappings -> fvariable -> hvariable -> ho.subst -> ho.subst -> o.
-  alloc Map Map N M H H :- std.mem Map (mapping N M), !.
-  alloc Map [mapping (fv N) (hv M Arity)|Map] (fv N) (hv M Arity) H H1 :- mem.new H M H1.
-
-  type unif-mk-app ho.tm -> ho.tm -> ho.tm -> o.
-  unif-mk-app (ho.uva N L) T (ho.uva N R) :- appendR L [T] R.
-  unif-mk-app (ho.con C) T (ho.app [ho.con C, T]).
-  unif-mk-app (ho.app L) T (ho.app R) :- appendR L [T] R.
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PROGRESS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -399,7 +407,8 @@ namespace comp {
     if (occur-check-links H1 L1) true (print "fail by oc in solve-link-fixpoint", fail),
     if (L = L1, H = H1)
       (print "end fixpoint", deref-links H L L2 , H2 = H)
-      (print "## Subst is" {ho.ppsubst H1}, print "## Links are" {pplinks {deref-links H1 L1}}, !, solve-links-fixpoint L1 L2 H1 H2).
+      (print "## Subst is" {ho.ppsubst H1}, print "## Links are" {pplinks {deref-links H1 L1}}, 
+        solve-links-fixpoint L1 L2 H1 H2).
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% DECOMPL %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -503,19 +512,26 @@ namespace comp {
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% TESTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  type test-maybe-eta-1 o.
-  type test-maybe-eta-2 o.
-  type test-maybe-eta-3 o.
-  test-maybe-eta-1 :-
-    pi f\ sigma B\
-      fo.parse "λx.(X (Y x) f)" (fo.flam B),
-    pi x\ maybe-eta x (B x) [x].
+  type test-maybe-eta o.
+  test-maybe-eta :-
+    TESTS_OK = [
+      "λx.(X (Y x) f)",
+      "λx. λy. (Z (Y  x) (X  x  y))",
+      "λx. λy. (Z (Y  (X x)) (X  (X x)  (X y)))",
+    ],
+    TESTS_KO = [
+      "λx.(f x x)",
+      "λx.(f (g x) x)",
+    ],
+    forall1 test-maybe-eta-ok TESTS_OK,
+    forall1 test-maybe-eta-ko TESTS_KO.
 
-  test-maybe-eta-2 :-
-    fo.parse "λx. λy. (Z (Y  x) (X  x  y))" (fo.flam B),
-    pi x\ maybe-eta x (B x) [x].
+  type test-maybe-eta-ok string -> o.
+  test-maybe-eta-ok S :- fo.parse S (fo.flam B),
+    if (pi x\ maybe-eta x (B x) [x]) true (print "Fail" S, fail).
 
-  test-maybe-eta-3 :-
-    fo.parse "λx. λy. (Z (Y  (X x)) (X  (X x)  (X y)))" (fo.flam B),
-    pi x\ maybe-eta x (B x) [x].
+  type test-maybe-eta-ko string -> o.
+  test-maybe-eta-ko S :- fo.parse S (fo.flam B),
+    if (pi x\ maybe-eta x (B x) [x]) (print "Succeed" S, fail) true.
+
 }
