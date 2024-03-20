@@ -157,19 +157,25 @@ namespace comp {
   % Ad1 is the variable with smaller arity, Ad2 is eta expanded N times
   type make-eta-link-aux nat -> address -> address -> 
     list ho.tm -> links -> ho.subst -> ho.subst -> o.
-  make-eta-link-aux z Ad1 Ad2 Scope1 [@val-link-eta (ho.uva Ad1 Scope) T1] H1 H1  :-
-    std.rev Scope1 Scope, eta-expand (ho.uva Ad2 Scope) @one T1.
-  make-eta-link-aux (s N) Ad1 Ad2 Scope1 [@val-link-eta (ho.uva Ad1 Scope) T2 | L2] H1 H3 :-
-    std.rev Scope1 Scope, mem.new H1 Ad H2, eta-expand (ho.uva Ad Scope) @one T2,
+  make-eta-link-aux z Ad1 Ad2 Scope1 L H1 H1  :-
+    std.rev Scope1 Scope, eta-expand (ho.uva Ad2 Scope) @one T1,
+    L = [@val-link-eta (ho.uva Ad1 Scope) T1].
+  make-eta-link-aux (s N) Ad1 Ad2 Scope1 L H1 H3 :-
+    std.rev Scope1 Scope, mem.new H1 Ad H2, 
+    eta-expand (ho.uva Ad Scope) @one T2,
     (pi x\ make-eta-link-aux N Ad Ad2 [x|Scope1] (L1 x) H2 H3),
-    close-links L1 L2.
+    close-links L1 L2,
+    L = [@val-link-eta (ho.uva Ad1 Scope) T2 | L2].
 
   % [make-eta-link ArityAd1, ArityAd2, Ad1, Ad2 Vars, Link]
   % as long as the arities are > 0, we eat one arity by putting a variable in the ctx
   % in the base case we return the link-eta eta-extending N times the variable with higher arity.
-  type make-eta-link nat -> nat -> address -> address -> list ho.tm -> links -> ho.subst -> ho.subst -> o.
-  make-eta-link (s N) z Ad1 Ad2 Vars L H H1 :- make-eta-link-aux N Ad2 Ad1 Vars L H H1.
-  make-eta-link z (s N) Ad1 Ad2 Vars L H H1 :- make-eta-link-aux N Ad1 Ad2 Vars L H H1.
+  type make-eta-link nat -> nat -> address -> address -> 
+          list ho.tm -> links -> ho.subst -> ho.subst -> o.
+  make-eta-link (s N) z Ad1 Ad2 Vars L H H1 :- 
+    make-eta-link-aux N Ad2 Ad1 Vars L H H1.
+  make-eta-link z (s N) Ad1 Ad2 Vars L H H1 :- 
+    make-eta-link-aux N Ad1 Ad2 Vars L H H1.
   make-eta-link (s N) (s M) Ad1 Ad2 Vars Links H H1 :-
     (pi x\ make-eta-link N M Ad1 Ad2 [x|Vars] (L x) H H1),
     close-links L Links.
@@ -183,7 +189,8 @@ namespace comp {
   % where: 
   %  - they share a common variable from the context (i.e. c0),
   %  - X4 is the eta-expanded once to be fully applied
-  type deduplicate-mappings mappings -> mappings -> ho.subst -> ho.subst -> links -> links -> o.
+  type deduplicate-mappings mappings -> mappings -> 
+      ho.subst -> ho.subst -> links -> links -> o.
   deduplicate-mappings [] [] H H L L.
   deduplicate-mappings [(mapping (fv O) (hv M (arity LenM)) as X1) | Map1] Map2 H1 H3 L1 L3 :-
     take-list Map1 (mapping (fv O) (hv M' (arity LenM'))) _, !,
@@ -193,8 +200,10 @@ namespace comp {
     print "new eta link" {pplinks New},
     std.append New L1 L2,
     deduplicate-mappings Map1 Map2 H2 H3 L2 L3.
-  deduplicate-mappings [A|As] [A|Bs] H1 H2 L1 L2 :- deduplicate-mappings As Bs H1 H2 L1 L2, !.
-  deduplicate-mappings [A|_] _ H _ _ _ :- halt "deduplicating mapping error" {ppmapping A} {ho.ppsubst H}.
+  deduplicate-mappings [A|As] [A|Bs] H1 H2 L1 L2 :- 
+    deduplicate-mappings As Bs H1 H2 L1 L2, !.
+  deduplicate-mappings [A|_] _ H _ _ _ :- 
+    halt "deduplicating mapping error" {ppmapping A} {ho.ppsubst H}.
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PROGRESS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
