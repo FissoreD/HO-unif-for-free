@@ -1,17 +1,6 @@
 accumulate common.
-% accumulate unif-1-fo.
-% accumulate unif-1-fo-test.
-% accumulate unif-2-ho-naive.
-% accumulate unif-2-ho-naive-test.
-% accumulate unif-3-ho.
-% accumulate unif-3-ho-test.
-% accumulate unif-4.
-% accumulate unif-4-test.
-% accumulate unif-5.
-% accumulate unif-5-test.
 accumulate unif-6.
 accumulate unif-6-test.
-
 
 main [] :-
   internal-tests,
