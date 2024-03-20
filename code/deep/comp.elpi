@@ -1,6 +1,6 @@
-
 internal-test comp.test-maybe-eta-1.
 internal-test comp.test-maybe-eta-2.
+internal-test comp.test-maybe-eta-3.
 
 typeabbrev (mem A) (mem.mem A).
 typeabbrev address mem.address.
@@ -71,10 +71,10 @@ namespace comp {
     % forall1 (x\ forall1 (y\ not (use-binder x y)) First) L,
     maybe-equal Last {std.rev L}.
 
+  % [maybe-eta-of N T L] answer T is a possible eta expansion of N (L is [] when called, and used for fapp)
   type maybe-eta-of fo.fm -> fo.fm -> list fo.fm -> o.
   maybe-eta-of N N _ :- !.
-  % TODO: not sure of this (why mem and not maybe-eta-of)
-  maybe-eta-of N (fo.fapp[fo.fuva _|Args]) L :- !, forall1 (mem Args) [N|L]. % Head is flex -> if N is in Args, we can have eta
+  maybe-eta-of N (fo.fapp[fo.fuva _|Args]) L :- !, forall1 (x\ exists (y\ maybe-eta-of x y []) Args) [N|L]. % Head is flex -> if N is in Args, we can have eta
   maybe-eta-of N (fo.flam B) L :- !, pi x\ maybe-eta-of N (B x) [x | L].
   maybe-eta-of N (fo.fapp [N|Args]) L :-                      % Head is rigid -> to be an eta we consider also L
     last-n {len L} Args R,
@@ -467,6 +467,7 @@ namespace comp {
 
   type test-maybe-eta-1 o.
   type test-maybe-eta-2 o.
+  type test-maybe-eta-3 o.
   test-maybe-eta-1 :-
     pi f\ sigma B\
       fo.parse "λx.(X (Y x) f)" (fo.flam B),
@@ -474,5 +475,9 @@ namespace comp {
 
   test-maybe-eta-2 :-
     fo.parse "λx. λy. (Z (Y  x) (X  x  y))" (fo.flam B),
+    pi x\ maybe-eta x (B x) [x].
+
+  test-maybe-eta-3 :-
+    fo.parse "λx. λy. (Z (Y  (X x)) (X  (X x)  (X y)))" (fo.flam B),
     pi x\ maybe-eta x (B x) [x].
 }
