@@ -238,7 +238,7 @@ napp (fuva N) (fuva N).
   type deref-assmt subst -> assignment -> assignment -> o.
   deref-assmt S (abs T) (abs R) :- pi x\ deref-assmt S (T x) (R x).
   deref-assmt S (val T) (val R) :- deref S T R.
-
+\end{elpicode}
 \section{The compiler}
 
 \begin{elpicode}
@@ -489,12 +489,105 @@ napp (fuva N) (fuva N).
 
 \section{The decompiler}
 
+\begin{elpicode}
+  
+  type abs->lam ho.assignment -> ho.tm -> o.
+  abs->lam (ho.abs T) (ho.lam R)  :- !, pi x\ abs->lam (T x) (R x).
+  abs->lam (ho.val A) A.
+
+  type commit-links-aux link -> ho.subst -> ho.subst -> o.
+  commit-links-aux (@val-link-eta T1 T2) H1 H2 :- 
+    ho.deref H1 T1 T1', ho.deref H1 T2 T2',
+    (T1' ==l T2') H1 H2.
+  commit-links-aux (@val-link-beta T1 T2) H1 H2 :- 
+    ho.deref H1 T1 T1', ho.deref H1 T2 T2',
+    (T1' ==l T2') H1 H2.
+  commit-links-aux (ho.abs B) H H1 :- 
+    pi x\ commit-links-aux (B x) H H1.
+
+  type commit-links links -> links -> ho.subst -> ho.subst -> o.
+  commit-links [] [] H H.
+  commit-links [Abs | Links] L H H2 :- 
+    commit-links-aux Abs H H1, !, commit-links Links L H1 H2.
+
+  type decompl-subst mappings -> mappings -> ho.subst -> 
+    fo.subst -> fo.subst -> o.
+  decompl-subst _ [A|_] _ _ _ :- fail.
+  decompl-subst _ [] _ F F.
+  decompl-subst Map [mapping (fv VO) (hv VM _)|Tl] H F F2 :- 
+    mem.set? VM H T, !, 
+    ho.deref-assmt H T TTT,
+    abs->lam TTT T', tm->fm Map T' T1, 
+    fo.eta-contract T1 T2, mem.assign VO F T2 F1,
+    decompl-subst Map Tl H F1 F2. 
+  decompl-subst Map [mapping _ (hv VM _)|Tl] H F F2 :- 
+    mem.unset? VM H, decompl-subst Map Tl H F F2.
+
+  type tm->fm mappings -> ho.tm -> fo.fm -> o.
+  tm->fm _ (ho.con C)  (fo.fcon C).
+  tm->fm L (ho.lam B1) (fo.flam B2) :- 
+    pi x y\ tm->fm _ x y => tm->fm L (B1 x) (B2 y).
+  tm->fm L (ho.app L1) T :- forall2 (tm->fm L) L1 [Hd|Tl], 
+    fo.mk-app Hd Tl T.
+  tm->fm L (ho.uva VM TL) T :- mem L (mapping (fv VO) (hv VM _)), 
+    forall2 (tm->fm L) TL T1, fo.mk-app (fo.fuva VO) T1 T.
+
+  type add-new-mappings-aux ho.subst -> list ho.tm -> mappings -> 
+        mappings ->  fo.subst -> fo.subst -> o.
+  add-new-mappings-aux _ [] _ [] S S.
+  add-new-mappings-aux H [T|Ts] L L2 S S2 :- 
+    add-new-mappings H T L L1 S S1, 
+    add-new-mappings-aux H Ts L1 L2 S1 S2.
+
+  type add-new-mappings ho.subst -> ho.tm -> mappings -> 
+      mappings ->  fo.subst -> fo.subst -> o.
+  add-new-mappings _ (ho.uva N _) Map [] F1 F1 :- 
+    mem Map (mapping _ (hv N _)), !.
+  add-new-mappings H (ho.uva N L) Map [Map1 | MapL] F1 F3 :-
+    mem.new F1 M F2,
+    len L Arity, Map1 = mapping (fv M) (hv N (arity Arity)),
+    add-new-mappings H (ho.app L) [Map1 | Map] MapL F2 F3.
+  add-new-mappings H (ho.lam B) Map NewMap F1 F2 :- 
+    pi x\ add-new-mappings H (B x) Map NewMap F1 F2.
+  add-new-mappings H (ho.app L) Map NewMap F1 F3 :- 
+    add-new-mappings-aux H L Map NewMap F1 F3.
+  add-new-mappings _ (ho.con _) _ [] F F :- !.
+  add-new-mappings _ N _ [] F F :- name N.
+
+  type complete-mapping-under-ass ho.subst -> ho.assignment -> 
+    mappings -> mappings ->  fo.subst -> fo.subst -> o.
+  complete-mapping-under-ass H (ho.val Val) Map1 Map2 F1 F2 :- 
+    add-new-mappings H Val Map1 Map2 F1 F2.
+  complete-mapping-under-ass H (ho.abs Abs) Map1 Map2 F1 F2 :- 
+    pi x\ complete-mapping-under-ass H (Abs x) Map1 Map2 F1 F2.
+
+  type complete-mapping ho.subst -> ho.subst ->   
+    mappings -> mappings -> fo.subst -> fo.subst -> o.
+  complete-mapping _ [] L L F F.
+  complete-mapping H [none | Tl] L1 L2 F1 F2 :-   
+    complete-mapping H Tl L1 L2 F1 F2.
+  complete-mapping H [some T0 | Tl] L1 L3 F1 F3 :-
+    ho.deref-assmt H T0 T,
+    complete-mapping-under-ass H T L1 L2 F1 F2, 
+    std.append L1 L2 LAll,
+    complete-mapping H Tl LAll L3 F2 F3.
+
+  type decompile mappings -> links -> ho.subst -> 
+    fo.subst -> fo.subst -> o.
+  decompile Map1 L HO FO FO2 :- 
+    commit-links L L1_ HO HO1, !,
+    complete-mapping HO1 HO1 Map1 Map2 FO FO1,
+    decompl-subst Map2 Map2 HO1 FO1 FO2.
+\end{elpicode}
+
 \section{Auxiliary functions}
 
 \begin{elpicode}
-  type fold4 (A -> A1 -> B -> B -> C -> C -> o) -> list A -> list A1 -> B -> B -> C -> C -> o.
+  type fold4 (A -> A1 -> B -> B -> C -> C -> o) -> list A -> 
+    list A1 -> B -> B -> C -> C -> o.
   fold4 _ [] [] A A B B.
-  fold4 F [X|XS] [Y|YS] A A1 B B1 :- F X Y A A0 B B0, fold4 F XS YS A0 A1 B0 B1.
+  fold4 F [X|XS] [Y|YS] A A1 B B1 :- F X Y A A0 B B0, 
+    fold4 F XS YS A0 A1 B0 B1.
   
   type len list A -> nat -> o.
   len [] z.
