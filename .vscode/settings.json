@@ -7,6 +7,7 @@
             "name": "pdflatex",
             "command": "pdflatex",
             "args": [
+                "-interaction=batchmode",
                 "--shell-escape",
                 "-synctex=1",
                 "-file-line-error",
