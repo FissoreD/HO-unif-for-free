@@ -2,7 +2,7 @@ shorten fo.{(==o) , parse, parse-eq}.
 
 macro @read :- input_line std_in _.
 
-shorten ho.{(`~l)}.
+shorten ho.{(==l)}.
 
 type compile-terms 
   list (triple diagnostic fo.fm fo.fm) -> 
@@ -34,7 +34,7 @@ type prolog
 prolog [] L L H H ok :- print "end proggram\n".
 prolog [triple ok L R|Us] Links Links2 H H3 D :- !, std.do! [
   print "## prolog unif step" {ho.pp {ho.deref H L}} "=" {ho.pp {ho.deref H R}},
-  (L `~l R) H H1,
+  (L ==l R) H H1,
   print "## After unif subst is" {ho.ppsubst H1},
   print "## Links are" {comp.pplinks Links},
   printC "solve links?",
@@ -48,7 +48,7 @@ prolog [triple ok L R|Us] Links Links2 H H3 D :- !, std.do! [
 prolog [triple (error X as E) L R|_] Links Links H H2 E :-
   valid-error X,
   print "## unif (error)" {ho.pp L} "=" {ho.pp R},
-  if ((L `~l R) H H1)
+  if ((L ==l R) H H1)
      (print "## After unif" {ho.pp L} "=" {ho.pp R} "subst is" {ho.ppsubst H1},
       print "## Links are" {comp.pplinks {comp.deref-links H1 Links}},
       printC "solve links?",

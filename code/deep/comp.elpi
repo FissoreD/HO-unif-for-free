@@ -7,7 +7,7 @@ typeabbrev address mem.address.
 typeabbrev addr mem.addr.
 
 namespace comp {
-  shorten ho.{(`~l)}.
+  shorten ho.{(==l)}.
 
   kind arity type.
   type arity nat -> arity.
@@ -203,10 +203,10 @@ namespace comp {
 
   % invariante: a sx non c'è mai una eta espansione, a destra c'è una lam, altrimenti il link eta è buttato via
   type progress-eta-link ho.tm -> ho.tm -> ho.subst -> ho.subst -> links -> o.
-  progress-eta-link (ho.app _ as T) (ho.lam x\ _ as T1) H H1 [] :- !, print "progress η app left", ({eta-expand T @one} `~l T1) H H1.
-  progress-eta-link (ho.con _ as T) (ho.lam x\ _ as T1) H H1 [] :- !, print "progress η con left", ({eta-expand T @one} `~l T1) H H1.
-  progress-eta-link (ho.lam _ as T) T1 H H1 [] :- !, print "progress η lam left", (T `~l T1) H H1.
-  progress-eta-link (ho.uva _ _ as X) T H H1 [] :- contract-rigid [] T T1, !, print "progress η app right", (X `~l T1) H H1.
+  progress-eta-link (ho.app _ as T) (ho.lam x\ _ as T1) H H1 [] :- !, print "progress η app left", ({eta-expand T @one} ==l T1) H H1.
+  progress-eta-link (ho.con _ as T) (ho.lam x\ _ as T1) H H1 [] :- !, print "progress η con left", ({eta-expand T @one} ==l T1) H H1.
+  progress-eta-link (ho.lam _ as T) T1 H H1 [] :- !, print "progress η lam left", (T ==l T1) H H1.
+  progress-eta-link (ho.uva _ _ as X) T H H1 [] :- contract-rigid [] T T1, !, print "progress η app right", (X ==l T1) H H1.
   % an example of the following OC error is `f X = λx.(X x)`
   progress-eta-link (ho.uva Ad _ as T1) T2 H H [@val-link-eta T1 T2] :- !, if (ho.not_occ Ad H T2) (print "no progress η") (print "progress η fail of occur-check", fail).
   progress-eta-link T _ _ _ _ :- halt "Error in progress-eta link: unreachable branch" T.
@@ -236,7 +236,7 @@ namespace comp {
   type progress-beta-link-aux ho.tm -> ho.tm -> ho.subst -> ho.subst -> links -> o.
   progress-beta-link-aux T1 T2 S1 S2 [] :-  is-in-pf T2, !,
     print "progress β not uva with" {ho.pp T1} "and" {ho.pp T2},
-    (T1 `~l T2) S1 S2.
+    (T1 ==l T2) S1 S2.
   progress-beta-link-aux T1 T2 S S [@val-link-beta T1 T2] :- !, print "No β progress2".
 
   % a sx non c'è mai un app[uva _ _ | _] per costruzione
@@ -246,7 +246,7 @@ namespace comp {
     arity T Arity, len L ArgsNb, ArgsNb >n Arity, !,
     minus ArgsNb Arity Diff, mem.new S V1 S1,
     eta-expand (ho.uva V1 Scope) Diff T1,
-    ((ho.uva V Scope) `~l T1) S1 S2,
+    ((ho.uva V Scope) ==l T1) S1 S2,
     print "progress β big arity" {ho.pp T} "unified with" {ho.pp T1} "->" {ho.ppsubst S2}.
 
   % this is for beta links of the form `link-beta T (app[uva N [], app[B, x] | ...])
@@ -353,7 +353,7 @@ namespace comp {
     std.assert! (std.length S1 {std.length S2}) "no same scope",
     std.map2 S1 S2 (x\y\r\ r = ho.copy x y) Perm,
     Perm => ho.copy A A',
-    (A' `~l B) H H1,
+    (A' ==l B) H H1,
   ].
 
   % Invariant: links received in entry have already been dereferenced
@@ -400,10 +400,10 @@ namespace comp {
   commit-links-aux (@val-link-eta T1 T2) H1 H2 :- 
     ho.deref H1 T1 T1', ho.deref H1 T2 T2',
     print "Start decompl-η of" {ho.pp T1'} "and" {ho.pp T2'} "in" {ho.ppsubst H1}, 
-    (T1' `~l T2') H1 H2.
+    (T1' ==l T2') H1 H2.
   commit-links-aux (@val-link-beta T1 T2) H1 H2 :- 
     ho.deref H1 T1 T1', ho.deref H1 T2 T2',
-    print "Start decompl-β of" {ho.pp T1'} "and" {ho.pp T2'}, (T1' `~l T2') H1 H2.
+    print "Start decompl-β of" {ho.pp T1'} "and" {ho.pp T2'}, (T1' ==l T2') H1 H2.
   commit-links-aux (ho.abs B) H H1 :- pi x\ commit-links-aux (B x) H H1.
 
   type commit-links links -> links -> ho.subst -> ho.subst -> o.
