@@ -344,6 +344,17 @@ occur-check-links S [Hd | Tl] :-
   print "Ok occur check for" {ho.pp (ho.uva Ad [])},
   occur-check-links S Tl.
 
+type same-link-eta link -> link -> ho.subst -> ho.subst -> o.
+same-link-eta (ho.abs F) B H H1 :- !, pi x\ same-link-eta (F x) B H H1.
+same-link-eta A (ho.abs G) H H1 :- !, pi x\ same-link-eta A (G x) H H1.
+same-link-eta (@val-link-eta (ho.uva N S1) A)
+              (@val-link-eta (ho.uva N S2) B) H H1 :- std.do! [
+  std.assert! (std.length S1 {std.length S2}) "no same scope",
+  std.map2 S1 S2 (x\y\r\ r = ho.copy x y) Perm,
+  Perm => ho.copy A A',
+  ho.unif A' B H H1,
+].
+
 % Invariant: links received in entry have already been dereferenced
 type solve-links links -> links -> ho.subst -> ho.subst -> o.
 solve-links [] [] X X :- print "end solve links".
@@ -370,16 +381,6 @@ solve-links-fixpoint L0 L2 H H2 :- std.do! [
      (print "## Subst is" {ho.ppsubst H1}, print "## Links are" {pplinks {deref-links H1 L1}}, !, solve-links-fixpoint L1 L2 H1 H2)
 ].
 
-type same-link-eta link -> link -> ho.subst -> ho.subst -> o.
-same-link-eta (ho.abs F) B H H1 :- !, pi x\ same-link-eta (F x) B H H1.
-same-link-eta A (ho.abs G) H H1 :- !, pi x\ same-link-eta A (G x) H H1.
-same-link-eta (@val-link-eta (ho.uva N S1) A)
-              (@val-link-eta (ho.uva N S2) B) H H1 :- std.do! [
-  std.assert! (std.length S1 {std.length S2}) "no same scope",
-  std.map2 S1 S2 (x\y\r\ r = ho.copy x y) Perm,
-  Perm => ho.copy A A',
-  ho.unif A' B H H1,
-].
 
 type abs->lam ho.assignment -> ho.tm -> o.
 abs->lam (ho.abs T) (ho.lam R)  :- !, pi x\ abs->lam (T x) (R x).
@@ -415,48 +416,43 @@ decompl-subst _ [] _ F F.
 decompl-subst Map [mapping (fv VO) (hv VM _)|Tl] H F F2 :- mem.set? VM H T, !, % TODO: is the res of mem.set? always a val?
   print {ho.ppsubst H} {ho.ppass T},
   std.assert!(ho.deref-assmt H T TTT) "Should not fail",
-  abs->lam TTT T', decomp Map T' T1, fo.eta-contract T1 T2, mem.assign VO F T2 F1,
+  abs->lam TTT T', tm->fm Map T' T1, fo.eta-contract T1 T2, mem.assign VO F T2 F1,
   decompl-subst Map Tl H F1 F2. 
 decompl-subst Map [mapping _ (hv VM _)|Tl] H F F2 :- mem.unset? VM H, decompl-subst Map Tl H F F2.
 decompl-subst _ [L|_] H _ _ :- halt "Decompl mapping: failed on" {ppmapping L} {ho.ppsubst H}.
 
-type decomp mappings -> ho.tm -> fo.fm -> o.
-decomp _ (ho.con C)  (fo.fcon C).
-decomp L (ho.lam B1) (fo.flam B2) :- pi x y\ decomp _ x y => decomp L (B1 x) (B2 y).
-decomp L (ho.app L1) T :-
-  forall2 (decomp L) L1 [Hd|Tl],
-  fo.mk-app Hd Tl T.
-decomp L (ho.uva VM TL) T :-
-  forall2 (decomp L) TL T1,
-  std.assert! (len {std.findall (mem L (mapping (fv VO) (hv VM _)))} (s z)) "Sanity check decompl1",
-  fo.mk-app (fo.fuva VO) T1 T.
-decomp L H _ :- halt "Fail in decomp" {ppmappings L} {ho.pp H}.
+type tm->fm mappings -> ho.tm -> fo.fm -> o.
+tm->fm _ (ho.con C)  (fo.fcon C).
+tm->fm L (ho.lam B1) (fo.flam B2) :- pi x y\ tm->fm _ x y => tm->fm L (B1 x) (B2 y).
+tm->fm L (ho.app L1) T :- forall2 (tm->fm L) L1 [Hd|Tl], fo.mk-app Hd Tl T.
+tm->fm L (ho.uva VM TL) T :- mem L (mapping (fv VO) (hv VM _)), forall2 (tm->fm L) TL T1, fo.mk-app (fo.fuva VO) T1 T.
+tm->fm L H _ :- halt "Fail in tm->fm" {ppmappings L} {ho.pp H}.
 
-type add-new-links-aux ho.subst -> list ho.tm -> mappings -> mappings ->  fo.subst -> fo.subst -> o.
-add-new-links-aux _ [] _ [] S S.
-add-new-links-aux H [T|Ts] L L2 S S2 :- add-new-link H T L L1 S S1, add-new-links-aux H Ts L1 L2 S1 S2.
+type add-new-mappings-aux ho.subst -> list ho.tm -> mappings -> mappings ->  fo.subst -> fo.subst -> o.
+add-new-mappings-aux _ [] _ [] S S.
+add-new-mappings-aux H [T|Ts] L L2 S S2 :- add-new-mappings H T L L1 S S1, add-new-mappings-aux H Ts L1 L2 S1 S2.
 
-type add-new-link ho.subst -> ho.tm -> mappings -> mappings ->  fo.subst -> fo.subst -> o.
-add-new-link _ (ho.uva N _) Links [] F1 F1 :- mem Links (mapping _ (hv N _)), !.
-add-new-link H (ho.uva N L) Links [Link1 | Links1] F1 F3 :-              % Build new link
+type add-new-mappings ho.subst -> ho.tm -> mappings -> mappings ->  fo.subst -> fo.subst -> o.
+add-new-mappings _ (ho.uva N _) Map [] F1 F1 :- mem Map (mapping _ (hv N _)), !.
+add-new-mappings H (ho.uva N L) Map [Map1 | MapL] F1 F3 :-              % Build new link
   mem.new F1 M F2,
-  len L Arity, Link1 = mapping (fv M) (hv N (arity Arity)),
-  add-new-link H (ho.app L) [Link1 | Links] Links1 F2 F3.
-add-new-link H (ho.lam B) Links NewLinks F1 F2 :- pi x\ add-new-link H (B x) Links NewLinks F1 F2.
-add-new-link H (ho.app L) Links NewLinks F1 F3 :- add-new-links-aux H L Links NewLinks F1 F3.
-add-new-link _ (ho.con _) _ [] F F :- !.
-add-new-link _ N _ [] F F :- name N.
+  len L Arity, Map1 = mapping (fv M) (hv N (arity Arity)),
+  add-new-mappings H (ho.app L) [Map1 | Map] MapL F2 F3.
+add-new-mappings H (ho.lam B) Map NewMap F1 F2 :- pi x\ add-new-mappings H (B x) Map NewMap F1 F2.
+add-new-mappings H (ho.app L) Map NewMap F1 F3 :- add-new-mappings-aux H L Map NewMap F1 F3.
+add-new-mappings _ (ho.con _) _ [] F F :- !.
+add-new-mappings _ N _ [] F F :- name N.
 
-type add-new-link-ass ho.subst -> ho.assignment -> mappings -> mappings ->  fo.subst -> fo.subst -> o.
-add-new-link-ass H (ho.val Val) Links1 Links2 F1 F2 :- add-new-link H Val Links1 Links2 F1 F2.
-add-new-link-ass H (ho.abs Abs) Links1 Links2 F1 F2 :- pi x\ add-new-link-ass H (Abs x) Links1 Links2 F1 F2.
+type complete-mapping-under-ass ho.subst -> ho.assignment -> mappings -> mappings ->  fo.subst -> fo.subst -> o.
+complete-mapping-under-ass H (ho.val Val) Map1 Map2 F1 F2 :- add-new-mappings H Val Map1 Map2 F1 F2.
+complete-mapping-under-ass H (ho.abs Abs) Map1 Map2 F1 F2 :- pi x\ complete-mapping-under-ass H (Abs x) Map1 Map2 F1 F2.
 
 type complete-mapping ho.subst -> ho.subst -> mappings -> mappings -> fo.subst -> fo.subst -> o.
 complete-mapping _ [] L L F F.
 complete-mapping H [none | Tl] L1 L2 F1 F2 :- complete-mapping H Tl L1 L2 F1 F2.
 complete-mapping H [some T0 | Tl] L1 L3 F1 F3 :-
   ho.deref-assmt H T0 T,
-  add-new-link-ass H T L1 L2 F1 F2, 
+  complete-mapping-under-ass H T L1 L2 F1 F2, 
   std.append L1 L2 LAll,
   complete-mapping H Tl LAll L3 F2 F3.
 
