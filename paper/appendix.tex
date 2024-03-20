@@ -2,7 +2,10 @@
 
 Note that \elpiIn{(a infix b) c d} de-sugars to \elpiIn{(infix) a b c d}.
 
-\begin{figure*}
+\section{The object language}
+
+
+% \begin{figure*}
 \begin{elpicode}
 ~\PYG{k+kd}{type} \PYG{n+nf}{(\Eo)} \PYG{k+kt}{ftm -> ftm -> o}~.                           ~($\customlabel{pred:fequal}{\Eo}$)~
 fapp A ~\Eo~fapp B :- map ~(\Eo)~ A B.
@@ -35,12 +38,13 @@ napp (fapp[X]) R :- !, napp X R.
 napp (fapp A) (fapp B) :- map napp A B.
 napp (fuva N) (fuva N).
 \end{elpicode}
-\caption{Full implementation of the \Eo predicate for \Fo}
-\label{code:eo-pred}
-\Description[code:eo-pred]{code:eo-pred}
-\end{figure*}
+% \caption{Full implementation of the \Eo predicate for \Fo}
+% \label{code:eo-pred}
+% \Description[code:eo-pred]{code:eo-pred}
+% \end{figure*}
 
-\begin{figure*}
+\section{The meta language}
+% \begin{figure*}
 \begin{elpicode}
 ~\PYG{k+kd}{type} \PYG{n+nf}{(\Ue)} \PYG{k+kt}{tm -> tm -> subst -> subst -> o}~.
 % Congruence
@@ -97,23 +101,32 @@ fold2 _ [] [] A A.
 fold2 F [X|XS] [Y|YS] A A1 :- F X Y A A0, fold2 F XS YS A0 A1.
 
 \end{elpicode}
-\caption{Implementation of the \Ue predicate for \Ho}
-\label{code:ue-pred}
-\Description[code:ue-pred]{code:ue-pred}
-\end{figure*}
+% \caption{Implementation of the \Ue predicate for \Ho}
+% \label{code:ue-pred}
+% \Description[code:ue-pred]{code:ue-pred}
+% \end{figure*}
 
-\begin{figure*}
+\section{The compiler}
+% \begin{figure*}
+% \caption{Implementation of the compiler}
+% \label{code:ue-pred}
+% \Description[code:ue-pred]{code:ue-pred}
+% \end{figure*}
+
+\section{The progress function}
+
+\section{The decompiler}
+
+\section{Auxiliary functions}
+
 \begin{elpicode}
-type fold4 (A -> A1 -> B -> B -> C -> C -> o) -> list A -> list A1 -> B -> B -> C -> C -> o.
-fold4 _ [] [] A A B B.
-fold4 F [X|XS] [Y|YS] A A1 B B1 :- F X Y A A0 B B0, fold4 F XS YS A0 A1 B0 B1.
-
-type len list A -> nat -> o.
-len [] z.
-len [_|L] (s X) :- len L X.
-
-\end{elpicode}
-\caption{Implementation of the compiler}
-\label{code:ue-pred}
-\Description[code:ue-pred]{code:ue-pred}
-\end{figure*}
+  type fold4 (A -> A1 -> B -> B -> C -> C -> o) -> list A -> list A1 -> B -> B -> C -> C -> o.
+  fold4 _ [] [] A A B B.
+  fold4 F [X|XS] [Y|YS] A A1 B B1 :- F X Y A A0 B B0, fold4 F XS YS A0 A1 B0 B1.
+  
+  type len list A -> nat -> o.
+  len [] z.
+  len [_|L] (s X) :- len L X.
+  
+  \end{elpicode}
+  
