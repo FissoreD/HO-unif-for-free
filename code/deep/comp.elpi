@@ -220,15 +220,18 @@ namespace comp {
     std.rev L LRev, std.appendR Prefix LRev Args,
     if (Prefix = []) (T = H) (T = ho.app [H|Prefix]).
 
-
   % invariante: a sx non c'è mai una eta espansione, a destra c'è una lam, altrimenti il link eta è buttato via
   type progress-eta-link ho.tm -> ho.tm -> ho.subst -> ho.subst -> links -> o.
-  progress-eta-link (ho.app _ as T) (ho.lam x\ _ as T1) H H1 [] :- !, print "progress η app left", ({eta-expand T @one} ==l T1) H H1.
-  progress-eta-link (ho.con _ as T) (ho.lam x\ _ as T1) H H1 [] :- !, print "progress η con left", ({eta-expand T @one} ==l T1) H H1.
-  progress-eta-link (ho.lam _ as T) T1 H H1 [] :- !, print "progress η lam left", (T ==l T1) H H1.
-  progress-eta-link (ho.uva _ _ as X) T H H1 [] :- contract-rigid [] T T1, !, print "progress η app right", (X ==l T1) H H1.
-  % an example of the following OC error is `f X = λx.(X x)`
-  progress-eta-link (ho.uva Ad _ as T1) T2 H H [@val-link-eta T1 T2] :- !, if (ho.not_occ Ad H T2) (print "no progress η") (print "progress η fail of occur-check", fail).
+  progress-eta-link (ho.app _ as T) (ho.lam x\ _ as T1) H H1 [] :- !, 
+    print "progress η app left", ({eta-expand T @one} ==l T1) H H1.
+  progress-eta-link (ho.con _ as T) (ho.lam x\ _ as T1) H H1 [] :- !, 
+    print "progress η con left", ({eta-expand T @one} ==l T1) H H1.
+  progress-eta-link (ho.lam _ as T) T1 H H1 [] :- !, 
+    print "progress η lam left", (T ==l T1) H H1.
+  progress-eta-link (ho.uva _ _ as X) T H H1 [] :- 
+    contract-rigid [] T T1, !, print "progress η app right", (X ==l T1) H H1.
+  progress-eta-link (ho.uva Ad _ as T1) T2 H H [@val-link-eta T1 T2] :- !, 
+    if (ho.not_occ Ad H T2) (print "no progress η") (print "progress η fail of occur-check", fail).
   progress-eta-link T _ _ _ _ :- halt "Error in progress-eta link: unreachable branch" T.
 
   type is-in-pf ho.tm -> o.
@@ -285,22 +288,26 @@ namespace comp {
     len Scope2 Scope2Len,
     make-eta-link Scope1Len Scope2Len Ad1 Ad2 [] LinkEta S2 S3,
     if (L2 = []) (NewLinks = LinkEta, T2 = ho.uva Ad2 Scope2) 
-      (T2 = ho.app [ho.uva Ad2 Scope2 | L2], NewLinks = [@val-link-beta T T2 | LinkEta]),
+      (T2 = ho.app [ho.uva Ad2 Scope2 | L2], 
+      NewLinks = [@val-link-beta T T2 | LinkEta]),
     print "progress β: refine" {pplink (@val-link-beta T T1)} "to" {pplinks NewLinks}.
 
   progress-beta-link T1 (ho.app[ho.uva _ _ | _] as T2) _ _ _ :- not (T1 = ho.uva _ _), !,
     print "unification outside PF for β:" {pplink (@val-link-beta T1 T2)}, fail.
 
-  progress-beta-link (ho.uva _ _ as T) (ho.app[ho.uva _ _ | _] as T2) S1 _ _ :- occur-check-err T T2 S1, !, fail.
+  progress-beta-link (ho.uva _ _ as T) (ho.app[ho.uva _ _ | _] as T2) S1 _ _ :- 
+    occur-check-err T T2 S1, !, fail.
 
   progress-beta-link T1 (ho.app[ho.uva _ _ | _] as T2) H H [@val-link-beta T1 T2] :- !, print "No β progress1".
 
   progress-beta-link T1 (ho.app [Hd | Tl]) S1 S2 B :- % Hd is rigid!
-    ho.beta Hd Tl T3, print "Progress β deep with" {ho.pp T3}, progress-beta-link-aux T1 T3 S1 S2 B.
+    ho.beta Hd Tl T3, print "Progress β deep with" {ho.pp T3}, 
+    progress-beta-link-aux T1 T3 S1 S2 B.
 
   type solve-link-abs link -> links -> ho.subst -> ho.subst -> o.
   solve-link-abs (ho.abs X) R H H1 :- 
-    pi x\ ho.copy x x => (pi S\ ho.deref S x x) => solve-link-abs (X x) (R' x) H H1,
+    pi x\ ho.copy x x => (pi S\ ho.deref S x x) => 
+      solve-link-abs (X x) (R' x) H H1,
     close-links R' R.
 
   solve-link-abs (@val-link-eta A B) NewLinks S S1 :- !,
@@ -316,8 +323,10 @@ namespace comp {
   take-link A [L|XS] B [L|YS] :- take-link A XS B YS.
 
   type link-abs-same-lhs link -> link -> o.
-  link-abs-same-lhs (ho.abs F) B :- pi x\ link-abs-same-lhs (F x) B.
-  link-abs-same-lhs A (ho.abs G) :- pi x\ link-abs-same-lhs A (G x).
+  link-abs-same-lhs (ho.abs F) B :- 
+    pi x\ link-abs-same-lhs (F x) B.
+  link-abs-same-lhs A (ho.abs G) :- 
+    pi x\ link-abs-same-lhs A (G x).
   link-abs-same-lhs (@val-link-eta (ho.uva N _) _) (@val-link-eta (ho.uva N _) _).
 
   % Invariant: links received in entry have already been dereferenced
