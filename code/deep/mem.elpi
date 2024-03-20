@@ -15,7 +15,8 @@ namespace mem {
   alloc-aux (s N) [X | L] [X | M] :- alloc-aux N L M.
 
   type alloc address -> mem A -> mem A -> o.
-  alloc (addr A as Ad) Mem1 Mem2 :- unset? Ad Mem1, alloc-aux A Mem1 Mem2.
+  alloc (addr A as Ad) Mem1 Mem2 :- unset? Ad Mem1, 
+    alloc-aux A Mem1 Mem2.
 
   type new-aux mem A -> nat -> mem A -> o.
   new-aux [] z [none].
@@ -36,6 +37,10 @@ namespace mem {
 
   type assign address -> mem A -> A -> mem A -> o.
   assign (addr A) Mem1 Val Mem2 :- assign-aux A Mem1 Val Mem2.
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PRINTER %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   type ppaddr address -> string -> o.
   ppaddr (addr A) S :- ppnat A S.

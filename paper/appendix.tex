@@ -2,6 +2,49 @@
 
 Note that \elpiIn{(a infix b) c d} de-sugars to \elpiIn{(infix) a b c d}.
 
+\section{The memory}
+
+\begin{elpicode}
+  kind address type.
+  type addr nat -> address.
+
+  typeabbrev (mem A) (list (option A)).
+
+  type get nat -> mem A -> A -> o.
+  get z (some Y :: _) Y.
+  get (s N) (_ :: L) X :- get N L X.
+
+  type alloc-aux nat -> mem A -> mem A -> o.
+  alloc-aux z [] [none] :- !.
+  alloc-aux z L L.
+  alloc-aux (s N) [] [none | M] :- alloc-aux N [] M.
+  alloc-aux (s N) [X | L] [X | M] :- alloc-aux N L M.
+
+  type alloc address -> mem A -> mem A -> o.
+  alloc (addr A as Ad) Mem1 Mem2 :- unset? Ad Mem1, 
+    alloc-aux A Mem1 Mem2.
+
+  type new-aux mem A -> nat -> mem A -> o.
+  new-aux [] z [none].
+  new-aux [A | As] (s N) [A | Bs] :- new-aux As N Bs.
+
+  type new mem A -> address -> mem A -> o.
+  new Mem1 (addr Ad) Mem2 :- new-aux Mem1 Ad Mem2.
+
+  type set? address -> mem A -> A -> o.
+  set? (addr A) Mem Val :- get A Mem Val.
+
+  type unset? address -> mem A -> o.
+  unset? Addr Mem :- not (set? Addr Mem _).
+
+  type assign-aux nat -> mem A -> A -> mem A -> o.
+  assign-aux z (none :: L) Y (some Y :: L).
+  assign-aux (s N) (X :: L) Y (X :: L1) :- assign-aux N L Y L1.
+
+  type assign address -> mem A -> A -> mem A -> o.
+  assign (addr A) Mem1 Val Mem2 :- assign-aux A Mem1 Val Mem2.
+\end{elpicode}
+
 \section{The object language}
 
 \begin{elpicode}
@@ -202,6 +245,10 @@ napp (fuva N) (fuva N).
 % \end{figure*}
 
 \section{The compiler}
+
+\begin{elpicode}
+  
+\end{elpicode}
 % \begin{figure*}
 % \caption{Implementation of the compiler}
 % \label{code:ue-pred}

@@ -38,6 +38,16 @@ namespace comp {
   typeabbrev links (list link).
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% AUXILIARY %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  type eta-expand ho.tm -> nat -> ho.tm -> o.
+  eta-expand T z T.
+  eta-expand T (s N) (ho.lam R2) :- 
+    pi x\ unif-mk-app T x (R1 x), eta-expand (R1 x) N (R2 x). 
+
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% COMPILER %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -54,35 +64,28 @@ namespace comp {
   %  - T = uva seing N (N is also the last of L)
   %  - T = app L such that the last args of L are maybe-eta wrt L
   type maybe-eta fo.fm -> fo.fm -> list fo.fm -> o.
-  maybe-eta N (fo.fapp[fo.fuva _|Args]) _ :- !, exists (x\ maybe-eta-of N x []) Args, !. % Head is flex -> if N is in Args, we can have eta
+  maybe-eta N (fo.fapp[fo.fuva _|Args]) _ :- !,
+    % Head is flex -> if N is in Args, we can have eta 
+    exists (x\ maybe-eta-of [] N x) Args, !. 
   maybe-eta N (fo.flam B) L :- !, pi x\ maybe-eta N (B x) [x | L].
-  maybe-eta _ (fo.fapp [fo.fcon _|Args]) L :-                                            % Head is rigid -> to be an eta we consider also L
+  maybe-eta _ (fo.fapp [fo.fcon _|Args]) L :-
+    % Head is rigid -> to be an eta we consider also L
     split-last-n {len L} Args First_ Last,
     % forall1 (x\ forall1 (y\ not (use-binder x y)) First) L,
-    maybe-equal Last {std.rev L}.
+    forall2 (maybe-eta-of []) {std.rev L} Last.
 
   % [maybe-eta-of N T L] answer T is a possible eta expansion of N (L is [] when called, and used for fapp)
-  type maybe-eta-of fo.fm -> fo.fm -> list fo.fm -> o.
-  maybe-eta-of N N _ :- !.
-  maybe-eta-of N (fo.fapp[fo.fuva _|Args]) L :- !, forall1 (x\ exists (y\ maybe-eta-of x y []) Args) [N|L]. % Head is flex -> if N is in Args, we can have eta
-  maybe-eta-of N (fo.flam B) L :- !, pi x\ maybe-eta-of N (B x) [x | L].
-  maybe-eta-of N (fo.fapp [N|Args]) L :-                      % Head is rigid -> to be an eta we consider also L
+  type maybe-eta-of list fo.fm -> fo.fm -> fo.fm -> o.
+  maybe-eta-of _ N N :- !.
+  maybe-eta-of L N (fo.fapp[fo.fuva _|Args]) :- !, 
+    % Head is flex -> if N is in Args, we can have eta
+    forall1 (x\ exists (maybe-eta-of [] x) Args) [N|L]. 
+  maybe-eta-of L N (fo.flam B) :- !, 
+    pi x\ maybe-eta-of [x | L] N (B x).
+  maybe-eta-of L N (fo.fapp [N|Args]) :-
+    % Head is rigid -> to be an eta we consider also L
     last-n {len L} Args R,
-    maybe-equal R {std.rev L}.
-
-  % takes two list of terms, for any pair of terms, it verifies if the second can reduce to the first
-  type maybe-equal list fo.fm -> list fo.fm -> o.
-  maybe-equal [] [].
-  maybe-equal [T|L1] [N|L2] :- maybe-eta-of N T [], maybe-equal L1 L2.
-
-  % if there exists a subst s such that contract-rigid st t', then
-  % maybe-eta t must scucceed
-  type contract-rigid list ho.tm -> ho.tm -> ho.tm -> o.
-  contract-rigid L (ho.lam F) T :- 
-    pi x\ contract-rigid [x|L] (F x) T. % also checks H Prefix does not see x
-  contract-rigid L (ho.app [H|Args]) T :- 
-    std.rev L LRev, std.appendR Prefix LRev Args,
-    if (Prefix = []) (T = H) (T = ho.app [H|Prefix]).
+    forall2 (maybe-eta-of []) R {std.rev L}.
 
   type locale ho.tm -> o.
   type get-scope-aux ho.tm -> list ho.tm -> o.
@@ -182,16 +185,21 @@ namespace comp {
   unif-mk-app (ho.con C) T (ho.app [ho.con C, T]).
   unif-mk-app (ho.app L) T (ho.app R) :- appendR L [T] R.
 
-  type eta-expand ho.tm -> nat -> ho.tm -> o.
-  eta-expand T z T.
-  eta-expand T (s N) (ho.lam R2) :- pi x\ unif-mk-app T x (R1 x), eta-expand (R1 x) N (R2 x). 
-
-
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PROGRESS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   macro @one :- s z.
+
+  % if there exists a subst s such that contract-rigid st t', then
+  % maybe-eta t must scucceed
+  type contract-rigid list ho.tm -> ho.tm -> ho.tm -> o.
+  contract-rigid L (ho.lam F) T :- 
+    pi x\ contract-rigid [x|L] (F x) T. % also checks H Prefix does not see x
+  contract-rigid L (ho.app [H|Args]) T :- 
+    std.rev L LRev, std.appendR Prefix LRev Args,
+    if (Prefix = []) (T = H) (T = ho.app [H|Prefix]).
+
 
   % invariante: a sx non c'è mai una eta espansione, a destra c'è una lam, altrimenti il link eta è buttato via
   type progress-eta-link ho.tm -> ho.tm -> ho.subst -> ho.subst -> links -> o.
