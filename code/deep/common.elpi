@@ -100,6 +100,14 @@ type fold6 (A -> A1 -> B -> B -> C -> C -> D -> D -> o) -> list A -> list A1 -> 
 fold6 _ [] [] A A B B C C.
 fold6 F [X|XS] [Y|YS] A A1 B B1 C C1 :- F X Y A A0 B B0 C C0, fold6 F XS YS A0 A1 B0 B1 C0 C1.
 
+type flatten-aux list A -> list (list A) -> list A -> o.
+flatten-aux [] L L1 :- flatten L L1.
+flatten-aux [A|As] L [A|L1] :- flatten-aux As L L1.
+
+type flatten list (list A) -> list A -> o.
+flatten [] [].
+flatten [H|L] R :- flatten-aux H L R.
+
 type all list o -> o.
 all [].
 all [P|PS] :- P, all PS.
