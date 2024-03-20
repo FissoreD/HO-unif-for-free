@@ -722,6 +722,9 @@ progress-beta-link (ho.uva _ _ as T) (ho.app[ho.uva Ad1 Scope1 | L1] as T1) S1 S
   NewLinks = [@val-link-beta T T2 | LinkEta],
   print "progress β: refine" {pplink (@val-link-beta T T1)} "to" {pplinks NewLinks}.
 
+progress-beta-link T1 (ho.app[ho.uva _ _ | _] as T2) _ _ _ :- not (T1 = ho.uva _ _), !,
+  print "unification outside PF for β:" {pplink (@val-link-beta T1 T2)}, fail.
+
 progress-beta-link (ho.uva _ _ as T) (ho.app[ho.uva _ _ | _] as T2) S1 _ _ :- occur-check-err T T2 S1, !, fail.
 progress-beta-link T1 (ho.app[ho.uva _ _ | _] as T2) H H [@val-link-beta T1 T2] :- !, print "No β progress1".
 
