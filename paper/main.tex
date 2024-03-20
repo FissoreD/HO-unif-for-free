@@ -554,9 +554,9 @@ a run time hint) then ...
 \subsection{The intuition in a nutshell}
 \label{sec:nutshell}
 A term $s$ is compiled in a term $t$ where any
-``problematic'' subterm $tp$ is replaced by a fresh unification variable $h$
+``problematic'' subterm $p$ is replaced by a fresh unification variable $h$
 and an accessory link that represent a suspended unification problem
-$h \Ue tp$. As a result \Ue is ``well behaved'' on $t$, meaning it does not
+$h \Ue p$. As a result \Ue is ``well behaved'' on $t$, meaning it does not
 contradict \Eo (as it would do on ``problematic'' terms).
 We now define ``problematic'' and ``well behaved'' more formally.
 
@@ -611,7 +611,7 @@ $\forall \mathcal{T}, \forall \mathbb{L}, \forall p, \forall \sigma, \forall \si
 $$
 \wellb(\sigma\mathcal{T}) \land
 \stepH{\mathcal{T}}{p}{\sigma}{\mathbb{L}}{\sigma'}
-\Rightarrow \wellb((\sigma \cup \sigma')\mathcal{T})
+\Rightarrow \wellb(\sigma' \mathcal{T})
 $$
 \end{proposition}
 
