@@ -128,33 +128,31 @@ namespace comp {
 
   type comp fo.fm -> ho.tm -> mappings -> mappings -> links -> 
     links -> ho.subst -> ho.subst -> o.
-  comp (fo.fcon X)              (ho.con X) Mappings Mappings L L S S.
-  comp (fo.flam F) (ho.uva E0 Scope) Mappings1 Mappings2  L L2 S S2 :-
+  comp (fo.fcon X) (ho.con X)        Map1 Map1 L1 L1 S1 S1.
+  comp (fo.flam F) (ho.uva E0 Scope) Map1 Map2 L1 L3 S1 S3 :-
     (pi x\ maybe-eta x (F x) [x]), !,
-    mem.new S E0 S1,
-    comp-lam F F1 Mappings1 Mappings2 L L1 S1 S2,
+    mem.new S1 E0 S2,
+    comp-lam F F1 Map1 Map2 L1 L2 S2 S3,
     (pi x\ locale x => get-scope (F1 x) Scope), 
     NewLink = ho.val(link-eta (ho.uva E0 Scope) (ho.lam F1)), 
-    L2 = [NewLink| L1].
-
-  comp (fo.flam F) (ho.lam F1) Mappings1 Mappings2 L L2 S S1 :- 
-    comp-lam F F1 Mappings1 Mappings2 L L2 S S1.
-  comp (fo.fuva N)              (ho.uva M []) Mappings Mappings1 L L S S1 :- 
-    alloc Mappings Mappings1 (fv N) (hv M (arity z)) S S1.
-  comp (fo.fapp [fo.fuva N|Ag]) (ho.uva M' Scope) Mappings1 Mappings3 L L2 S S4 :- !,
+    L3 = [NewLink| L2].
+  comp (fo.flam F) (ho.lam F1)       Map1 Map2 L1 L2 S1 S2 :- 
+    comp-lam F F1 Map1 Map2 L1 L2 S1 S2.
+  comp (fo.fuva N) (ho.uva M []) Map1 Map2 L L S S1 :- 
+    alloc Map1 Map2 (fv N) (hv M (arity z)) S S1.
+  comp (fo.fapp [fo.fuva N|Ag]) (ho.uva M' Scope) Map1 Map3 L1 L3 S1 S4 :- !,
     split-pf Ag PF NPF,
-    fold6 comp PF PF1 Mappings1 Mappings1 L L S S1,                                 % Note : PF is a list of names -> Mappings1 and L not change
-    fold6 comp NPF NPF1 Mappings1 Mappings2 L L1 S1 S2,
+    forall2 (x\y\ comp x y _ _ _ _ _ _) PF PF1,
+    fold6 comp NPF NPF1 Map1 Map2 L1 L2 S1 S2,
     len PF Arity, 
-    alloc Mappings2 Mappings3 (fv N) (hv M (arity Arity)) S2 S3, % mem.new S2 M S3,
+    alloc Map2 Map3 (fv N) (hv M (arity Arity)) S2 S3,
     if (NPF = []) 
-      (Scope = PF1, M' = M, S3 = S4, L1 = L2)
-      (get-scope (ho.app {std.append PF1 NPF1}) Scope,
+      (Scope = PF1, M' = M, S3 = S4, L2 = L3)
+      (get-scope (ho.app {std.append PF1 NPF1}) Scope, 
         mem.new S3 M' S4,
-        L2 = [@val-link-beta (ho.uva M' Scope) (ho.app[ho.uva M PF1 | NPF1]) | L1],
-        true).
-  comp (fo.fapp A)              (ho.app A1) Mappings1 Mappings2 L L1 S S1 :- 
-    fold6 comp A A1 Mappings1 Mappings2 L L1 S S1.
+        L3 = [@val-link-beta (ho.uva M' Scope) (ho.app[ho.uva M PF1 | NPF1]) | L2]).
+  comp (fo.fapp A) (ho.app A1) Map1 Map2 L1 L2 S1 S2 :- 
+    fold6 comp A A1 Map1 Map2 L1 L2 S1 S2.
 
   % Ad1 is the variable with smaller arity, Ad2 is eta expanded N times
   type make-eta-link-aux nat -> address -> address -> 
