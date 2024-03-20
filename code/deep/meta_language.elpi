@@ -8,241 +8,220 @@ internal-test ho.test-unif-7.
 
 namespace ho {
 
-typeabbrev subst list (option assignment).
+  typeabbrev subst list (option assignment).
 
-kind inctx type -> type.
-type abs (tm -> inctx A) -> inctx A.
-type val A -> inctx A.
+  kind inctx type -> type.
+  type abs (tm -> inctx A) -> inctx A.
+  type val A -> inctx A.
 
-typeabbrev assignment (inctx tm).
+  typeabbrev assignment (inctx tm).
 
-kind tm  type.
-type app list tm -> tm.
-type lam (tm -> tm) -> tm.
-type con string -> tm.
-type uva  address -> list tm -> tm.
+  kind tm  type.
+  type app list tm -> tm.
+  type lam (tm -> tm) -> tm.
+  type con string -> tm.
+  type uva  address -> list tm -> tm.
 
-type pp tm -> string -> o.
-pp (app [lam F|L]) S :- !,
-  pp (lam F) H,
-  std.string.concat " " {std.map L pp} X, S is "((" ^ H ^ ") " ^ X ^ ")".
-pp (app L) S :- !, std.string.concat " " {std.map L pp} X, S is "(" ^ X ^ ")".
-pp (con S) S :- !.
-pp (lam F) S :- !, pi x\ std.any->string x N, pp (F x) S1, S is N ^ "\\ " ^ S1.
-pp (uva N []) S :- !, S is {ppuva N}.
-pp (uva N L) S :- !, std.string.concat " " {std.map L pp} X, !, S is "`" ^ {ppuva N} ^ " " ^ X ^ "'".
-pp X S :- name X, !, std.any->string X S.
-pp _ "ERROR".
+  type pp tm -> string -> o.
+  pp (app [lam F|L]) S :- !, pp (lam F) H, std.string.concat " " {std.map L pp} X, S is "((" ^ H ^ ") " ^ X ^ ")".
+  pp (app L) S :- !, std.string.concat " " {std.map L pp} X, S is "(" ^ X ^ ")".
+  pp (con S) S :- !.
+  pp (lam F) S :- !, pi x\ std.any->string x N, pp (F x) S1, S is N ^ "\\ " ^ S1.
+  pp (uva N []) S :- !, S is {ppuva N}.
+  pp (uva N L) S :- !, std.string.concat " " {std.map L pp} X, !, S is "`" ^ {ppuva N} ^ " " ^ X ^ "'".
+  pp X S :- name X, !, std.any->string X S.
+  pp _ "ERROR".
 
-type ppuva address -> string -> o.
-ppuva N S :- S is "X" ^ {mem.ppaddr N}.
+  type ppuva address -> string -> o.
+  ppuva N S :- S is "X" ^ {mem.ppaddr N}.
 
-type ppsubst subst -> list string -> o.
-ppsubst L S :- mem.pp L "X" ppass S.
+  type ppsubst subst -> list string -> o.
+  ppsubst L S :- mem.pp L "X" ppass S.
 
-type ppass assignment -> string -> o.
-ppass (abs F) S :- pi x\ std.any->string x N, ppass (F x) S1, S is N ^ " " ^ S1.
-ppass (val T) S :- S is ":= " ^ {pp T}.
+  type ppass assignment -> string -> o.
+  ppass (abs F) S :- pi x\ std.any->string x N, ppass (F x) S1, S is N ^ " " ^ S1.
+  ppass (val T) S :- S is ":= " ^ {pp T}.
 
-% [unif T1 T2 SOld SNew] check if T1 and T2 unify looking into SOld. SNew is the final substution
-type unif tm -> tm -> subst -> subst ->  o.
-unif A B C _ :- (var A; var B; var C), halt "Passed var to unif".
-%unif A B _ _ :- print "## unif" {pp A} "=?=" {pp B}, fail.
-% Base cases
-unif (app L1) (app L2) S S1 :- fold2 unif L1 L2 S S1.
-unif (lam F1) (lam F2) S S1 :- 
-  pi x\ copy x x => unif (F1 x) (F2 x) S S1.
-unif (con X) (con X) S S.
-% Assigned variables
-unif (uva N Args) T S S1 :- 
-  mem.set? N S F,!, move F Args T1, unif T1 T S S1.
-unif T (uva N Args) S S1 :- 
-  mem.set? N S F,!, move F Args T1, unif T T1 S S1.
-% Not assigned vars
-unif (uva M A1) (uva N A2) S1 S2 :- !, 
-  pattern-fragment A1, pattern-fragment A2, 
-  prune! M A1 N A2 S1 S2.
-unif (uva N Args) T S S1 :- not_occ N S T, pattern-fragment Args, 
-  bind T Args T1, mem.assign N S T1 S1.
-unif T (uva N Args) S S1 :- not_occ N S T, pattern-fragment Args, 
-  bind T Args T1, mem.assign N S T1 S1.
-unif N N S S :- name N.
+  % [unif T1 T2 SOld SNew] check if T1 and T2 unify looking into SOld. SNew is the final substution
+  type unif tm -> tm -> subst -> subst ->  o.
+  unif A B C _ :- (var A; var B; var C), halt "Passed var to unif".
+  % Base cases
+  unif (app L1) (app L2) S S1 :- fold2 unif L1 L2 S S1.
+  unif (lam F1) (lam F2) S S1 :- 
+    pi x\ copy x x => unif (F1 x) (F2 x) S S1.
+  unif (con X) (con X) S S.
+  % Assigned variables
+  unif (uva N Args) T S S1 :- 
+    mem.set? N S F,!, move F Args T1, unif T1 T S S1.
+  unif T (uva N Args) S S1 :- 
+    mem.set? N S F,!, move F Args T1, unif T T1 S S1.
+  % Not assigned vars
+  unif (uva M A1) (uva N A2) S1 S2 :- !, 
+    pattern-fragment A1, pattern-fragment A2, 
+    prune! M A1 N A2 S1 S2.
+  unif (uva N Args) T S S1 :- not_occ N S T, pattern-fragment Args, 
+    bind T Args T1, mem.assign N S T1 S1.
+  unif T (uva N Args) S S1 :- not_occ N S T, pattern-fragment Args, 
+    bind T Args T1, mem.assign N S T1 S1.
+  unif N N S S :- name N.
 
-% Note: eta & beta for unification is not allowed in ML over terms of the OL
+  % Note: eta & beta for unification is not allowed in ML over terms of the OL
 
-% Note: We suppose the scopes to always be in PF
-type prune! address -> list ho.tm -> address -> list ho.tm -> subst -> subst -> o.
-prune! N A  N A  S S :- !.
-prune! M A  N A  S1 S2 :- !, bind (uva M A) A Ass, mem.assign N S1 Ass S2.
-prune! N A1 N A2 S1 S3 :- !,
-  std.assert!(len A1 {len A2}) "Not typechecking", !,
-  mem.new S1 W S2, prune-same-variable W A1 A2 [] Ass,
-  mem.assign N S2 Ass S3.
-prune! N A1 M A2 S1 S4 :- !,
-  mem.new S1 W S2, prune-smart W A1 A2 Ass1 Ass2, 
-  mem.assign N S2 Ass1 S3,
-  mem.assign M S3 Ass2 S4. 
+  % Note: We suppose the scopes to always be in PF
+  type prune! address -> list ho.tm -> address -> list ho.tm -> subst -> subst -> o.
+  prune! N A  N A  S S :- !.
+  prune! M A  N A  S1 S2 :- !, bind (uva M A) A Ass, mem.assign N S1 Ass S2.
+  prune! N A1 N A2 S1 S3 :- !,
+    std.assert!(len A1 {len A2}) "Not typechecking", !,
+    mem.new S1 W S2, prune-same-variable W A1 A2 [] Ass,
+    mem.assign N S2 Ass S3.
+  prune! N A1 M A2 S1 S4 :- !,
+    mem.new S1 W S2, prune-diff-variables W A1 A2 Ass1 Ass2, 
+    mem.assign N S2 Ass1 S3,
+    mem.assign M S3 Ass2 S4. 
 
-type prune-same-variable address -> list tm -> list tm -> list tm -> assignment -> o.
-prune-same-variable N [] [] ACC (val (uva N Args)) :- std.rev ACC Args.
-prune-same-variable N [X|XS] [X|YS] ACC (abs F) :- pi x\ prune-same-variable N XS YS [x|ACC] (F x).
-prune-same-variable N [_|XS] [_|YS] ACC (abs F) :- pi x\ prune-same-variable N XS YS ACC (F x).
+  type prune-same-variable address -> list tm -> list tm -> list tm -> assignment -> o.
+  prune-same-variable N [] [] ACC (val (uva N Args)) :- std.rev ACC Args.
+  prune-same-variable N [X|XS] [X|YS] ACC (abs F) :- pi x\ prune-same-variable N XS YS [x|ACC] (F x).
+  prune-same-variable N [_|XS] [_|YS] ACC (abs F) :- pi x\ prune-same-variable N XS YS ACC (F x).
 
-type prune-build-ass1 address -> list tm -> list bool -> assignment -> o.
-prune-build-ass1 N Acc [] (val (uva N Args)) :- std.rev Acc Args.
-prune-build-ass1 N Acc [tt|L] (abs T) :- pi x\ prune-build-ass1 N [x|Acc] L (T x).
-prune-build-ass1 N Acc [ff|L] (abs T) :- pi x\ prune-build-ass1 N Acc L (T x).
+  type prune-build-ass1 address -> list tm -> list bool -> assignment -> o.
+  prune-build-ass1 N Acc [] (val (uva N Args)) :- std.rev Acc Args.
+  prune-build-ass1 N Acc [tt|L] (abs T) :- pi x\ prune-build-ass1 N [x|Acc] L (T x).
+  prune-build-ass1 N Acc [ff|L] (abs T) :- pi x\ prune-build-ass1 N Acc L (T x).
 
-type build-order list nat -> list tm -> list tm -> o.
-build-order L T R :-
-  len L Len, list-init Len z (p\r\ sigma Index Elt\ index L p Index, nth Index T r) R.
+  type build-order list nat -> list tm -> list tm -> o.
+  build-order L T R :-
+    len L Len, list-init Len z (p\r\ sigma Index Elt\ index L p Index, nth Index T r) R.
 
-type prune-build-ass2 address -> list tm -> list bool -> list nat -> assignment -> o.
-prune-build-ass2 N Acc [] Pos (val (uva N Args)) :- std.rev Acc Acc', build-order Pos Acc' Args.
-prune-build-ass2 N Acc [tt|L] Pos (abs T) :- pi x\ prune-build-ass2 N [x|Acc] L Pos (T x).
-prune-build-ass2 N Acc [ff|L] Pos (abs T) :- pi x\ prune-build-ass2 N Acc L Pos (T x).
+  type prune-build-ass2 address -> list tm -> list bool -> list nat -> assignment -> o.
+  prune-build-ass2 N Acc [] Pos (val (uva N Args)) :- std.rev Acc Acc', build-order Pos Acc' Args.
+  prune-build-ass2 N Acc [tt|L] Pos (abs T) :- pi x\ prune-build-ass2 N [x|Acc] L Pos (T x).
+  prune-build-ass2 N Acc [ff|L] Pos (abs T) :- pi x\ prune-build-ass2 N Acc L Pos (T x).
 
-type keep list A -> A -> bool -> o.
-keep L A tt :- mem L A, !.
-keep _ _ ff.
+  type keep list A -> A -> bool -> o.
+  keep L A tt :- mem L A, !.
+  keep _ _ ff.
 
-type prune-smart address -> list tm -> list tm -> assignment -> assignment -> o.
-prune-smart N Args1 Args2 Ass1 Ass2 :-
-  std.do![std.map Args1 (keep Args2) Bits1, prune-build-ass1 N [] Bits1 Ass1,
-  std.map Args2 (keep Args1) Bits2, 
-  std.filter Args1 (mem Args2) ToKeep1,
-  std.filter Args2 (mem Args1) ToKeep2,
-  std.map ToKeep2 (index ToKeep1) Pos,
-  prune-build-ass2 N [] Bits2 Pos Ass2].
+  type prune-diff-variables address -> list tm -> list tm -> assignment -> assignment -> o.
+  prune-diff-variables N Args1 Args2 Ass1 Ass2 :-
+    std.do![std.map Args1 (keep Args2) Bits1, prune-build-ass1 N [] Bits1 Ass1,
+    std.map Args2 (keep Args1) Bits2, 
+    std.filter Args1 (mem Args2) ToKeep1,
+    std.filter Args2 (mem Args1) ToKeep2,
+    std.map ToKeep2 (index ToKeep1) Pos,
+    prune-build-ass2 N [] Bits2 Pos Ass2].
 
-type move assignment -> list tm -> tm -> o.
-move (abs Bo)        [H|L] R :- move (Bo H) L R.
-move (val A)         []    A :- !.
-move (val (uva N A)) L     (uva N X) :- std.append A L X.
-move (abs A)         []    _ :- !, fatal "Invalid move call: too few args for abs" A.
-move A               L    _ :- !, fatal "Invalid move call:" A L.
+  type move assignment -> list tm -> tm -> o.
+  move (abs Bo)        [H|L] R :- move (Bo H) L R.
+  move (val A)         []    A :- !.
+  move (val (uva N A)) L     (uva N X) :- std.append A L X.
+  move (abs A)         []    _ :- !, fatal "Invalid move call: too few args for abs" A.
+  move A               L    _ :- !, fatal "Invalid move call:" A L.
 
-type beta tm -> list tm -> tm -> o.
-beta A [] A.
-beta (lam Bo) [H | L] R :- beta (Bo H) L R.
-beta (app A) L (app X) :- std.append A L X.
-beta (uva N A) L (uva N A') :- std.append A L A'.
-beta (con H) L (app [con H | L]).
+  type beta tm -> list tm -> tm -> o.
+  beta A [] A.
+  beta (lam Bo) [H | L] R :- beta (Bo H) L R.
+  beta (app A) L (app X) :- std.append A L X.
+  beta (uva N A) L (uva N A') :- std.append A L A'.
+  beta (con H) L (app [con H | L]).
 
-type not_occ_aux address -> subst -> tm -> o.
-not_occ_aux N H T :- (var N; var H; var T), halt "Invalid call to not_occ_aux". 
-not_occ_aux N S (uva M _) :- std.do![mem.unset? M S, not (N = M)].
-not_occ_aux N S (uva M Args) :- std.do![mem.set? M S F, move F Args T, not_occ_aux N S T].
-not_occ_aux N S (app L) :- forall1 (not_occ_aux N S) L.
-not_occ_aux N S (lam F) :- pi x\ /*not_occ_aux N S x =>*/ not_occ_aux N S (F x).
-not_occ_aux _ _ (con _).
-not_occ_aux _ _ X :- name X.
- 
-type not_occ  address -> subst -> tm -> o.
-% not_occ N S T :- print "not occ" N S T, fail.
-not_occ N H T :- (var N; var H; var T), halt "Invalid call to not_occ". 
-not_occ N _ (uva N _).
-not_occ N S (uva M Args) :- mem.set? M S F, move F Args T, not_occ N S T.
-not_occ N S (uva M Args) :- mem.unset? M S, std.forall Args (not_occ_aux N S).
-not_occ _ _ (con _).
-not_occ N S (app L) :- not_occ_aux N S (app L).
-not_occ N S (lam L) :- pi x\ not_occ N S (L x).
-not_occ _ _ X :- name X.
+  type not_occ_aux address -> subst -> tm -> o.
+  not_occ_aux N H T :- (var N; var H; var T), halt "Invalid call to not_occ_aux". 
+  not_occ_aux N S (uva M _) :- mem.unset? M S, not (N = M).
+  not_occ_aux N S (uva M Args) :- mem.set? M S F, move F Args T, not_occ_aux N S T.
+  not_occ_aux N S (app L) :- forall1 (not_occ_aux N S) L.
+  not_occ_aux N S (lam F) :- pi x\ not_occ_aux N S (F x).
+  not_occ_aux _ _ (con _).
+  not_occ_aux _ _ X :- name X.
+  
+  type not_occ  address -> subst -> tm -> o.
+  not_occ N H T :- (var N; var H; var T), halt "Invalid call to not_occ". 
+  not_occ N _ (uva N _).
+  not_occ N S (uva M Args) :- mem.set? M S F, move F Args T, not_occ N S T.
+  not_occ N S (uva M Args) :- mem.unset? M S, std.forall Args (not_occ_aux N S).
+  not_occ _ _ (con _).
+  not_occ N S (app L) :- not_occ_aux N S (app L).
+  not_occ N S (lam L) :- pi x\ not_occ N S (L x).
+  not_occ _ _ X :- name X.
 
-type copy tm -> tm -> o.
-copy (app L)   (app L') :- forall2 copy L L'.
-copy (lam T)   (lam T') :- pi x\ copy x x => copy (T x) (T' x).
-copy (uva N L) (uva N L') :- forall2 copy L L'.
-copy (con C)   (con C).
-copy N N :- not(scope-check), name N.
+  type copy tm -> tm -> o.
+  copy (app L)   (app L') :- forall2 copy L L'.
+  copy (lam T)   (lam T') :- pi x\ copy x x => copy (T x) (T' x).
+  copy (uva N L) (uva N L') :- forall2 copy L L'.
+  copy (con C)   (con C).
+  copy N N :- not(scope-check), name N.
 
-type scope-check o.
+  type scope-check o.
 
-type bind tm -> list tm -> assignment -> o.
-bind T [] (val T') :- scope-check => copy T T'.
-bind T [X | TL] (abs T') :- pi x\ copy X x => bind T TL (T' x).
+  type bind tm -> list tm -> assignment -> o.
+  bind T [] (val T') :- scope-check => copy T T'.
+  bind T [X | TL] (abs T') :- pi x\ copy X x => bind T TL (T' x).
 
-type deref subst -> tm -> tm -> o.
-deref S X _ :- (var S; var X), halt "flex deref".
-deref H (uva N L)  X         :- mem.set? N H T, move T L X', !, deref H X' X.
-deref H (app L)   (app L1)   :- forall2 (deref H) L L1.
-deref _ (con X)   (con X).
-deref H (uva X L) (uva X L1) :- mem.unset? X H, forall2 (deref H) L L1.
-deref H (lam F)   (lam G)    :- pi x\ deref H (F x) (G x).
-deref _ N         N          :- name N.
-% deref A B V :- var V, fatal "This is should be an error" B A.
+  type deref subst -> tm -> tm -> o.
+  deref S X _ :- (var S; var X), halt "flex deref".
+  deref H (uva N L)  X         :- mem.set? N H T, move T L X', !, deref H X' X.
+  deref H (app L)   (app L1)   :- forall2 (deref H) L L1.
+  deref _ (con X)   (con X).
+  deref H (uva X L) (uva X L1) :- mem.unset? X H, forall2 (deref H) L L1.
+  deref H (lam F)   (lam G)    :- pi x\ deref H (F x) (G x).
+  deref _ N         N          :- name N.
 
-type deref-assmt subst -> assignment -> assignment -> o.
-deref-assmt S (abs T) (abs R) :-
-  pi x\ deref-assmt S (T x) (R x).
-deref-assmt S (val T) (val R) :-
-  deref S T R.
+  type deref-assmt subst -> assignment -> assignment -> o.
+  deref-assmt S (abs T) (abs R) :- pi x\ deref-assmt S (T x) (R x).
+  deref-assmt S (val T) (val R) :- deref S T R.
 
-type eta-contract tm -> tm -> o.
-eta-contract X _ :- var X, halt "Eta contract first arg is flexible".
-eta-contract (con X)   (con X).
-eta-contract (app L)   (app L1)   :- forall2 eta-contract L L1.
-eta-contract (lam F)   T          :- contract [] (lam F) T.
-eta-contract (lam F)   (lam F1)   :- pi x\ eta-contract x x => eta-contract (F x) (F1 x).
-eta-contract (uva X L) (uva X L1) :- forall2 eta-contract L L1.
-eta-contract X X :- name X.
+  macro @mem-uva N S :- uva (mem.addr N) S.
 
-type contract list tm -> tm -> tm -> o.
-contract L (lam F) T :- 
-  pi x\ contract [x|L] (F x) T. % also checks H Prefix does not see x
-contract L (app [H|Args]) T :- 
-  std.rev L LRev, std.appendR Prefix LRev Args,
-  if (Prefix = []) (T = H) (T = app [H|Prefix]).
-contract L (uva H Args) (uva H Prefix) :- 
-  std.rev L LRev, std.appendR Prefix LRev Args.
 
-macro @mem-uva N S :- uva (mem.addr N) S.
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% TESTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  type test-unif-1 o.
+  type test-unif-2 o.
+  type test-unif-3 o.
+  type test-unif-4 o.
+  type test-unif-5 o.
+  type test-unif-6 o.
+  type test-unif-7 o.
 
-type test-unif-1 o.
-type test-unif-2 o.
-type test-unif-3 o.
-type test-unif-4 o.
-type test-unif-5 o.
-type test-unif-6 o.
-type test-unif-7 o.
+  test-unif-1 :- pi x\
+    unif (@mem-uva z [x]) (@mem-uva (s z) []) [none, none] L,
+    Z = (abs x\ val (uva X [])),
+    SZ = val (uva X []),
+    L = [some Z, some SZ|_].
 
-test-unif-1 :- pi x\
-  unif (@mem-uva z [x]) (@mem-uva (s z) []) [none, none] L,
-  Z = (abs x\ val (uva X [])),
-  SZ = val (uva X []),
-  L = [some Z, some SZ|_].
+  test-unif-2 :- pi x y\
+    unif (@mem-uva z [x, y]) (@mem-uva (s z) [y]) [none, none] L,
+    Z = (abs x\ abs y\ val (uva X [y])),
+    SZ = (abs x\ val (uva X [x])),
+    L = [some Z, some SZ|_].
 
-test-unif-2 :- pi x y\
-  unif (@mem-uva z [x, y]) (@mem-uva (s z) [y]) [none, none] L,
-  Z = (abs x\ abs y\ val (uva X [y])),
-  SZ = (abs x\ val (uva X [x])),
-  L = [some Z, some SZ|_].
+  test-unif-3 :- pi x y w\
+    unif (@mem-uva z [x, y]) (@mem-uva (s z) [x, w, y]) [none, none] L,
+    Z = (abs x\ abs y\ val (uva X [x, y])),
+    SZ = (abs x\ abs y\ abs z\ val (uva X [x, z])),
+    L = [some Z, some SZ|_].
 
-test-unif-3 :- pi x y w\
-  unif (@mem-uva z [x, y]) (@mem-uva (s z) [x, w, y]) [none, none] L,
-  Z = (abs x\ abs y\ val (uva X [x, y])),
-  SZ = (abs x\ abs y\ abs z\ val (uva X [x, z])),
-  L = [some Z, some SZ|_].
+  test-unif-4 :- pi x y\ 
+    unif (@mem-uva z [x, y]) (@mem-uva (s z) [y, x]) [none, none] L,
+    Z = (abs x\ abs y\ val (uva X [x, y])),
+    SZ = (abs x\ abs y\ val (uva X [y, x])),
+    L = [some Z, some SZ|_].
 
-test-unif-4 :- pi x y\ 
-  unif (@mem-uva z [x, y]) (@mem-uva (s z) [y, x]) [none, none] L,
-  Z = (abs x\ abs y\ val (uva X [x, y])),
-  SZ = (abs x\ abs y\ val (uva X [y, x])),
-  L = [some Z, some SZ|_].
+  test-unif-5 :- pi x y zz w\
+    unif (@mem-uva z [x, w, y]) (@mem-uva (s z) [y, zz, w]) [none, none] L,
+    Z = (abs c0\ abs c1\ abs c2\ val (uva X [c1, c2])),
+    SZ = (abs c0\ abs c1\ abs c2\ val (uva X [c2, c0])),
+    L = [some Z, some SZ|_].
 
-test-unif-5 :- pi x y zz w\
-  unif (@mem-uva z [x, w, y]) (@mem-uva (s z) [y, zz, w]) [none, none] L,
-  Z = (abs c0\ abs c1\ abs c2\ val (uva X [c1, c2])),
-  SZ = (abs c0\ abs c1\ abs c2\ val (uva X [c2, c0])),
-  L = [some Z, some SZ|_].
+  test-unif-6 :- pi x y zz w\
+    unif (@mem-uva (s z) [y, zz, w]) (@mem-uva z [x, w, y]) [none, none] L,
+    Z = (abs c0\ abs c1\ abs c2\ val (uva X [c2, c1])),
+    SZ = (abs c0\ abs c1\ abs c2\ val (uva X [c0, c2])),
+    L = [some Z, some SZ|_].
 
-test-unif-6 :- pi x y zz w\
-  unif (@mem-uva (s z) [y, zz, w]) (@mem-uva z [x, w, y]) [none, none] L,
-  Z = (abs c0\ abs c1\ abs c2\ val (uva X [c2, c1])),
-  SZ = (abs c0\ abs c1\ abs c2\ val (uva X [c0, c2])),
-  L = [some Z, some SZ|_].
-
-test-unif-7 :- pi x y w zz\
-  unif (@mem-uva z [x, y, w]) (@mem-uva z [zz, y, x]) [none] L,
-  L = [some (abs x\ abs y\ abs z\ val (uva _ [y])) | _].
+  test-unif-7 :- pi x y w zz\
+    unif (@mem-uva z [x, y, w]) (@mem-uva z [zz, y, x]) [none] L,
+    L = [some (abs x\ abs y\ abs z\ val (uva _ [y])) | _].
 }
