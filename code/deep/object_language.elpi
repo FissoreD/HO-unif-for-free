@@ -2,140 +2,136 @@ internal-test fo.test-parse-1.
 
 namespace fo {
 
-% Common terms
-kind fm type.
-type fapp list fm -> fm.
-type flam (fm -> fm) -> fm.
-type fcon string -> fm.
-type fuva  address -> fm.
+  kind fm type.
+  type fapp list fm -> fm.
+  type flam (fm -> fm) -> fm.
+  type fcon string -> fm.
+  type fuva  address -> fm.
 
-type pp fm -> string -> o.
-pp X "_" :- var X.
-pp (fapp L) S :- !, std.string.concat " " {std.map L pp} X, S is "(@ " ^ X ^ ")".
-pp (fcon S) S :- !.
-pp (flam F) S :- !, pi x\ std.any->string x N, pp (F x) S1, S is "λ" ^ N ^ "." ^ S1.
-pp (fuva N) S :- !, ppuva N S.
-pp X S :- name X, !, std.any->string X S.
-pp _ "ERROR".
+  type pp fm -> string -> o.
+  pp X "_" :- var X, !.
+  pp (fapp L) S :- !, std.string.concat " " {std.map L pp} X, S is "(@ " ^ X ^ ")".
+  pp (fcon S) S :- !.
+  pp (flam F) S :- !, pi x\ std.any->string x N, pp (F x) S1, S is "λ" ^ N ^ "." ^ S1.
+  pp (fuva N) S :- !, ppuva N S.
+  pp X S :- name X, !, std.any->string X S.
+  pp _ "fo.pp ERROR".
 
-type ppuva address -> string -> o.
-ppuva N S :- mem.ppaddr N X, S is "C" ^ X.
+  type ppuva address -> string -> o.
+  ppuva N S :- mem.ppaddr N X, S is "C" ^ X.
 
-type parse string -> fm -> o.
-parse S T :- rex.split "" S L, utf8-norm L L1, if (parse-aux L1 T) true (halt "Error parse" S).
+  type parse string -> fm -> o.
+  parse S T :- rex.split "" S L, utf8-norm L L1, if (parse-aux L1 T) true (halt "Error parse" S).
 
-type parse-aux list string -> fm -> o.
-parse-aux L1 T :- ll L1 [] T, !.
-parse-aux L1 T :- llapp L1 [] [] A, T = fapp A, !.
-parse-aux L1 _ :- std.string.concat "" L1 S, halt "parse error:" S. 
+  type parse-aux list string -> fm -> o.
+  parse-aux L1 T :- ll L1 [] T, !.
+  parse-aux L1 T :- llapp L1 [] [] A, T = fapp A, !.
+  parse-aux L1 _ :- std.string.concat "" L1 S, halt "parse error:" S. 
 
-type parse-eq string -> fm -> fm -> o.
-parse-eq S A B  :- rex.split "" S L, utf8-norm L L1, if (parse-eq-aux L1 A B) true (halt "Error parse-eq" S).
+  type parse-eq string -> fm -> fm -> o.
+  parse-eq S A B  :- rex.split "" S L, utf8-norm L L1, if (parse-eq-aux L1 A B) true (halt "Error parse-eq" S).
 
-type parse-eq-aux list string -> fm -> fm -> o.
-parse-eq-aux L1 A B :-
-  llapp L1 L2 [] AA, if (AA = [A]) true (A = fapp AA), !,
-  ee L2 L3,
-  llapp L3 [] [] BB, if (BB = [B]) true (B = fapp BB).
+  type parse-eq-aux list string -> fm -> fm -> o.
+  parse-eq-aux L1 A B :-
+    llapp L1 L2 [] AA, if (AA = [A]) true (A = fapp AA), !,
+    ee L2 L3,
+    llapp L3 [] [] BB, if (BB = [B]) true (B = fapp BB).
 
-type ee list string -> list string -> o.
-ee ["="|L] L.
-ee [" "|L] L1 :- ee L L1.
+  type ee list string -> list string -> o.
+  ee ["="|L] L.
+  ee [" "|L] L1 :- ee L L1.
 
-type ll list string -> list string -> fm -> o.
-ll [C|L] L (fcon C) :- rex.match "[a-z]" C.
-ll ["_"|L] L (fcon "_").
-ll ["C",N|L] L (fuva (mem.addr R)) :- rex.match "[0-9]" N, N' is string_to_int N, int->nat N' R. 
-ll ["X"|L] L (fuva (mem.addr z)).
-ll ["Y"|L] L (fuva (mem.addr (s z))).
-ll ["Z"|L] L (fuva (mem.addr (s (s z)))).
-ll ["W"|L] L (fuva (mem.addr (s (s (s z))))).
-ll [ C |_] _ _ :- rex.match "[A-Z]" C, halt "Parser:" C "is not parsed as a knwon variable".
-ll ["(","@"|L] L1 T :- !, llapp L L1 [] A, if (A = [T]) true (T = fapp A).
-ll ["("|L] L1 T :- llapp L L1 [] A, if (A = [T]) true (T = fapp A).
-ll ["λ",V,"."|L] L1 (flam X) :- pi x\ (pi L\ ll [V|L] L x :- !) => ll L L1 (X x).
-ll [" "|L] L1 X :- ll L L1 X.
+  type ll list string -> list string -> fm -> o.
+  ll [C|L] L (fcon C) :- rex.match "[a-z]" C.
+  ll ["_"|L] L (fcon "_").
+  ll ["C",N|L] L (fuva (mem.addr R)) :- rex.match "[0-9]" N, N' is string_to_int N, int->nat N' R. 
+  ll ["X"|L] L (fuva (mem.addr z)).
+  ll ["Y"|L] L (fuva (mem.addr (s z))).
+  ll ["Z"|L] L (fuva (mem.addr (s (s z)))).
+  ll ["W"|L] L (fuva (mem.addr (s (s (s z))))).
+  ll [ C |_] _ _ :- rex.match "[A-Z]" C, halt "Parser:" C "is not parsed as a knwon variable".
+  ll ["(","@"|L] L1 T :- !, llapp L L1 [] A, if (A = [T]) true (T = fapp A).
+  ll ["("|L] L1 T :- llapp L L1 [] A, if (A = [T]) true (T = fapp A).
+  ll ["λ",V,"."|L] L1 (flam X) :- pi x\ (pi L\ ll [V|L] L x :- !) => ll L L1 (X x).
+  ll [" "|L] L1 X :- ll L L1 X.
 
-type llapp list string -> list string -> list fm -> list fm -> o.
-llapp [")"|L] L A RA :- !, std.rev A RA.
-llapp L L2 A B :- ll L L1 X, !, llapp L1 L2 [X|A] B.
-llapp L L A RA :- std.rev A RA.
+  type llapp list string -> list string -> list fm -> list fm -> o.
+  llapp [")"|L] L A RA :- !, std.rev A RA.
+  llapp L L2 A B :- ll L L1 X, !, llapp L1 L2 [X|A] B.
+  llapp L L A RA :- std.rev A RA.
 
-type utf8-norm list string -> list string -> o.
-utf8-norm [X,Y|L] ["λ"|L1] :- "λ" is X ^ Y, !, utf8-norm L L1.
-utf8-norm [X|L] [X|L1] :- utf8-norm L L1.
-utf8-norm [] [].
+  type utf8-norm list string -> list string -> o.
+  utf8-norm [X,Y|L] ["λ"|L1] :- "λ" is X ^ Y, !, utf8-norm L L1.
+  utf8-norm [X|L] [X|L1] :- utf8-norm L L1.
+  utf8-norm [] [].
 
-type test-parse-1 o.
-test-parse-1 :-
-  parse "C0" (fuva (mem.addr z)),
-  parse "f" (fcon "f"),
-  parse "(f)" (fcon "f"),
-  parse "(f g)" (fapp [fcon "f", fcon "g"]),
-  parse "λx.x" (flam x\x).
+  type test-parse-1 o.
+  test-parse-1 :-
+    parse "C0" (fuva (mem.addr z)),
+    parse "f" (fcon "f"),
+    parse "(f)" (fcon "f"),
+    parse "(f g)" (fapp [fcon "f", fcon "g"]),
+    parse "λx.x" (flam x\x).
 
-typeabbrev subst mem fm.
+  typeabbrev subst mem fm.
 
-type ppsubst subst -> list string -> o.
-ppsubst L S :- mem.pp L "C" (x\s\sigma y\pp x y, s is ":= " ^ y)  S.
+  type ppsubst subst -> list string -> o.
+  ppsubst L S :- mem.pp L "C" (x\s\sigma y\pp x y, s is ":= " ^ y)  S.
 
-type deref subst -> fm -> fm -> o.
-deref S X _ :- (var S; var X), fatal "flex deref".
-deref S (fuva N) T1 :- mem.set? N S T, deref S T T1.
-deref S (fapp [fuva N|L]) R :- mem.set? N S T, !, beta T L R', deref S R' R.
-deref S (fapp L1) (fapp L2) :- forall2 (deref S) L1 L2.
-deref S (flam F1) (flam F2) :- pi x\ deref S x x => deref S (F1 x) (F2 x).
-deref _ (fcon X) (fcon X).
-deref _ (fuva N) (fuva N).
-deref _ N N :- name N.
-% deref A B V :- var V, fatal "This is should be an error" B A.
+  type deref subst -> fm -> fm -> o.
+  deref S X _ :- (var S; var X), fatal "flex deref".
+  deref S (fuva N) T1 :- mem.set? N S T, deref S T T1.
+  deref S (fapp [fuva N|L]) R :- mem.set? N S T, !, beta T L R', deref S R' R.
+  deref S (fapp L1) (fapp L2) :- forall2 (deref S) L1 L2.
+  deref S (flam F1) (flam F2) :- pi x\ deref S x x => deref S (F1 x) (F2 x).
+  deref _ (fcon X) (fcon X).
+  deref _ (fuva N) (fuva N).
+  deref _ N N :- name N.
 
-% [equal T1 T2] check if two terms are equal for the OL
-type (==o) fm -> fm -> o.
+  type (==o) fm -> fm -> o.
+  X ==o Y :- (var X ; var Y), fatal "flex equal".
+  fapp L1 ==o fapp L2 :- forall2 (==o) L1 L2.
+  flam F1 ==o flam F2 :- pi x\ x ==o x => F1 x ==o F2 x.
+  fcon X ==o fcon X.
+  fuva N ==o fuva N.
+  flam F ==o T :- pi x\ beta T [x] (T' x), x ==o x => F x ==o T' x.
+  T ==o flam F :- pi x\ beta T [x] (T' x), x ==o x => T' x ==o F x.
+  fapp [flam X | TL] ==o T :- beta (flam X) TL T', T' ==o T.
+  T ==o fapp [flam X | TL] :- beta (flam X) TL T', T ==o T'.
 
-X ==o Y :- (var X ; var Y), fatal "flex equal". % chekc to prevent implem errors
-fapp L1 ==o fapp L2 :- forall2 (==o) L1 L2.
-flam F1 ==o flam F2 :- pi x\ x ==o x => F1 x ==o F2 x.
-fcon X ==o fcon X.
-fuva N ==o fuva N.
-flam F ==o T :- pi x\ beta T [x] (T' x), x ==o x => F x ==o T' x.
-T ==o flam F :- pi x\ beta T [x] (T' x), x ==o x => T' x ==o F x.
-fapp [flam X | TL] ==o T :- beta (flam X) TL T', T' ==o T.
-T ==o fapp [flam X | TL] :- beta (flam X) TL T', T ==o T'.
+  % [extend-subst T S S'] forall fuva N in T, extends S with none at pos N
+  % this is used only in test to build the subst-map before running it
+  type extend-subst fm -> subst -> subst -> o.
+  extend-subst (fuva N) S S' :- mem.alloc N S S'.
+  extend-subst (flam F) S S' :- pi x\ (pi S\extend-subst x S S) => extend-subst (F x) S S'.
+  extend-subst (fcon _) S S.
+  extend-subst (fapp L) S S1 :- fold extend-subst L S S1.
 
-% [extend-subst T S S'] forall fuva N in T, extends S with none at pos N
-% this is used only in test to build the subst-map before running it
-type extend-subst fm -> subst -> subst -> o.
-extend-subst (fuva N) S S' :- mem.alloc N S S'.
-extend-subst (flam F) S S' :- pi x\ (pi S\extend-subst x S S) => extend-subst (F x) S S'.
-extend-subst (fcon _) S S.
-extend-subst (fapp L) S S1 :- fold extend-subst L S S1.
+  type beta fm -> list fm -> fm -> o.
+  beta A [] A.
+  beta (flam Bo) [H | L] R :- beta (Bo H) L R.
+  beta (fapp A) L (fapp X) :- std.append A L X.
+  beta (fuva N) L (fapp [fuva N | L]).
+  beta (fcon H) L (fapp [fcon H | L]).
+  beta N L (fapp [N | L]) :- name N.
 
-type beta fm -> list fm -> fm -> o.
-beta A [] A.
-beta (flam Bo) [H | L] R :- beta (Bo H) L R.
-beta (fapp A) L (fapp X) :- std.append A L X.
-beta (fuva N) L (fapp [fuva N | L]).
-beta (fcon H) L (fapp [fcon H | L]).
-beta N L (fapp [N | L]) :- name N.
+  type mk-app fm -> list fm -> fm -> o.
+  mk-app T L S :- beta T L S.
 
-type mk-app fm -> list fm -> fm -> o.
-mk-app T L S :- beta T L S.
+  type eta-contract fm -> fm -> o.
+  eta-contract X _ :- var X, halt "Eta-contract first args is flexible".
+  eta-contract (fcon X) (fcon X).
+  eta-contract (fapp L) (fapp L1) :- forall2 eta-contract L L1.
+  eta-contract (flam F) T :- eta-contract-aux [] (flam F) T.
+  eta-contract (flam F) (flam F1) :- pi x\ eta-contract x x => eta-contract (F x) (F1 x).
+  eta-contract (fuva X) (fuva X).
+  eta-contract X X :- name X.
 
-type eta-contract fm -> fm -> o.
-eta-contract X _ :- var X, halt "Eta-contract first args is flexible".
-eta-contract (fcon X) (fcon X).
-eta-contract (fapp L) (fapp L1) :- forall2 eta-contract L L1.
-eta-contract (flam F) T :- contract [] (flam F) T.
-eta-contract (flam F) (flam F1) :- pi x\ eta-contract x x => eta-contract (F x) (F1 x).
-eta-contract (fuva X) (fuva X).
-eta-contract X X :- name X.
-
-type contract list fm -> fm -> fm -> o.
-contract L (flam F) T :- 
-  pi x\ contract [x|L] (F x) T. % also checks H Prefix does not see x
-contract L (fapp [H|Args]) T :- 
-  std.rev L LRev, std.appendR Prefix LRev Args,
-  if (Prefix = []) (T = H) (T = fapp [H|Prefix]).
+  type eta-contract-aux list fm -> fm -> fm -> o.
+  eta-contract-aux L (flam F) T :- 
+    pi x\ eta-contract-aux [x|L] (F x) T. % also checks H Prefix does not see x
+  eta-contract-aux L (fapp [H|Args]) T :- 
+    std.rev L LRev, std.appendR Prefix LRev Args,
+    if (Prefix = []) (T = H) (T = fapp [H|Prefix]).
 
 }
