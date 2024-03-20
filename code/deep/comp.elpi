@@ -90,9 +90,14 @@ namespace comp {
   type locale ho.tm -> o.
   type get-scope-aux ho.tm -> list ho.tm -> o.
   get-scope-aux (ho.con _) [].
-  get-scope-aux (ho.uva _ L) L1 :- fold (x\y\r\ sigma R\ get-scope-aux x R, std.append y R r) L [] L1.
-  get-scope-aux (ho.lam B) L1 :- pi x\ locale x => get-scope-aux (B x) L1.
-  get-scope-aux (ho.app L) L1 :- fold (x\y\r\ sigma R\ get-scope-aux x R, std.append y R r) L [] L1.
+  get-scope-aux (ho.uva _ L) L1 :- 
+    forall2 get-scope-aux L R,
+    std.flatten R L1.
+  get-scope-aux (ho.lam B) L1 :- 
+    pi x\ locale x => get-scope-aux (B x) L1.
+  get-scope-aux (ho.app L) L1 :- 
+    forall2 get-scope-aux L R,
+    std.flatten R L1.
   get-scope-aux X [X] :- name X, not (locale X).
   get-scope-aux X [] :- name X, (locale X).
 
