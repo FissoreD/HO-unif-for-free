@@ -359,56 +359,11 @@ solve-links [L0|L1] L3 S S2 :- deref-link S L0 L,
   if (R = []) (print {pplink L} "is removed") true,
   solve-links L1 L2 S1 S2, std.append R L2 L3.
 
-% type use-binder1 ho.tm -> ho.tm -> o.
-% use-binder1 N N.
-% use-binder1 N (ho.app L) :- exists (use-binder1 N) L.
-% use-binder1 N (ho.lam B) :- pi x\ use-binder1 N (B x).
-
-% type correct-subst-eta ho.tm -> ho.tm -> list ho.tm -> o.
-% correct-subst-eta _ (ho.app [ho.uva _ _|_]) _ :- halt "app[uva _ _|_] in subst...".
-% correct-subst-eta N (ho.uva _ Args) _ :- !, exists (x\ correct-subst-eta-of N x []) Args, !. % Head is flex -> if N is in Args, we can have eta
-% correct-subst-eta N (ho.lam B) L :- !, pi x\ correct-subst-eta N (B x) [x | L].
-% correct-subst-eta _ (ho.app [ho.con _|Args]) L :-                                            % Head is rigid -> to be an eta we consider also L
-%   split-last-n {len L} Args First Last,
-%   forall1 (x\ forall1 (y\ not (use-binder1 x y)) First) L,
-%    correct-subst-eta-equal Last {std.rev L}.
-
-% type correct-subst-eta-of ho.tm -> ho.tm -> list ho.tm -> o.
-% correct-subst-eta-of _ (ho.app [ho.uva _ _|_]) _ :- halt "app[uva _ _|_] in subst...".
-% correct-subst-eta-of N N _ :- !.
-% % TODO: not sure of this (why mem and not correct-subst-eta-of)
-% correct-subst-eta-of N (ho.uva _ Args) L :- !, forall1 (mem Args) [N|L]. % Head is flex -> if N is in Args, we can have eta
-% correct-subst-eta-of N (ho.lam B) L :- !, pi x\ correct-subst-eta-of N (B x) [x | L].
-% correct-subst-eta-of N (ho.app [N|Args]) L :-                      % Head is rigid -> to be an eta we consider also L
-%   last-n {len L} Args R,
-%   correct-subst-eta-equal R {std.rev L}.
-
-% % takes two list of terms, for any pair of terms, it verifies if the second can reduce to the first
-% type correct-subst-eta-equal list ho.tm -> list ho.tm -> o.
-% correct-subst-eta-equal [] [].
-% correct-subst-eta-equal [T|L1] [N|L2] :- correct-subst-eta-of N T [], correct-subst-eta-equal L1 L2.
-
-% type correct-subst-aux ho.assignment -> o.
-% correct-subst-aux (ho.val (ho.lam T)) :- !, pi x\
-%   if (correct-subst-eta x (T x) [x]) (halt "Subst contains maybeeta") true.
-% correct-subst-aux (ho.val _) :- true.
-% correct-subst-aux (ho.abs B) :- pi x\ correct-subst-aux (B x).
-
-% type correct-subst ho.subst -> o.
-% correct-subst [].
-% correct-subst [some Ass | Tl] :- !,
-%   correct-subst-aux Ass,
-%   correct-subst Tl.
-% correct-subst [_| Tl] :- correct-subst Tl.
-
-% We test forall linked var of the ML, that they have the same assignment
 type solve-links-fixpoint links -> links -> ho.subst -> ho.subst -> o.
 solve-links-fixpoint L0 L2 H H2 :- std.do! [
   deref-links H L0 L, !,
   print "\nfixpoint iteration on:" {pplinks L}, !,
   solve-links L L1 H H1, !,
-  % print "Check correct subst of" {ho.ppsubst H1},
-  % if ((correct-subst H1)) true (halt "Invalid subst"),
   if (occur-check-links H1 L1) true (print "fail by oc in solve-link-fixpoint", fail),
   if (L = L1, H = H1)
      (print "end fixpoint", deref-links H L L2 , H2 = H)
