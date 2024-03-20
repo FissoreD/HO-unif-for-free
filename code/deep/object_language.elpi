@@ -8,75 +8,7 @@ namespace fo {
   type fcon string -> fm.
   type fuva  address -> fm.
 
-  type pp fm -> string -> o.
-  pp X "_" :- var X, !.
-  pp (fapp L) S :- !, std.string.concat " " {std.map L pp} X, S is "(@ " ^ X ^ ")".
-  pp (fcon S) S :- !.
-  pp (flam F) S :- !, pi x\ std.any->string x N, pp (F x) S1, S is "λ" ^ N ^ "." ^ S1.
-  pp (fuva N) S :- !, ppuva N S.
-  pp X S :- name X, !, std.any->string X S.
-  pp _ "fo.pp ERROR".
-
-  type ppuva address -> string -> o.
-  ppuva N S :- mem.ppaddr N X, S is "C" ^ X.
-
-  type parse string -> fm -> o.
-  parse S T :- rex.split "" S L, utf8-norm L L1, if (parse-aux L1 T) true (halt "Error parse" S).
-
-  type parse-aux list string -> fm -> o.
-  parse-aux L1 T :- ll L1 [] T, !.
-  parse-aux L1 T :- llapp L1 [] [] A, T = fapp A, !.
-  parse-aux L1 _ :- std.string.concat "" L1 S, halt "parse error:" S. 
-
-  type parse-eq string -> fm -> fm -> o.
-  parse-eq S A B  :- rex.split "" S L, utf8-norm L L1, if (parse-eq-aux L1 A B) true (halt "Error parse-eq" S).
-
-  type parse-eq-aux list string -> fm -> fm -> o.
-  parse-eq-aux L1 A B :-
-    llapp L1 L2 [] AA, if (AA = [A]) true (A = fapp AA), !,
-    ee L2 L3,
-    llapp L3 [] [] BB, if (BB = [B]) true (B = fapp BB).
-
-  type ee list string -> list string -> o.
-  ee ["="|L] L.
-  ee [" "|L] L1 :- ee L L1.
-
-  type ll list string -> list string -> fm -> o.
-  ll [C|L] L (fcon C) :- rex.match "[a-z]" C.
-  ll ["_"|L] L (fcon "_").
-  ll ["C",N|L] L (fuva (mem.addr R)) :- rex.match "[0-9]" N, N' is string_to_int N, int->nat N' R. 
-  ll ["X"|L] L (fuva (mem.addr z)).
-  ll ["Y"|L] L (fuva (mem.addr (s z))).
-  ll ["Z"|L] L (fuva (mem.addr (s (s z)))).
-  ll ["W"|L] L (fuva (mem.addr (s (s (s z))))).
-  ll [ C |_] _ _ :- rex.match "[A-Z]" C, halt "Parser:" C "is not parsed as a knwon variable".
-  ll ["(","@"|L] L1 T :- !, llapp L L1 [] A, if (A = [T]) true (T = fapp A).
-  ll ["("|L] L1 T :- llapp L L1 [] A, if (A = [T]) true (T = fapp A).
-  ll ["λ",V,"."|L] L1 (flam X) :- pi x\ (pi L\ ll [V|L] L x :- !) => ll L L1 (X x).
-  ll [" "|L] L1 X :- ll L L1 X.
-
-  type llapp list string -> list string -> list fm -> list fm -> o.
-  llapp [")"|L] L A RA :- !, std.rev A RA.
-  llapp L L2 A B :- ll L L1 X, !, llapp L1 L2 [X|A] B.
-  llapp L L A RA :- std.rev A RA.
-
-  type utf8-norm list string -> list string -> o.
-  utf8-norm [X,Y|L] ["λ"|L1] :- "λ" is X ^ Y, !, utf8-norm L L1.
-  utf8-norm [X|L] [X|L1] :- utf8-norm L L1.
-  utf8-norm [] [].
-
-  type test-parse-1 o.
-  test-parse-1 :-
-    parse "C0" (fuva (mem.addr z)),
-    parse "f" (fcon "f"),
-    parse "(f)" (fcon "f"),
-    parse "(f g)" (fapp [fcon "f", fcon "g"]),
-    parse "λx.x" (flam x\x).
-
   typeabbrev subst mem fm.
-
-  type ppsubst subst -> list string -> o.
-  ppsubst L S :- mem.pp L "C" (x\s\sigma y\pp x y, s is ":= " ^ y)  S.
 
   type deref subst -> fm -> fm -> o.
   deref S X _ :- (var S; var X), fatal "flex deref".
@@ -133,5 +65,81 @@ namespace fo {
   eta-contract-aux L (fapp [H|Args]) T :- 
     std.rev L LRev, std.appendR Prefix LRev Args,
     if (Prefix = []) (T = H) (T = fapp [H|Prefix]).
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PRINTER %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  type pp fm -> string -> o.
+  pp X "_" :- var X, !.
+  pp (fapp L) S :- !, std.string.concat " " {std.map L pp} X, S is "(@ " ^ X ^ ")".
+  pp (fcon S) S :- !.
+  pp (flam F) S :- !, pi x\ std.any->string x N, pp (F x) S1, S is "λ" ^ N ^ "." ^ S1.
+  pp (fuva N) S :- !, ppuva N S.
+  pp X S :- name X, !, std.any->string X S.
+  pp _ "fo.pp ERROR".
+
+  type ppuva address -> string -> o.
+  ppuva N S :- mem.ppaddr N X, S is "C" ^ X.
+
+  type ppsubst subst -> list string -> o.
+  ppsubst L S :- mem.pp L "C" (x\s\sigma y\pp x y, s is ":= " ^ y)  S.
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PARSER %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  type parse string -> fm -> o.
+  parse S T :- rex.split "" S L, utf8-norm L L1, if (parse-aux L1 T) true (halt "Error parse" S).
+
+  type parse-aux list string -> fm -> o.
+  parse-aux L1 T :- ll L1 [] T, !.
+  parse-aux L1 T :- llapp L1 [] [] A, T = fapp A, !.
+  parse-aux L1 _ :- std.string.concat "" L1 S, halt "parse error:" S. 
+
+  type parse-eq string -> fm -> fm -> o.
+  parse-eq S A B  :- rex.split "" S L, utf8-norm L L1, if (parse-eq-aux L1 A B) true (halt "Error parse-eq" S).
+
+  type parse-eq-aux list string -> fm -> fm -> o.
+  parse-eq-aux L1 A B :-
+    llapp L1 L2 [] AA, if (AA = [A]) true (A = fapp AA), !,
+    ee L2 L3,
+    llapp L3 [] [] BB, if (BB = [B]) true (B = fapp BB).
+
+  type ee list string -> list string -> o.
+  ee ["="|L] L.
+  ee [" "|L] L1 :- ee L L1.
+
+  type ll list string -> list string -> fm -> o.
+  ll [C|L] L (fcon C) :- rex.match "[a-z]" C.
+  ll ["_"|L] L (fcon "_").
+  ll ["C",N|L] L (fuva (mem.addr R)) :- rex.match "[0-9]" N, N' is string_to_int N, int->nat N' R. 
+  ll ["X"|L] L (fuva (mem.addr z)).
+  ll ["Y"|L] L (fuva (mem.addr (s z))).
+  ll ["Z"|L] L (fuva (mem.addr (s (s z)))).
+  ll ["W"|L] L (fuva (mem.addr (s (s (s z))))).
+  ll [ C |_] _ _ :- rex.match "[A-Z]" C, halt "Parser:" C "is not parsed as a knwon variable".
+  ll ["(","@"|L] L1 T :- !, llapp L L1 [] A, if (A = [T]) true (T = fapp A).
+  ll ["("|L] L1 T :- llapp L L1 [] A, if (A = [T]) true (T = fapp A).
+  ll ["λ",V,"."|L] L1 (flam X) :- pi x\ (pi L\ ll [V|L] L x :- !) => ll L L1 (X x).
+  ll [" "|L] L1 X :- ll L L1 X.
+
+  type llapp list string -> list string -> list fm -> list fm -> o.
+  llapp [")"|L] L A RA :- !, std.rev A RA.
+  llapp L L2 A B :- ll L L1 X, !, llapp L1 L2 [X|A] B.
+  llapp L L A RA :- std.rev A RA.
+
+  type utf8-norm list string -> list string -> o.
+  utf8-norm [X,Y|L] ["λ"|L1] :- "λ" is X ^ Y, !, utf8-norm L L1.
+  utf8-norm [X|L] [X|L1] :- utf8-norm L L1.
+  utf8-norm [] [].
+
+  type test-parse-1 o.
+  test-parse-1 :-
+    parse "C0" (fuva (mem.addr z)),
+    parse "f" (fcon "f"),
+    parse "(f)" (fcon "f"),
+    parse "(f g)" (fapp [fcon "f", fcon "g"]),
+    parse "λx.x" (flam x\x).
 
 }

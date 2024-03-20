@@ -37,21 +37,6 @@ namespace comp {
 
   typeabbrev links (list link).
 
-  type ppmapping mapping -> string -> o.
-  ppmapping (mapping (fv N) (hv M (arity Len))) S :-
-    S is {fo.ppuva N} ^ " -> " ^ {ho.ppuva M} ^ " (" ^ {ppnat Len} ^ ")".
-
-  type ppmappings mappings -> list string -> o.
-  ppmappings Map Str :- forall2 ppmapping Map Str.
-
-  type pplink link -> string -> o.
-  pplink (ho.abs F) S :- pi x\ std.any->string x N, pplink (F x) S1, S is N ^ " " ^ S1.
-  pplink (@val-link-eta A B) S :- S is "|- " ^ {ho.pp A} ^ " =η= " ^ {ho.pp B}.
-  pplink (@val-link-beta A B) S :- S is "|- " ^ {ho.pp A} ^ " =β= " ^ {ho.pp B}.
-
-  type pplinks links -> list string -> o.
-  pplinks L R :- forall2 pplink L R.
-
   % a term use a binder B if there exists a sub-term which `surely` reduce to B
   % for example: `f (g x) a` use the binder x
   %       while: `f (A x) a` may not use x, since A can reduce to a constant
@@ -459,6 +444,30 @@ namespace comp {
     complete-mapping HO1 HO1 Map1 Map2 FO FO1,                                            % Foreach VM not mapped to OL, we build a link
     print "# After complete-mapping, mappings are" {ppmappings Map2} "with ho-subst" {ho.ppsubst HO1}, 
     decompl-subst Map2 Map2 HO1 FO1 FO2.
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PRINTER %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  type ppmapping mapping -> string -> o.
+  ppmapping (mapping (fv N) (hv M (arity Len))) S :-
+    S is {fo.ppuva N} ^ " -> " ^ {ho.ppuva M} ^ " (" ^ {ppnat Len} ^ ")".
+
+  type ppmappings mappings -> list string -> o.
+  ppmappings Map Str :- forall2 ppmapping Map Str.
+
+  type pplink link -> string -> o.
+  pplink (ho.abs F) S :- pi x\ std.any->string x N, pplink (F x) S1, S is N ^ " " ^ S1.
+  pplink (@val-link-eta A B) S :- S is "|- " ^ {ho.pp A} ^ " =η= " ^ {ho.pp B}.
+  pplink (@val-link-beta A B) S :- S is "|- " ^ {ho.pp A} ^ " =β= " ^ {ho.pp B}.
+
+  type pplinks links -> list string -> o.
+  pplinks L R :- forall2 pplink L R.
+
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% TESTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   type test-maybe-eta-1 o.
   type test-maybe-eta-2 o.
