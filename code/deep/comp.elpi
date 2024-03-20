@@ -37,6 +37,10 @@ namespace comp {
 
   typeabbrev links (list link).
 
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% COMPILER %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
   % a term use a binder B if there exists a sub-term which `surely` reduce to B
   % for example: `f (g x) a` use the binder x
   %       while: `f (A x) a` may not use x, since A can reduce to a constant
@@ -182,6 +186,11 @@ namespace comp {
   eta-expand T z T.
   eta-expand T (s N) (ho.lam R2) :- pi x\ unif-mk-app T x (R1 x), eta-expand (R1 x) N (R2 x). 
 
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PROGRESS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
   macro @one :- s z.
 
   % invariante: a sx non c'è mai una eta espansione, a destra c'è una lam, altrimenti il link eta è buttato via
@@ -274,6 +283,33 @@ namespace comp {
     print "In progress beta link for" {ho.pp A} {ho.pp B},
     progress-beta-link A B S S1 NewLinks.
 
+  type take-link link -> links -> link -> links -> o.
+  take-link A [B|XS] B XS :- link-abs-same-lhs A B, !.
+  take-link A [L|XS] B [L|YS] :- take-link A XS B YS.
+
+  type link-abs-same-lhs link -> link -> o.
+  link-abs-same-lhs (ho.abs F) B :- pi x\ link-abs-same-lhs (F x) B.
+  link-abs-same-lhs A (ho.abs G) :- pi x\ link-abs-same-lhs A (G x).
+  link-abs-same-lhs (@val-link-eta (ho.uva N _) _) (@val-link-eta (ho.uva N _) _).
+
+  % Invariant: links received in entry have already been dereferenced
+  type solve-links links -> links -> ho.subst -> ho.subst -> o.
+  solve-links [] [] X X :- print "end solve links".
+
+  solve-links [A|L1] [A|L3] S S2 :- take-link A L1 B L2, !,
+    print "deduplicating links:" {pplink A} "===" {pplink B}, 
+    same-link-eta A B S S1, 
+    solve-links L2 L3 S1 S2.
+  solve-links [L0|L1] L3 S S2 :- deref-link S L0 L,
+    print "considering link for progress:" {pplink L},
+    solve-link-abs L R S S1, !,
+    if (R = []) (print {pplink L} "is removed") true,
+    solve-links L1 L2 S1 S2, std.append R L2 L3.
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% OCC CHECK %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
   :index(_ 1)
   type deref-links ho.subst -> links -> links -> o.
   deref-links H L1 L2 :- forall2 (x\r\ std.assert! (deref-link H x r) "bug deref links") L1 L2.
@@ -338,19 +374,9 @@ namespace comp {
     Perm => ho.copy A A',
     (A' ==l B) H H1.
 
-  % Invariant: links received in entry have already been dereferenced
-  type solve-links links -> links -> ho.subst -> ho.subst -> o.
-  solve-links [] [] X X :- print "end solve links".
-
-  solve-links [A|L1] [A|L3] S S2 :- take-link A L1 B L2, !,
-    print "deduplicating links:" {pplink A} "===" {pplink B}, 
-    same-link-eta A B S S1, 
-    solve-links L2 L3 S1 S2.
-  solve-links [L0|L1] L3 S S2 :- deref-link S L0 L,
-    print "considering link for progress:" {pplink L},
-    solve-link-abs L R S S1, !,
-    if (R = []) (print {pplink L} "is removed") true,
-    solve-links L1 L2 S1 S2, std.append R L2 L3.
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% CHECK %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   type solve-links-fixpoint links -> links -> ho.subst -> ho.subst -> o.
   solve-links-fixpoint L0 L2 H H2 :-
@@ -362,19 +388,14 @@ namespace comp {
       (print "end fixpoint", deref-links H L L2 , H2 = H)
       (print "## Subst is" {ho.ppsubst H1}, print "## Links are" {pplinks {deref-links H1 L1}}, !, solve-links-fixpoint L1 L2 H1 H2).
 
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% DECOMPL %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
   type abs->lam ho.assignment -> ho.tm -> o.
   abs->lam (ho.abs T) (ho.lam R)  :- !, pi x\ abs->lam (T x) (R x).
   abs->lam (ho.val A) A.
-
-  type take-link link -> links -> link -> links -> o.
-  take-link A [B|XS] B XS :- link-abs-same-lhs A B, !.
-  take-link A [L|XS] B [L|YS] :- take-link A XS B YS.
-
-  type link-abs-same-lhs link -> link -> o.
-  link-abs-same-lhs (ho.abs F) B :- pi x\ link-abs-same-lhs (F x) B.
-  link-abs-same-lhs A (ho.abs G) :- pi x\ link-abs-same-lhs A (G x).
-  link-abs-same-lhs (@val-link-eta (ho.uva N _) _) (@val-link-eta (ho.uva N _) _).
 
   type commit-links-aux link -> ho.subst -> ho.subst -> o.
   commit-links-aux (@val-link-eta T1 T2) H1 H2 :- 
