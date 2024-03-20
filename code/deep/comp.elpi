@@ -329,6 +329,16 @@ namespace comp {
     pi x\ link-abs-same-lhs A (G x).
   link-abs-same-lhs (@val-link-eta (ho.uva N _) _) (@val-link-eta (ho.uva N _) _).
 
+  type same-link-eta link -> link -> ho.subst -> ho.subst -> o.
+  same-link-eta (ho.abs F) B H H1 :- !, pi x\ same-link-eta (F x) B H H1.
+  same-link-eta A (ho.abs G) H H1 :- !, pi x\ same-link-eta A (G x) H H1.
+  same-link-eta (@val-link-eta (ho.uva N S1) A)
+                (@val-link-eta (ho.uva N S2) B) H H1 :-
+    std.assert! (std.length S1 {std.length S2}) "no same scope",
+    std.map2 S1 S2 (x\y\r\ r = ho.copy x y) Perm,
+    Perm => ho.copy A A',
+    (A' ==l B) H H1.
+
   % Invariant: links received in entry have already been dereferenced
   type solve-links links -> links -> ho.subst -> ho.subst -> o.
   solve-links [] [] X X :- print "end solve links".
@@ -400,16 +410,6 @@ namespace comp {
     not_occ_links Ad Term Tl,
     print "Ok occur check for" {ho.pp (ho.uva Ad [])},
     occur-check-links S Tl.
-
-  type same-link-eta link -> link -> ho.subst -> ho.subst -> o.
-  same-link-eta (ho.abs F) B H H1 :- !, pi x\ same-link-eta (F x) B H H1.
-  same-link-eta A (ho.abs G) H H1 :- !, pi x\ same-link-eta A (G x) H H1.
-  same-link-eta (@val-link-eta (ho.uva N S1) A)
-                (@val-link-eta (ho.uva N S2) B) H H1 :-
-    std.assert! (std.length S1 {std.length S2}) "no same scope",
-    std.map2 S1 S2 (x\y\r\ r = ho.copy x y) Perm,
-    Perm => ho.copy A A',
-    (A' ==l B) H H1.
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% CHECK %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

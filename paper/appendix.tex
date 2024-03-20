@@ -468,6 +468,15 @@ napp (fuva N) (fuva N).
     pi x\ link-abs-same-lhs A (G x).
   link-abs-same-lhs (@val-link-eta (ho.uva N _) _) (@val-link-eta (ho.uva N _) _).
 
+  type same-link-eta link -> link -> ho.subst -> ho.subst -> o.
+  same-link-eta (ho.abs F) B H H1 :- !, pi x\ same-link-eta (F x) B H H1.
+  same-link-eta A (ho.abs G) H H1 :- !, pi x\ same-link-eta A (G x) H H1.
+  same-link-eta (@val-link-eta (ho.uva N S1) A)
+                (@val-link-eta (ho.uva N S2) B) H H1 :-
+    std.map2 S1 S2 (x\y\r\ r = ho.copy x y) Perm,
+    Perm => ho.copy A A',
+    (A' ==l B) H H1.
+
   type solve-links links -> links -> ho.subst -> ho.subst -> o.
   solve-links [] [] X X.
   solve-links [A|L1] [A|L3] S S2 :- take-link A L1 B L2, !,
