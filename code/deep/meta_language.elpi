@@ -43,27 +43,27 @@ namespace ho {
   ppass (val T) S :- S is ":= " ^ {pp T}.
 
   % [unif T1 T2 SOld SNew] check if T1 and T2 unify looking into SOld. SNew is the final substution
-  type unif tm -> tm -> subst -> subst ->  o.
-  unif A B C _ :- (var A; var B; var C), halt "Passed var to unif".
+  type (`~l) tm -> tm -> subst -> subst ->  o.
+  (A `~l B) C _ :- (var A; var B; var C), halt "Passed var to unif".
   % Base cases
-  unif (app L1) (app L2) S S1 :- fold2 unif L1 L2 S S1.
-  unif (lam F1) (lam F2) S S1 :- 
-    pi x\ copy x x => unif (F1 x) (F2 x) S S1.
-  unif (con X) (con X) S S.
+  ((app L1) `~l (app L2)) S S1 :- fold2 (`~l) L1 L2 S S1.
+  ((lam F1) `~l (lam F2)) S S1 :- 
+    pi x\ copy x x => ((F1 x) `~l (F2 x)) S S1.
+  ((con X) `~l (con X)) S S.
   % Assigned variables
-  unif (uva N Args) T S S1 :- 
-    mem.set? N S F,!, move F Args T1, unif T1 T S S1.
-  unif T (uva N Args) S S1 :- 
-    mem.set? N S F,!, move F Args T1, unif T T1 S S1.
+  ((uva N Args) `~l T) S S1 :- 
+    mem.set? N S F,!, move F Args T1, (T1 `~l T) S S1.
+  (T `~l (uva N Args)) S S1 :- 
+    mem.set? N S F,!, move F Args T1, (T `~l T1) S S1.
   % Not assigned vars
-  unif (uva M A1) (uva N A2) S1 S2 :- !, 
+  ((uva M A1) `~l (uva N A2)) S1 S2 :- !, 
     pattern-fragment A1, pattern-fragment A2, 
     prune! M A1 N A2 S1 S2.
-  unif (uva N Args) T S S1 :- not_occ N S T, pattern-fragment Args, 
+  ((uva N Args) `~l T) S S1 :- not_occ N S T, pattern-fragment Args, 
     bind T Args T1, mem.assign N S T1 S1.
-  unif T (uva N Args) S S1 :- not_occ N S T, pattern-fragment Args, 
+  (T `~l (uva N Args)) S S1 :- not_occ N S T, pattern-fragment Args, 
     bind T Args T1, mem.assign N S T1 S1.
-  unif N N S S :- name N.
+  (N `~l N) S S :- name N.
 
   % Note: eta & beta for unification is not allowed in ML over terms of the OL
 
@@ -186,42 +186,42 @@ namespace ho {
   type test-unif-7 o.
 
   test-unif-1 :- pi x\
-    unif (@mem-uva z [x]) (@mem-uva (s z) []) [none, none] L,
+    ((@mem-uva z [x]) `~l (@mem-uva (s z) [])) [none, none] L,
     Z = (abs x\ val (uva X [])),
     SZ = val (uva X []),
     L = [some Z, some SZ|_].
 
   test-unif-2 :- pi x y\
-    unif (@mem-uva z [x, y]) (@mem-uva (s z) [y]) [none, none] L,
+    ((@mem-uva z [x, y]) `~l (@mem-uva (s z) [y])) [none, none] L,
     Z = (abs x\ abs y\ val (uva X [y])),
     SZ = (abs x\ val (uva X [x])),
     L = [some Z, some SZ|_].
 
   test-unif-3 :- pi x y w\
-    unif (@mem-uva z [x, y]) (@mem-uva (s z) [x, w, y]) [none, none] L,
+    ((@mem-uva z [x, y]) `~l (@mem-uva (s z) [x, w, y])) [none, none] L,
     Z = (abs x\ abs y\ val (uva X [x, y])),
     SZ = (abs x\ abs y\ abs z\ val (uva X [x, z])),
     L = [some Z, some SZ|_].
 
   test-unif-4 :- pi x y\ 
-    unif (@mem-uva z [x, y]) (@mem-uva (s z) [y, x]) [none, none] L,
+    ((@mem-uva z [x, y]) `~l (@mem-uva (s z) [y, x])) [none, none] L,
     Z = (abs x\ abs y\ val (uva X [x, y])),
     SZ = (abs x\ abs y\ val (uva X [y, x])),
     L = [some Z, some SZ|_].
 
   test-unif-5 :- pi x y zz w\
-    unif (@mem-uva z [x, w, y]) (@mem-uva (s z) [y, zz, w]) [none, none] L,
+    ((@mem-uva z [x, w, y]) `~l (@mem-uva (s z) [y, zz, w])) [none, none] L,
     Z = (abs c0\ abs c1\ abs c2\ val (uva X [c1, c2])),
     SZ = (abs c0\ abs c1\ abs c2\ val (uva X [c2, c0])),
     L = [some Z, some SZ|_].
 
   test-unif-6 :- pi x y zz w\
-    unif (@mem-uva (s z) [y, zz, w]) (@mem-uva z [x, w, y]) [none, none] L,
+    ((@mem-uva (s z) [y, zz, w]) `~l (@mem-uva z [x, w, y])) [none, none] L,
     Z = (abs c0\ abs c1\ abs c2\ val (uva X [c2, c1])),
     SZ = (abs c0\ abs c1\ abs c2\ val (uva X [c0, c2])),
     L = [some Z, some SZ|_].
 
   test-unif-7 :- pi x y w zz\
-    unif (@mem-uva z [x, y, w]) (@mem-uva z [zz, y, x]) [none] L,
+    ((@mem-uva z [x, y, w]) `~l (@mem-uva z [zz, y, x])) [none] L,
     L = [some (abs x\ abs y\ abs z\ val (uva _ [y])) | _].
 }
