@@ -252,7 +252,7 @@ unif A B C _ :- (var A; var B; var C), halt "Passed var to unif".
 % Base cases
 unif (app L1) (app L2) S S1 :- fold2 unif L1 L2 S S1.
 unif (lam F1) (lam F2) S S1 :- 
-  pi x\ (pi S\ unif x x S S) => copy x x => unif (F1 x) (F2 x) S S1.
+  pi x\ copy x x => unif (F1 x) (F2 x) S S1.
 unif (con X) (con X) S S.
 % Assigned variables
 unif (uva N Args) T S S1 :- 
@@ -267,6 +267,7 @@ unif (uva N Args) T S S1 :- not_occ N S T, pattern-fragment Args,
   bind T Args T1, mem.assign N S T1 S1.
 unif T (uva N Args) S S1 :- not_occ N S T, pattern-fragment Args, 
   bind T Args T1, mem.assign N S T1 S1.
+unif N N S S :- name N.
 
 % Note: eta & beta for unification is not allowed in ML over terms of the OL
 
@@ -730,7 +731,7 @@ progress-beta-link T1 T2 S1 S2 B :-
 
 type solve-link-abs link -> links -> ho.subst -> ho.subst -> o.
 solve-link-abs (ho.abs X) R H H1 :- 
-  pi x\ (pi S\ ho.unif x x S S) => ho.copy x x => (pi S\ ho.deref S x x) => solve-link-abs (X x) (R' x) H H1,
+  pi x\ ho.copy x x => (pi S\ ho.deref S x x) => solve-link-abs (X x) (R' x) H H1,
   close-links R' R.
 
 solve-link-abs (@val-link-eta A B) NewLinks S S1 :- !,
