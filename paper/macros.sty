@@ -59,10 +59,12 @@
 }
 
 \newenvironment{textcode}{%
+  \vspace{0.2em}%
   \VerbatimEnvironment
-    \begin{minted}[autogobble,escapeinside=~~,mathescape=true]{text}%
+  \begin{minted}[breaklines,fontsize=\small,autogobble,escapeinside=~~,mathescape=true,frame=leftline,framerule=0pt,framesep=1em]{text}%
 }{%
   \end{minted}%
+  \vspace{0.2em}%
 }
 
 \newenvironment{coqcode}{%

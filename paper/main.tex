@@ -61,6 +61,9 @@
 
 \newcommand*{\eqtau}{\ensuremath{\mathrel{\overset{\mathrm{\tau}}{=}}}}
 
+\newcommand{\linketaM}[3]{\texttt{#1 |- #2 =$\eta$= #3}}
+\newcommand{\linkbetaM}[3]{\texttt{#1 |- #2 =$\beta$= #3}}
+
 \begin{document}
 
 \title{HO unification from object language to meta language} 
@@ -1185,15 +1188,18 @@ sequenza)
 Invarianti:
 A destra della eta abbiamo sempre un termine che comincia per $\lambda x. bla$
 
-
-La deduplicate eta:
-  - viene chiamata che della forma [variable] -> [eta1] e [variable] -> [eta2] (a destra non c'è mai un termine con testa rigida)
+\begin{textcode}
+  La deduplicate eta:
+  - viene chiamata che della forma [variable] -> [eta1] e [variable] -> [eta2] 
+    (a destra non c'è mai un termine con testa rigida)
   - i due termini a dx vengono unificati con la unif e uno dei due link viene buttato
-    -> si mettono più lambda 
-  - dopo l'unificazione rimane un link [variabile] -> [etaX] e quando
-    risolviamo un eta-link, allora dobbiamo eta-espandere qb il termine di sinistra per
-    poterlo  unifcare con quello di dx.
-
+    NOTA!! A dx abbiamo sempre un termine della forma lam x.VAR x!!!
+    Altrimenti il link sarebbe stato risolto!!
+  - dopo l'unificazione rimane un link [variabile] -> [etaX] 
+  - nella progress-eta, se a sx abbiamo una constante o un'app, allora eta-espandiamo
+    di uno per poter unificare con il termine di dx.
+\end{textcode}
+  
 \subsection{Problems with $\beta$}
 
 $\beta$-reduction problems (\maybebeta) appears any time we deal with a subterm $t
@@ -1253,15 +1259,43 @@ An example justifying this last link manipulation is given by the following
 unification problem:
 
 \begin{elpicode}
-  f = flam x\ flam y\ fapp[F, (X x), y] % $f = \lambda x.\lambda y.F (X x) y$
+  f = flam x\ fapp[F, (X x), a] % $f = \lambda x.F (X x) a$
 \end{elpicode}
 
 \noindent
-from the subsitution $\rho = \{X \mapsto \lambda x.x\}$.
+under the subsitution $\rho = \{X \mapsto \lambda x.x\}$.
 
 \noindent
-\otext{The following goal: \elpiIn{X = lam x\ x, app[X, a] = a}}
-\otext{We use links-beta}
+The links generated from this unification problem are:
+
+\begin{textcode}
+X ~$\mapsto$~ X1; F ~$\mapsto$~ X2 % The mappings
+  ~$\vdash$~ X0   =~$\eta$~= x\ `X3 x'
+x ~$\vdash$~ X3 x =~$\beta$~= X2 `X1 x' a
+\end{textcode}
+
+\noindent
+where the first link is a \linketa between the variable \texttt{X0}, representing
+the right side of the unification problem (it is a \maybeeta) and
+\texttt{X3}; and a \linkbeta between the variable \texttt{X3} and the subterm
+\texttt{c0\textbackslash\ X2 `X1 c0' a} (it is a \maybebeta).
+The substitution tells that \textIn{x ~$\vdash$~ X1 x = x}.
+
+We can now represent the \hrun execution from this configuration which will, at
+first, dereference all the links, and then try to solve them. The only link
+being modified is the second one, which is set to \textIn{X3 x =~$\beta$~= X2
+x a}. The $rhs$ of the link has now a variable which is partially in the PF,
+we can therefore remove the original \linkbeta and replace it with the following 
+couple on links:
+
+\begin{textcode}
+  ~$\vdash$~ X1   =~$\eta$~= x\ `X4 x'
+x ~$\vdash$~ X3 x =~$\beta$~= x\ `X4 x' a
+\end{textcode}
+
+By these links we say that \texttt{X1} is now $\eta$-linked to a fresh variable
+\texttt{X4} with arity one. This new variable is used in the new \linkbeta where
+the name \texttt{x} is in its scope. This allows 
 
 \subsection{Tricky examples}
 
