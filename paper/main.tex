@@ -1216,11 +1216,11 @@ Despite this, it is possible to work with $\maybebeta$ if an oracle provides a
 substitution $\rho$ such that $\rho t$ falls again in the \llambda. 
 
 On the other hand, the \Ue is not designed to understand how the $\beta$-redexes
-work in the onject language. Therefore, even if we know that $F$ is assigned
+work in the object language. Therefore, even if we know that $F$ is assigned
 to $\lambda x.x$, \Ue is not able to unify $F a$ with $a$. On the other hand,
 the problem $F a = G$ is solvable by \Ue, but the final result is that $G$ is
 assigned to $(\lambda x.x) a$ which breaks the invariant saying that the 
-substitution of the meta language always contain only terms in normal form.
+substitution of the meta language does not generate terms outide \wellb{} (Property \ref{prop:nf}).
 
 The solution to this problem is to modify the compiler such that any sub-term $t$
 considered as a potential $\beta$-redex is replaced with a hole $h$ and a new dedicated
@@ -1232,25 +1232,25 @@ link, called \linkbeta.
   
 This link carries two terms, the former representing the variable $h$ for the
 new created hole and the latter containing the subterm $t$. As for the \linketa,
-we will call $h$ and $t$ respectively the left $lhs$ and the right $rhs$ hand
-side of the \linkbeta.
+we will call $h$ and $t$ respectively the left hand side (LHS)
+and the right hand side (RHS) of the \linkbeta.
 
-At compile time, a subterm is \maybebeta, if it has the shape \elpiIn{fapp[fuva
+A subterm is in \maybebeta{} if it has the shape \elpiIn{fapp[fuva
 N | L]} and \elpiIn{distinct L} does not hold. In that case, \elpiIn{L} is split
 in two sublist \elpiIn{PF} and \elpiIn{NPF} such that former is the longest
 prefix of \elpiIn{L} such that \elpiIn{distinct PF} holds. \elpiIn{NPF} is the
-list such that \elpiIn{append PF NPF L}. The $lhs$ is set to a new variable
-named $M$ with \elpiIn{PF} in scope whereas the $rhs$ is given by the term
+list such that \elpiIn{append PF NPF L}. The LHS is set to a new variable
+named $M$ with \elpiIn{PF} in scope whereas the RHS is given by the term
 \elpiIn{app[uva N' PF | NPF]} where the \Ho variable identified by \elpiIn{N'}
-is mapped to the \Fo variable named \elpiIn{N}.
+is mapped to the \Fo{} variable named \elpiIn{N}.
 
-
-After its creation, a \linkbeta remain suspended until the head of $rhs$ is
-instantiated by the oracle (see \cref{prop:simulation}). In this case, $rhs$ is
-$\beta$-reduced to a new term, say $t'$. $t'$ is either a term in \llambda, in
-which case $t'$ is unified with the $lhs$, otherwise, the link remain suspended
+\marginpar{signposting: a link is reconsidered in two cases. then make 2 paragraphs}
+After its creation, a \linkbeta remain suspended until the head of the RHS is
+instantiated by the oracle (see \cref{prop:simulation}). In this case the RHS is
+$\beta$-reduced to a new term $t$. $t$ is either a term in \llambda, in
+which case $t$ is unified with the LHS, otherwise, the link remain suspended
 and no progress is performed. Another way to wake a \linkbeta up is when the
-$lhs$ is a term \elpiIn{T} and $rhs$ has the shape \elpiIn{app[uva N PF | NPF]}
+LHS is a term \elpiIn{T} and RHS has the shape \elpiIn{app[uva N PF | NPF]}
 and some of the arguments in the \elpiIn{NPF} list become names. This is
 possible after the resolution of other links. In this case, the list \elpiIn{L}
 obtained by the concatenation between \elpiIn{PF} and \elpiIn{NPF} is split
@@ -1259,6 +1259,7 @@ same as \elpiIn{PF'}, then we can 1) remove the current \linkbeta, 2) create a
 new \linkbeta between \elpiIn{T} and \elpiIn{app[uva N' PF' | NPF']} and 3)
 create a new \linketa between the variables \elpiIn{N} and \elpiIn{N'}.
 
+\marginpar{A bit too fast, we first compile, then unify, then the oracle, then the manip...}
 An example justifying this last link manipulation is given by the following
 unification problem:
 
@@ -1288,7 +1289,7 @@ The substitution tells that \textIn{x ~$\vdash$~ X1 x = x}.
 We can now represent the \hrun execution from this configuration which will, at
 first, dereference all the links, and then try to solve them. The only link
 being modified is the second one, which is set to \textIn{X3 x =~$\beta$~= X2
-x a}. The $rhs$ of the link has now a variable which is partially in the PF,
+x a}. The RHS of the link has now a variable which is partially in the PF,
 we can therefore remove the original \linkbeta and replace it with the following 
 couple on links:
 
