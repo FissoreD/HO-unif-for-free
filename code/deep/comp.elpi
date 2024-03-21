@@ -108,21 +108,20 @@ namespace comp {
   get-scope T Scope :-
     get-scope-aux T ScopeDuplicata,
     names N, filter N (mem ScopeDuplicata) Scope.
+%SNIP: comp_base2
+  type comp-lam (fm -> fm) -> (tm -> tm) -> 
+    map -> map -> links -> links -> subst -> subst -> o.
+  comp-lam F F1 M1 M2 L L2 S S1 :-
+    pi x y\ (pi M L S\ comp x y M M L L S S) => 
+      comp (F x) (F1 y) M1 M2 L (L1 y) S S1, 
+    close-links L1 L2.
 
   type close-links (tm -> links) -> links -> o.
   close-links (_\[]) [].
   close-links (v\[L|XS v]) [L|YS] :- !, close-links XS YS.
   close-links (v\[(L v)|XS v]) [ho.abs L|YS] :- !, 
     close-links XS YS.
-
-  type comp-lam (fm -> fm) -> (tm -> tm) -> 
-    map -> map -> links -> links -> subst -> 
-      subst -> o.
-  comp-lam F F1 M1 M2 L L2 S S1 :-
-    pi x y\ (pi M L S\ comp x y M M L L S S) => 
-      comp (F x) (F1 y) M1 M2 L (L1 y) S S1, 
-        close-links L1 L2.
-
+%ENDSNIP
 %SNIP: comp_base
   type comp fm -> tm -> map -> map -> links -> links ->
     subst -> subst -> o.
