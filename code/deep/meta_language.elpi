@@ -163,7 +163,7 @@ namespace ho {
   type deref subst -> tm -> tm -> o.
   deref S X _ :- (var S; var X), halt "flex deref". % HIDE
   deref H (uva N L)  X         :- set? N H T, 
-    move T L X', !, deref H X' X.
+    move T L X', deref H X' X.
   deref H (app L)   (app L1)   :- forall2 (deref H) L L1.
   deref _ (con X)   (con X).
   deref H (uva X L) (uva X L1) :- unset? X H, 

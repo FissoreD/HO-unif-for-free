@@ -488,7 +488,7 @@ $$
 That is, the two executions give the same result. Moreover:
 
 \begin{proposition}[Simulation fidelity]\label{prop:fidelity}
-In the context of~ \hrun, we have that
+In the context of~ \hrun, if $~\mathcal{T} \subseteq \llambda$ we have that
 $\forall p \in 1 \ldots \mathcal{N}$
 $$
 \stepF{\mathcal{S}}{p}{\rho_{p-1}}{\rho_p}
@@ -503,6 +503,12 @@ property very important from a practical point of view since it guarantees
 that the execution traces are strongly related and in turn this enables a user
 to debug a logic program in \Fo{} by looking at its execution trace in
 \Ho{}.
+
+XXX permuting hrun does not change the final result if check dooes not fail eagerly
+
+XXX if we want to apply heuristics, we can apply them in decomp to avoid committing to
+a non MGU too early
+
 
 We can define $s_1 \Uo{} s_2$ by specializing the code of \hrun{} to
 $\mathcal{S} = \{ s_1, s_2 \}$ as follows:
@@ -583,24 +589,25 @@ An example of $t$ in \maybebeta{} is $F a$ for a constant $a$. Note however tha
 an oracle could provide an assignment $\rho = \{ F \mapsto \lambda x.x\}$
 that makes the resulting term fall outside of \maybebeta. 
 
-\begin{definition}[Subterm $\mathcal{P}(t)$]
+\newcommand{\subterm}[1]{\ensuremath{\mathcal{P}(#1)}}
+\begin{definition}[Subterm \subterm{t}]
 $$
 \begin{array}{l}
-t \in \mathcal{P}(t)\\
-t = f t_1\ldots t_n \Rightarrow \mathcal{P}(t_i) \subseteq \mathcal{P}(t) \land f \in \mathcal{P}(t)\\
-t = \lambda x.t' \Rightarrow \mathcal{P}(t') \subseteq \mathcal{P}(t)\\
+t \in \subterm{t}\\
+t = f t_1\ldots t_n \Rightarrow \subterm{t_i} \subseteq \subterm{t} \land f \in \subterm{t}\\
+t = \lambda x.t' \Rightarrow \subterm{t'} \subseteq \subterm{t}\\
 \end{array}
 $$
 \end{definition}
 
 \noindent
-We write $\mathcal{P}(X) = \bigcup_{t\in X} \mathcal{P}(t)$.
+We write $\subterm{X} = \bigcup_{t\in X} \subterm{t}$.
 
 \newcommand{\wellb}{\ensuremath{\mathcal{W}}}
 \begin{definition}[Well behaved set]
 Given a set of terms $X \subseteq \Ho{}$,
 $$
-\wellb(X) \Leftrightarrow \forall t \in \mathcal{P}(X), t \not\in (\maybebeta{} ~\cup~ \maybeeta{})
+\wellb(X) \Leftrightarrow \forall t \in \subterm{X}, t \not\in (\maybebeta{} ~\cup~ \maybeeta{})
 $$
 \end{definition}
 

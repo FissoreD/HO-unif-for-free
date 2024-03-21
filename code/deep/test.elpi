@@ -547,8 +547,8 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- std
 ] ["λf.f"].
 
 % @sokl 67 [
+%   pr ok "f = λx.(Y (X x))"
 %   pr ok "X = λx.x",
-%   pr ok "f = λx.(Y (X x) a)"
 % ] ["λx.x", "f"].
 
 /* Non passa in elpi (x\ X x) = A B */

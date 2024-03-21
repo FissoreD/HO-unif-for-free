@@ -9,7 +9,8 @@ def print_tex(lines, fout):
     with open(fout, "w") as f:
         f.write("\\begin{elpicode}\n")
         for l in lines:
-            l = re.sub("^ *% *.*\n","",l)
+            l = re.sub("^ *% +.*\n","",l)
+            l = re.sub("^ *%%%.*\n","",l)
             l = re.sub("==l",r"~$\\Ue$~",l)
             l = re.sub("==o",r"~$\\Eo$~",l)
             l = re.sub(".*% *HIDE.*\n","",l)
