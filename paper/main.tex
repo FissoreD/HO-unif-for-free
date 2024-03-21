@@ -779,7 +779,14 @@ Other invariant: the terms in ho\_subst never contains eta and beta expansion
 
 \subsection{Notations}
 
-we use math mode for ho.
+We use math mode for \Ho.
+
+\begin{tabular}{ll}
+  $\lambda x.\lambda y.F_{x y}$ & \elpiIn{lam x\ lam y\ uva F [x, y]} \\
+  $f~ a$ &  \elpiIn{app[con "f", con "a"]}\\
+  $\lambda x.F_{x} ~ a$ & \elpiIn{lam x\ app[uva F [x], con "a"]} \\
+  $\lambda x.F_{x} ~ x$ & \elpiIn{lam x\ app[uva F [x], x]} \\
+\end{tabular}
 
 \subsection{Equational theory and Unification}
 
