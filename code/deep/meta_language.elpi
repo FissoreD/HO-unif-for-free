@@ -7,7 +7,7 @@ internal-test ho.test-unif-6.
 internal-test ho.test-unif-7.
 
 namespace ho {
-
+%BEGIN
   typeabbrev subst list (option assignment).
 
   kind inctx type -> type.
@@ -23,8 +23,8 @@ namespace ho {
   type uva  address -> list tm -> tm.
 
   % [unif T1 T2 SOld SNew] check if T1 and T2 unify looking into SOld. SNew is the final substution
-  type (==l) tm -> tm -> subst -> subst ->  o.
-  (A ==l B) C _ :- (var A; var B; var C), halt "Passed var to unif".
+  type (==l) tm -> tm -> subst -> subst -> o.
+  (A ==l B) C _ :- (var A; var B; var C), halt "Passed var to unif". %HIDE
   % congruence
   ((app L1) ==l (app L2)) S S1 :- fold2 (==l) L1 L2 S S1.
   ((lam F1) ==l (lam F2)) S S1 :- 
@@ -172,6 +172,7 @@ namespace ho {
   type deref-assmt subst -> assignment -> assignment -> o.
   deref-assmt S (abs T) (abs R) :- pi x\ deref-assmt S (T x) (R x).
   deref-assmt S (val T) (val R) :- deref S T R.
+%END
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PRINTER %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
