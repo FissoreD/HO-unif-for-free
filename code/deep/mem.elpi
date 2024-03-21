@@ -1,4 +1,6 @@
 namespace mem {
+%BEGIN
+
   kind address type.
   type addr nat -> address.
 
@@ -37,6 +39,8 @@ namespace mem {
 
   type assign address -> mem A -> A -> mem A -> o.
   assign (addr A) Mem1 Val Mem2 :- assign-aux A Mem1 Val Mem2.
+
+%END
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PRINTER %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
