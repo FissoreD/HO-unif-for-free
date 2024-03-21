@@ -124,41 +124,41 @@ namespace comp {
   type comp-lam (fm -> fm) -> (tm -> tm) -> 
     mappings -> mappings -> links -> links -> subst -> 
       subst -> o.
-  comp-lam F F1 Mappings1 Mappings2 L L2 S S1 :-
+  comp-lam F F1 M1 M2 L L2 S S1 :-
     pi x y\ (pi M L S\ comp x y M M L L S S) => 
-      comp (F x) (F1 y) Mappings1 Mappings2 L (L1 y) S S1, 
+      comp (F x) (F1 y) M1 M2 L (L1 y) S S1, 
         close-links L1 L2.
 
-  type comp fm -> tm -> mappings -> mappings -> links -> 
-    links -> subst -> subst -> o.
-  comp (fcon X) (con X)        Map1 Map1 L1 L1 S1 S1.
-  comp (flam F) (uva E0 Scope) Map1 Map2 L1 L3 S1 S3 :-
+  type comp fm -> tm -> mappings -> mappings -> links -> links ->
+    subst -> subst -> o.
+  comp (fcon C) (con C)       M1 M1 L1 L1 S1 S1.
+  comp (flam F) (uva A Scope) M1 M2 L1 L3 S1 S3 :-
     (pi x\ maybe-eta x (F x) [x]), !,
-      mem.new S1 E0 S2,
-      comp-lam F F1 Map1 Map2 L1 L2 S2 S3,
+      mem.new S1 A S2,
+      comp-lam F F1 M1 M2 L1 L2 S2 S3,
       get-scope (lam F1) Scope, 
-      NewLink = ho.val(link-eta (uva E0 Scope) (lam F1)), 
-      L3 = [NewLink| L2].
-  comp (flam F) (lam F1)       Map1 Map2 L1 L2 S1 S2 :- 
-    comp-lam F F1 Map1 Map2 L1 L2 S1 S2.
-  comp (fuva N) (uva M []) Map1 Map2 L L S S1 :- 
-    alloc Map1 Map2 (fv N) (hv M (arity z)) S S1.
-  comp (fapp [fuva N|Ag]) (uva M Scope) Map1 Map2 L1 L1 S1 S2 :-
-    pattern-fragment Ag, !,
-      fold6 comp Ag Scope Map1 Map1 L1 L1 S1 S1,
-      len Ag Arity, 
-      alloc Map1 Map2 (fv N) (hv M (arity Arity)) S1 S2.
-  comp (fapp [fuva N|Ag]) (uva M' Scope) Map1 Map3 L1 L3 S1 S4 :- !,
-    pattern-fragment-prefix Ag PF NPF,
-      fold6 comp PF PF1 Map1 Map1 L1 L1 S1 S1,
-      fold6 comp NPF NPF1 Map1 Map2 L1 L2 S1 S2,
-      len PF Arity, 
-      alloc Map2 Map3 (fv N) (hv M (arity Arity)) S2 S3,
-      get-scope (app {append PF1 NPF1}) Scope, 
-      mem.new S3 M' S4,
-      L3 = [@val-link-beta (uva M' Scope) (app[uva M PF1 | NPF1]) | L2].
-  comp (fapp A) (app A1) Map1 Map2 L1 L2 S1 S2 :- 
-    fold6 comp A A1 Map1 Map2 L1 L2 S1 S2.
+      L3 = [@val-link-eta (uva A Scope) (lam F1)| L2].
+  comp (flam F) (lam F1)      M1 M2 L1 L2 S1 S2 :- 
+    comp-lam F F1 M1 M2 L1 L2 S1 S2.
+  comp (fuva A) (uva B [])    M1 M2 L L S S1 :- 
+    alloc M1 M2 (fv A) (hv B (arity z)) S S1.
+  comp (fapp [fuva A|Scope]) (uva B Scope1) M1 M2 L1 L1 S1 S2 :-
+    pattern-fragment Scope, !,
+      fold6 comp Scope Scope1 M1 M1 L1 L1 S1 S1,
+      len Scope Arity, 
+      alloc M1 M2 (fv A) (hv B (arity Arity)) S1 S2.
+  comp (fapp [fuva A|Args]) (uva C Scope) M1 M3 L1 L3 S1 S4 :- !,
+    pattern-fragment-prefix Args Pf Extra,
+      fold6 comp Pf    Scope1 M1 M1 L1 L1 S1 S1,
+      fold6 comp Extra Extra1 M1 M2 L1 L2 S1 S2,
+      len Pf Arity,
+      alloc M2 M3 (fv A) (hv B (arity Arity)) S2 S3,
+      Beta = app [uva B Scope1 | Extra1],
+      get-scope Beta Scope, 
+      mem.new S3 C S4,
+      L3 = [@val-link-beta (uva C Scope) Beta | L2].
+  comp (fapp A) (app A1)      M1 M2 L1 L2 S1 S2 :- 
+    fold6 comp A A1 M1 M2 L1 L2 S1 S2.
 
 type compile-terms-diagnostic 
   triple diagnostic fm fm -> 
