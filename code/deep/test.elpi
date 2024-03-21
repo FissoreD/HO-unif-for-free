@@ -4,21 +4,6 @@ macro @read :- input_line std_in _.
 
 shorten ho.{(==l)}.
 
-type compile-terms 
-  list (triple diagnostic fo.fm fo.fm) -> 
-  list (triple diagnostic ho.tm ho.tm) -> 
-  comp.mappings ->
-  comp.mappings ->
-  comp.links ->
-  ho.subst -> ho.subst ->
-  o.
-compile-terms [] [] M M [] H H.
-compile-terms [triple D S1 S2|Src] [triple D T1 T2|PS] Map0 MapS LS H0 H3 :-
-  std.assert! (comp.comp S1 T1 Map0 Map1 [] L1 H0 H1) "comp s1",
-  std.assert! (comp.comp S2 T2 Map1 Map2 L1 L2 H1 H2) "comp s2",
-  compile-terms Src PS Map2 MapS Links2 H2 H3,
-  std.append L2 Links2 LS.
-
 type valid-error string -> o.
 valid-error uvar :- !, halt "Message error should not be flexible".
 valid-error "unif" :- !.
@@ -129,9 +114,7 @@ type xtest test fo.fm -> o.
 xtest (test N (pr LR Sol) as Test) :- std.do![
   print "## Test" N ":" {ptest Test},
   printC "run test?",
-  build-fo-subst LR [] FO_Subst,
-  compile-terms LR Uproblems [] Map1 Links [] HO_Subst,
-  comp.deduplicate-mappings Map1 Map2 HO_Subst HO_Subst1 Links Links2,                % TODO: refactor compile-terms so that it also does post processing 
+  comp.compile-terms LR Uproblems Map2 Links2 HO_Subst1,
   print "## After compilation the terms are" {std.map Uproblems pppbsc},
   print "## After compilation the links are" {comp.pplinks Links2},
   print "## After compilation the mappings are" {comp.ppmappings Map2},
@@ -142,6 +125,7 @@ xtest (test N (pr LR Sol) as Test) :- std.do![
     print "## After prolog links are" {comp.pplinks Links1},
     print "## After prolog mappings are" {comp.ppmappings Map2},
     printC "continue to decomp?",
+    build-fo-subst LR [] FO_Subst,
     decompile-subst Map2 Links1 HO_Subst2 FO_Subst Sol1,
     print "## After decomp FO subst is" {fo.ppsubst Sol1},
     printC "continue to validate solution?",

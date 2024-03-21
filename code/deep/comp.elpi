@@ -157,6 +157,24 @@ namespace comp {
   comp (fo.fapp A) (ho.app A1) Map1 Map2 L1 L2 S1 S2 :- 
     fold6 comp A A1 Map1 Map2 L1 L2 S1 S2.
 
+type compile-terms-diagnostic 
+  triple diagnostic fo.fm fo.fm -> 
+  triple diagnostic ho.tm ho.tm -> 
+  mappings -> mappings -> 
+  links -> links -> 
+  ho.subst -> ho.subst -> o.
+compile-terms-diagnostic (triple D FO1 FO2) (triple D HO1 HO2) M1 M3 L1 L3 S1 S3 :-
+  comp FO1 HO1 M1 M2 L1 L2 S1 S2,
+  comp FO2 HO2 M2 M3 L2 L3 S2 S3.
+
+type compile-terms 
+  list (triple diagnostic fo.fm fo.fm) -> 
+  list (triple diagnostic ho.tm ho.tm) -> 
+  mappings -> links -> ho.subst -> o.
+compile-terms T H M L S :- 
+  fold6 compile-terms-diagnostic T H [] M_ [] L_ [] S_,
+  deduplicate-mappings M_ M S_ S L_ L.
+
   % Ad1 is the variable with smaller arity, Ad2 is eta expanded N times
   type make-eta-link-aux nat -> address -> address -> 
     list ho.tm -> links -> ho.subst -> ho.subst -> o.
