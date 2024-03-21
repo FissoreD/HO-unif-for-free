@@ -43,7 +43,7 @@ prolog [triple (error X as E) L R|_] Links Links H H2 E :-
      (H2 = H).
 
 type decompile-subst
-  comp.mappings -> 
+  comp.map -> 
   comp.links -> 
   ho.subst ->
   fo.subst ->

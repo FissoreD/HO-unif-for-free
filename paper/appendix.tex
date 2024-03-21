@@ -167,7 +167,7 @@ Explain builtin name (can be implemented by loading name after each pi)
   commit-links [Abs | Links] L H H2 :- 
     commit-links-aux Abs H H1, !, commit-links Links L H1 H2.
 
-  type decompl-subst mappings -> mappings -> ho.subst -> 
+  type decompl-subst map -> map -> ho.subst -> 
     fo.subst -> fo.subst -> o.
   decompl-subst _ [A|_] _ _ _ :- fail.
   decompl-subst _ [] _ F F.
@@ -180,7 +180,7 @@ Explain builtin name (can be implemented by loading name after each pi)
   decompl-subst Map [mapping _ (hv VM _)|Tl] H F F2 :- 
     mem.unset? VM H, decompl-subst Map Tl H F F2.
 
-  type tm->fm mappings -> ho.tm -> fo.fm -> o.
+  type tm->fm map -> ho.tm -> fo.fm -> o.
   tm->fm _ (ho.con C)  (fo.fcon C).
   tm->fm L (ho.lam B1) (fo.flam B2) :- 
     pi x y\ tm->fm _ x y => tm->fm L (B1 x) (B2 y).
@@ -189,37 +189,37 @@ Explain builtin name (can be implemented by loading name after each pi)
   tm->fm L (ho.uva VM TL) T :- mem L (mapping (fv VO) (hv VM _)), 
     forall2 (tm->fm L) TL T1, fo.mk-app (fo.fuva VO) T1 T.
 
-  type add-new-mappings-aux ho.subst -> list ho.tm -> mappings -> 
-        mappings ->  fo.subst -> fo.subst -> o.
-  add-new-mappings-aux _ [] _ [] S S.
-  add-new-mappings-aux H [T|Ts] L L2 S S2 :- 
-    add-new-mappings H T L L1 S S1, 
-    add-new-mappings-aux H Ts L1 L2 S1 S2.
+  type add-new-map-aux ho.subst -> list ho.tm -> map -> 
+        map ->  fo.subst -> fo.subst -> o.
+  add-new-map-aux _ [] _ [] S S.
+  add-new-map-aux H [T|Ts] L L2 S S2 :- 
+    add-new-map H T L L1 S S1, 
+    add-new-map-aux H Ts L1 L2 S1 S2.
 
-  type add-new-mappings ho.subst -> ho.tm -> mappings -> 
-      mappings ->  fo.subst -> fo.subst -> o.
-  add-new-mappings _ (ho.uva N _) Map [] F1 F1 :- 
+  type add-new-map ho.subst -> ho.tm -> map -> 
+      map ->  fo.subst -> fo.subst -> o.
+  add-new-map _ (ho.uva N _) Map [] F1 F1 :- 
     mem Map (mapping _ (hv N _)), !.
-  add-new-mappings H (ho.uva N L) Map [Map1 | MapL] F1 F3 :-
+  add-new-map H (ho.uva N L) Map [Map1 | MapL] F1 F3 :-
     mem.new F1 M F2,
     len L Arity, Map1 = mapping (fv M) (hv N (arity Arity)),
-    add-new-mappings H (ho.app L) [Map1 | Map] MapL F2 F3.
-  add-new-mappings H (ho.lam B) Map NewMap F1 F2 :- 
-    pi x\ add-new-mappings H (B x) Map NewMap F1 F2.
-  add-new-mappings H (ho.app L) Map NewMap F1 F3 :- 
-    add-new-mappings-aux H L Map NewMap F1 F3.
-  add-new-mappings _ (ho.con _) _ [] F F :- !.
-  add-new-mappings _ N _ [] F F :- name N.
+    add-new-map H (ho.app L) [Map1 | Map] MapL F2 F3.
+  add-new-map H (ho.lam B) Map NewMap F1 F2 :- 
+    pi x\ add-new-map H (B x) Map NewMap F1 F2.
+  add-new-map H (ho.app L) Map NewMap F1 F3 :- 
+    add-new-map-aux H L Map NewMap F1 F3.
+  add-new-map _ (ho.con _) _ [] F F :- !.
+  add-new-map _ N _ [] F F :- name N.
 
   type complete-mapping-under-ass ho.subst -> ho.assignment -> 
-    mappings -> mappings ->  fo.subst -> fo.subst -> o.
+    map -> map ->  fo.subst -> fo.subst -> o.
   complete-mapping-under-ass H (ho.val Val) Map1 Map2 F1 F2 :- 
-    add-new-mappings H Val Map1 Map2 F1 F2.
+    add-new-map H Val Map1 Map2 F1 F2.
   complete-mapping-under-ass H (ho.abs Abs) Map1 Map2 F1 F2 :- 
     pi x\ complete-mapping-under-ass H (Abs x) Map1 Map2 F1 F2.
 
   type complete-mapping ho.subst -> ho.subst ->   
-    mappings -> mappings -> fo.subst -> fo.subst -> o.
+    map -> map -> fo.subst -> fo.subst -> o.
   complete-mapping _ [] L L F F.
   complete-mapping H [none | Tl] L1 L2 F1 F2 :-   
     complete-mapping H Tl L1 L2 F1 F2.
@@ -229,7 +229,7 @@ Explain builtin name (can be implemented by loading name after each pi)
     append L1 L2 LAll,
     complete-mapping H Tl LAll L3 F2 F3.
 
-  type decompile mappings -> links -> ho.subst -> 
+  type decompile map -> links -> ho.subst -> 
     fo.subst -> fo.subst -> o.
   decompile Map1 L HO FO FO2 :- 
     commit-links L L1_ HO HO1, !,
