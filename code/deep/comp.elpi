@@ -335,8 +335,7 @@ namespace comp {
 
   type solve-link-abs link -> links -> subst -> subst -> o.
   solve-link-abs (ho.abs X) R H H1 :- 
-    pi x\ ho.copy x x => (pi S\ ho.deref S x x) => 
-      solve-link-abs (X x) (R' x) H H1,
+    (pi x\ solve-link-abs (X x) (R' x) H H1),
     close-links R' R.
 
   solve-link-abs (@val-link-eta A B) NewLinks S S1 :- !,

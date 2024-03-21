@@ -109,7 +109,7 @@ namespace ho {
   type move assignment -> list tm -> tm -> o.
   move (abs Bo)        [H|L] R :- move (Bo H) L R.
   move (val A)         []    A :- !.
-  move (val (uva N A)) L     (uva N X) :- append A L X.
+  % move (val (uva N A)) L     (uva N X) :- append A L X.
   move (abs A)         []    _ :- !, fatal "Invalid move call: too few args for abs" A. % HIDE
   move A               L    _ :- !, fatal "Invalid move call:" A L. % HIDE
 
@@ -117,9 +117,26 @@ namespace ho {
   beta A [] A.
   beta (lam Bo) [H | L] R :- beta (Bo H) L R.
   beta (app A) L (app X) :- append A L X.
-  beta (uva N A) L (uva N A') :- append A L A'.
+  beta (uva N A) L (uva N A') :- halt "XXX", append A L A'. % HIDE
   beta (con H) L (app [con H | L]).
+  beta X L (app[X|L]) :- name X.
 
+  /* occur check for N before crossing a functor */
+  type not_occ  address -> subst -> tm -> o.
+  not_occ N H T :- (var N; var H; var T), halt "Invalid call to not_occ". % HIDE
+  not_occ N S (uva M Args) :- set? M S F, 
+    move F Args T, not_occ N S T.
+  not_occ N S (uva M Args) :- unset? M S, not (M = N),
+    forall1 (not_occ_aux N S) Args.
+  not_occ _ _ (con _).
+  not_occ N S (app L) :- not_occ_aux N S (app L).
+  /* Note: lam is a functor for the meta language! */
+  not_occ N S (lam L) :- pi x\ not_occ_aux N S (L x).
+  not_occ _ _ X :- name X.
+  /* finding N is ok */
+  not_occ N _ (uva N _).
+
+  /* occur check for X after crossing a functor */
   type not_occ_aux address -> subst -> tm -> o.
   not_occ_aux N H T :- (var N; var H; var T), halt "Invalid call to not_occ_aux". % HIDE
   not_occ_aux N S (uva M _) :- unset? M S, not (N = M).
@@ -129,30 +146,20 @@ namespace ho {
   not_occ_aux N S (lam F) :- pi x\ not_occ_aux N S (F x).
   not_occ_aux _ _ (con _).
   not_occ_aux _ _ X :- name X.
+  /* finding N is ko, hence no rule */
   
-  type not_occ  address -> subst -> tm -> o.
-  not_occ N H T :- (var N; var H; var T), halt "Invalid call to not_occ". % HIDE
-  not_occ N _ (uva N _).
-  not_occ N S (uva M Args) :- set? M S F, 
-    move F Args T, not_occ N S T.
-  not_occ N S (uva M Args) :- unset? M S, 
-    std.forall Args (not_occ_aux N S).
-  not_occ _ _ (con _).
-  not_occ N S (app L) :- not_occ_aux N S (app L).
-  not_occ N S (lam L) :- pi x\ not_occ N S (L x).
-  not_occ _ _ X :- name X.
-
+  /* copy T T' vails if T contains a free variable, i.e. it
+     performs scope checking for bind */
   type copy tm -> tm -> o.
+  copy (con C)   (con C).
   copy (app L)   (app L') :- forall2 copy L L'.
   copy (lam T)   (lam T') :- pi x\ copy x x => copy (T x) (T' x).
-  copy (uva N L) (uva N L') :- forall2 copy L L'.
-  copy (con C)   (con C).
-  copy N N :- not(scope-check), name N.
+  copy (uva A L) (uva A L') :- forall2 copy L L'.
 
   type scope-check o.
 
   type bind tm -> list tm -> assignment -> o.
-  bind T [] (val T') :- scope-check => copy T T'.
+  bind T [] (val T') :- copy T T'.
   bind T [X | TL] (abs T') :- pi x\ copy X x => bind T TL (T' x).
 
   type deref subst -> tm -> tm -> o.
