@@ -11,7 +11,7 @@ namespace comp {
   typeabbrev tm ho.tm.
   typeabbrev subst ho.subst.
 
-
+%BEGIN
   kind arity type.
   type arity nat -> arity.
 
@@ -38,24 +38,6 @@ namespace comp {
 
   typeabbrev links (list link).
   
-  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% AUXILIARY %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-  type mk-app tm -> tm -> tm -> o.
-  mk-app (uva N L) T (uva N R) :- append L [T] R.
-  mk-app (con C) T (app [con C, T]).
-  mk-app (app L) T (app R) :- append L [T] R.
-
-  type eta-expand tm -> nat -> tm -> o.
-  eta-expand T z T.
-  eta-expand T (s N) (lam R2) :- 
-    pi x\ mk-app T x (R1 x), eta-expand (R1 x) N (R2 x). 
-
-  type alloc-mapping mappings -> mappings -> fvariable -> hvariable -> subst -> subst -> o.
-  alloc-mapping Map Map N M H H :- std.mem Map (mapping N M), !.
-  alloc-mapping Map [mapping (fv N) (hv M Arity)|Map] (fv N) (hv M Arity) H H1 :- alloc H M H1.
-
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% COMPILER %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -160,26 +142,26 @@ namespace comp {
   comp (fapp A) (app A1)      M1 M2 L1 L2 S1 S2 :- 
     fold6 comp A A1 M1 M2 L1 L2 S1 S2.
 
-type alloc subst -> address -> subst -> o.
-alloc S N S1 :- mem.new S N S1.
+  type alloc subst -> address -> subst -> o.
+  alloc S N S1 :- mem.new S N S1.
 
-type compile-terms-diagnostic 
-  triple diagnostic fm fm -> 
-  triple diagnostic tm tm -> 
-  mappings -> mappings -> 
-  links -> links -> 
-  subst -> subst -> o.
-compile-terms-diagnostic (triple D FO1 FO2) (triple D HO1 HO2) M1 M3 L1 L3 S1 S3 :-
-  comp FO1 HO1 M1 M2 L1 L2 S1 S2,
-  comp FO2 HO2 M2 M3 L2 L3 S2 S3.
+  type compile-terms-diagnostic 
+    triple diagnostic fm fm -> 
+    triple diagnostic tm tm -> 
+    mappings -> mappings -> 
+    links -> links -> 
+    subst -> subst -> o.
+  compile-terms-diagnostic (triple D FO1 FO2) (triple D HO1 HO2) M1 M3 L1 L3 S1 S3 :-
+    comp FO1 HO1 M1 M2 L1 L2 S1 S2,
+    comp FO2 HO2 M2 M3 L2 L3 S2 S3.
 
-type compile-terms 
-  list (triple diagnostic fm fm) -> 
-  list (triple diagnostic tm tm) -> 
-  mappings -> links -> subst -> o.
-compile-terms T H M L S :- 
-  fold6 compile-terms-diagnostic T H [] M_ [] L_ [] S_,
-  deduplicate-mappings M_ M S_ S L_ L.
+  type compile-terms 
+    list (triple diagnostic fm fm) -> 
+    list (triple diagnostic tm tm) -> 
+    mappings -> links -> subst -> o.
+  compile-terms T H M L S :- 
+    fold6 compile-terms-diagnostic T H [] M_ [] L_ [] S_,
+    deduplicate-mappings M_ M S_ S L_ L.
 
   % Ad1 is the variable with smaller arity, Ad2 is eta expanded N times
   type make-eta-link-aux nat -> address -> address -> 
@@ -231,6 +213,26 @@ compile-terms T H M L S :-
     deduplicate-mappings As Bs H1 H2 L1 L2, !.
   deduplicate-mappings [A|_] _ H _ _ _ :- 
     halt "deduplicating mapping error" {ppmapping A} {ho.ppsubst H}.
+%END
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% AUXILIARY %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  type mk-app tm -> tm -> tm -> o.
+  mk-app (uva N L) T (uva N R) :- append L [T] R.
+  mk-app (con C) T (app [con C, T]).
+  mk-app (app L) T (app R) :- append L [T] R.
+
+  type eta-expand tm -> nat -> tm -> o.
+  eta-expand T z T.
+  eta-expand T (s N) (lam R2) :- 
+    pi x\ mk-app T x (R1 x), eta-expand (R1 x) N (R2 x). 
+
+  type alloc-mapping mappings -> mappings -> fvariable -> hvariable -> subst -> subst -> o.
+  alloc-mapping Map Map N M H H :- std.mem Map (mapping N M), !.
+  alloc-mapping Map [mapping (fv N) (hv M Arity)|Map] (fv N) (hv M Arity) H H1 :- alloc H M H1.
+
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PROGRESS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -308,7 +310,7 @@ compile-terms T H M L S :-
   progress-beta-link (uva _ _ as T) (app[uva Ad1 Scope1 | L1] as T1) S1 S3 NewLinks :-
     append Scope1 L1 Scope1L,
     pattern-fragment-prefix Scope1L Scope2 L2,
-    print Scope2 L2,
+    %print Scope2 L2,
     not (Scope1 = Scope2), !,
     alloc S1 Ad2 S2,
     len Scope1 Scope1Len,

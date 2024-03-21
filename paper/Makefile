@@ -4,6 +4,8 @@ BIBER = biber --output-directory=$(OUTPUTDIR)
 
 main: clean
 	mkdir -p $(OUTPUTDIR) && \
+	make -C code/ && \
+	echo "---------------- 0 --------------------" && \
 	${LATEX} main.tex -interaction=nonstopmode && \
 	echo "---------------- 1 --------------------" && \
 	# read a && \

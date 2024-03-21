@@ -22,12 +22,20 @@
             "args": [
                 "%OUTDIR%/%DOCFILE%"
             ]
+        },
+        {
+            "name": "gentex",
+            "command": "make",
+            "args": [
+                "-C", "%DIR%/code/"
+            ]
         }
     ],
     "latex-workshop.latex.recipes": [
         {
             "name": "pdflatex -> biber -> pdflatex*2",
             "tools": [
+                "gentex",
                 "pdflatex",
                 "biber",
                 "pdflatex",

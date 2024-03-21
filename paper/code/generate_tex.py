@@ -1,4 +1,4 @@
-import os, sys
+import os, sys, re
 
 def get_file_cnt(lines):
     indexBegin = lines.index("%BEGIN\n")
@@ -8,14 +8,16 @@ def get_file_cnt(lines):
 def print_tex(lines, fout):
     with open(fout, "w") as f:
         f.write("\\begin{elpicode}\n")
-        f.write("".join(lines))
+        for l in lines:
+            l = re.sub("^ *% .*\n","",l)
+            f.write(l)
         f.write("\\end{elpicode}\n")
 
 def mk_fname(fname):
-    return fname[:-4] + "tex"
+    return fname.split("/")[-1][:-4] + "tex"
 
 def read_file(fname):
-    with open("../../code/deep/" + fname) as f:
+    with open(fname) as f:
         lines = f.readlines()
         print_tex(get_file_cnt(lines), mk_fname(fname))
         
