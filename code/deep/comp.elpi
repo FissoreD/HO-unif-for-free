@@ -104,7 +104,7 @@ namespace comp {
   get-scope-aux X [] :- name X, (locally-bound X).
 
   %% TODO: scrivere undup
-  get-scope T Scope :-'
+  get-scope T Scope :-
     get-scope-aux T ScopeDuplicata,
     names N, filter N (mem ScopeDuplicata) Scope.
 
