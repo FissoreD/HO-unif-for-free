@@ -22,9 +22,6 @@ namespace fo {
   fder _ (fuva N) (fuva N).
   %fder _ N N :- name N.
 
-  type fderef subst -> fm -> fm -> o.
-  fderef S T T2 :- fder S T T1, napp T1 T2.
-
   type napp fm -> fm -> o.
   napp (fcon C) (fcon C).
   napp (fuva A) (fuva A).
@@ -32,6 +29,9 @@ namespace fo {
   napp (fapp [fapp L1 |L2]) T :- !,
     append L1 L2 L3, napp (fapp L3) T.
   napp (fapp L) (fapp L1) :- forall2 napp L L1.
+
+  type fderef subst -> fm -> fm -> o.
+  fderef S T T2 :- fder S T T1, napp T1 T2.
 
   type (==o) fm -> fm -> o.
   X ==o Y :- (var X ; var Y), fatal "flex equal". % HIDE
