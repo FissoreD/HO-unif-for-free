@@ -39,6 +39,9 @@ type list-init nat -> nat -> (nat -> A -> o) -> list A -> o.
 list-init Len Len _ [].
 list-init Len Pos F [A | TL] :- F Pos A, list-init Len (s Pos) F TL.
 
+type iota nat -> list nat -> o.
+iota N L :- list-init N z (=) L.
+
 type index list A -> A -> nat -> o.
 index [A|_] A z :- !.
 index [_|TL] A (s P) :- index TL A P.
@@ -125,6 +128,14 @@ type rev list A -> list A -> o.
 rev L RL  :- rev.aux L []  RL.
 rev.aux [X|XS] ACC R :- rev.aux XS [X|ACC] R.
 rev.aux [] L L.
+
+type filter list A -> (A -> prop) -> list A -> o.
+filter []    _ [].
+filter [X|L] P R :- if (P X) (R = X :: L1) (R = L1), filter L P L1.
+
+type filter2 list A -> list B -> (A -> B -> prop) -> list A -> o.
+filter2 [] []   _ [].
+filter2 [X|L] [Y|YS] P R :- if (P X Y) (R = X :: L1) (R = L1), filter2 L YS P L1.
 
 % [pattern-fragment-prefix L [] ]
 type pattern-fragment-prefix-aux list A -> list A -> list A -> list A -> o.

@@ -95,7 +95,7 @@ namespace comp {
   type get-scope tm -> list tm -> o.
   get-scope T Scope :- names N,
     get-scope-aux T ScopeDuplicata,
-    std.filter N (mem ScopeDuplicata) Scope.
+    filter N (mem ScopeDuplicata) Scope.
 
   type close-links (tm -> links) -> links -> o.
   close-links (_\[]) [].

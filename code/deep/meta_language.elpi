@@ -49,15 +49,18 @@ namespace ho {
   % Note: eta & beta for unification is not allowed in ML over terms of the OL
 
   % Note: We suppose the scopes to always be in PF
-  type prune! address -> list ho.tm -> address -> 
-              list ho.tm -> subst -> subst -> o.
+  type prune! address -> list tm -> address -> 
+              list tm -> subst -> subst -> o.
+  /* no pruning needed */               
   prune! N A  N A  S S :- !.
   prune! M A  N A  S1 S2 :- !, bind (uva M A) A Ass, 
     assign N S1 Ass S2.
+  /* prune different arguments */
   prune! N A1 N A2 S1 S3 :- !,
     std.assert!(len A1 {len A2}) "Not typechecking", !, % HIDE
     new S1 W S2, prune-same-variable W A1 A2 [] Ass,
     assign N S2 Ass S3.
+  /* prune to the intersection of scopes */
   prune! N A1 M A2 S1 S4 :- !,
     new S1 W S2, prune-diff-variables W A1 A2 Ass1 Ass2, 
     assign N S2 Ass1 S3,
@@ -72,28 +75,20 @@ namespace ho {
   prune-same-variable N [_|XS] [_|YS] ACC (abs F) :- 
     pi x\ prune-same-variable N XS YS ACC (F x).
 
-  type prune-build-ass1 address -> list tm -> 
-                        list bool -> assignment -> o.
-  prune-build-ass1 N Acc [] (val (uva N Args)) :- 
-    rev Acc Args.
-  prune-build-ass1 N Acc [tt|L] (abs T) :- 
-    pi x\ prune-build-ass1 N [x|Acc] L (T x).
-  prune-build-ass1 N Acc [ff|L] (abs T) :- 
-    pi x\ prune-build-ass1 N Acc L (T x).
+  type permute list nat -> list tm -> list tm -> o.
+  permute [] _ [].
+  permute [P|PS] Args [T|TS] :-
+    nth P Args T,
+    permute PS Args TS.
 
-  type build-order list nat -> list tm -> list tm -> o.
-  build-order L T R :-
-    len L Len, list-init Len z 
-      (p\r\ sigma Index Elt\ index L p Index, nth Index T r) R.
-
-  type prune-build-ass2 address -> list tm -> list bool -> 
+  type build-perm-assign address -> list tm -> list bool -> 
                       list nat -> assignment -> o.
-  prune-build-ass2 N Acc [] Pos (val (uva N Args)) :- 
-    rev Acc Acc', build-order Pos Acc' Args.
-  prune-build-ass2 N Acc [tt|L] Pos (abs T) :- 
-    pi x\ prune-build-ass2 N [x|Acc] L Pos (T x).
-  prune-build-ass2 N Acc [ff|L] Pos (abs T) :- 
-    pi x\ prune-build-ass2 N Acc L Pos (T x).
+  build-perm-assign N ArgsR [] Perm (val (uva N PermutedArgs)) :- 
+    rev ArgsR Args, permute Perm Args PermutedArgs.
+  build-perm-assign N Acc [tt|L] Perm (abs T) :- 
+    pi x\ build-perm-assign N [x|Acc] L Perm (T x).
+  build-perm-assign N Acc [ff|L] Perm (abs T) :- 
+    pi x\ build-perm-assign N Acc L Perm (T x).
 
   type keep list A -> A -> bool -> o.
   keep L A tt :- mem L A, !.
@@ -102,13 +97,14 @@ namespace ho {
   type prune-diff-variables address -> list tm -> list tm -> 
                             assignment -> assignment -> o.
   prune-diff-variables N Args1 Args2 Ass1 Ass2 :-
-    std.map Args1 (keep Args2) Bits1, 
-    prune-build-ass1 N [] Bits1 Ass1,
-    std.map Args2 (keep Args1) Bits2, 
-    std.filter Args1 (mem Args2) ToKeep1,
-    std.filter Args2 (mem Args1) ToKeep2,
-    std.map ToKeep2 (index ToKeep1) Pos,
-    prune-build-ass2 N [] Bits2 Pos Ass2.
+    forall2 (keep Args2) Args1 Bits1, 
+    forall2 (keep Args1) Args2 Bits2,
+    filter Args1 (mem Args2) ToKeep1,
+    filter Args2 (mem Args1) ToKeep2,
+    forall2 (index ToKeep1) ToKeep1 IdPerm,
+    forall2 (index ToKeep1) ToKeep2 Perm21,
+    build-perm-assign N [] Bits1 IdPerm Ass1,
+    build-perm-assign N [] Bits2 Perm21 Ass2.
 
   type move assignment -> list tm -> tm -> o.
   move (abs Bo)        [H|L] R :- move (Bo H) L R.
