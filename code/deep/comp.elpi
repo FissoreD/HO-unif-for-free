@@ -131,26 +131,29 @@ namespace comp {
   comp (fo.fcon X) (ho.con X)        Map1 Map1 L1 L1 S1 S1.
   comp (fo.flam F) (ho.uva E0 Scope) Map1 Map2 L1 L3 S1 S3 :-
     (pi x\ maybe-eta x (F x) [x]), !,
-    mem.new S1 E0 S2,
-    comp-lam F F1 Map1 Map2 L1 L2 S2 S3,
-    (pi x\ locale x => get-scope (F1 x) Scope), 
-    NewLink = ho.val(link-eta (ho.uva E0 Scope) (ho.lam F1)), 
-    L3 = [NewLink| L2].
+      mem.new S1 E0 S2,
+      comp-lam F F1 Map1 Map2 L1 L2 S2 S3,
+      (pi x\ locale x => get-scope (F1 x) Scope), 
+      NewLink = ho.val(link-eta (ho.uva E0 Scope) (ho.lam F1)), 
+      L3 = [NewLink| L2].
   comp (fo.flam F) (ho.lam F1)       Map1 Map2 L1 L2 S1 S2 :- 
     comp-lam F F1 Map1 Map2 L1 L2 S1 S2.
   comp (fo.fuva N) (ho.uva M []) Map1 Map2 L L S S1 :- 
     alloc Map1 Map2 (fv N) (hv M (arity z)) S S1.
+  comp (fo.fapp [fo.fuva N|Ag]) (ho.uva M Scope) Map1 Map2 L1 L1 S1 S2 :-
+    pattern-fragment Ag, !,
+      fold6 comp Ag Scope Map1 Map1 L1 L1 S1 S1,
+      len Ag Arity, 
+      alloc Map1 Map2 (fv N) (hv M (arity Arity)) S1 S2.
   comp (fo.fapp [fo.fuva N|Ag]) (ho.uva M' Scope) Map1 Map3 L1 L3 S1 S4 :- !,
-    split-pf Ag PF NPF,
-    forall2 (x\y\ comp x y _ _ _ _ _ _) PF PF1,
-    fold6 comp NPF NPF1 Map1 Map2 L1 L2 S1 S2,
-    len PF Arity, 
-    alloc Map2 Map3 (fv N) (hv M (arity Arity)) S2 S3,
-    if (NPF = []) 
-      (Scope = PF1, M' = M, S3 = S4, L2 = L3)
-      (get-scope (ho.app {std.append PF1 NPF1}) Scope, 
-        mem.new S3 M' S4,
-        L3 = [@val-link-beta (ho.uva M' Scope) (ho.app[ho.uva M PF1 | NPF1]) | L2]).
+    pattern-fragment-prefix Ag PF NPF,
+      fold6 comp PF PF1 Map1 Map1 L1 L1 S1 S1,
+      fold6 comp NPF NPF1 Map1 Map2 L1 L2 S1 S2,
+      len PF Arity, 
+      alloc Map2 Map3 (fv N) (hv M (arity Arity)) S2 S3,
+      get-scope (ho.app {std.append PF1 NPF1}) Scope, 
+      mem.new S3 M' S4,
+      L3 = [@val-link-beta (ho.uva M' Scope) (ho.app[ho.uva M PF1 | NPF1]) | L2].
   comp (fo.fapp A) (ho.app A1) Map1 Map2 L1 L2 S1 S2 :- 
     fold6 comp A A1 Map1 Map2 L1 L2 S1 S2.
 
@@ -280,7 +283,7 @@ namespace comp {
   % New links will be: [link-beta T (app[uva N' [x] | L]), link-eta N (λx.ho.uva N' [x])]
   progress-beta-link (ho.uva _ _ as T) (ho.app[ho.uva Ad1 Scope1 | L1] as T1) S1 S3 NewLinks :-
     std.append Scope1 L1 Scope1L,
-    split-pf Scope1L Scope2 L2,
+    pattern-fragment-prefix Scope1L Scope2 L2,
     print Scope2 L2,
     not (Scope1 = Scope2), !,
     mem.new S1 Ad2 S2,

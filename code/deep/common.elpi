@@ -121,15 +121,15 @@ type len list A -> nat -> o.
 len [] z.
 len [_|L] (s X) :- len L X.
 
-% [split-pf L [] ]
-type split-pf-aux list A -> list A -> list A -> list A -> o.
-split-pf-aux [] _ [] [].
-split-pf-aux [X | L] ACC [X | PF] NPF :- name X, not-in ACC X, !, 
-  split-pf-aux L [X | ACC] PF NPF.
-split-pf-aux L _ [] L.
+% [pattern-fragment-prefix L [] ]
+type pattern-fragment-prefix-aux list A -> list A -> list A -> list A -> o.
+pattern-fragment-prefix-aux [] _ [] [].
+pattern-fragment-prefix-aux [X | L] ACC [X | PF] NPF :- name X, not-in ACC X, !, 
+  pattern-fragment-prefix-aux L [X | ACC] PF NPF.
+pattern-fragment-prefix-aux L _ [] L.
 
-type split-pf list A -> list A -> list A -> o.
-split-pf L PF NPF :- split-pf-aux L [] PF NPF.
+type pattern-fragment-prefix list A -> list A -> list A -> o.
+pattern-fragment-prefix L PF NPF :- pattern-fragment-prefix-aux L [] PF NPF.
 
 pred pattern-fragment i:list A.
 pattern-fragment L :- distinct_names L.
