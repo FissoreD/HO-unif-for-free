@@ -65,7 +65,7 @@ type validate-solution
   o.
 validate-solution [] _.
 validate-solution [triple ok L R|Goals] FS :- 
-  std.do![fo.deref FS L L', fo.deref FS R R',
+  std.do![fo.fderef FS L L', fo.fderef FS R R',
   %  (L' ==o R'),
   if (L' ==o R') true (halt "Invalid solution:" {fo.pp L'} "=/=" {fo.pp R'}),
   validate-solution Goals FS].

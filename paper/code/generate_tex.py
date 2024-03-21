@@ -9,9 +9,10 @@ def print_tex(lines, fout):
     with open(fout, "w") as f:
         f.write("\\begin{elpicode}\n")
         for l in lines:
-            l = re.sub("^ *% .*\n","",l)
+            l = re.sub("^ *% *.*\n","",l)
             l = re.sub("==l",r"~$\\Ue$~",l)
-            l = re.sub(".*%HIDE\n","",l)
+            l = re.sub("==o",r"~$\\Eo$~",l)
+            l = re.sub(".*% *HIDE *\n","",l)
             l = re.sub("type \(~\$([^ ]+)\$~\) (.*)\.$",r"~\\PYG{k+kd}{type} \\PYG{n+nf}{(\g<1>)} \\PYG{k+kt}{\g<2>}~.",l)
             l = re.sub("type (\([^ ]+\)) (.*)\.$",r"~\\PYG{k+kd}{type} \\PYG{n+nf}{\g<1>} \\PYG{k+kt}{\g<2>}~.",l)
             f.write(l)

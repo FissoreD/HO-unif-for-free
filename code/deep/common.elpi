@@ -121,6 +121,11 @@ type len list A -> nat -> o.
 len [] z.
 len [_|L] (s X) :- len L X.
 
+type rev list A -> list A -> o.
+rev L RL  :- rev.aux L []  RL.
+rev.aux [X|XS] ACC R :- rev.aux XS [X|ACC] R.
+rev.aux [] L L.
+
 % [pattern-fragment-prefix L [] ]
 type pattern-fragment-prefix-aux list A -> list A -> list A -> list A -> o.
 pattern-fragment-prefix-aux [] _ [] [].

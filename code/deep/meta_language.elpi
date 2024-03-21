@@ -65,7 +65,7 @@ namespace ho {
   type prune-same-variable address -> list tm -> list tm -> 
                             list tm -> assignment -> o.
   prune-same-variable N [] [] ACC (val (uva N Args)) :- 
-    std.rev ACC Args.
+    rev ACC Args.
   prune-same-variable N [X|XS] [X|YS] ACC (abs F) :- 
     pi x\ prune-same-variable N XS YS [x|ACC] (F x).
   prune-same-variable N [_|XS] [_|YS] ACC (abs F) :- 
@@ -74,7 +74,7 @@ namespace ho {
   type prune-build-ass1 address -> list tm -> 
                         list bool -> assignment -> o.
   prune-build-ass1 N Acc [] (val (uva N Args)) :- 
-    std.rev Acc Args.
+    rev Acc Args.
   prune-build-ass1 N Acc [tt|L] (abs T) :- 
     pi x\ prune-build-ass1 N [x|Acc] L (T x).
   prune-build-ass1 N Acc [ff|L] (abs T) :- 
@@ -88,7 +88,7 @@ namespace ho {
   type prune-build-ass2 address -> list tm -> list bool -> 
                       list nat -> assignment -> o.
   prune-build-ass2 N Acc [] Pos (val (uva N Args)) :- 
-    std.rev Acc Acc', build-order Pos Acc' Args.
+    rev Acc Acc', build-order Pos Acc' Args.
   prune-build-ass2 N Acc [tt|L] Pos (abs T) :- 
     pi x\ prune-build-ass2 N [x|Acc] L Pos (T x).
   prune-build-ass2 N Acc [ff|L] Pos (abs T) :- 

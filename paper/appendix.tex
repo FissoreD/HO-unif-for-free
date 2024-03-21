@@ -6,6 +6,10 @@ Note that \elpiIn{(a infix b) c d} de-sugars to \elpiIn{(infix) a b c d}.
 
 \input{code/mem}
 
+\section{The object language}
+
+\input{code/object\_language}
+
 \section{The meta language}
 
 \input{code/meta\_language}
@@ -24,7 +28,7 @@ Note that \elpiIn{(a infix b) c d} de-sugars to \elpiIn{(infix) a b c d}.
   contract-rigid L (ho.lam F) T :- 
     pi x\ contract-rigid [x|L] (F x) T. % also checks H Prefix does not see x
   contract-rigid L (ho.app [H|Args]) T :- 
-    std.rev L LRev, append Prefix LRev Args,
+    rev L LRev, append Prefix LRev Args,
     if (Prefix = []) (T = H) (T = ho.app [H|Prefix]).
 
   type progress-eta-link ho.tm -> ho.tm -> ho.subst -> ho.subst -> links -> o.

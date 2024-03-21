@@ -63,7 +63,7 @@ namespace comp {
     % Head is rigid -> to be an eta we consider also L
     split-last-n {len L} Args First Last,
     forall1 (x\ forall1 (y\ not (use-binder x y)) First) L,
-    forall2 (maybe-eta-of []) {std.rev L} Last.
+    forall2 (maybe-eta-of []) {rev L} Last.
 
   % [maybe-eta-of N T L] answer T is a possible eta expansion of N (L is [] when called, and used for fapp)
   type maybe-eta-of list fm -> fm -> fm -> o.
@@ -76,7 +76,7 @@ namespace comp {
   maybe-eta-of L N (fapp [N|Args]) :-
     % Head is rigid -> to be an eta we consider also L
     last-n {len L} Args R,
-    forall2 (maybe-eta-of []) R {std.rev L}.
+    forall2 (maybe-eta-of []) R {rev L}.
 
   type locally-bound tm -> o.
   type get-scope-aux tm -> list tm -> o.
@@ -142,7 +142,7 @@ namespace comp {
   comp (fapp A) (app A1)      M1 M2 L1 L2 S1 S2 :- 
     fold6 comp A A1 M1 M2 L1 L2 S1 S2.
 
-  type alloc subst -> address -> subst -> o.
+  type alloc mem A -> address -> mem A -> o.
   alloc S N S1 :- mem.new S N S1.
 
   type compile-terms-diagnostic 
@@ -167,10 +167,10 @@ namespace comp {
   type make-eta-link-aux nat -> address -> address -> 
     list tm -> links -> subst -> subst -> o.
   make-eta-link-aux z Ad1 Ad2 Scope1 L H1 H1  :-
-    std.rev Scope1 Scope, eta-expand (uva Ad2 Scope) @one T1,
+    rev Scope1 Scope, eta-expand (uva Ad2 Scope) @one T1,
     L = [@val-link-eta (uva Ad1 Scope) T1].
   make-eta-link-aux (s N) Ad1 Ad2 Scope1 L H1 H3 :-
-    std.rev Scope1 Scope, alloc H1 Ad H2, 
+    rev Scope1 Scope, alloc H1 Ad H2, 
     eta-expand (uva Ad Scope) @one T2,
     (pi x\ make-eta-link-aux N Ad Ad2 [x|Scope1] (L1 x) H2 H3),
     close-links L1 L2,
@@ -246,7 +246,7 @@ namespace comp {
   contract-rigid L (lam F) T :- 
     pi x\ contract-rigid [x|L] (F x) T. % also checks H Prefix does not see x
   contract-rigid L (app [H|Args]) T :- 
-    std.rev L LRev, append Prefix LRev Args,
+    rev L LRev, append Prefix LRev Args,
     if (Prefix = []) (T = H) (T = app [H|Prefix]).
 
   % invariante: a sx non c'è mai una eta espansione, a destra c'è una lam, altrimenti il link eta è buttato via
