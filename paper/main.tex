@@ -978,21 +978,8 @@ available in \Ho{} when expressed in a first order way in \Fo{}. The compiler
 also generates a list of links that are used to bring back the substitution from
 \Ho{} to \Fo{} and allocates in the memory a cell for each variable.
 
-\begin{elpicode}
-kind link type.
-type link nat -> nat -> nat -> subst. % link Fo Ho Arity
-typeabbrev links list link.
-type comp fm -> tm -> links -> links -> subst -> subst -> o.
-comp (fcon X) (con X) L L S S.
-comp (flam F) (lam G) K L R S :- pi x y\
-  (pi A S\ comp x y L L S S) => comp (F x) (G y) K L R S.
-comp (fuva M) (uva N []) K [link M N z|K] R S :- new R N S.
-comp (fapp[fuva M|A]) (uva N B) K L R S :- distinct A, !,
-  fold4 comp A B K K R R,
-  new R N S, len A Arity,
-  L = [link N M Arity | K].
-comp (fapp A) (app B) K L R S :- fold4 comp A B K L R S.
-\end{elpicode}
+\input{code/comp_base_types}
+\input{code/comp_base}
 
 \noindent
 Note that \elpiIn{link} carries the arity (number of expected arguments) of
@@ -1203,6 +1190,9 @@ perdità di generalità (e facciamo problemi più corti, e modellizziamo anche l
 sequenza)
 
 \subsection{Problems with $\eta$}
+
+\input{code/comp_eta}
+
 \otext{The following goal necessita v1 (lo scope è usato):\\ \elpiIn{X = lam x\ lam y\ Y y x, X = lam x\ f}}
 \otext{The snd unif pb, we have to unif \elpiIn{lam x\ lam y\ Y x y} with \elpiIn{lam x\ f}}
 \otext{It is not doable, with the same elpi var}
@@ -1223,6 +1213,8 @@ A destra della eta abbiamo sempre un termine che comincia per $\lambda x. bla$
 \end{textcode}
   
 \subsection{Problems with $\beta$}
+
+\input{code/comp_beta}
 
 $\beta$-reduction problems (\maybebeta) appears any time we deal with a subterm $t
 = X t_1 \dots t_n$, where $X$ is flexible and the list $[t_1 \dots t_n]$ in not

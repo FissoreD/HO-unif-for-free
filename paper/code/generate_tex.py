@@ -1,9 +1,13 @@
 import os, sys, re
 
 def get_file_cnt(lines):
-    indexBegin = lines.index("%BEGIN\n")
-    indexEnd = lines.index("%END\n")
-    return lines[indexBegin+1:indexEnd]
+    try:
+        indexBegin = lines.index("%BEGIN\n")
+        indexEnd = lines.index("%END\n")
+        return lines[indexBegin+1:indexEnd]
+    finally:
+        return []
+
 
 def print_tex(lines, fout):
     with open(fout, "w") as f:
@@ -22,10 +26,38 @@ def print_tex(lines, fout):
 def mk_fname(fname):
     return fname.split("/")[-1][:-4] + "tex"
 
+def get_snippets(lines):
+    snips = {}
+    ingrp = False
+    name = ""
+    curgrp = []
+    for l in lines:
+        m = re.match(r"^%ENDSNIP",l)
+        if not (m is None):
+            snips[name] = curgrp
+            ingrp = False
+            curgrp = []
+        if ingrp is True:
+            curgrp = curgrp + [l]
+        m = re.match(r"^%SNIP: *(.*) *$",l)
+        if not (m is None):
+            ingrp = True
+            name = m.group(1)
+            if name in snips:
+                curgrp = snips[name]
+            else:
+                curgrp = []
+    return snips
+
 def read_file(fname):
     with open(fname) as f:
         lines = f.readlines()
         print_tex(get_file_cnt(lines), mk_fname(fname))
+        snippets = get_snippets(lines)
+        for fname in snippets:
+            lines = snippets[fname]
+            print_tex(lines, fname + ".tex")
+
         
 if __name__ == "__main__":
     fname = sys.argv[1]

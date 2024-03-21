@@ -12,6 +12,7 @@ namespace comp {
   typeabbrev subst ho.subst.
 
 %BEGIN
+%SNIP: comp_base_types
   kind arity type.
   type arity nat -> arity.
 
@@ -27,6 +28,7 @@ namespace comp {
 
   typeabbrev scope (list tm).
 
+%ENDSNIP
   kind linkctx type.
   type link-eta tm -> tm -> linkctx.
   type link-beta tm -> tm -> linkctx.
@@ -42,6 +44,7 @@ namespace comp {
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% COMPILER %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%SNIP: maybe_eta
   % a term use a binder B if there exists a sub-term which `surely` reduce to B
   % for example: `f (g x) a` use the binder x
   %       while: `f (A x) a` may not use x, since A can reduce to a constant
@@ -84,6 +87,7 @@ namespace comp {
     % Head is rigid -> to be an eta we consider also L
     last-n {len L} Args R,
     forall2 (maybe-eta-of []) R {rev L}.
+%ENDSNIP
 
   type locally-bound tm -> o.
   type get-scope-aux tm -> list tm -> o.
@@ -118,15 +122,20 @@ namespace comp {
       comp (F x) (F1 y) M1 M2 L (L1 y) S S1, 
         close-links L1 L2.
 
+%SNIP: comp_base
   type comp fm -> tm -> mappings -> mappings -> links -> links ->
     subst -> subst -> o.
   comp (fcon C) (con C)       M1 M1 L1 L1 S1 S1.
+%ENDSNIP
+%SNIP: comp_eta
   comp (flam F) (uva A Scope) M1 M2 L1 L3 S1 S3 :-
     (pi x\ maybe-eta x (F x) [x]), !,
       alloc S1 A S2,
       comp-lam F F1 M1 M2 L1 L2 S2 S3,
       get-scope (lam F1) Scope, 
       L3 = [@val-link-eta (uva A Scope) (lam F1)| L2].
+%ENDSNIP
+%SNIP: comp_base
   comp (flam F) (lam F1)      M1 M2 L1 L2 S1 S2 :- 
     comp-lam F F1 M1 M2 L1 L2 S1 S2.
   comp (fuva A) (uva B [])    M1 M2 L L S S1 :- 
@@ -136,6 +145,8 @@ namespace comp {
       fold6 comp Scope Scope1 M1 M1 L1 L1 S1 S1,
       len Scope Arity, 
       alloc-mapping M1 M2 (fv A) (hv B (arity Arity)) S1 S2.
+%ENDSNIP
+%SNIP: comp_beta
   comp (fapp [fuva A|Args]) (uva C Scope) M1 M3 L1 L3 S1 S4 :- !,
     pattern-fragment-prefix Args Pf Extra,
       fold6 comp Pf    Scope1 M1 M1 L1 L1 S1 S1,
@@ -146,8 +157,11 @@ namespace comp {
       get-scope Beta Scope, 
       alloc S3 C S4,
       L3 = [@val-link-beta (uva C Scope) Beta | L2].
+%ENDSNIP
+%SNIP: comp_base
   comp (fapp A) (app A1)      M1 M2 L1 L2 S1 S2 :- 
     fold6 comp A A1 M1 M2 L1 L2 S1 S2.
+%ENDSNIP
 
   type alloc mem A -> address -> mem A -> o.
   alloc S N S1 :- mem.new S N S1.
