@@ -52,9 +52,9 @@ namespace comp {
   eta-expand T (s N) (lam R2) :- 
     pi x\ mk-app T x (R1 x), eta-expand (R1 x) N (R2 x). 
 
-  type alloc mappings -> mappings -> fvariable -> hvariable -> subst -> subst -> o.
-  alloc Map Map N M H H :- std.mem Map (mapping N M), !.
-  alloc Map [mapping (fv N) (hv M Arity)|Map] (fv N) (hv M Arity) H H1 :- mem.new H M H1.
+  type alloc-mapping mappings -> mappings -> fvariable -> hvariable -> subst -> subst -> o.
+  alloc-mapping Map Map N M H H :- std.mem Map (mapping N M), !.
+  alloc-mapping Map [mapping (fv N) (hv M Arity)|Map] (fv N) (hv M Arity) H H1 :- alloc H M H1.
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% COMPILER %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -134,31 +134,34 @@ namespace comp {
   comp (fcon C) (con C)       M1 M1 L1 L1 S1 S1.
   comp (flam F) (uva A Scope) M1 M2 L1 L3 S1 S3 :-
     (pi x\ maybe-eta x (F x) [x]), !,
-      mem.new S1 A S2,
+      alloc S1 A S2,
       comp-lam F F1 M1 M2 L1 L2 S2 S3,
       get-scope (lam F1) Scope, 
       L3 = [@val-link-eta (uva A Scope) (lam F1)| L2].
   comp (flam F) (lam F1)      M1 M2 L1 L2 S1 S2 :- 
     comp-lam F F1 M1 M2 L1 L2 S1 S2.
   comp (fuva A) (uva B [])    M1 M2 L L S S1 :- 
-    alloc M1 M2 (fv A) (hv B (arity z)) S S1.
+    alloc-mapping M1 M2 (fv A) (hv B (arity z)) S S1.
   comp (fapp [fuva A|Scope]) (uva B Scope1) M1 M2 L1 L1 S1 S2 :-
     pattern-fragment Scope, !,
       fold6 comp Scope Scope1 M1 M1 L1 L1 S1 S1,
       len Scope Arity, 
-      alloc M1 M2 (fv A) (hv B (arity Arity)) S1 S2.
+      alloc-mapping M1 M2 (fv A) (hv B (arity Arity)) S1 S2.
   comp (fapp [fuva A|Args]) (uva C Scope) M1 M3 L1 L3 S1 S4 :- !,
     pattern-fragment-prefix Args Pf Extra,
       fold6 comp Pf    Scope1 M1 M1 L1 L1 S1 S1,
       fold6 comp Extra Extra1 M1 M2 L1 L2 S1 S2,
       len Pf Arity,
-      alloc M2 M3 (fv A) (hv B (arity Arity)) S2 S3,
+      alloc-mapping M2 M3 (fv A) (hv B (arity Arity)) S2 S3,
       Beta = app [uva B Scope1 | Extra1],
       get-scope Beta Scope, 
-      mem.new S3 C S4,
+      alloc S3 C S4,
       L3 = [@val-link-beta (uva C Scope) Beta | L2].
   comp (fapp A) (app A1)      M1 M2 L1 L2 S1 S2 :- 
     fold6 comp A A1 M1 M2 L1 L2 S1 S2.
+
+type alloc subst -> address -> subst -> o.
+alloc S N S1 :- mem.new S N S1.
 
 type compile-terms-diagnostic 
   triple diagnostic fm fm -> 
@@ -185,7 +188,7 @@ compile-terms T H M L S :-
     std.rev Scope1 Scope, eta-expand (uva Ad2 Scope) @one T1,
     L = [@val-link-eta (uva Ad1 Scope) T1].
   make-eta-link-aux (s N) Ad1 Ad2 Scope1 L H1 H3 :-
-    std.rev Scope1 Scope, mem.new H1 Ad H2, 
+    std.rev Scope1 Scope, alloc H1 Ad H2, 
     eta-expand (uva Ad Scope) @one T2,
     (pi x\ make-eta-link-aux N Ad Ad2 [x|Scope1] (L1 x) H2 H3),
     close-links L1 L2,
@@ -291,7 +294,7 @@ compile-terms T H M L S :-
   type progress-beta-link tm -> tm -> subst -> subst -> links -> o.
   progress-beta-link T (app[uva V Scope | L] as T2) S S2 [@val-link-beta T T2] :- 
     arity T Arity, len L ArgsNb, ArgsNb >n Arity, !,
-    minus ArgsNb Arity Diff, mem.new S V1 S1,
+    minus ArgsNb Arity Diff, alloc S V1 S1,
     eta-expand (uva V1 Scope) Diff T1,
     ((uva V Scope) ==l T1) S1 S2,
     print "progress β big arity" {ho.pp T} "unified with" {ho.pp T1} "->" {ho.ppsubst S2}.
@@ -307,7 +310,7 @@ compile-terms T H M L S :-
     pattern-fragment-prefix Scope1L Scope2 L2,
     print Scope2 L2,
     not (Scope1 = Scope2), !,
-    mem.new S1 Ad2 S2,
+    alloc S1 Ad2 S2,
     len Scope1 Scope1Len,
     len Scope2 Scope2Len,
     make-eta-link Scope1Len Scope2Len Ad1 Ad2 [] LinkEta S2 S3,
@@ -515,7 +518,7 @@ compile-terms T H M L S :-
   add-new-mappings _ (uva N _) Map [] F1 F1 :- 
     mem Map (mapping _ (hv N _)), !.
   add-new-mappings H (uva N L) Map [Map1 | MapL] F1 F3 :-
-    mem.new F1 M F2,
+    alloc F1 M F2,
     len L Arity, Map1 = mapping (fv M) (hv N (arity Arity)),
     add-new-mappings H (app L) [Map1 | Map] MapL F2 F3.
   add-new-mappings H (lam B) Map NewMap F1 F2 :- 
