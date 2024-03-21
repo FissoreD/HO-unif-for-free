@@ -156,8 +156,6 @@ namespace ho {
   copy (lam T)   (lam T') :- pi x\ copy x x => copy (T x) (T' x).
   copy (uva A L) (uva A L') :- forall2 copy L L'.
 
-  type scope-check o.
-
   type bind tm -> list tm -> assignment -> o.
   bind T [] (val T') :- copy T T'.
   bind T [X | TL] (abs T') :- pi x\ copy X x => bind T TL (T' x).

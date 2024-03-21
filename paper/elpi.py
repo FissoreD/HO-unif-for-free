@@ -104,7 +104,8 @@ class ElpiLexer(RegexLexer):
         ],
         'elpi-multiline-comment': [
             (r'\*/', Comment, '#pop'),
-            (r'.', Comment)
+            (r'.', Comment),
+            (r'\n', Comment)
         ],
         'elpi-indexing-expr':[
             (r'\(', Punctuation, '#push'),
