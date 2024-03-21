@@ -112,15 +112,15 @@ namespace ho {
   type move assignment -> list tm -> tm -> o.
   move (abs Bo)        [H|L] R :- move (Bo H) L R.
   move (val A)         []    A :- !.
-  move (val (uva N A)) L     (uva N X) :- std.append A L X.
+  move (val (uva N A)) L     (uva N X) :- append A L X.
   move (abs A)         []    _ :- !, fatal "Invalid move call: too few args for abs" A.
   move A               L    _ :- !, fatal "Invalid move call:" A L.
 
   type beta tm -> list tm -> tm -> o.
   beta A [] A.
   beta (lam Bo) [H | L] R :- beta (Bo H) L R.
-  beta (app A) L (app X) :- std.append A L X.
-  beta (uva N A) L (uva N A') :- std.append A L A'.
+  beta (app A) L (app X) :- append A L X.
+  beta (uva N A) L (uva N A') :- append A L A'.
   beta (con H) L (app [con H | L]).
 
   type not_occ_aux address -> subst -> tm -> o.

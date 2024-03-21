@@ -88,9 +88,9 @@ mem [A|_] A :- !.
 mem [_|L] A :- mem L A.
 
 
-type appendR list A -> list A -> list A -> o.
-appendR [] A A.
-appendR [A | TL] L [A | L'] :- appendR TL L L'.
+type append list A -> list A -> list A -> o.
+append [] A A.
+append [A | TL] L [A | L'] :- append TL L L'.
 
 type fold4 (A -> A1 -> B -> B -> C -> C -> o) -> list A -> list A1 -> B -> B -> C -> C -> o.
 fold4 _ [] [] A A B B.

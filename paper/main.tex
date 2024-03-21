@@ -833,7 +833,7 @@ deref S (uva N A) (uva N B) :- unset? N S, map (deref S) A B.
 type move assignment -> list tm -> tm -> o.
 move (abs Bo)        [H|L] R :- move (Bo H) L R.
 move (val A)         []    A :- !.
-move (val (uva N A)) L     (uva N X) :- std.append A L X.
+move (val (uva N A)) L     (uva N X) :- append A L X.
 \end{elpicode}
 
 \noindent

@@ -184,13 +184,13 @@ napp (fuva N) (fuva N).
   type move assignment -> list tm -> tm -> o.
   move (abs Bo)        [H|L] R :- move (Bo H) L R.
   move (val A)         []    A :- !.
-  move (val (uva N A)) L     (uva N X) :- std.append A L X.
+  move (val (uva N A)) L     (uva N X) :- append A L X.
 
   type beta tm -> list tm -> tm -> o.
   beta A [] A.
   beta (lam Bo) [H | L] R :- beta (Bo H) L R.
-  beta (app A) L (app X) :- std.append A L X.
-  beta (uva N A) L (uva N A') :- std.append A L A'.
+  beta (app A) L (app X) :- append A L X.
+  beta (uva N A) L (uva N A') :- append A L A'.
   beta (con H) L (app [con H | L]).
 
   type not_occ_aux address -> subst -> tm -> o.
@@ -268,19 +268,19 @@ napp (fuva N) (fuva N).
     last-n {len L} Args R,
     forall2 (maybe-eta-of []) R {std.rev L}.
 
-  type locale ho.tm -> o.
+  type locally-bound ho.tm -> o.
   type get-scope-aux ho.tm -> list ho.tm -> o.
   get-scope-aux (ho.con _) [].
   get-scope-aux (ho.uva _ L) L1 :- 
     forall2 get-scope-aux L R,
     flatten R L1.
   get-scope-aux (ho.lam B) L1 :- 
-    pi x\ locale x => get-scope-aux (B x) L1.
+    pi x\ locally-bound x => get-scope-aux (B x) L1.
   get-scope-aux (ho.app L) L1 :- 
     forall2 get-scope-aux L R,
     flatten R L1.
-  get-scope-aux X [X] :- name X, not (locale X).
-  get-scope-aux X [] :- name X, (locale X).
+  get-scope-aux X [X] :- name X, not (locally-bound X).
+  get-scope-aux X [] :- name X, (locally-bound X).
 
   type get-scope ho.tm -> list ho.tm -> o.
   get-scope T Scope :- names N,
@@ -308,7 +308,7 @@ napp (fuva N) (fuva N).
     (pi x\ maybe-eta x (F x) [x]), !,
       mem.new S1 E0 S2,
       comp-lam F F1 Map1 Map2 L1 L2 S2 S3,
-      (pi x\ locale x => get-scope (F1 x) Scope), 
+      (pi x\ locally-bound x => get-scope (F1 x) Scope), 
       NewLink = ho.val(link-eta (ho.uva E0 Scope) (ho.lam F1)), 
       L3 = [NewLink| L2].
   comp (fo.flam F) (ho.lam F1)       Map1 Map2 L1 L2 S1 S2 :- 
@@ -326,7 +326,7 @@ napp (fuva N) (fuva N).
       fold6 comp NPF NPF1 Map1 Map2 L1 L2 S1 S2,
       len PF Arity, 
       alloc Map2 Map3 (fv N) (hv M (arity Arity)) S2 S3,
-      get-scope (ho.app {std.append PF1 NPF1}) Scope, 
+      get-scope (ho.app {append PF1 NPF1}) Scope, 
       mem.new S3 M' S4,
       L3 = [@val-link-beta (ho.uva M' Scope) (ho.app[ho.uva M PF1 | NPF1]) | L2].
   comp (fo.fapp A) (ho.app A1) Map1 Map2 L1 L2 S1 S2 :- 
@@ -360,7 +360,7 @@ napp (fuva N) (fuva N).
   deduplicate-mappings [(mapping (fv O) (hv M (arity LenM)) as X1) | Map1] Map2 H1 H3 L1 L3 :-
     take-list Map1 (mapping (fv O) (hv M' (arity LenM'))) _, !,
     make-eta-link LenM LenM' M M' [] New H1 H2,
-    std.append New L1 L2,
+    append New L1 L2,
     deduplicate-mappings Map1 Map2 H2 H3 L2 L3.
   deduplicate-mappings [A|As] [A|Bs] H1 H2 L1 L2 :- 
     deduplicate-mappings As Bs H1 H2 L1 L2, !.
@@ -376,7 +376,7 @@ napp (fuva N) (fuva N).
   contract-rigid L (ho.lam F) T :- 
     pi x\ contract-rigid [x|L] (F x) T. % also checks H Prefix does not see x
   contract-rigid L (ho.app [H|Args]) T :- 
-    std.rev L LRev, std.appendR Prefix LRev Args,
+    std.rev L LRev, append Prefix LRev Args,
     if (Prefix = []) (T = H) (T = ho.app [H|Prefix]).
 
   type progress-eta-link ho.tm -> ho.tm -> ho.subst -> ho.subst -> links -> o.
@@ -425,7 +425,7 @@ napp (fuva N) (fuva N).
     ((ho.uva V Scope) ==l T1) S1 S2.
 
   progress-beta-link (ho.uva _ _ as T) (ho.app[ho.uva Ad1 Scope1 | L1] as T1) S1 S3 NewLinks :-
-    std.append Scope1 L1 Scope1L,
+    append Scope1 L1 Scope1L,
     pattern-fragment-prefix Scope1L Scope2 L2,
     not (Scope1 = Scope2), !,
     mem.new S1 Ad2 S2,
@@ -487,7 +487,7 @@ napp (fuva N) (fuva N).
     solve-links L2 L3 S1 S2.
   solve-links [L0|L1] L3 S S2 :- deref-link S L0 L,
     solve-link-abs L R S S1, !,
-    solve-links L1 L2 S1 S2, std.append R L2 L3.
+    solve-links L1 L2 S1 S2, append R L2 L3.
 \end{elpicode}
 
 \section{The decompiler}
@@ -572,7 +572,7 @@ napp (fuva N) (fuva N).
   complete-mapping H [some T0 | Tl] L1 L3 F1 F3 :-
     ho.deref-assmt H T0 T,
     complete-mapping-under-ass H T L1 L2 F1 F2, 
-    std.append L1 L2 LAll,
+    append L1 L2 LAll,
     complete-mapping H Tl LAll L3 F2 F3.
 
   type decompile mappings -> links -> ho.subst -> 

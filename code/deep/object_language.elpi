@@ -42,7 +42,7 @@ namespace fo {
   type beta fm -> list fm -> fm -> o.
   beta A [] A.
   beta (flam Bo) [H | L] R :- beta (Bo H) L R.
-  beta (fapp A) L (fapp X) :- std.append A L X.
+  beta (fapp A) L (fapp X) :- append A L X.
   beta (fuva N) L (fapp [fuva N | L]).
   beta (fcon H) L (fapp [fcon H | L]).
   beta N L (fapp [N | L]) :- name N.
@@ -63,7 +63,7 @@ namespace fo {
   eta-contract-aux L (flam F) T :- 
     pi x\ eta-contract-aux [x|L] (F x) T. % also checks H Prefix does not see x
   eta-contract-aux L (fapp [H|Args]) T :- 
-    std.rev L LRev, std.appendR Prefix LRev Args,
+    std.rev L LRev, append Prefix LRev Args,
     if (Prefix = []) (T = H) (T = fapp [H|Prefix]).
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
