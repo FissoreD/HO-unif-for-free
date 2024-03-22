@@ -604,12 +604,12 @@ namespace comp {
   type ppctx list string -> string -> o.
   ppctx [] "".
   ppctx [A] A :- !.
-  ppctx [A|As] R :- ppctx As R1, R is A ^ " " ^ R1.
+  ppctx [A|As] R :- ppctx As R1, R is A ^ "~" ^ R1.
 
   type pplink-latex link -> string -> o.
   pplink-latex L S :-
     pplink-latex-aux L Ctx Op Left Right,
-    S is "\\link" ^ Op ^ "{" ^ {ppctx Ctx} ^ "}{" ^ Left ^ "}{" ^ Right ^ "}".
+    S is "\\link" ^ Op ^ "M{" ^ {ppctx Ctx} ^ "}{" ^ Left ^ "}{" ^ Right ^ "}".
 
   type pplink link -> string -> o.
   pplink L S :- tex, !, pplink-latex L S.
