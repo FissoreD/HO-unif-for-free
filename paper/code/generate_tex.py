@@ -10,9 +10,10 @@ def get_file_cnt(lines):
         return res
 
 
-def print_tex(lines, fout):
+def print_tex(lines, fout, raw = False):
     with open(fout, "w") as f:
-        f.write("\\begin{elpicode}\n")
+        if not raw:
+            f.write("\\begin{elpicode}\n")
         for l in lines:
             l = re.sub("^ *% +.*\n","",l)   
             l = re.sub("^ *%SNIP.*\n","",l)   
@@ -24,7 +25,8 @@ def print_tex(lines, fout):
             l = re.sub("type \(~\$([^ ]+)\$~\) (.*)\.$",r"~\\PYG{k+kd}{type} \\PYG{n+nf}{(\g<1>)} \\PYG{k+kt}{\g<2>}~.",l)
             l = re.sub("type (\([^ ]+\)) (.*)\.$",r"~\\PYG{k+kd}{type} \\PYG{n+nf}{\g<1>} \\PYG{k+kt}{\g<2>}~.",l)
             f.write(l)
-        f.write("\\end{elpicode}\n")
+        if not raw:
+            f.write("\\end{elpicode}\n")
 
 def mk_fname(fname):
     return fname.split("/")[-1][:-4] + "tex"
@@ -60,6 +62,7 @@ def read_file(fname):
         for fname in snippets:
             lines = snippets[fname]
             print_tex(lines, fname + ".tex")
+            print_tex(lines, fname + "_raw.tex", True)
 
         
 if __name__ == "__main__":

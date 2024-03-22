@@ -9,19 +9,22 @@ internal-test ho.test-unif-7.
 namespace ho {
   shorten mem.{ set? , unset? , assign , new }.
 %BEGIN
-  typeabbrev subst list (option assignment).
 
+%SNIP: ho_subst
   kind inctx type -> type.
   type abs (tm -> inctx A) -> inctx A.
   type val A -> inctx A.
-
   typeabbrev assignment (inctx tm).
+  typeabbrev subst (mem assignment).
+%ENDSNIP
 
+%SNIP: ho_tm
   kind tm  type.
   type app list tm -> tm.
   type lam (tm -> tm) -> tm.
   type con string -> tm.
-  type uva  address -> list tm -> tm.
+  type uva addr -> list tm -> tm.
+%ENDSNIP
 
   % [unif T1 T2 SOld SNew] check if T1 and T2 unify looking into SOld. SNew is the final substution
   type (==l) tm -> tm -> subst -> subst -> o.
@@ -49,7 +52,7 @@ namespace ho {
   % Note: eta & beta for unification is not allowed in ML over terms of the OL
 
   % Note: We suppose the scopes to always be in PF
-  type prune! address -> list tm -> address -> 
+  type prune! addr -> list tm -> addr -> 
               list tm -> subst -> subst -> o.
   /* no pruning needed */               
   prune! N A  N A  S S :- !.
@@ -66,7 +69,7 @@ namespace ho {
     assign N S2 Ass1 S3,
     assign M S3 Ass2 S4. 
 
-  type prune-same-variable address -> list tm -> list tm -> 
+  type prune-same-variable addr -> list tm -> list tm -> 
                             list tm -> assignment -> o.
   prune-same-variable N [] [] ACC (val (uva N Args)) :- 
     rev ACC Args.
@@ -81,7 +84,7 @@ namespace ho {
     nth P Args T,
     permute PS Args TS.
 
-  type build-perm-assign address -> list tm -> list bool -> 
+  type build-perm-assign addr -> list tm -> list bool -> 
                       list nat -> assignment -> o.
   build-perm-assign N ArgsR [] Perm (val (uva N PermutedArgs)) :- 
     rev ArgsR Args, permute Perm Args PermutedArgs.
@@ -94,7 +97,7 @@ namespace ho {
   keep L A tt :- mem L A, !.
   keep _ _ ff.
 
-  type prune-diff-variables address -> list tm -> list tm -> 
+  type prune-diff-variables addr -> list tm -> list tm -> 
                             assignment -> assignment -> o.
   prune-diff-variables N Args1 Args2 Ass1 Ass2 :-
     forall2 (keep Args2) Args1 Bits1, 
@@ -122,7 +125,7 @@ namespace ho {
   beta X L (app[X|L]) :- name X.
 
   /* occur check for N before crossing a functor */
-  type not_occ  address -> subst -> tm -> o.
+  type not_occ  addr -> subst -> tm -> o.
   not_occ N H T :- (var N; var H; var T), halt "Invalid call to not_occ". % HIDE
   not_occ N S (uva M Args) :- set? M S F, 
     move F Args T, not_occ N S T.
@@ -137,7 +140,7 @@ namespace ho {
   not_occ N _ (uva N _).
 
   /* occur check for X after crossing a functor */
-  type not_occ_aux address -> subst -> tm -> o.
+  type not_occ_aux addr -> subst -> tm -> o.
   not_occ_aux N H T :- (var N; var H; var T), halt "Invalid call to not_occ_aux". % HIDE
   not_occ_aux N S (uva M _) :- unset? M S, not (N = M).
   not_occ_aux N S (uva M Args) :- set? M S F, 
@@ -194,7 +197,7 @@ namespace ho {
   pp X S :- name X, !, std.any->string X S.
   pp _ "ERROR".
 
-  type ppuva address -> string -> o.
+  type ppuva addr -> string -> o.
   ppuva N S :- S is "X" ^ {mem.ppaddr N}.
 
   type ppsubst subst -> list string -> o.

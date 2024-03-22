@@ -3,13 +3,19 @@ internal-test fo.test-parse-1.
 namespace fo {
   shorten mem.{ set? }.
 %BEGIN
+
+%SNIP: fo_tm
   kind fm type.
   type fapp list fm -> fm.
   type flam (fm -> fm) -> fm.
   type fcon string -> fm.
-  type fuva  address -> fm.
+  type fuva  addr -> fm.
+%ENDSNIP
 
-  typeabbrev subst mem fm.
+%SNIP: fo_subst
+  typeabbrev fsubst (mem fm).
+%ENDSNIP
+  typeabbrev subst fsubst.
 
   type fder subst -> fm -> fm -> o.
   fder S X _ :- (var S; var X), fatal "flex fder". % HIDE
@@ -94,7 +100,7 @@ namespace fo {
   pp X S :- name X, !, std.any->string X S.
   pp _ "fo.pp ERROR".
 
-  type ppuva address -> string -> o.
+  type ppuva addr -> string -> o.
   ppuva N S :- mem.ppaddr N X, S is "C" ^ X.
 
   type ppsubst subst -> list string -> o.

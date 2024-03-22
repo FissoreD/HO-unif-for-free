@@ -42,6 +42,10 @@
 % \newminted{coq}{escapeinside=||}
 % \newminted{elpi}{escapeinside=||}
 
+\newcommand{\inputrawelpicode}[1]{%
+\inputminted[fontsize=\small,autogobble,escapeinside=~~,mathescape=true,frame=leftline,framerule=0pt,framesep=0em]{elpi.py:ElpiLexer -x}{#1_raw.tex}%
+}
+
 \newenvironment{elpicode}{%
   \vspace{0.2em}%
   \VerbatimEnvironment

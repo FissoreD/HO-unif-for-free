@@ -1,7 +1,7 @@
 internal-test comp.test-maybe-eta.
 
 typeabbrev (mem A) (mem.mem A).
-typeabbrev address mem.address.
+typeabbrev addr mem.addr.
 typeabbrev addr mem.addr.
 
 namespace comp {
@@ -17,10 +17,10 @@ namespace comp {
   type arity nat -> arity.
 
   kind fvariable type.
-  type fv address -> fvariable.
+  type fv addr -> fvariable.
 
   kind hvariable type.
-  type hv address -> arity -> hvariable.
+  type hv addr -> arity -> hvariable.
 
   kind mapping type.
   type mapping fvariable -> hvariable -> mapping.
@@ -109,10 +109,10 @@ namespace comp {
   get-scope T Scope :-
     get-scope-aux T ScopeDuplicata,
     names N, filter N (mem ScopeDuplicata) Scope.
-%SNIP: comp_base2
   type rigid fm -> o.
   rigid X :- not (X = fuva _).
 
+%SNIP: comp_base2
   type comp-lam (fm -> fm) -> (tm -> tm) -> 
     map -> map -> links -> links -> subst -> subst -> o.
   comp-lam F F1 M1 M2 L L2 S S1 :-
@@ -167,7 +167,7 @@ namespace comp {
     fold6 comp A A1 M1 M2 L1 L2 S1 S2.
 %ENDSNIP
 
-  type alloc mem A -> address -> mem A -> o.
+  type alloc mem A -> addr -> mem A -> o.
   alloc S N S1 :- mem.new S N S1.
 
   type compile-terms-diagnostic 
@@ -189,7 +189,7 @@ namespace comp {
     deduplicate-map M_ M S_ S L_ L.
 
   % Ad1 is the variable with smaller arity, Ad2 is eta expanded N times
-  type make-eta-link-aux nat -> address -> address -> 
+  type make-eta-link-aux nat -> addr -> addr -> 
     list tm -> links -> subst -> subst -> o.
   make-eta-link-aux z Ad1 Ad2 Scope1 L H1 H1  :-
     rev Scope1 Scope, eta-expand (uva Ad2 Scope) @one T1,
@@ -204,7 +204,7 @@ namespace comp {
   % [make-eta-link ArityAd1, ArityAd2, Ad1, Ad2 Vars, Link]
   % as long as the arities are > 0, we eat one arity by putting a variable in the ctx
   % in the base case we return the link-eta eta-extending N times the variable with higher arity.
-  type make-eta-link nat -> nat -> address -> address -> 
+  type make-eta-link nat -> nat -> addr -> addr -> 
           list tm -> links -> subst -> subst -> o.
   make-eta-link (s N) z Ad1 Ad2 Vars L H H1 :- 
     make-eta-link-aux N Ad2 Ad1 Vars L H H1.
@@ -421,13 +421,13 @@ namespace comp {
   deref-link H (@val-link-eta A B) (@val-link-eta A1 B1) :- ho.deref H A A1, ho.deref H B B1.
   deref-link H (@val-link-beta A B) (@val-link-beta A1 B1) :- ho.deref H A A1, ho.deref H B B1.
 
-  type get-head-link link -> address -> tm -> o.
+  type get-head-link link -> addr -> tm -> o.
   get-head-link (@val-link-eta (uva Ad _) T) Ad T :- !.
   get-head-link (@val-link-beta (uva Ad _) T) Ad T :- !.
   get-head-link (ho.abs B) Ad (lam T) :- !, pi x\ get-head-link (B x) Ad (T x).
   get-head-link Link _ _ :- print "get-head-link: attention not in PF" {pplink Link} /*,halt*/, fail.
 
-  type find-link-by-var address -> links -> links -> list tm -> list links -> o.
+  type find-link-by-var addr -> links -> links -> list tm -> list links -> o.
   find-link-by-var _ _ [] [] [].
   find-link-by-var Ad Prefix [Hd | L1] [T | L2] [Hd1|LL] :-
     append Prefix L1 Hd1,
@@ -436,7 +436,7 @@ namespace comp {
   find-link-by-var Ad Prefix [Hd | L1] L2 LL :- !,
     find-link-by-var Ad [Hd | Prefix] L1 L2 LL.
 
-  type not_occ_links_aux address -> links -> tm -> o.
+  type not_occ_links_aux addr -> links -> tm -> o.
   not_occ_links_aux Ad _ (uva Ad _) :- !, fail.
   not_occ_links_aux Ad L (uva Ad1 _) :- !, 
     find-link-by-var Ad1 [] L Terms Links,
@@ -446,7 +446,7 @@ namespace comp {
   not_occ_links_aux Ad L (lam B) :- !, pi x\ not_occ_links_aux Ad L (B x).
   not_occ_links_aux Ad L (app B) :- !, forall1 (not_occ_links_aux Ad L) B.
 
-  type not_occ_links address -> tm -> links -> o.
+  type not_occ_links addr -> tm -> links -> o.
   not_occ_links _ (con _) _.
   not_occ_links Ad (lam B) L :- pi x\ not_occ_links Ad (B x) L.
   not_occ_links Ad (uva Ad _) _ :- !.

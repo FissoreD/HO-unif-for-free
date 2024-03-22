@@ -699,25 +699,13 @@ terms carried by the \elpiIn{lam} constructor.
 \begin{figure}[H]
   \begin{tabular}{ll}
   \begin{minipage}{0.21\textwidth}
-  \begin{elpicodetab}
-kind fm type.
-type fapp list fm -> fm.
-type flam (fm -> fm) -> fm.
-type fcon string -> fm.
-type fuva nat -> fm.
-\end{elpicodetab}
+   \inputrawelpicode{code/fo_tm}
   \end{minipage}
   &
   \begin{minipage}{0.24\textwidth}
-  \begin{elpicodetab}
-kind tm type.
-type app list tm -> tm.
-type lam (tm -> tm) -> tm.
-type con string -> tm.
-type uva nat -> list tm -> tm.
-  \end{elpicodetab}
+   \inputrawelpicode{code/ho_tm}
   \end{minipage}
-  \end{tabular}
+  \end{tabular}\vspace{4pt}
   \caption{\Fo{} and \Ho language}\vspace{0.3em}
   \label{code:common-terms}
   \Description[code:common-terms]{code:common-terms}
@@ -751,12 +739,7 @@ In both languages unification variables are identified by a natural number,
 which can be seen as a memory address. The memory and its associated
 operations are described below:
 
-\begin{elpicode}
-typeabbrev memory A (list (option A)).
-type set?   nat -> memory A -> A -> o.
-type unset? nat -> memory A -> o.
-type assign nat -> memory A -> A -> memory A -> o.
-\end{elpicode}
+\input{code/mem_types}
 
 \noindent 
 If a memory cell is \elpiIn{none}, then the corresponding unification variable
@@ -767,13 +750,8 @@ abstracted over it in order to enable the instantiation of a single
 solution to different scopes. On the contrary solutions to \Fo variables
 are plain terms.
 
-\begin{elpicode}
-  typeabbrev fsubst (memory ftm).
-  kind assmt type.
-  type abs (tm -> assmt) -> assmt.
-  type val tm -> assmt.
-  typeabbrev subst (memory assmt).
-\end{elpicode}
+\input{code/fo_subst}
+\input{code/ho_subst}
 
 \noindent
 We call \elpiIn{fsubst} the memory of \Fo{}, while we call \elpiIn{subst}
@@ -980,6 +958,8 @@ an \Uo{} that respects $\beta$-conversion for terms in \llambda. The extension t
 $\eta\beta$-conversion is described in Section \ref{sec:eta} and the support
 for terms outside \llambda in Section \ref{sec:beta}.
 
+\subsection{Compilation}
+
 The objective of the compilation is to recognize the higher-order variables
 available in \Ho{} when expressed in a first order way in \Fo{}. The compiler
 also generates a map to bring back the substitution from
@@ -1011,101 +991,17 @@ This preliminary version of \elpiIn{comp} simply recognizes \Fo variables
 applied to a (possibly empty) duplicate free list of names (i.e.
 \elpiIn{pattern-fragment} detects variables in \llambda).
 
-The auxiliary function \elpiIn{close-liks}
+The auxiliary function \elpiIn{close-links} cannot be explained here,
+che palle. \marginpar{fix}
 
 \input{code/comp_base2}
 
-\noindent
-Note that \elpiIn{link} carries the arity (number of expected arguments) of
-the variable. \marginpar{say when this is needed}
+\subsection{Execution}
 
-\begin{elpicode}
-type solve-links links -> links -> subst -> subst -> o.
-solve-links L L S S.
-\end{elpicode}
 
-Then decomp
+\subsection{Decompilation}
 
-\begin{elpicode}
-type decompile links -> subst -> fsubst -> o.
-decompile L S O :-
-  map (_\r\r = none) S O1, % allocate empty fsubst
-  (pi N X\ knil N X :- mem L (link X N _) ; N = X) =>
-    decompl S L O1 O.
-type knil nat -> nat -> o.
-
-type decompl links -> subst -> fsubst -> o.
-decompl S [] [].
-decompl S [link _ N _|L] O P :- unset? N S X,
-  decompl S L O P.
-decompl S [link M N _|L] O P :- set? N S X,
-  decomp-assignment S X T, assign M O (some T) O1,
-  decompl S L O1 P.
-
-type decomp-assignment subst -> assignment -> fm -> o.
-decomp-assignment S (abs F) (flam G) :-
-  pi x y\ decomp-tm S x y => decomp-assignment S (F x) (G y).
-decomp-assignment S (val T) T1 :- decomp S T T1.
-
-type decomp subst -> tm -> fm.
-decomp _ (con C) (fcon C).
-decomp S (app A) (app B) :- map (decomp S) A B.
-decomp S (lam F) (flam G) :-
-  pi x y\ decomp S x y => decomp S (F x) (G y).
-decomp S (uva N A) R :- set? N S F,
-  move F A T, decomp S T R.
-decomp S (uva N A) R :- unset? N S,
-  map (decomp S) A B, knil N M, napp (fapp[fuva M|B]) R.
-\end{elpicode}
   
-\marginpar{TODO link}
-\marginpar{TODO nuove subst}
-
-Now unif\marginpar{TODO: code unif}
-
-\begin{elpicode}
-~\PYG{k+kd}{type} \PYG{n+nf}{(\Uo)} \PYG{k+kt}{fm -> fm -> subst -> subst -> o}~.
-(X ~\Uo~Y) S S1 :-
-  fderef S X X0, fderef S Y Y0,                    ~($\customlabel{step:norm}{norm}$)~
-  comp X0 X1 [] S0 [] L0,                        ~($\customlabel{step:compile}{compile}$)~
-  comp Y0 Y1 S0 S1 L0 L1,
-  (X1 ~\Ue~Y1) [] HS0,                              ~($\customlabel{step:unify}{unify}$)~
-  solve-links L1 L2 HS0 HS1,                        ~($\customlabel{step:link}{link}$)~
-  decompile L2 HS1  S1.                        ~($\customlabel{step:decompile}{decompile}$)~
-\end{elpicode}
-
-\subsection{Prolog simulation}
-Allows us to express the properties.
-we take all terms involved in a search (if a rule is used twice we simply
-take a copy of it), we compile all of them, and then we pick the unification
-prblems among these terms and step trough them.
-
-\begin{elpicode}
-type pick list A -> (pair nat nat) -> (pair A A) -> o.
-pick L (pr X Y) (pr TX TY) :- nth X L TX, nth Y L TY.
-
-type prolog-fo list fm -> list (pair nat nat) -> subst -> o.
-prolog-fo Terms Problems S :-
-  map (pick Terms) Problems FoProblems,
-  fold4 ~(\Uo)~ FoProblems [] S.
-
-type step-ho (pair tm tm) -> links -> links -> subst -> subst -> o.
-step-ho (pr X Y) L0 L1 S0 S2 :-
-  (X1 ~\Ue~Y1) S0 S1,
-  solve-links L0 L1 S1 S2.
-
-type prolog-ho list fm -> list (pair nat nat) -> subst -> o.
-prolog-ho Terms Problems S :-
-  fold4 comp Terms HoTerms [] L0 [] HS0,
-  map (pick HoTerms) Problems HoProblems,
-  fold4 step-ho HoProblems L0 L HS0 HS,
-  decompile L HS S.
-\end{elpicode}
-
-\noindent
-the proprty is that if a step for Fo succeds then the Ho one does, and
-if Fo fails then the Ho fails ()
-
 \subsection{Example}
 
 OK 
