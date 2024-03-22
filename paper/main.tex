@@ -971,25 +971,47 @@ by the ML. \todo{same or $\supseteq$ or $\subseteq$}
 In the following section we explain how we deal with term (de)compilation and
 links between unification variables.
 
-\section[Compilation: fo\_tm to tm]{Basic compilation \Fo{} to \Ho{}}
+\section[Compilation: fo\_tm to tm]{Basic simulation of \Fo{} in \Ho{}}
 \label{sec:compilation}
 
 In this section we describe a basic compilation scheme that we refine
-later, in the following sections.
+later, in the following sections. This scheme is sufficient to implement
+an \Uo{} that respects $\beta$-conversion for terms in \llambda. The extension to
+$\eta\beta$-conversion is described in Section \ref{sec:eta} and the support
+for terms outside \llambda in Section \ref{sec:beta}.
 
 The objective of the compilation is to recognize the higher-order variables
 available in \Ho{} when expressed in a first order way in \Fo{}. The compiler
-also generates a list of links that are used to bring back the substitution from
-\Ho{} to \Fo{} and allocates in the memory a cell for each variable.
+also generates a map to bring back the substitution from
+\Ho{} to \Fo{}.
 
-types
+\newtheorem{invariant}{Invariant}
+
 \input{code/comp_base_types}
 
-core
+\begin{invariant}[Unification variable arity] Each variable \elpiIn{A}
+in \Ho has a (unique) arity \elpiIn{N} and each occurrence~
+\elpiIn{(uvar A L)} is such that \elpiIn{(len L N)} holds
+\end{invariant}
+
+\noindent The arity of a variable in \Ho (a \elpiIn{hvariable} is stored in
+the mapping. In particular \elpiIn{m-alloc}
+bla bla explain. Multiple mappings for the same \elpiIn{fvariable}
+are handled in section \ref{sec:eta}.
+
+\input{code/alloc_mapping}
+
+The signature of the \elpiIn{comp} predicate below allows for the generation of
+links (suspended unification problems) that play no role in this section
+but play a major role in Sections \ref{sec:eta} and \ref{sec:beta}.
 
 \input{code/comp_base}
 
-aux
+This preliminary version of \elpiIn{comp} simply recognizes \Fo variables
+applied to a (possibly empty) duplicate free list of names (i.e.
+\elpiIn{pattern-fragment} detects variables in \llambda).
+
+The auxiliary function \elpiIn{close-liks}
 
 \input{code/comp_base2}
 
@@ -1201,7 +1223,7 @@ a sto punto consideriamo liste di problemi e così da eliminare sta xxx senza
 perdità di generalità (e facciamo problemi più corti, e modellizziamo anche la
 sequenza)
 
-\subsection{Problems with $\eta$}
+\subsection{Problems with $\eta$}\label{sec:eta}
 
 \input{code/comp_eta}
 
@@ -1228,7 +1250,7 @@ A destra della eta abbiamo sempre un termine che comincia per $\lambda x. bla$
     di uno per poter unificare con il termine di dx.
 \end{textcode}
   
-\subsection{Problems with $\beta$}
+\subsection{Problems with $\beta$}\label{sec:beta}
 
 $\beta$-reduction problems (\maybebeta) appears any time we deal with a subterm $t
 = X t_1 \dots t_n$, where $X$ is flexible and the list $[t_1 \dots t_n]$ in not

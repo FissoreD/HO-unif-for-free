@@ -25,10 +25,10 @@ namespace comp {
   kind mapping type.
   type mapping fvariable -> hvariable -> mapping.
   typeabbrev map (list mapping).
+%ENDSNIP
 
   typeabbrev scope (list tm).
 
-%ENDSNIP
   kind linkctx type.
   type link-eta tm -> tm -> linkctx.
   type link-beta tm -> tm -> linkctx.
@@ -89,6 +89,7 @@ namespace comp {
     forall2 (maybe-eta-of []) R {rev L}.
 %ENDSNIP
 
+
   type locally-bound tm -> o.
   type get-scope-aux tm -> list tm -> o.
   get-scope-aux (con _) [].
@@ -109,6 +110,9 @@ namespace comp {
     get-scope-aux T ScopeDuplicata,
     names N, filter N (mem ScopeDuplicata) Scope.
 %SNIP: comp_base2
+  type rigid fm -> o.
+  rigid X :- not (X = fuva _).
+
   type comp-lam (fm -> fm) -> (tm -> tm) -> 
     map -> map -> links -> links -> subst -> subst -> o.
   comp-lam F F1 M1 M2 L L2 S S1 :-
@@ -139,12 +143,12 @@ namespace comp {
   comp (flam F) (lam F1)      M1 M2 L1 L2 S1 S2 :- 
     comp-lam F F1 M1 M2 L1 L2 S1 S2.
   comp (fuva A) (uva B [])    M1 M2 L L S S1 :- 
-    alloc-mapping M1 M2 (fv A) (hv B (arity z)) S S1.
-  comp (fapp [fuva A|Scope]) (uva B Scope1) M1 M2 L1 L1 S1 S2 :-
-    pattern-fragment Scope, !,
-      fold6 comp Scope Scope1 M1 M1 L1 L1 S1 S1,
-      len Scope Arity, 
-      alloc-mapping M1 M2 (fv A) (hv B (arity Arity)) S1 S2.
+    m-alloc (fv A) (hv B (arity z)) M1 M2 S S1.
+  comp (fapp [fuva A|Ag]) (uva B Ag1) M1 M2 L1 L1 S1 S2 :-
+    pattern-fragment Ag, !,
+      fold6 comp Ag Ag1 M1 M1 L1 L1 S1 S1,
+      len Ag Arity, 
+      m-alloc (fv A) (hv B (arity Arity)) M1 M2 S1 S2.
 %ENDSNIP
 %SNIP: comp_beta
   comp (fapp [fuva A|Ag]) (uva C Scope) M1 M3 L1 L3 S1 S4 :- !,
@@ -152,7 +156,7 @@ namespace comp {
     fold6 comp Pf    Scope1 M1 M1 L1 L1 S1 S1,
     fold6 comp Extra Extra1 M1 M2 L1 L2 S1 S2,
     len Pf Arity,
-    alloc-mapping M2 M3 (fv A) (hv B (arity Arity)) S2 S3,
+    m-alloc (fv A) (hv B (arity Arity)) M2 M3 S2 S3,
     Beta = app [uva B Scope1 | Extra1],
     get-scope Beta Scope, 
     alloc S3 C S4,
@@ -250,10 +254,13 @@ namespace comp {
   eta-expand T (s N) (lam R2) :- 
     pi x\ mk-app T x (R1 x), eta-expand (R1 x) N (R2 x). 
 
-  type alloc-mapping map -> map -> fvariable -> hvariable -> subst -> subst -> o.
-  alloc-mapping Map Map N M H H :- std.mem Map (mapping N M), !.
-  alloc-mapping Map [mapping (fv N) (hv M Arity)|Map] (fv N) (hv M Arity) H H1 :- alloc H M H1.
-
+%SNIP: alloc_mapping
+  type m-alloc fvariable -> hvariable -> map -> map -> 
+    subst -> subst -> o.
+  m-alloc Fv Hv Map Map S S :- mem Map (mapping Fv Hv), !.
+  m-alloc Fv Hv Map [mapping Fv Hv|Map] S S1 :- Hv = hv N _,
+    alloc S N S1.
+%ENDSNIP
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PROGRESS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
