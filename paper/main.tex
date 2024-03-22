@@ -1290,16 +1290,22 @@ $\beta$-reduced to a new term $t'$ and the result can be unified with \lhs. In
 this scenario the \linkbeta has accomplished its goal and can be removed from
 \linkStore.
 
-The second circumstance making the \linkbeta to progress is the instantiation 
-of the variables in the \elpiIn{Extra}. 
+The second circumstance making the \linkbeta to progress is the instantiation of
+the variables in the \elpiIn{Extra1} making the corresponding arguments to
+reduce to names. In this case, we want to take the list \elpiIn{Scope1} and
+append to it the largest prefix of \elpiIn{Extra1} in a new variable
+\elpiIn{Scope2} such that \elpiIn{Scope2} remains in \llambda; we call
+\elpiIn{Extra2} the suffix of \elpiIn{Extra1} such that the concatenation of
+\elpiIn{Scope1} and \elpiIn{Extra1} is the same as the concatenation of
+\elpiIn{Scope2} and \elpiIn{Extra2}.
 
-and some of the arguments in the \elpiIn{NPF} list become names. This is
-possible after the resolution of other links. In this case, the list \elpiIn{L}
-obtained by the concatenation between \elpiIn{PF} and \elpiIn{NPF} is split
-again in to lists \elpiIn{PF'} and \elpiIn{NPF'}. If \elpiIn{PF} is not that
-same as \elpiIn{PF'}, then we can 1) remove the current \linkbeta, 2) create a
-new \linkbeta between \elpiIn{T} and \elpiIn{app[uva N' PF' | NPF']} and 3)
-create a new \linketa between the variables \elpiIn{N} and \elpiIn{N'}.
+% and some of the arguments in the \elpiIn{NPF} list become names. This is
+% possible after the resolution of other links. In this case, the list \elpiIn{L}
+% obtained by the concatenation between \elpiIn{PF} and \elpiIn{NPF} is split
+% again in to lists \elpiIn{PF'} and \elpiIn{NPF'}. If \elpiIn{PF} is not that
+% same as \elpiIn{PF'}, then we can 1) remove the current \linkbeta, 2) create a
+% new \linkbeta between \elpiIn{T} and \elpiIn{app[uva N' PF' | NPF']} and 3)
+% create a new \linketa between the variables \elpiIn{N} and \elpiIn{N'}.
 
 \marginpar{A bit too fast, we first compile, then unify, then the oracle, then the manip...}
 An example justifying this last link manipulation is given by the following
