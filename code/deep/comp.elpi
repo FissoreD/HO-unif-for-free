@@ -458,7 +458,6 @@ namespace comp {
     occur-check-links S Tl.
   occur-check-links S [_|Tl] :-
     print "OC is partial: a term is not in PF"
-    not_occ_links Ad Term Tl,
     occur-check-links S Tl.
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
