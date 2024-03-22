@@ -319,7 +319,7 @@ namespace comp {
     arity T Arity, len L ArgsNb, ArgsNb >n Arity, !,
     minus ArgsNb Arity Diff, alloc S V1 S1,
     eta-expand (uva V1 Scope) Diff T1,
-    ((uva V Scope) ==l T1) S1 S2,
+    (uva V Scope ==l T1) S1 S2,
     print "progress β big arity" {ho.pp T} "unified with" {ho.pp T1} "->" {ho.ppsubst S2}.
 
   % this is for beta links of the form `link-beta T (app[uva N [], app[B, x] | ...])

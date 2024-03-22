@@ -214,42 +214,42 @@ namespace ho {
   type test-unif-7 o.
 
   test-unif-1 :- pi x\
-    ((@mem-uva z [x]) ==l (@mem-uva (s z) [])) [none, none] L,
+    (@mem-uva z [x] ==l @mem-uva (s z) []) [none, none] L,
     Z = (abs x\ val (uva X [])),
     SZ = val (uva X []),
     L = [some Z, some SZ|_].
 
   test-unif-2 :- pi x y\
-    ((@mem-uva z [x, y]) ==l (@mem-uva (s z) [y])) [none, none] L,
+    (@mem-uva z [x, y] ==l @mem-uva (s z) [y]) [none, none] L,
     Z = (abs x\ abs y\ val (uva X [y])),
     SZ = (abs x\ val (uva X [x])),
     L = [some Z, some SZ|_].
 
   test-unif-3 :- pi x y w\
-    ((@mem-uva z [x, y]) ==l (@mem-uva (s z) [x, w, y])) [none, none] L,
+    (@mem-uva z [x, y] ==l @mem-uva (s z) [x, w, y]) [none, none] L,
     Z = (abs x\ abs y\ val (uva X [x, y])),
     SZ = (abs x\ abs y\ abs z\ val (uva X [x, z])),
     L = [some Z, some SZ|_].
 
   test-unif-4 :- pi x y\ 
-    ((@mem-uva z [x, y]) ==l (@mem-uva (s z) [y, x])) [none, none] L,
+    (@mem-uva z [x, y] ==l @mem-uva (s z) [y, x]) [none, none] L,
     Z = (abs x\ abs y\ val (uva X [x, y])),
     SZ = (abs x\ abs y\ val (uva X [y, x])),
     L = [some Z, some SZ|_].
 
   test-unif-5 :- pi x y zz w\
-    ((@mem-uva z [x, w, y]) ==l (@mem-uva (s z) [y, zz, w])) [none, none] L,
+    (@mem-uva z [x, w, y] ==l @mem-uva (s z) [y, zz, w]) [none, none] L,
     Z = (abs c0\ abs c1\ abs c2\ val (uva X [c1, c2])),
     SZ = (abs c0\ abs c1\ abs c2\ val (uva X [c2, c0])),
     L = [some Z, some SZ|_].
 
   test-unif-6 :- pi x y zz w\
-    ((@mem-uva (s z) [y, zz, w]) ==l (@mem-uva z [x, w, y])) [none, none] L,
+    (@mem-uva (s z) [y, zz, w] ==l @mem-uva z [x, w, y]) [none, none] L,
     Z = (abs c0\ abs c1\ abs c2\ val (uva X [c2, c1])),
     SZ = (abs c0\ abs c1\ abs c2\ val (uva X [c0, c2])),
     L = [some Z, some SZ|_].
 
   test-unif-7 :- pi x y w zz\
-    ((@mem-uva z [x, y, w]) ==l (@mem-uva z [zz, y, x])) [none] L,
+    (@mem-uva z [x, y, w] ==l @mem-uva z [zz, y, x]) [none] L,
     L = [some (abs x\ abs y\ abs z\ val (uva _ [y])) | _].
 }
