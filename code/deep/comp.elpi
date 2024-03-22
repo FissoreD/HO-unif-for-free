@@ -89,6 +89,9 @@ namespace comp {
     forall2 (maybe-eta-of []) R {rev L}.
 %ENDSNIP
 
+  type rigid fm -> o.
+  rigid X :- not (X = fuva _).
+
   type locally-bound tm -> o.
   type get-scope-aux tm -> list tm -> o.
   get-scope-aux (con _) [].
@@ -125,7 +128,6 @@ namespace comp {
 %SNIP: comp_base
   type comp fm -> tm -> map -> map -> links -> links ->
     subst -> subst -> o.
-  comp (fcon C) (con C)       M1 M1 L1 L1 S1 S1.
 %ENDSNIP
 %SNIP: comp_eta
   comp (flam F) (uva A Scope) M1 M2 L1 L3 S1 S3 :-
@@ -136,6 +138,7 @@ namespace comp {
       L3 = [@val-link-eta (uva A Scope) (lam F1)| L2].
 %ENDSNIP
 %SNIP: comp_base
+  comp (fcon C) (con C)       M1 M1 L1 L1 S1 S1.
   comp (flam F) (lam F1)      M1 M2 L1 L2 S1 S2 :- 
     comp-lam F F1 M1 M2 L1 L2 S1 S2.
   comp (fuva A) (uva B [])    M1 M2 L L S S1 :- 
@@ -145,9 +148,11 @@ namespace comp {
       fold6 comp Scope Scope1 M1 M1 L1 L1 S1 S1,
       len Scope Arity, 
       alloc-mapping M1 M2 (fv A) (hv B (arity Arity)) S1 S2.
+  comp (fapp [H|Ag]) (app A1) M1 M2 L1 L2 S1 S2 :- rigid H, 
+    fold6 comp [H|Ag] A1 M1 M2 L1 L2 S1 S2.
 %ENDSNIP
 %SNIP: comp_beta
-  comp (fapp [fuva A|Args]) (uva C Scope) M1 M3 L1 L3 S1 S4 :- !,
+  comp (fapp [fuva A|Args]) (uva C Scope) M1 M3 L1 L3 S1 S4 :-
     pattern-fragment-prefix Args Pf Extra,
       fold6 comp Pf    Scope1 M1 M1 L1 L1 S1 S1,
       fold6 comp Extra Extra1 M1 M2 L1 L2 S1 S2,
@@ -157,10 +162,6 @@ namespace comp {
       get-scope Beta Scope, 
       alloc S3 C S4,
       L3 = [@val-link-beta (uva C Scope) Beta | L2].
-%ENDSNIP
-%SNIP: comp_base
-  comp (fapp A) (app A1)      M1 M2 L1 L2 S1 S2 :- 
-    fold6 comp A A1 M1 M2 L1 L2 S1 S2.
 %ENDSNIP
 
   type alloc mem A -> address -> mem A -> o.
