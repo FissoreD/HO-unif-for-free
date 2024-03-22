@@ -42,6 +42,11 @@ list-init Len Pos F [A | TL] :- F Pos A, list-init Len (s Pos) F TL.
 type iota nat -> list nat -> o.
 iota N L :- list-init N z (=) L.
 
+type partition (A -> o) -> list A -> list A -> list A -> o.
+partition _ [] [] [].
+partition F [A|As] [A|Bs] Cs :- F A, !, partition F As Bs Cs.
+partition F [A|As] Bs [A|Cs] :- partition F As Bs Cs.
+
 type index list A -> A -> nat -> o.
 index [A|_] A z :- !.
 index [_|TL] A (s P) :- index TL A P.
@@ -213,3 +218,5 @@ ppnat-aux (s N) M :- ppnat-aux N M1, M is M1 + 1.
 type ppnat nat -> string -> o.
 ppnat X _ :- var X, halt "ppnat: passed flexible arg".
 ppnat N S :- ppnat-aux N M, std.any->string M S.
+
+type tex o.
