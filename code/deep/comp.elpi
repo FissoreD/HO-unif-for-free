@@ -331,18 +331,17 @@ namespace comp {
   progress-beta-link (uva _ _ as T) (app[uva Ad1 Scope1 | L1] as T1) S1 S3 NewLinks :-
     append Scope1 L1 Scope1L,
     pattern-fragment-prefix Scope1L Scope2 L2,
-    %print Scope2 L2,
     not (Scope1 = Scope2), !,
     alloc S1 Ad2 S2,
     len Scope1 Scope1Len,
     len Scope2 Scope2Len,
-    make-eta-link Scope1Len Scope2Len Ad1 Ad2 [] LinkEta S2 S3,
-    if (L2 = []) (NewLinks = LinkEta, T2 = uva Ad2 Scope2) 
-      (T2 = app [uva Ad2 Scope2 | L2], 
-      NewLinks = [@val-link-beta T T2 | LinkEta]),
+    if (L2 = []) ((T ==l T1) S2 S3) 
+      (make-eta-link Scope1Len Scope2Len Ad1 Ad2 [] LinkEta S2 S3,
+        T2 = app [uva Ad2 Scope2 | L2], 
+        NewLinks = [@val-link-beta T T2 | LinkEta]),
     print "progress β: refine" {pplink (@val-link-beta T T1)} "to" {pplinks NewLinks}.
 
-  progress-beta-link T1 (app[uva _ _ | _] as T2) _ _ _ :- not (T1 = uva _ _), !,
+  progress-beta-link T1 (app[uva _ _ | _] as T2) S S [@val-link-beta T1 T2] :- not (T1 = uva _ _), !,
     print "unification outside PF for β:" {pplink (@val-link-beta T1 T2)}, fail.
 
   progress-beta-link (uva _ _ as T) (app[uva _ _ | _] as T2) S1 _ _ :- 
@@ -360,11 +359,11 @@ namespace comp {
     close-links R' R.
 
   solve-link-abs (@val-link-eta A B) NewLinks S S1 :- !,
-    print "In progress eta link for" {ho.pp A} {ho.pp B},
+    print "In progress eta link for" {ho.pp A} {ho.pp B}, %HIDE
     progress-eta-link A B S S1 NewLinks.
 
   solve-link-abs (@val-link-beta A B) NewLinks S S1 :- !,
-    print "In progress beta link for" {ho.pp A} {ho.pp B},
+    print "In progress beta link for" {ho.pp A} {ho.pp B} "in" {ho.ppsubst S}, %HIDE
     progress-beta-link A B S S1 NewLinks.
 
   type take-link link -> links -> link -> links -> o.
@@ -455,9 +454,9 @@ namespace comp {
   occur-check-links _ [].
   occur-check-links S [Hd | Tl] :-
     std.assert! (get-head-link Hd Ad Term) "get-head-link should not fail",
-    print "## Occur check for" {pplink Hd} "in" {pplinks Tl}, 
+    % print "## Occur check for" {pplink Hd} "in" {pplinks Tl},  %HIDE
     not_occ_links Ad Term Tl,
-    print "Ok occur check for" {ho.pp (uva Ad [])},
+    % print "Ok occur check for" {ho.pp (uva Ad [])}, %HIDE
     occur-check-links S Tl.
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
