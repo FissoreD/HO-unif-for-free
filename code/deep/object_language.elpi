@@ -1,7 +1,7 @@
 internal-test fo.test-parse-1.
 
 namespace fo {
-  shorten mem.{ set? }.
+  shorten mem.{ set? , unset? }.
 %BEGIN
 
 %SNIP: fo_tm
@@ -17,38 +17,45 @@ namespace fo {
 %ENDSNIP
   typeabbrev subst fsubst.
 
+%SNIP: fderef
   type fder subst -> fm -> fm -> o.
   fder S X _ :- (var S; var X), fatal "flex fder". % HIDE
-  fder S (fuva N) T1 :- set? N S T, fder S T T1.
-  %fder S (fapp [fuva N|L]) R :- set? N S T, !, beta T L R', fder S R' R.
-  fder S (fapp L1) (fapp L2) :- forall2 (fder S) L1 L2.
-  fder S (flam F1) (flam F2) :-
-    pi x\ fder S x x => fder S (F1 x) (F2 x).
-  fder _ (fcon X) (fcon X).
-  fder _ (fuva N) (fuva N).
-  %fder _ N N :- name N.
+  fder _ (fcon C) (fcon C).
+  fder S (fapp A) (fapp B) :- forall2 (fder S) A B.
+  fder S (flam F) (flam G) :-
+    pi x\ fder S x x => fder S (F x) (G x).
+  fder S (fuva N) R :- set? N S T, fder S T R.
+% fder S (fapp [fuva N|L]) R :- set? N S T, !, beta T L R', fder S R' R.
+  fder S (fuva N) (fuva N) :- unset? N S.
+% fder _ N N :- name N.
+
+  type fderef subst -> fm -> fm -> o.                 %~($\customlabel{pred:fder}{\rho s}$)~
+  fderef S T T2 :- fder S T T1, napp T1 T2.
 
   type napp fm -> fm -> o.
   napp (fcon C) (fcon C).
   napp (fuva A) (fuva A).
-  napp (flam F) (flam F1) :- pi x\ napp x x => napp (F x) (F1 x).
+  napp (flam F) (flam F1) :-
+    pi x\ napp x x => napp (F x) (F1 x).
   napp (fapp [fapp L1 |L2]) T :- !,
     append L1 L2 L3, napp (fapp L3) T.
   napp (fapp L) (fapp L1) :- forall2 napp L L1.
+%ENDSNIP
 
-  type fderef subst -> fm -> fm -> o.
-  fderef S T T2 :- fder S T T1, napp T1 T2.
-
-  type (==o) fm -> fm -> o.
+%SNIP: feq
+  type (==o) fm -> fm -> o.                             %~($\customlabel{pred:fequal}{\Eo}$)~
   X ==o Y :- (var X ; var Y), fatal "flex equal". % HIDE
-  fapp L1 ==o fapp L2 :- forall2 (==o) L1 L2.
-  flam F1 ==o flam F2 :- pi x\ x ==o x => F1 x ==o F2 x.
   fcon X ==o fcon X.
+  fapp A ==o fapp B :- forall2 (==o) A B.
+  flam F ==o flam G :- pi x\ x ==o x => F x ==o G x.
   fuva N ==o fuva N.
-  flam F ==o T :- pi x\ beta T [x] (T' x), x ==o x => F x ==o T' x.
-  T ==o flam F :- pi x\ beta T [x] (T' x), x ==o x => T' x ==o F x.
-  fapp [flam X | TL] ==o T :- beta (flam X) TL T', T' ==o T.
-  T ==o fapp [flam X | TL] :- beta (flam X) TL T', T ==o T'.
+  flam F ==o T :-                                       %~($\customlabel{clause:eta1}{\eta_l}$)~
+    pi x\ beta T [x] (T' x), x ==o x => F x ==o T' x.
+  T ==o flam F :-                                       %~($\customlabel{clause:eta2}{\eta_r}$)~
+    pi x\ beta T [x] (T' x), x ==o x => T' x ==o F x.
+  fapp [flam X | L] ==o T :- beta (flam X) L R, R ==o T. %~($\customlabel{clause:beta1}{\beta_l}$)~
+  T ==o fapp [flam X | L] :- beta (flam X) L R, T ==o R. %~($\customlabel{clause:beta2}{\beta_r}$)~
+%ENDSNIP
 
   % [extend-subst T S S'] forall fuva N in T, extends S with none at pos N
   % this is used only in test to build the subst-map before running it

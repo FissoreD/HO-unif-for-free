@@ -759,6 +759,23 @@ the one of \Ho.
 Both have the invariant that they are not cyclic, TODO explain.
 Other invariant: the terms in ho\_subst never contains eta and beta expansion
 
+\input{code/comp_base_types}
+
+\newtheorem{invariant}{Invariant}
+
+
+\begin{invariant}[Unification variable arity] Each variable \elpiIn{A}
+in \Ho has a (unique) arity \elpiIn{N} and each occurrence~
+\elpiIn{(uvar A L)} is such that \elpiIn{(len L N)} holds
+\end{invariant}
+
+\noindent The arity of a variable in \Ho (a \elpiIn{hvariable} is stored in
+the mapping. In particular \elpiIn{m-alloc}
+bla bla explain. Multiple mappings for the same \elpiIn{fvariable}
+are handled in section \ref{sec:eta}.
+
+\input{code/comp_links}
+
 \subsection{Notations}
 
 We use math mode for \Ho.
@@ -798,20 +815,7 @@ representing rigid terms, namely \elpiIn{app}, \elpiIn{lam} and \elpiIn{con},
 make the dereferencing procedure to recurse over the their subterms. The code
 below display this behavior for the dereferencing performed by the OL:
 
-\begin{elpicode}
-type fder fsubst -> fm -> fm -> o.
-fder S (fapp A) (fapp B) :- map (fder S) A B.
-fder S (flam F) (flam G) :- 
-  pi x\ fder S x x => fder S (F x) (G x).
-fder _ (fcon C) (fcon C).
-fder S (fuva N) R :- set? N S T, fder S T R.
-fder S (fuva N) (fuva N) :- unset? N S.
-
-type fderef fsubst -> fm -> fm -> o.                 ~($\customlabel{pred:fder}{\rho s}$)~
-fderef S T R :- fder S T T', napp T' R.
-
-type napp fm -> fm -> o.
-\end{elpicode}
+\input{code/fderef}
 
 \noindent
 TODO explain napp.
@@ -822,19 +826,7 @@ first one, but that requires a rather verbose analysis of the head of \elpiIn{A}
 The corresponding code for \Ho is similar, we only show the last two rules that
 differ in a substantial way:
 
-\begin{elpicode}
-type deref subst -> tm -> tm -> o.                   ~($\customlabel{pred:deref}{\sigma t}$)~
-deref S (app A) (app B) :- map (deref S) A B.
-deref S (lam F) (lam G) :- 
-  pi x\ deref S x x => deref S (F x) (G x).
-deref _ (con C) (con C).
-deref S (uva N A) R :- set? N S F, move F A T, deref S T R.
-deref S (uva N A) (uva N B) :- unset? N S, map (deref S) A B.
-type move assignment -> list tm -> tm -> o.
-move (abs Bo)        [H|L] R :- move (Bo H) L R.
-move (val A)         []    A :- !.
-move (val (uva N A)) L     (uva N X) :- append A L X.
-\end{elpicode}
+\input{code/deref}
 
 \noindent
 TODO: no need to napp, see the beta section.
@@ -849,33 +841,6 @@ A different reasoning is to be addressed to the variables of the ML. Firstly, a
 meta variable cannot appear in the \elpiIn{app} node as the first element of the
 list, we will explain why in \cref{sec:compilation}
 
-\begin{elpicode}
-  ~\PYG{k+kd}{type} \PYG{n+nf}{(\Eo)} \PYG{k+kt}{ftm -> ftm -> o}~.                           ~($\customlabel{pred:fequal}{\Eo}$)~
-  fapp A ~\Eo~fapp B :- map ~(\Eo)~ A B.
-  flam F ~\Eo~flam G :- pi x\ x ~\Eo~x => F x ~\Eo~G x.
-  fcon C ~\Eo~fcon C.
-  fuva N ~\Eo~fuva N.
-  flam F ~\Eo~T :-                                       ~($\customlabel{clause:eta1}{\eta_l}$)~
-    pi x\ beta T [x] (R x), x ~\Eo~x => F x ~\Eo~R x.
-  T ~\Eo~flam F :-                                       ~($\customlabel{clause:eta2}{\eta_r}$)~
-    pi x\ beta T [x] (R x), x ~\Eo~x => R x ~\Eo~F x.
-  fapp [flam X | L] ~\Eo~T :- beta (flam X) L R, R ~\Eo~T. ~($\customlabel{clause:beta1}{\beta_l}$)~
-  T ~\Eo~fapp [flam X | L] :- beta (flam X) L R, T ~\Eo~R. ~($\customlabel{clause:beta2}{\beta_r}$)~
-\end{elpicode}
-
-\begin{figure}
-  \begin{elpicode}
-    ~\PYG{k+kd}{type} \PYG{n+nf}{(\Ee)} \PYG{k+kt}{tm -> tm -> o}~.
-    app A ~\Ee~fapp B :- map ~(\Ee)~ A B.
-    lam F ~\Ee~flam G :- pi x\ x ~\Ee~x => F x ~\Ee~G x.
-    con C ~\Ee~fcon C.
-    uva N A ~\Ee~fuva N B :- map ~(\Ee)~ A B.
-  \end{elpicode}
-  \caption{Equal predicate ML}
-  \label{code:eq-pred-meta}
-  \Description[code:equal-pred-meta]{code:equal-pred-meta}
-\end{figure}
-
 \paragraph{Term equality: \Eo vs. \Ee} We can test if two terms are equal
 following the equational theory of the language being considered. In
 \cref{code:eq-pred} we provide an implementation of the \Eo predicate. The first
@@ -884,6 +849,16 @@ current node, that is, two terms are equal if they have same head and if
 recursively each subterm is two by two equal. Moreover, since the theory of the
 OL accepts $\eta$- and $\beta$-equivalence, then we implement the corresponding
 rules.
+
+\input{code/feq}
+
+\begin{elpicode}
+  ~\PYG{k+kd}{type} \PYG{n+nf}{(\Ee)} \PYG{k+kt}{tm -> tm -> o}~.
+  app A ~\Ee~fapp B :- map ~(\Ee)~ A B.
+  lam F ~\Ee~flam G :- pi x\ x ~\Ee~x => F x ~\Ee~G x.
+  con C ~\Ee~fcon C.
+  uva N A ~\Ee~fuva N B :- map ~(\Ee)~ A B.
+\end{elpicode}
 
 \noindent
 The equality relation for the ML, accepts $\eta\beta$-equivalence between terms
@@ -904,9 +879,7 @@ the corresponding substitution mapping. We will not give an implementation of
 \Uo, since we are giving an implementation of it using
 our algorithm, see \cref{XX}.
 
-\begin{elpicode}
-~\PYG{k+kd}{type} \PYG{n+nf}{(\Ue)} \PYG{k+kt}{tm -> tm -> subst -> subst -> o}~.
-\end{elpicode}
+\input{code/ue_type}
 
 On the other hand, unification in the ML needs to be defined. In
 \cref{code:ue-pred}, we give an implementation of \Ue but
@@ -915,39 +888,40 @@ that is actually what our meta language provides as a builtin.
 This predicate has four
 arguments, the two terms $t_1$ and $t_2$ to unify, the old substitution map
 $\rho_1$, and the new substitution map $\rho_2$, with the invariant $\rho_1
-\subseteq \rho_2$. The first three rules unify terms with same rigid heads, and
-call the unification relation on the sub-terms. If $t_1$ (resp. $t_2$) is an
-assigned variables, $t_1$ is dereferenced to $t_1'$ (resp. $t_2'$) and the
-unification is called between $t_1'$ and $t_2$ (resp. $t_1$ and $t_2'$). If both
-terms are unification variables, we test that their arguments are in the pattern
-fragment, we allocate a new variable $w$ in $\rho_1$ such that $w$ is the
-pruning of the arguments of $t_1$ and $t_2$, we assign both $t_1$ and $t_2$ to
-$w$ and return the new mapping $\rho_2$ containing all the new variable
-assignment. Finally, if only one of the two terms is an unification variable
-$v$, after having verified that $v$ does not occur in the other term $t$, we
-bind $v$ to $t$ and return the new substitution mapping.
+\subseteq \rho_2$.
+% The first three rules unify terms with same rigid heads, and
+% call the unification relation on the sub-terms. If $t_1$ (resp. $t_2$) is an
+% assigned variables, $t_1$ is dereferenced to $t_1'$ (resp. $t_2'$) and the
+% unification is called between $t_1'$ and $t_2$ (resp. $t_1$ and $t_2'$). If both
+% terms are unification variables, we test that their arguments are in the pattern
+% fragment, we allocate a new variable $w$ in $\rho_1$ such that $w$ is the
+% pruning of the arguments of $t_1$ and $t_2$, we assign both $t_1$ and $t_2$ to
+% $w$ and return the new mapping $\rho_2$ containing all the new variable
+% assignment. Finally, if only one of the two terms is an unification variable
+% $v$, after having verified that $v$ does not occur in the other term $t$, we
+% bind $v$ to $t$ and return the new substitution mapping.
 
-\old
+% \old
 
-A key property needed in unification is being able to verify if two terms are
-equal wrt a given equational theory. This relation allow to compare terms under
-a certain substitution mapping, so that any time a variable $v$ is assigned in a
-subterm, a dereferencing of $v$ is performed. After variable dereferencing, the
-test for equality is continued on the new-created subterm.
+% A key property needed in unification is being able to verify if two terms are
+% equal wrt a given equational theory. This relation allow to compare terms under
+% a certain substitution mapping, so that any time a variable $v$ is assigned in a
+% subterm, a dereferencing of $v$ is performed. After variable dereferencing, the
+% test for equality is continued on the new-created subterm.
 
-The base equality function over terms can be defined as follows:
+% The base equality function over terms can be defined as follows:
 
-The solution we are proposing aim to overcome these unification issues by 1)
-compiling the terms $t$ and $u$ of the OL into an internal version $t'$ and $u'$
-in the ML; 2) unifying $t'$ and $u'$ at the meta level instantiating meta
-variables; 3) decompiling the meta variable into terms of the OL; 4) assigning
-the variables of the OL with the decompiled version of their corresponding meta
-variables. We claim that $t$ and $u$ unify if and only if $t'$ and $u'$ unify
-and that the substitution in the object language is the same as the one returned
-by the ML. \todo{same or $\supseteq$ or $\subseteq$} 
+% The solution we are proposing aim to overcome these unification issues by 1)
+% compiling the terms $t$ and $u$ of the OL into an internal version $t'$ and $u'$
+% in the ML; 2) unifying $t'$ and $u'$ at the meta level instantiating meta
+% variables; 3) decompiling the meta variable into terms of the OL; 4) assigning
+% the variables of the OL with the decompiled version of their corresponding meta
+% variables. We claim that $t$ and $u$ unify if and only if $t'$ and $u'$ unify
+% and that the substitution in the object language is the same as the one returned
+% by the ML. \todo{same or $\supseteq$ or $\subseteq$} 
 
-In the following section we explain how we deal with term (de)compilation and
-links between unification variables.
+% In the following section we explain how we deal with term (de)compilation and
+% links between unification variables.
 
 \section[Compilation: fo\_tm to tm]{Basic simulation of \Fo{} in \Ho{}}
 \label{sec:compilation}
@@ -964,20 +938,6 @@ The objective of the compilation is to recognize the higher-order variables
 available in \Ho{} when expressed in a first order way in \Fo{}. The compiler
 also generates a map to bring back the substitution from
 \Ho{} to \Fo{}.
-
-\newtheorem{invariant}{Invariant}
-
-\input{code/comp_base_types}
-
-\begin{invariant}[Unification variable arity] Each variable \elpiIn{A}
-in \Ho has a (unique) arity \elpiIn{N} and each occurrence~
-\elpiIn{(uvar A L)} is such that \elpiIn{(len L N)} holds
-\end{invariant}
-
-\noindent The arity of a variable in \Ho (a \elpiIn{hvariable} is stored in
-the mapping. In particular \elpiIn{m-alloc}
-bla bla explain. Multiple mappings for the same \elpiIn{fvariable}
-are handled in section \ref{sec:eta}.
 
 \input{code/alloc_mapping}
 

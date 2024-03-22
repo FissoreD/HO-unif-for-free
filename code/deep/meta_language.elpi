@@ -26,8 +26,10 @@ namespace ho {
   type uva addr -> list tm -> tm.
 %ENDSNIP
 
+%SNIP: ue_type
   % [unif T1 T2 SOld SNew] check if T1 and T2 unify looking into SOld. SNew is the final substution
   type (==l) tm -> tm -> subst -> subst -> o.
+%ENDSNIP
   (A ==l B) C _ :- (var A; var B; var C), halt "Passed var to unif". %HIDE
   % congruence
   (con C ==l con C) S S.
@@ -109,13 +111,6 @@ namespace ho {
     build-perm-assign N [] Bits1 IdPerm Ass1,
     build-perm-assign N [] Bits2 Perm21 Ass2.
 
-  type move assignment -> list tm -> tm -> o.
-  move (abs Bo)        [H|L] R :- move (Bo H) L R.
-  move (val A)         []    A :- !.
-  % move (val (uva N A)) L     (uva N X) :- append A L X.
-  move (abs A)         []    _ :- !, fatal "Invalid move call: too few args for abs" A. % HIDE
-  move A               L    _ :- !, fatal "Invalid move call:" A L. % HIDE
-
   type beta tm -> list tm -> tm -> o.
   beta A [] A.
   beta (lam Bo) [H | L] R :- beta (Bo H) L R.
@@ -163,16 +158,25 @@ namespace ho {
   bind T [] (val T') :- copy T T'.
   bind T [X | TL] (abs T') :- pi x\ copy X x => bind T TL (T' x).
 
-  type deref subst -> tm -> tm -> o.
+%SNIP: deref
+  type deref subst -> tm -> tm -> o.                   %~($\customlabel{pred:deref}{\sigma t}$)~
   deref S X _ :- (var S; var X), halt "flex deref". % HIDE
-  deref H (uva N L)  X         :- set? N H T, 
-    move T L X', deref H X' X.
-  deref H (app L)   (app L1)   :- forall2 (deref H) L L1.
-  deref _ (con X)   (con X).
-  deref H (uva X L) (uva X L1) :- unset? X H, 
-    forall2 (deref H) L L1.
-  deref H (lam F)   (lam G)    :- pi x\ deref H (F x) (G x).
-  deref _ N         N          :- name N.
+  deref _ (con C) (con C).
+  deref S (app A) (app B) :- forall2 (deref S) A B.
+  deref S (lam F) (lam G) :-
+    pi x\ deref S x x => deref S (F x) (G x).
+  deref S (uva N L) R :- set? N S A, move A L T, deref S T R.
+  deref S (uva X A) (uva X B) :- unset? X S, forall2 (deref S) A B.
+  deref _ N         N          :- name N. % HIDE
+
+  type move assignment -> list tm -> tm -> o.
+  move (abs Bo) [H|L] R :- move (Bo H) L R.
+  move (val A)  [] A :- !.
+  % move (val (uva N A)) L     (uva N X) :- append A L X.
+  move (abs A)         []    _ :- !, fatal "Invalid move call: too few args for abs" A. % HIDE
+  move A               L    _ :- !, fatal "Invalid move call:" A L. % HIDE
+
+%ENDSNIP
 
   type deref-assmt subst -> assignment -> assignment -> o.
   deref-assmt S (abs T) (abs R) :- pi x\ deref-assmt S (T x) (R x).

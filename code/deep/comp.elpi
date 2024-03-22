@@ -28,18 +28,19 @@ namespace comp {
 %ENDSNIP
 
   typeabbrev scope (list tm).
-
-  kind linkctx type.
-  type link-eta tm -> tm -> linkctx.
-  type link-beta tm -> tm -> linkctx.
+  typeabbrev inctx ho.inctx.
+%SNIP: comp_links
+  kind baselink type.
+  type link-eta  tm -> tm -> baselink.
+  type link-beta tm -> tm -> baselink.
+  typeabbrev link (inctx baselink).
+  typeabbrev links (list link).
+%ENDSNIP
 
   macro @val-link-eta T1 T2 :- ho.val (link-eta T1 T2).
   macro @val-link-beta T1 T2 :- ho.val (link-beta T1 T2).
 
-  typeabbrev link (ho.inctx linkctx).
 
-  typeabbrev links (list link).
-  
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% COMPILER %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
