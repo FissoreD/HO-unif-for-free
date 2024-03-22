@@ -61,8 +61,10 @@
 
 \newcommand*{\eqtau}{\ensuremath{\mathrel{\overset{\mathrm{\tau}}{=}}}}
 
-\newcommand{\linketaM}[3]{\texttt{#1 |- #2 =$\eta$= #3}}
-\newcommand{\linkbetaM}[3]{\texttt{#1 |- #2 =$\beta$= #3}}
+\newcommand{\linketaM}[3]{\ensuremath{#1 \vdash #2 =_\eta #3}}
+\newcommand{\linkbetaM}[3]{\ensuremath{#1 \vdash #2 =_\beta #3}}
+\newcommand{\substCell}[3]{\ensuremath{#1 \vdash #2 = #3}}
+\newcommand{\mapping}[3]{\ensuremath{#1 \mapsto #2^#3}}
 
 \begin{document}
 
@@ -447,6 +449,8 @@ The initial here $\rho_0$ is the empty substitution
 \newcommand{\runHD}[3]{\ensuremath{%
 \bigwedge_{p = 1}^{#2} \stepH{#1}{p}{\sigma_{p-1}}{#3}{\sigma_{p}}}}
 \newcommand{\deff}{\ensuremath{\stackrel{{\scriptscriptstyle def}}{=\!=\!\!\!=}}}
+\def\linkStore{\ensuremath{\mathbb{L}}}
+
 $$
 \begin{array}{l}
 \stepF{\mathcal{S}}{p}{\rho}{\rho''}
@@ -462,12 +466,12 @@ We simulate each run in \Fo{} with a run in \Ho as follows.
 Note that $\sigma_0$ is the empty substitution.
 $$
 \begin{array}{l}
-\stepH{\mathcal{T}}{p}{\sigma}{\mathbb{L}}{\sigma''} \deff\vspace{2pt}\\
-  \qquad\stepHD{\mathcal{T}}{p}{\sigma}{\sigma'}{\sigma''}{\mathbb{L}}\vspace{2pt}\\
+\stepH{\mathcal{T}}{p}{\sigma}{\linkStore}{\sigma''} \deff\vspace{2pt}\\
+  \qquad\stepHD{\mathcal{T}}{p}{\sigma}{\sigma'}{\sigma''}{\linkStore}\vspace{2pt}\\
 \runH{\mathcal{S}}{\mathcal{N}}{\rho} \deff \vspace{2pt}\\
-  \qquad \mathcal{T} \times \mathbb{M} \times \mathbb{L} = \{ (t_j,m_j,l_j) | s_j \in \mathcal{S}, \C{s_j}{t_j}{m_j}{l_j} \}\vspace{2pt}\\
-  \qquad \runHD{\mathcal{T}}{\mathcal{N}}{\mathbb{L}}\vspace{2pt}\\
-  \qquad \D{\sigma_{\mathcal{N}}}{\mathbb{M}}{\mathbb{L}}{\rho_{\mathcal{N}}}
+  \qquad \mathcal{T} \times \mathbb{M} \times \linkStore = \{ (t_j,m_j,l_j) | s_j \in \mathcal{S}, \C{s_j}{t_j}{m_j}{l_j} \}\vspace{2pt}\\
+  \qquad \runHD{\mathcal{T}}{\mathcal{N}}{\linkStore}\vspace{2pt}\\
+  \qquad \D{\sigma_{\mathcal{N}}}{\mathbb{M}}{\linkStore}{\rho_{\mathcal{N}}}
 \end{array}
 $$
 
@@ -493,7 +497,7 @@ $\forall p \in 1 \ldots \mathcal{N}$
 $$
 \stepF{\mathcal{S}}{p}{\rho_{p-1}}{\rho_p}
 \Leftrightarrow
-\stepH{\mathcal{T}}{p}{\sigma_{p-1}}{\mathbb{L}}{\sigma_p}
+\stepH{\mathcal{T}}{p}{\sigma_{p-1}}{\linkStore}{\sigma_p}
 $$
 \end{proposition}
 \noindent
@@ -614,10 +618,10 @@ $$
 \noindent
 
 \begin{proposition}[\wellb{}-preservation]\label{prop:nf}
-$\forall \mathcal{T}, \forall \mathbb{L}, \forall p, \forall \sigma, \forall \sigma'$
+$\forall \mathcal{T}, \forall \linkStore, \forall p, \forall \sigma, \forall \sigma'$
 $$
 \wellb(\sigma\mathcal{T}) \land
-\stepH{\mathcal{T}}{p}{\sigma}{\mathbb{L}}{\sigma'}
+\stepH{\mathcal{T}}{p}{\sigma}{\linkStore}{\sigma'}
 \Rightarrow \wellb(\sigma' \mathcal{T})
 $$
 \end{proposition}
@@ -631,7 +635,7 @@ node that could be erased by a $\beta$-reduction).
 
 Note that proposition \ref{prop:nf} does not hold for \Uo{} since
 decompilation can introduce (actually restore) terms in
-\maybeeta or \maybebeta that were move out of the way (put in $\mathbb{L}$)
+\maybeeta or \maybebeta that were move out of the way (put in $\linkStore$)
 by compilation.
 
 \section{Alternative encodings and related work}
@@ -1226,8 +1230,6 @@ A destra della eta abbiamo sempre un termine che comincia per $\lambda x. bla$
   
 \subsection{Problems with $\beta$}
 
-\input{code/comp_beta}
-
 $\beta$-reduction problems (\maybebeta) appears any time we deal with a subterm $t
 = X t_1 \dots t_n$, where $X$ is flexible and the list $[t_1 \dots t_n]$ in not
 in \llambda. This unification problem is not solvable without loss of
@@ -1251,28 +1253,46 @@ link, called \linkbeta.
 \begin{elpicode}
   type link-beta tm -> tm -> link.
 \end{elpicode}
+
+\def\rhs{\ensuremath{rhs}\xspace}
+\def\lhs{\ensuremath{lhs}\xspace}
   
 This link carries two terms, the former representing the variable $h$ for the
 new created hole and the latter containing the subterm $t$. As for the \linketa,
-we will call $h$ and $t$ respectively the left hand side (LHS)
-and the right hand side (RHS) of the \linkbeta.
+we will call $h$ and $t$ respectively the left hand side (\lhs)
+and the right hand side (\rhs) of the \linkbeta.
 
-A subterm is in \maybebeta{} if it has the shape \elpiIn{fapp[fuva
-N | L]} and \elpiIn{distinct L} does not hold. In that case, \elpiIn{L} is split
-in two sublist \elpiIn{PF} and \elpiIn{NPF} such that former is the longest
-prefix of \elpiIn{L} such that \elpiIn{distinct PF} holds. \elpiIn{NPF} is the
-list such that \elpiIn{append PF NPF L}. The LHS is set to a new variable
-named $M$ with \elpiIn{PF} in scope whereas the RHS is given by the term
-\elpiIn{app[uva N' PF | NPF]} where the \Ho variable identified by \elpiIn{N'}
-is mapped to the \Fo{} variable named \elpiIn{N}.
+In order to build a \linkbeta, we need to adapt the compiler so that it can
+recognize these ``problematic'' subterms. The following code snippet illustrate
+such behavior, we suppose the rule to be added just after \cref{rule:comp-pf}.
 
-\marginpar{signposting: a link is reconsidered in two cases. then make 2 paragraphs}
-After its creation, a \linkbeta remain suspended until the head of the RHS is
-instantiated by the oracle (see \cref{prop:simulation}). In this case the RHS is
-$\beta$-reduced to a new term $t$. $t$ is either a term in \llambda, in
-which case $t$ is unified with the LHS, otherwise, the link remain suspended
-and no progress is performed. Another way to wake a \linkbeta up is when the
-LHS is a term \elpiIn{T} and RHS has the shape \elpiIn{app[uva N PF | NPF]}
+\input{code/comp_beta}
+
+A term is \maybebeta if it has the shape \elpiIn{fapp[fuva A|Ag]} and
+\elpiIn{distinct Ag} does not hold. In that case, \elpiIn{Ag} is split in two
+sublist \elpiIn{Pf} and \elpiIn{Extra} such that former is the longest prefix of
+\elpiIn{Ag} such that \elpiIn{distinct Pf} holds. \elpiIn{Extra} is the list
+such that \elpiIn{append Pf Extra Ag}. Next important step is to compile
+recursively the terms of these lists and allocate a memory adress \elpiIn{B}
+from the substitution in order to map the \Fo variable \elpiIn{fuva A} to
+the \Ho variable \elpiIn{uva B}. The \linkbeta to return in the end is given 
+by the term \elpiIn{Beta = app[uva B Scope1 | Extra1]} constituting the \rhs,
+and a fresh variable \elpiIn{C} having in scope all the free variables occurring
+in \elpiIn{Beta} (this is \lhs). We point out that the \rhs is intentionally
+built as an \elpiIn{uva} where \elpiIn{Extra1} are not in scope, since by 
+invariant, we want all the variables appearing in \Ho to be in \llambda.
+
+One created, there exist two main situations waking up a suspended \linkbeta.
+The former is strictly connected to the definition of $\beta$-redex and occurs
+when the head of \rhs is materialized by the oracle (see
+\cref{prop:simulation}). In this case \rhs is safely\marginpar{explain why}
+$\beta$-reduced to a new term $t'$ and the result can be unified with \lhs. In
+this scenario the \linkbeta has accomplished its goal and can be removed from
+\linkStore.
+
+The second circumstance making the \linkbeta to progress is the instantiation 
+of the variables in the \elpiIn{Extra}. 
+
 and some of the arguments in the \elpiIn{NPF} list become names. This is
 possible after the resolution of other links. In this case, the list \elpiIn{L}
 obtained by the concatenation between \elpiIn{PF} and \elpiIn{NPF} is split
@@ -1295,25 +1315,25 @@ under the subsitution $\rho = \{X \mapsto \lambda x.x\}$.
 \noindent
 The links generated from this unification problem are:
 
-\begin{textcode}
-X ~$\mapsto$~ X1; F ~$\mapsto$~ X2 % The map
-  ~$\vdash$~ X0   =~$\eta$~= x\ `X3 x'
-x ~$\vdash$~ X3 x =~$\beta$~= X2 `X1 x' a
-\end{textcode}
+\begin{gather}
+  \mapping{X}{X1}{1}; \mapping{F}{X2}{0} (\mathrm{The map})\\
+  \linketaM{}{X0}{\lambda x.X3_x}\\
+  \linkbetaM{x}{X3_x}{X2 ~ X1_x ~ a}
+\end{gather}
 
 \noindent
 where the first link is a \linketa between the variable \texttt{X0}, representing
 the right side of the unification problem (it is a \maybeeta) and
 \texttt{X3}; and a \linkbeta between the variable \texttt{X3} and the subterm
-\texttt{c0\textbackslash\ X2 `X1 c0' a} (it is a \maybebeta).
-The substitution tells that \textIn{x ~$\vdash$~ X1 x = x}.
+$\lambda x.X1_x ~ a$ (it is a \maybebeta).
+The substitution tells that \substCell{x}{X1_x}{x}.
 
 We can now represent the \hrun execution from this configuration which will, at
 first, dereference all the links, and then try to solve them. The only link
-being modified is the second one, which is set to \textIn{X3 x =~$\beta$~= X2
-x a}. The RHS of the link has now a variable which is partially in the PF,
-we can therefore remove the original \linkbeta and replace it with the following 
-couple on links:
+being modified is the second one, which is set to \linkbetaM{x}{X3}{X2 x a}. The
+\rhs of the link has now a variable which is partially in the PF, we can
+therefore remove the original \linkbeta and replace it with the following couple
+on links:
 
 \begin{textcode}
   ~$\vdash$~ X1   =~$\eta$~= x\ `X4 x'
