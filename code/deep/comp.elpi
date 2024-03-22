@@ -342,7 +342,7 @@ namespace comp {
     print "progress β: refine" {pplink (@val-link-beta T T1)} "to" {pplinks NewLinks}.
 
   progress-beta-link T1 (app[uva _ _ | _] as T2) S S [@val-link-beta T1 T2] :- not (T1 = uva _ _), !,
-    print "unification outside PF for β:" {pplink (@val-link-beta T1 T2)}, fail.
+    print "unification outside PF for β:" {pplink (@val-link-beta T1 T2)} /*, fail */.
 
   progress-beta-link (uva _ _ as T) (app[uva _ _ | _] as T2) S1 _ _ :- 
     occur-check-err T T2 S1, !, fail.
@@ -418,13 +418,13 @@ namespace comp {
   get-head-link (@val-link-eta (uva Ad _) T) Ad T :- !.
   get-head-link (@val-link-beta (uva Ad _) T) Ad T :- !.
   get-head-link (ho.abs B) Ad (lam T) :- !, pi x\ get-head-link (B x) Ad (T x).
-  get-head-link Link _ _ :- halt "get-head-link: should never fail" {pplink Link}.
+  get-head-link Link _ _ :- print "get-head-link: attention not in PF" {pplink Link} /*,halt*/, fail.
 
   type find-link-by-var address -> links -> links -> list tm -> list links -> o.
   find-link-by-var _ _ [] [] [].
   find-link-by-var Ad Prefix [Hd | L1] [T | L2] [Hd1|LL] :-
     append Prefix L1 Hd1,
-    std.assert! (get-head-link Hd Ad1 T) "get head should not fail", Ad = Ad1, !,
+    get-head-link Hd Ad1 T, Ad = Ad1, !,
     find-link-by-var Ad1 [Hd|Prefix] L1 L2 LL.
   find-link-by-var Ad Prefix [Hd | L1] L2 LL :- !,
     find-link-by-var Ad [Hd | Prefix] L1 L2 LL.
@@ -453,10 +453,12 @@ namespace comp {
   type occur-check-links subst -> links -> o.
   occur-check-links _ [].
   occur-check-links S [Hd | Tl] :-
-    std.assert! (get-head-link Hd Ad Term) "get-head-link should not fail",
-    % print "## Occur check for" {pplink Hd} "in" {pplinks Tl},  %HIDE
+    get-head-link Hd Ad Term, !,
     not_occ_links Ad Term Tl,
-    % print "Ok occur check for" {ho.pp (uva Ad [])}, %HIDE
+    occur-check-links S Tl.
+  occur-check-links S [_|Tl] :-
+    print "OC is partial: a term is not in PF"
+    not_occ_links Ad Term Tl,
     occur-check-links S Tl.
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
