@@ -147,16 +147,16 @@ namespace comp {
       alloc-mapping M1 M2 (fv A) (hv B (arity Arity)) S1 S2.
 %ENDSNIP
 %SNIP: comp_beta
-  comp (fapp [fuva A|Args]) (uva C Scope) M1 M3 L1 L3 S1 S4 :- !,
-    pattern-fragment-prefix Args Pf Extra,
-      fold6 comp Pf    Scope1 M1 M1 L1 L1 S1 S1,
-      fold6 comp Extra Extra1 M1 M2 L1 L2 S1 S2,
-      len Pf Arity,
-      alloc-mapping M2 M3 (fv A) (hv B (arity Arity)) S2 S3,
-      Beta = app [uva B Scope1 | Extra1],
-      get-scope Beta Scope, 
-      alloc S3 C S4,
-      L3 = [@val-link-beta (uva C Scope) Beta | L2].
+  comp (fapp [fuva A|Ag]) (uva C Scope) M1 M3 L1 L3 S1 S4 :- !,
+    pattern-fragment-prefix Ag Pf Extra,
+    fold6 comp Pf    Scope1 M1 M1 L1 L1 S1 S1,
+    fold6 comp Extra Extra1 M1 M2 L1 L2 S1 S2,
+    len Pf Arity,
+    alloc-mapping M2 M3 (fv A) (hv B (arity Arity)) S2 S3,
+    Beta = app [uva B Scope1 | Extra1],
+    get-scope Beta Scope, 
+    alloc S3 C S4,
+    L3 = [@val-link-beta (uva C Scope) Beta | L2].
 %ENDSNIP
 %SNIP: comp_base
   comp (fapp A) (app A1)      M1 M2 L1 L2 S1 S2 :- 
