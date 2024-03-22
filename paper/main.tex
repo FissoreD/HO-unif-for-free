@@ -778,7 +778,13 @@ are handled in section \ref{sec:eta}.
 
 \subsection{Notations}
 
-We use math mode for \Ho.
+When we write \Ho terms outside code blocks we prefer to use the
+usual and more compact mathematical notation. However we need to
+distinguish between the ``application'' of a unification variable
+to its scope and the application of a term (possibly a unification
+variable) to a list of arguments. We write the scope in subscript
+and we use juxtaposition for application. Here a few examples:
+\vspace{5pt}
 
 \begin{tabular}{ll}
   $\lambda x.\lambda y.F_{x y}$ & \elpiIn{lam x\ lam y\ uva F [x, y]} \\
@@ -786,6 +792,15 @@ We use math mode for \Ho.
   $\lambda x.F_{x} ~ a$ & \elpiIn{lam x\ app[uva F [x], con "a"]} \\
   $\lambda x.F_{x} ~ x$ & \elpiIn{lam x\ app[uva F [x], x]} \\
 \end{tabular}
+\vspace{5pt}
+
+\noindent
+When detailing example we prefer to write links in mathematical notation,
+as equations between terms in a context. The equality sign is subscripted with
+kind of \elpiIn{baselink}. For example $\linkbetaM{x}{A}{F_x~a}$ corresponds to:
+\begin{elpicode}
+abs x\ val (link-beta (uva A []) (app[uva F [x],con "a"]))
+\end{elpicode}
 
 \subsection{Equational theory and Unification}
 
