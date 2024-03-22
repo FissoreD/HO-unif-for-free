@@ -6,7 +6,7 @@ typeabbrev addr mem.addr.
 
 namespace comp {
   shorten fo.{ (==o), flam, fapp, fcon, fuva }.
-  shorten ho.{ (==l), lam, app, con, uva }.
+  shorten ho.{ (==l), lam, app, con, uva , abs }.
   typeabbrev fm fo.fm.
   typeabbrev tm ho.tm.
   typeabbrev subst ho.subst.
@@ -124,7 +124,7 @@ namespace comp {
   type close-links (tm -> links) -> links -> o.
   close-links (_\[]) [].
   close-links (v\[L|XS v]) [L|YS] :- !, close-links XS YS.
-  close-links (v\[(L v)|XS v]) [ho.abs L|YS] :- !, 
+  close-links (v\[(L v)|XS v]) [abs L|YS] :- !, 
     close-links XS YS.
 %ENDSNIP
 %SNIP: comp_base

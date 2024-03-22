@@ -949,12 +949,16 @@ but play a major role in Sections \ref{sec:eta} and \ref{sec:beta}.
 
 This preliminary version of \elpiIn{comp} simply recognizes \Fo variables
 applied to a (possibly empty) duplicate free list of names (i.e.
-\elpiIn{pattern-fragment} detects variables in \llambda).
+\elpiIn{pattern-fragment} detects variables in \llambda). Note tha compiling
+\elpiIn{Ag} cannot create new mappings nor links, see the comp-lam hyp rule.
 
-The auxiliary function \elpiIn{close-links} cannot be explained here,
-che palle. \marginpar{fix}
+The auxiliary function \elpiIn{close-links}
 
 \input{code/comp_base2}
+
+since we want links to bubble up we use the abs constructor of the inctx data
+type to bind back the variable just crossed, and we do so only if the variable
+v occurs in L.
 
 \subsection{Execution}
 
