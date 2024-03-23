@@ -433,7 +433,7 @@ just consider as many copies as needed of the terms composing the
 rules, with fresh unification variables each time}
 The initial here $\rho_0$ is the empty substitution
 %
-\newcommand{\progress}{\ensuremath{\mathrm{check}}\xspace}
+\newcommand{\progress}{\ensuremath{\mathrm{progress}}\xspace}
 \newcommand{\fstep}{\ensuremath{\mathrm{fstep}}\xspace}
 \newcommand{\hstep}{\ensuremath{\mathrm{hstep}}\xspace}
 \newcommand{\frun}{\ensuremath{\mathrm{frun}}\xspace}
@@ -612,7 +612,7 @@ $$
 \noindent
 We write $\subterm{X} = \bigcup_{t\in X} \subterm{t}$ when $X$ is a set of terms.
 
-\newcommand{\wellb}{\ensuremath{\mathcal{W}}}
+\newcommand{\wellb}{\ensuremath{\mathcal{W}}\xspace}
 \begin{definition}[Well behaved set]
 Given a set of terms $X \subseteq \Ho{}$,
 $$
@@ -769,6 +769,7 @@ Other invariant: the terms in ho\_subst never contains eta and beta expansion
 Each variable \elpiIn{A}
 in \Ho has a (unique) arity \elpiIn{N} and each occurrence~
 \elpiIn{(uva A L)} is such that \elpiIn{(len L N)} holds
+\label{invariant:arity}
 \end{invariant}
 
 \noindent
@@ -776,6 +777,8 @@ The compiler establishes a mapping between variables of the two languages.
 In order to preserve invariant \ref{inv:uvaarity} we store the
 arity of each \elpiIn{hvariable} in the mapping and we reuse an existing
 mapping only if the arity matches.
+
+TODO: add ref to \cref{sec:invariant1}
 
 \input{code/alloc_mapping}
 
@@ -795,6 +798,8 @@ has a dedicated link.
 \begin{invariant}[Link left hand side] The left hand side of a new link
   is a flexible term.
 \end{invariant}
+
+\marginpar{WARNING: not true if we delay beta}
 
 \noindent
 The right hand side of a link, the problematic term, can occur under binders.
@@ -1089,23 +1094,33 @@ decomp che mappa abs verso lam
 \otext{An other example: \\
   \elpiIn{lam x\ app[f, app[X, x]] = Y, (lam x\ x) = X.}}
 
-\section{Use of multivars}
+% \section{Use of multivars}
 
-Se il termine initziale è della forma
+% Se il termine initziale è della forma
 
-\begin{elpicode}
-  app[con"xxx", (lam x\ lam y\ Y y x), (lam x\ f)]
-  =
-  app[con"xxx",X,X]
-\end{elpicode}
+% \begin{elpicode}
+%   app[con"xxx", (lam x\ lam y\ Y y x), (lam x\ f)]
+%   =
+%   app[con"xxx",X,X]
+% \end{elpicode}
 
-allora se non uso due X diverse non ho modo di recuperare il quoziente che mi manca.
+% allora se non uso due X diverse non ho modo di recuperare il quoziente che mi manca.
 
-a sto punto consideriamo liste di problemi e così da eliminare sta xxx senza
-perdità di generalità (e facciamo problemi più corti, e modellizziamo anche la
-sequenza)
+% a sto punto consideriamo liste di problemi e così da eliminare sta xxx senza
+% perdità di generalità (e facciamo problemi più corti, e modellizziamo anche la
+% sequenza)
 
-\subsection{Problems with $\eta$}\label{sec:eta}
+\section{Handling of \maybeeta}\label{sec:eta}
+
+Even though the unification process explained in the previous sections is able
+to solve a large number of unification problems, it remains still incomplete:
+\wellb is only a subset of terms in \Ho. In order to capture all the unification
+properties of \Eo, we need ad-hoc compilation strategies over those subterms
+that have been defined as ``problematic''.
+
+
+\subsection{Compilation}
+\subsection{Progress}
 
 \input{code/comp_eta}
 
@@ -1132,7 +1147,11 @@ A destra della eta abbiamo sempre un termine che comincia per $\lambda x. bla$
     di uno per poter unificare con il termine di dx.
 \end{textcode}
 
-\subsection{Problems with $\beta$}\label{sec:beta}
+\section{Enforcing Invariant~\ref{invariant:arity}}
+\label{sec:invariant1}
+Deduplicate mapping code etc...
+  
+\section{Handling of \maybebeta}\label{sec:beta}
 
 $\beta$-reduction problems (\maybebeta) appears any time we deal with a subterm $t
 = X t_1 \dots t_n$, where $X$ is flexible and the list $[t_1 \dots t_n]$ in not
@@ -1166,6 +1185,8 @@ new created hole and the latter containing the subterm $t$. As for the \linketa,
 we will call $h$ and $t$ respectively the left hand side (\lhs)
 and the right hand side (\rhs) of the \linkbeta.
 
+\subsection{Compilation}
+
 In order to build a \linkbeta, we need to adapt the compiler so that it can
 recognize these ``problematic'' subterms. The following code snippet illustrate
 such behavior, we suppose the rule to be added just after \cref{rule:comp-pf}.
@@ -1186,7 +1207,9 @@ in \elpiIn{Beta} (this is \lhs). We point out that the \rhs is intentionally
 built as an \elpiIn{uva} where \elpiIn{Extra1} are not in scope, since by
 invariant, we want all the variables appearing in \Ho to be in \llambda.
 
-One created, there exist two main situations waking up a suspended \linkbeta.
+\subsection{Progress}
+
+Once created, there exist two main situations waking up a suspended \linkbeta.
 The former is strictly connected to the definition of $\beta$-redex and occurs
 when the head of \rhs is materialized by the oracle (see
 \cref{prop:simulation}). In this case \rhs is safely\marginpar{explain why}
@@ -1201,34 +1224,35 @@ append to it the largest prefix of \elpiIn{Extra1} in a new variable
 \elpiIn{Scope2} such that \elpiIn{Scope2} remains in \llambda; we call
 \elpiIn{Extra2} the suffix of \elpiIn{Extra1} such that the concatenation of
 \elpiIn{Scope1} and \elpiIn{Extra1} is the same as the concatenation of
-\elpiIn{Scope2} and \elpiIn{Extra2}.
+\elpiIn{Scope2} and \elpiIn{Extra2}. Finally, two cases should be considered: 1)
+\elpiIn{Extra2} is the empty list, \lhs and rhs can be unified: we have two
+terms in \llambda; otherwise 2) the \linkbeta in question is replaced with a
+refined version where the \rhs is  \elpiIn{app[uva C Scope2 | Extra2]} and a new
+\linketa is added between the \lhs and the new-added variable \elpiIn{C}.
+\marginpar{dire che si adatta bene nelle approximation}
 
-% and some of the arguments in the \elpiIn{NPF} list become names. This is
-% possible after the resolution of other links. In this case, the list \elpiIn{L}
-% obtained by the concatenation between \elpiIn{PF} and \elpiIn{NPF} is split
-% again in to lists \elpiIn{PF'} and \elpiIn{NPF'}. If \elpiIn{PF} is not that
-% same as \elpiIn{PF'}, then we can 1) remove the current \linkbeta, 2) create a
-% new \linkbeta between \elpiIn{T} and \elpiIn{app[uva N' PF' | NPF']} and 3)
-% create a new \linketa between the variables \elpiIn{N} and \elpiIn{N'}.
-
-\marginpar{A bit too fast, we first compile, then unify, then the oracle, then the manip...}
-An example justifying this last link manipulation is given by the following
+An example justifying this second  link manipulation is given by the following
 unification problem:
 
+\def\varF{\ensuremath{\textbf{F}}\xspace}
+\def\varA{\ensuremath{\textbf{A}}\xspace}
+\def\varB{\ensuremath{\textbf{B}}\xspace}
+
 \begin{elpicode}
-  f = flam x\ fapp[F, (X x), a] % $f = \lambda x.F (X x) a$
+  f = flam x\ fapp[F, fapp[A, x]].
 \end{elpicode}
 
-\noindent
-under the subsitution $\rho = \{X \mapsto \lambda x.x\}$.
+% \begin{elpicode};
+%   f = flam x\ flam y\ fapp[F, fapp[A, x], fapp[B, y]].
+% \end{elpicode}
 
-\noindent
-The links generated from this unification problem are:
+The compilation of these terms produces the new unification problem: $f = X0$
 
+We obtain the mappings $\mapping{F}{\varF}{0}, \mapping{A}{\varA}{1}$ and the links:
+%
 \begin{gather}
-  \mapping{X}{X1}{1}; \mapping{F}{X2}{0} (\mathrm{The map})\\
-  \linketaM{}{X0}{\lambda x.X3_x}\\
-  \linkbetaM{x}{X3_x}{X2 ~ X1_x ~ a}
+  \linkbetaM{c0}{X3_{c0}}{X2~X1_{c0}}\\
+  \linketaM{}{X0}{\lambda c0.X3_{c0}}
 \end{gather}
 
 \noindent
