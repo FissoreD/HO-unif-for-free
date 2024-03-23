@@ -15,7 +15,7 @@
 \copyrightyear{2024}
 \acmYear{XXXX 2024}
 \acmBooktitle{YYY}
-\acmDOI{ZZZZZZZZZZZZ}    
+\acmDOI{ZZZZZZZZZZZZ}
 
 
 % \xspaceaddexceptions{]\}}
@@ -68,7 +68,7 @@
 
 \begin{document}
 
-\title{HO unification from object language to meta language} 
+\title{HO unification from object language to meta language}
 
 \author{Davide Fissore}
 \email{davide.fissore@inria.fr}
@@ -83,7 +83,7 @@
   \institution{Université Côte d'Azur, Inria}
   % \city{Nice}
   \country{France}}
-  
+
 \begin{abstract}
   Specifying and implementing a logic from scratch requires significant effort.
   Logical Frameworks and Higher Order Logic Programming Languages provide
@@ -99,7 +99,7 @@
   Set Theory~\cite{10.1007/BF00881873},
   Higher Order Logic~\cite{books/sp/NipkowPW02}, and even the Calculus of
   Constuctions~\cite{felty93lics}.
-  
+
   The object logic we are interested in is Coq's~\cite{Coq-refman}
   Dependent Type Theory (DTT),
   for which we aim to implement a unification procedure \Uo using the ML
@@ -112,22 +112,22 @@
   Elpi also comes with an encoding for DTT that works well
   for meta-programming~\cite{tassi:hal-01637063,tassi:hal-01897468,gregoire:hal-03800154,newtc}.
   Unfortunately this encoding, which we refer to as \Fo,
-  ``underuses'' \Ue by restricting it to first-order unification problems only. 
+  ``underuses'' \Ue by restricting it to first-order unification problems only.
   To address this issue, we propose a better-behaved encoding, \Ho,
   demonstrate how to map unification problems in \Fo{}
   to related problems in \Ho, and illustrate
   how to map back the unifiers found by \Ue, effectively implementing
    \Uo on top of \Ue for the encoding \Fo.
-   
+
   We apply this technique to the implementation of a type-class~\cite{wadler89}
   solver for Coq~\cite{Coq-refman}.
   Type-class solvers are proof search procedures based on
   unification that back-chain designated lemmas, providing essential
-  automation to widely used 
+  automation to widely used
   Coq libraries such as Stdpp/Iris~\cite{JUNG_KREBBERS_JOURDAN_BIZJAK_BIRKEDAL_DREYER_2018}
   and TLC~\cite{10.1007/978-3-642-14052-5_15}. These two libraries
   constitute our test bed.
-\end{abstract} 
+\end{abstract}
 
 \keywords{Logic Programming, Meta-Programming, Higher-Order Unification, Proof Automation}
 
@@ -228,9 +228,9 @@ predicate \coqIn{P} as a first order term: for the meta
 language its type is \elpiIn{tm}.
 If we try to backchain the rule \ref{clause:r3} on the encoding of the goal
 \ref{goal:g} given below
-  
+
 \begin{elpicode}
-decision (all (app[con"fin", con"7"]) y\                 
+decision (all (app[con"fin", con"7"]) y\
   app[con"nfact", y, con"3"]).
 \end{elpicode}
 
@@ -266,7 +266,7 @@ app[con"nfact", y, con"3"] = Pm y                     ~\customlabel{problem:pa}{
 Pm = x\ app[con"nfact", x, con"3"]     % assignment for Pm
 A = app[con"fin", con"7"]              % assignment for A
 \end{elpicode}
-  
+
 \noindent
 After unifying the head of rule \ref{clause:r3a} with the goal, Elpi runs
 the premise <<\elpiIn{link Pm A P}>> that is in charge of bringing the
@@ -361,8 +361,8 @@ This choice would underuse the logic programming engine provided by
 the metalanguage since by removing any datum from the head of rules
 indexing degenerates. Moreover the unification procedure built in the
 meta language is likely to be faster than one implemented in it,
-especially if the meta language is interpreted as Elpi is. 
-  
+especially if the meta language is interpreted as Elpi is.
+
 To state precisely the problem we solve we need a \Fo{} representation
 of DTT terms and a \Ho one.
 We call \Eo the equality over ground terms in \Fo,
@@ -375,7 +375,7 @@ TODO extend \Eo and \Ee with reflexivity on uvars.
   #3_i \in \llambda \Rightarrow %
     \exists \rho, %
       \rho #3_1 #1 \rho #3_2  %
-        \Leftrightarrow #3_1 #2 #3_2 \mapsto \rho' \subseteq \rho 
+        \Leftrightarrow #3_1 #2 #3_2 \mapsto \rho' \subseteq \rho
 }
 
 
@@ -384,7 +384,7 @@ TODO extend \Eo and \Ee with reflexivity on uvars.
     % \{#3_1, #3_2\} \subseteq \llambda \Rightarrow %
     #3_i \in \llambda \Rightarrow
       #3_1 #2 #3_2 \mapsto \rho
-        \Rightarrow 
+        \Rightarrow
           \rho #3_1 #1 \rho #3_2  %
 }
 
@@ -394,7 +394,7 @@ TODO extend \Eo and \Ee with reflexivity on uvars.
     #3_i \in \llambda \Rightarrow
       % \forall \rho, %
         \rho #3_1 #1 \rho #3_2  %
-          \Rightarrow \exists \rho', #3_1 #2 #3_2 \mapsto \rho' \land \rho' \subseteq \rho 
+          \Rightarrow \exists \rho', #3_1 #2 #3_2 \mapsto \rho' \land \rho' \subseteq \rho
 }
 
 We write $t_1 \Ue t_2 \mapsto \sigma$ when $t_1$ and $t_2$ unify
@@ -533,7 +533,7 @@ $$
 \begin{gather}
   \unifcorrect{\Eo}{\Uo}{s}\label{prop:correct}\\
 \unifcomplete{\Eo}{\Uo}{s}\label{prop:complete}\\
-% \forall \rho'\rho, 
+% \forall \rho'\rho,
   \rho s_1 \Eo \rho s_2 \Rightarrow
   \rho' \subseteq \rho \Rightarrow
   \rho's_i \in \llambda \Rightarrow
@@ -595,7 +595,7 @@ unification failure against, say, a constant.
 \noindent
 An example of $t$ in \maybebeta{} is $F a$ for a constant $a$. Note however tha
 an oracle could provide an assignment $\rho = \{ F \mapsto \lambda x.x\}$
-that makes the resulting term fall outside of \maybebeta. 
+that makes the resulting term fall outside of \maybebeta.
 
 \newcommand{\subterm}[1]{\ensuremath{\mathcal{P}(#1)}}
 \begin{definition}[Subterms \subterm{t}] The set of sub terms of $t$ is the
@@ -696,7 +696,7 @@ In order to reason about unification we provide a description of the
 are first class terms, i.e. they have a concrete syntax. We keep these languages
 minimal, for example, we omit the \elpiIn{all} quantifier of DTT we used
 in the example in Section~\ref{sec:intro} together with the type notation of
-terms carried by the \elpiIn{lam} constructor. 
+terms carried by the \elpiIn{lam} constructor.
 %
 \setlength{\abovecaptionskip}{0pt}
 \setlength{\belowcaptionskip}{-13pt}
@@ -741,7 +741,7 @@ The memory and its associated operations are described below:
 
 \input{code/mem_types}
 
-\noindent 
+\noindent
 If a memory cell is \elpiIn{none}, then the corresponding unification variable
 is not set. \elpiIn{assign} sets an unset cell to the given value, while
 \elpiIn{new} finds the first unused address and sets it to \elpiIn{none}.\marginpar{is new used?}
@@ -749,7 +749,7 @@ is not set. \elpiIn{assign} sets an unset cell to the given value, while
 Since in \Ho unification variables have a scope, their solution needs to be
 abstracted over it to enable the instantiation of a single
 solution to different scopes. This is obtained via the \elpiIn{inctx}
-container, and in particular via its \elpiIn{abs} binding constructor. 
+container, and in particular via its \elpiIn{abs} binding constructor.
 On the contrary a solution to a \Fo variable is a plain term.
 
 \input{code/fo_subst}
@@ -886,7 +886,7 @@ materialize.
 \input{code/fderef}
 
 \noindent
-TODO: about the cut\marginpar{should we rename forall2 into map}
+TODO: about the cut
 
 \input{code/deref}
 
@@ -898,9 +898,9 @@ number of abstractions in its assignment have to match.
 \paragraph{Term unification: \Uo vs. \Ue}
 
 In this paper we assume to have an implementation of \Ue that satisfies
-properties \ref{prop:correct-ml,prop:complete-ml}. Although we provide an
+properties~\ref{prop:correct-ml} and~\ref{prop:complete-ml}. Although we provide an
 implementation in the appendix (that we used for testing purposes) we only
-describe its signature. Elpi is expected to provide this brick, as well as
+describe its signature here. Elpi is expected to provide this brick, as well as
 any other implementation of $\lambda$Prolog.
 
 \input{code/ue_type}
@@ -940,7 +940,7 @@ over a term, updating a substitution while it traverses it.\marginpar{explain be
 % the variables of the OL with the decompiled version of their corresponding meta
 % variables. We claim that $t$ and $u$ unify if and only if $t'$ and $u'$ unify
 % and that the substitution in the object language is the same as the one returned
-% by the ML. \todo{same or $\supseteq$ or $\subseteq$} 
+% by the ML. \todo{same or $\supseteq$ or $\subseteq$}
 
 % In the following section we explain how we deal with term (de)compilation and
 % links between unification variables.
@@ -987,15 +987,15 @@ v occurs in L.
 
 \subsection{Decompilation}
 
-  
+
 \subsection{Example}
 
-OK 
+OK
 
 \begin{elpicode}
-Terms [ flam x\ fapp[fcon"g",fapp[fuva z, x]] 
+Terms [ flam x\ fapp[fcon"g",fapp[fuva z, x]]
       , flam x\ fapp[fcon"g", fcon"a"] ]
-Problems = [ pr z (s z) ] % $\lambda x.g (F x) = \lambda x.g a$ 
+Problems = [ pr z (s z) ] % $\lambda x.g (F x) = \lambda x.g a$
 lam x\ app[con"g",uva z [x]] ~\Uo~lam x\ app[con"g", con"a"]
 link z z (s z)
 HS = [some (abs x\con"a")]
@@ -1005,10 +1005,10 @@ S = [some (flam x\fcon a)]
 KO
 
 \begin{elpicode}
-  Terms [ flam x\ fapp[fcon"g",fapp[fuva z, x]] 
+  Terms [ flam x\ fapp[fcon"g",fapp[fuva z, x]]
   , flam x\ fapp[fcon"g", fcon"a"] ]
 Problems = [ pr 0 1   % $A = \lambda x.x$
-           , pr 2 3 ] % $A a = a$ 
+           , pr 2 3 ] % $A a = a$
 lam x\ app[con"g",uva z [x]] ~\Uo~lam x\ app[con"g", con"a"]
 link z z (s z)
 HS = [some (abs x\con"a")]
@@ -1030,16 +1030,16 @@ The compilation step is meant to recover the higher-order variables of the OL,
 expressed in a first order way, by replacing them with higher-order variables in
 the ML. In particular, every time a variable of the OL is encountered in the
 original term, it is replaced with a meta variable, and if the OL variable is
-applied to a list of distinct names $L$, then this list becomes the scope of the variable. 
+applied to a list of distinct names $L$, then this list becomes the scope of the variable.
 For all the other constructors of
 \elpiIn{tm}, the same term constructor is returned and its arguments are
 recursively compiled. The predicate in charge for term compilation is:
 
-\elpiIn{type comp tm -> tm -> links -> links -> subst -> subst -> o}. 
+\elpiIn{type comp tm -> tm -> links -> links -> subst -> subst -> o}.
 
 \noindent
 where, we take the term of the OL, produce the term of the ML, take a list
-of link and produce a list of new links, take a substitution and return a 
+of link and produce a list of new links, take a substitution and return a
 new substitution.
 
 In particular, due to programming constraints, we need to drag the old subst and
@@ -1056,9 +1056,9 @@ The following code
 defines a link, which is a relation between to variables indexes, the first
 being the index of a OL variable and the second being the index of a ML
 variable. The third integer\todo{integer or nat?} is the number of term in the
-scope of the two variables, or equivalently, in a typed language, their arity. 
+scope of the two variables, or equivalently, in a typed language, their arity.
 
-As an example, let's study the following unification problem (a slightly 
+As an example, let's study the following unification problem (a slightly
 modified version from \cref{sec:intro}):
 
 \begin{elpicode}
@@ -1068,7 +1068,7 @@ modified version from \cref{sec:intro}):
 
 \noindent
 we have the main unification problem where the nested \elpiIn{app} nodes have
-lists of different lengths making the unification to fail. The compilation of 
+lists of different lengths making the unification to fail. The compilation of
 these terms produces a new unification problem with the following shape:
 
 \begin{elpicode}
@@ -1122,16 +1122,16 @@ A destra della eta abbiamo sempre un termine che comincia per $\lambda x. bla$
 
 \begin{textcode}
   La deduplicate eta:
-  - viene chiamata che della forma [variable] -> [eta1] e [variable] -> [eta2] 
+  - viene chiamata che della forma [variable] -> [eta1] e [variable] -> [eta2]
     (a destra non c'è mai un termine con testa rigida)
   - i due termini a dx vengono unificati con la unif e uno dei due link viene buttato
     NOTA!! A dx abbiamo sempre un termine della forma lam x.VAR x!!!
     Altrimenti il link sarebbe stato risolto!!
-  - dopo l'unificazione rimane un link [variabile] -> [etaX] 
+  - dopo l'unificazione rimane un link [variabile] -> [etaX]
   - nella progress-eta, se a sx abbiamo una constante o un'app, allora eta-espandiamo
     di uno per poter unificare con il termine di dx.
 \end{textcode}
-  
+
 \subsection{Problems with $\beta$}\label{sec:beta}
 
 $\beta$-reduction problems (\maybebeta) appears any time we deal with a subterm $t
@@ -1141,13 +1141,13 @@ generality, since there is not a most general unifier. If we take back the
 example given in \cref{sec:nutshell}, the unification $F a = a$ admits two solutions for $F$:
 $\rho_1 = \{F \mapsto \lambda x.x\}$ and $\rho_2 = \{F \mapsto \lambda \_.a\}$.
 Despite this, it is possible to work with $\maybebeta$ if an oracle provides a
-substitution $\rho$ such that $\rho t$ falls again in the \llambda. 
+substitution $\rho$ such that $\rho t$ falls again in the \llambda.
 
 On the other hand, the \Ue is not designed to understand how the $\beta$-redexes
 work in the object language. Therefore, even if we know that $F$ is assigned
 to $\lambda x.x$, \Ue is not able to unify $F a$ with $a$. On the other hand,
 the problem $F a = G$ is solvable by \Ue, but the final result is that $G$ is
-assigned to $(\lambda x.x) a$ which breaks the invariant saying that the 
+assigned to $(\lambda x.x) a$ which breaks the invariant saying that the
 substitution of the meta language does not generate terms outide \wellb{} (Property \ref{prop:nf}).
 
 The solution to this problem is to modify the compiler such that any sub-term $t$
@@ -1160,7 +1160,7 @@ link, called \linkbeta.
 
 \def\rhs{\ensuremath{rhs}\xspace}
 \def\lhs{\ensuremath{lhs}\xspace}
-  
+
 This link carries two terms, the former representing the variable $h$ for the
 new created hole and the latter containing the subterm $t$. As for the \linketa,
 we will call $h$ and $t$ respectively the left hand side (\lhs)
@@ -1179,11 +1179,11 @@ sublist \elpiIn{Pf} and \elpiIn{Extra} such that former is the longest prefix of
 such that \elpiIn{append Pf Extra Ag}. Next important step is to compile
 recursively the terms of these lists and allocate a memory adress \elpiIn{B}
 from the substitution in order to map the \Fo variable \elpiIn{fuva A} to
-the \Ho variable \elpiIn{uva B}. The \linkbeta to return in the end is given 
+the \Ho variable \elpiIn{uva B}. The \linkbeta to return in the end is given
 by the term \elpiIn{Beta = app[uva B Scope1 | Extra1]} constituting the \rhs,
 and a fresh variable \elpiIn{C} having in scope all the free variables occurring
 in \elpiIn{Beta} (this is \lhs). We point out that the \rhs is intentionally
-built as an \elpiIn{uva} where \elpiIn{Extra1} are not in scope, since by 
+built as an \elpiIn{uva} where \elpiIn{Extra1} are not in scope, since by
 invariant, we want all the variables appearing in \Ho to be in \llambda.
 
 One created, there exist two main situations waking up a suspended \linkbeta.
@@ -1252,7 +1252,7 @@ x ~$\vdash$~ X3 x =~$\beta$~= x\ `X4 x' a
 
 By these links we say that \texttt{X1} is now $\eta$-linked to a fresh variable
 \texttt{X4} with arity one. This new variable is used in the new \linkbeta where
-the name \texttt{x} is in its scope. This allows 
+the name \texttt{x} is in its scope. This allows
 
 \subsection{Tricky examples}
 

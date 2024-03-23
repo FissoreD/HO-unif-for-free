@@ -530,10 +530,10 @@ namespace comp {
   tm->fm _ (con C)  (fcon C).
   tm->fm L (lam B1) (flam B2) :- 
     pi x y\ tm->fm _ x y => tm->fm L (B1 x) (B2 y).
-  tm->fm L (app L1) T :- forall2 (tm->fm L) L1 [Hd|Tl], 
+  tm->fm L (app L1) T :- map (tm->fm L) L1 [Hd|Tl], 
     fo.mk-app Hd Tl T.
   tm->fm L (uva VM TL) T :- mem L (mapping (fv VO) (hv VM _)), 
-    forall2 (tm->fm L) TL T1, fo.mk-app (fuva VO) T1 T.
+    map (tm->fm L) TL T1, fo.mk-app (fuva VO) T1 T.
   tm->fm L H _ :- halt "Fail in tm->fm" {ppmappings L} {ho.pp H}.
 
   type add-new-map-aux subst -> list tm -> map -> 

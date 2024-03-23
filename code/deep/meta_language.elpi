@@ -102,12 +102,12 @@ namespace ho {
   type prune-diff-variables addr -> list tm -> list tm -> 
                             assignment -> assignment -> o.
   prune-diff-variables N Args1 Args2 Ass1 Ass2 :-
-    forall2 (keep Args2) Args1 Bits1, 
-    forall2 (keep Args1) Args2 Bits2,
+    map (keep Args2) Args1 Bits1, 
+    map (keep Args1) Args2 Bits2,
     filter Args1 (mem Args2) ToKeep1,
     filter Args2 (mem Args1) ToKeep2,
-    forall2 (index ToKeep1) ToKeep1 IdPerm,
-    forall2 (index ToKeep1) ToKeep2 Perm21,
+    map (index ToKeep1) ToKeep1 IdPerm,
+    map (index ToKeep1) ToKeep2 Perm21,
     build-perm-assign N [] Bits1 IdPerm Ass1,
     build-perm-assign N [] Bits2 Perm21 Ass2.
 
@@ -150,9 +150,9 @@ namespace ho {
      performs scope checking for bind */
   type copy tm -> tm -> o.
   copy (con C)   (con C).
-  copy (app L)   (app L') :- forall2 copy L L'.
+  copy (app L)   (app L') :- map copy L L'.
   copy (lam T)   (lam T') :- pi x\ copy x x => copy (T x) (T' x).
-  copy (uva A L) (uva A L') :- forall2 copy L L'.
+  copy (uva A L) (uva A L') :- map copy L L'.
 
   type bind tm -> list tm -> assignment -> o.
   bind T [] (val T') :- copy T T'.
@@ -162,11 +162,13 @@ namespace ho {
   type deref subst -> tm -> tm -> o.                   %~($\customlabel{pred:deref}{\sigma t}$)~
   deref S X _ :- (var S; var X), halt "flex deref". % HIDE
   deref _ (con C) (con C).
-  deref S (app A) (app B) :- forall2 (deref S) A B.
+  deref S (app A) (app B) :- map (deref S) A B.
   deref S (lam F) (lam G) :-
     pi x\ deref S x x => deref S (F x) (G x).
-  deref S (uva N L) R :- set? N S A, move A L T, deref S T R.
-  deref S (uva X A) (uva X B) :- unset? X S, forall2 (deref S) A B.
+  deref S (uva N L) R :- set? N S A,
+    move A L T, deref S T R.
+  deref S (uva N A) (uva N B) :- unset? N S,
+    map (deref S) A B.
   deref _ N         N          :- name N. % HIDE
 
   type move assignment -> list tm -> tm -> o.

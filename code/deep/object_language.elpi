@@ -21,7 +21,7 @@ namespace fo {
   type fder subst -> fm -> fm -> o.
   fder S X _ :- (var S; var X), fatal "flex fder". % HIDE
   fder _ (fcon C) (fcon C).
-  fder S (fapp A) (fapp B) :- forall2 (fder S) A B.
+  fder S (fapp A) (fapp B) :- map (fder S) A B.
   fder S (flam F) (flam G) :-
     pi x\ fder S x x => fder S (F x) (G x).
   fder S (fuva N) R :- set? N S T, fder S T R.
@@ -39,7 +39,7 @@ namespace fo {
     pi x\ napp x x => napp (F x) (F1 x).
   napp (fapp [fapp L1 |L2]) T :- !,
     append L1 L2 L3, napp (fapp L3) T.
-  napp (fapp L) (fapp L1) :- forall2 napp L L1.
+  napp (fapp L) (fapp L1) :- map napp L L1.
 %ENDSNIP
 
 %SNIP: feq
@@ -82,7 +82,7 @@ namespace fo {
   type eta-contract fm -> fm -> o.
   eta-contract X _ :- var X, halt "Eta-contract first args is flexible". % HIDE
   eta-contract (fcon X) (fcon X).
-  eta-contract (fapp L) (fapp L1) :- forall2 eta-contract L L1.
+  eta-contract (fapp L) (fapp L1) :- map eta-contract L L1.
   eta-contract (flam F) T :- eta-contract-aux [] (flam F) T.
   eta-contract (flam F) (flam F1) :-
     pi x\ eta-contract x x => eta-contract (F x) (F1 x).
