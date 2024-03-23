@@ -70,13 +70,6 @@
 
 \title{HO unification from object language to meta language} 
 
-\author{Enrico Tassi}
-\email{enrico.tassi@inria.fr}
-\affiliation{%
-  \institution{Université Côte d'Azur, Inria}
-  % \city{Nice}
-  \country{France}}
-
 \author{Davide Fissore}
 \email{davide.fissore@inria.fr}
 \affiliation{%
@@ -84,6 +77,13 @@
   % \city{Nice}
   \country{France}}
 
+\author{Enrico Tassi}
+\email{enrico.tassi@inria.fr}
+\affiliation{%
+  \institution{Université Côte d'Azur, Inria}
+  % \city{Nice}
+  \country{France}}
+  
 \begin{abstract}
   Specifying and implementing a logic from scratch requires significant effort.
   Logical Frameworks and Higher Order Logic Programming Languages provide
@@ -565,11 +565,11 @@ a run time hint) then ...
 
 \subsection{The intuition in a nutshell}
 \label{sec:nutshell}
-A term $s$ is compiled in a term $t$ where any
-``problematic'' subterm $p$ is replaced by a fresh unification variable $h$
+A term $s$ is compiled in a term $t$ where every
+``problematic'' sub term $p$ is replaced by a fresh unification variable $h$
 and an accessory link that represent a suspended unification problem
-$h \Ue p$. As a result \Ue is ``well behaved'' on $t$, meaning it does not
-contradict \Eo (as it would do on ``problematic'' terms).
+$h \Ue p$. As a result \Ue is ``well behaved'' on $t$, that is it does not
+contradict \Eo as it would otherwise do on ``problematic'' terms.
 We now define ``problematic'' and ``well behaved'' more formally.
 
 \newcommand{\maybeeta}{\ensuremath{\Diamond\eta}\xspace}
@@ -584,7 +584,9 @@ $\lambda x.\lambda y.F~y~x$
 since the substitution
 $\rho = \{ F \mapsto \lambda a.\lambda b.fba\}$
 makes $\rho t = \lambda x.\lambda y.f x y$
-that is the eta long form of $f$.
+that is the eta long form of $f$. This term is problematic since
+its rigid part, the $\lambda$-abstractions, cannot justify a
+unification failure against, say, a constant.
 
 \begin{definition}[\maybebeta]
   $\maybebeta = \{ X t_1 \ldots t_n ~|~ X t_1 \ldots t_n \not\in \llambda \}$.
@@ -596,7 +598,8 @@ an oracle could provide an assignment $\rho = \{ F \mapsto \lambda x.x\}$
 that makes the resulting term fall outside of \maybebeta. 
 
 \newcommand{\subterm}[1]{\ensuremath{\mathcal{P}(#1)}}
-\begin{definition}[Subterm \subterm{t}]
+\begin{definition}[Subterms \subterm{t}] The set of sub terms of $t$ is the
+  largest set $\mathcal{P(t)}$ that can be obtained by the following rules.
 $$
 \begin{array}{l}
 t \in \subterm{t}\\
@@ -607,7 +610,7 @@ $$
 \end{definition}
 
 \noindent
-We write $\subterm{X} = \bigcup_{t\in X} \subterm{t}$.
+We write $\subterm{X} = \bigcup_{t\in X} \subterm{t}$ when $X$ is a set of terms.
 
 \newcommand{\wellb}{\ensuremath{\mathcal{W}}}
 \begin{definition}[Well behaved set]
@@ -638,7 +641,7 @@ node that could be erased by a $\beta$-reduction).
 Note that proposition \ref{prop:nf} does not hold for \Uo{} since
 decompilation can introduce (actually restore) terms in
 \maybeeta or \maybebeta that were move out of the way (put in $\linkStore$)
-by compilation.
+during compilation.
 
 \section{Alternative encodings and related work}
 
@@ -714,43 +717,39 @@ terms carried by the \elpiIn{lam} constructor.
 \end{figure}
 
 \noindent
-In the case of \Fo{} unification variables \elpiIn{fuva} have no explicit scope:
-the arguments of an higher order unification variable are via the \elpiIn{fapp}
-constructor. For example in the statement of the instance \coqIn{forall_dec} the
-term \coqIn{P x} is represented as \elpiIn{fapp[fuva N, x]}, where \elpiIn{N} is
-a memory address and \elpiIn{x} is a bound variable.
+Unification variables (\elpiIn{fuva} term constructor)
+in \Fo{} have no explicit scope:
+the arguments of an higher order variable are given via the \elpiIn{fapp}
+constructor. For example the term \coqIn{P x} is represented as
+\elpiIn{fapp[fuva N, x]}, where \elpiIn{N} is a memory address and
+\elpiIn{x} is a bound variable.\\
+In \Ho the representation of \coqIn{P x} is instead \elpiIn{uva N [x]},
+since unification variables come equipped with an explicit scope.
+We say that the unification variable occurrence \elpiIn{uva N L} is in
+\llambda if and only if \elpiIn{L} is made of distinct names. The
+predicate to test this condition is called \elpiIn{pattern-fragment}:
 
-In \Ho the representation of \coqIn{P x} is instead \elpiIn{uva N [x]}.
-We say that the unification variable \elpiIn{uva N L} is in \llambda iff
-\elpiIn{distinct L} holds.
-
-\begin{elpicode}
-type distinct list A -> o.
-distinct [].
-distinct [X|XS] :- name X, not(mem X XS), distinct XS.
-\end{elpicode}
+\input{code/pattern_fragment}
 
 \noindent
 The \elpiIn{name} builtin predicate tests if a term is a bound variable.
 \footnote{one could always load name x for every x under a pi and get rid of the name builtin}
-The
-compiler~\ref{sec:xxx} needs to support terms outside \llambda for practical
-reasons, so we don't assume all out terms are in \llambda but rather test. \textbf{\textcolor{red}{what?? }}
 
-In both languages unification variables are identified by a natural number,
-which can be seen as a memory address. The memory and its associated
-operations are described below:
+In both languages unification variables are identified by a natural number
+representing a memory address.
+The memory and its associated operations are described below:
 
 \input{code/mem_types}
 
 \noindent 
 If a memory cell is \elpiIn{none}, then the corresponding unification variable
-is not set. \elpiIn{assign} sets an unset cell to the given value.
+is not set. \elpiIn{assign} sets an unset cell to the given value, while
+\elpiIn{new} finds the first unused address and sets it to \elpiIn{none}.\marginpar{is new used?}
 
 Since in \Ho unification variables have a scope, their solution needs to be
-abstracted over it in order to enable the instantiation of a single
-solution to different scopes. On the contrary solutions to \Fo variables
-are plain terms.
+abstracted over it to enable the instantiation of a single
+solution to different scopes.
+On the contrary a solution to a \Fo variable is a plain term.
 
 \input{code/fo_subst}
 \input{code/ho_subst}
@@ -768,7 +767,7 @@ Other invariant: the terms in ho\_subst never contains eta and beta expansion
 
 \begin{invariant}[Unification variable arity] Each variable \elpiIn{A}
 in \Ho has a (unique) arity \elpiIn{N} and each occurrence~
-\elpiIn{(uvar A L)} is such that \elpiIn{(len L N)} holds
+\elpiIn{(uva A L)} is such that \elpiIn{(len L N)} holds
 \end{invariant}
 
 \noindent The arity of a variable in \Ho (a \elpiIn{hvariable} is stored in

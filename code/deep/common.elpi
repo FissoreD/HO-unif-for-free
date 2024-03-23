@@ -15,6 +15,7 @@ fatal A B C D :- halt A B C D.
 fatal A B C D E :- halt A B C D E.
 type failsafe o.
 
+%BEGIN
 kind nat type.
 type z nat.
 type s nat -> nat.
@@ -143,17 +144,22 @@ filter2 [] []   _ [].
 filter2 [X|L] [Y|YS] P R :- if (P X Y) (R = X :: L1) (R = L1), filter2 L YS P L1.
 
 % [pattern-fragment-prefix L [] ]
+%SNIP: pattern_fragment_prefix
 type pattern-fragment-prefix-aux list A -> list A -> list A -> list A -> o.
 pattern-fragment-prefix-aux [] _ [] [].
 pattern-fragment-prefix-aux [X | L] ACC [X | PF] NPF :- name X, not-in ACC X, !, 
   pattern-fragment-prefix-aux L [X | ACC] PF NPF.
 pattern-fragment-prefix-aux L _ [] L.
+%ENDSNIP
 
 type pattern-fragment-prefix list A -> list A -> list A -> o.
 pattern-fragment-prefix L PF NPF :- pattern-fragment-prefix-aux L [] PF NPF.
 
-pred pattern-fragment i:list A.
+%SNIP: pattern_fragment
+type pattern-fragment list A -> o.
+%ENDSNIP
 pattern-fragment L :- distinct_names L.
+%END
 
 type minus nat -> nat -> nat -> o.
 minus z _ z.
