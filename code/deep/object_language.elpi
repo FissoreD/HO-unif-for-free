@@ -66,6 +66,7 @@ namespace fo {
   extend-subst (fcon _) S S.
   extend-subst (fapp L) S S1 :- fold extend-subst L S S1.
 
+%SNIP: beta_fo
   type beta fm -> list fm -> fm -> o.
   beta A [] A.
   beta (flam Bo) [H | L] R :- beta (Bo H) L R.
@@ -73,6 +74,7 @@ namespace fo {
   beta (fuva N) L (fapp [fuva N | L]).
   beta (fcon H) L (fapp [fcon H | L]).
   beta N L (fapp [N | L]) :- name N.
+%ENDSNIP
 
   type mk-app fm -> list fm -> fm -> o.
   mk-app T L S :- beta T L S.
