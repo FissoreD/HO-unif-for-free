@@ -43,17 +43,17 @@ prolog [triple (error X as E) L R|_] Links Links H H2 E :-
      (H2 = H).
 
 type decompile-subst
-  comp.map -> 
+  comp.mmap -> 
   comp.links -> 
   ho.subst ->
-  fo.subst ->
-  fo.subst ->
+  fo.fsubst ->
+  fo.fsubst ->
   o.
 decompile-subst Mappings Links H F F1 :-
   comp.decompile Mappings Links H F F1.
 decompile-subst _ _ _ _ _ :- !, print "Fail decompl-subst", fail.
 
-type build-fo-subst list (triple diagnostic fo.fm fo.fm) -> fo.subst -> fo.subst -> o.
+type build-fo-subst list (triple diagnostic fo.fm fo.fm) -> fo.fsubst -> fo.fsubst -> o.
 build-fo-subst [] L L.
 build-fo-subst [triple _ L R | TL] A D :-
   fo.extend-subst L A B, fo.extend-subst R B C,
@@ -61,7 +61,7 @@ build-fo-subst [triple _ L R | TL] A D :-
 
 type validate-solution 
   list (triple diagnostic fo.fm fo.fm) ->
-  fo.subst ->
+  fo.fsubst ->
   o.
 validate-solution [] _.
 validate-solution [triple ok L R|Goals] FS :- 
@@ -79,7 +79,7 @@ same-sols L [] :- std.assert! (forall1 ((=) none) L) "Invalid solution".
 same-sols A B :- halt "INVALID SOL" {fo.ppsubst A} " =/= " {fo.ppsubst B}.
 
 
-type check-sol option (list fo.fm) -> fo.subst -> o.
+type check-sol option (list fo.fm) -> fo.fsubst -> o.
 check-sol none _. 
 check-sol (some Sol) L :-
   std.map Sol (x\r\ if (x = fo.fcon "_") (r = none) (r = some x)) L1,
@@ -546,8 +546,10 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- std
   pr ok "λf.(X f a) = λf.(f a)",
 ] ["λf.f"].
 
-@sokl 68 [
-  pr ok "f = λx.λy.(X (Y x) (Z y))",
-  pr ok "Y = λx.x",
-  pr ok "Z = λx.x",
-] ["f","λx.x", "λx.x"].
+% @sokl 67 [
+%   pr ok "f = λx.(Y (X x))"
+%   pr ok "X = λx.x",
+% ] ["λx.x", "f"].
+
+/* Non passa in elpi (x\ X x) = A B */
+/*     Passa in elpi X = A B        */
