@@ -9,16 +9,15 @@ namespace fo {
   type fapp list fm -> fm.
   type flam (fm -> fm) -> fm.
   type fcon string -> fm.
-  type fuva  addr -> fm.
+  type fuva addr -> fm.
 %ENDSNIP
 
 %SNIP: fo_subst
   typeabbrev fsubst (mem fm).
 %ENDSNIP
-  typeabbrev subst fsubst.
 
 %SNIP: fderef
-  type fder subst -> fm -> fm -> o.
+  type fder fsubst -> fm -> fm -> o.
   fder S X _ :- (var S; var X), fatal "flex fder". % HIDE
   fder _ (fcon C) (fcon C).
   fder S (fapp A) (fapp B) :- map (fder S) A B.
@@ -29,7 +28,7 @@ namespace fo {
   fder S (fuva N) (fuva N) :- unset? N S.
 % fder _ N N :- name N.
 
-  type fderef subst -> fm -> fm -> o.                 %~($\customlabel{pred:fder}{\rho s}$)~
+  type fderef fsubst -> fm -> fm -> o.                 %~($\customlabel{pred:fder}{\rho s}$)~
   fderef S T T2 :- fder S T T1, napp T1 T2.
 
   type napp fm -> fm -> o.
@@ -59,7 +58,7 @@ namespace fo {
 
   % [extend-subst T S S'] forall fuva N in T, extends S with none at pos N
   % this is used only in test to build the subst-map before running it
-  type extend-subst fm -> subst -> subst -> o.
+  type extend-subst fm -> fsubst -> fsubst -> o.
   extend-subst (fuva N) S S' :- mem.alloc N S S'.
   extend-subst (flam F) S S' :-
     pi x\ (pi S\extend-subst x S S) => extend-subst (F x) S S'.
@@ -112,7 +111,7 @@ namespace fo {
   type ppuva addr -> string -> o.
   ppuva N S :- mem.ppaddr N X, S is "C" ^ X.
 
-  type ppsubst subst -> list string -> o.
+  type ppsubst fsubst -> list string -> o.
   ppsubst L S :- mem.pp L "C" (x\s\sigma y\pp x y, s is ":= " ^ y)  S.
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
