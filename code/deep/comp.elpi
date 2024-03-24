@@ -5,11 +5,13 @@ typeabbrev addr mem.addr.
 typeabbrev addr mem.addr.
 
 namespace comp {
-  shorten fo.{ (==o), flam, fapp, fcon, fuva }.
-  shorten ho.{ (==l), lam, app, con, uva , abs }.
+  shorten fo.{ (==o), flam, fapp, fcon, fuva , eta-contract }.
+  shorten ho.{ (==l), lam, app, con, uva , abs , deref-assmt }.
+  shorten mem.{ set? , unset? , assign }.
   typeabbrev fm fo.fm.
   typeabbrev tm ho.tm.
   typeabbrev subst ho.subst.
+  typeabbrev fsubst fo.fsubst.
 
 %BEGIN
 %SNIP: comp_base_types
@@ -116,10 +118,10 @@ namespace comp {
 %SNIP: comp_base2
   type comp-lam (fm -> fm) -> (tm -> tm) -> 
     mmap -> mmap -> links -> links -> subst -> subst -> o.
-  comp-lam F F1 M1 M2 L L2 S S1 :-
+  comp-lam F G M1 M2 L1 L3 S1 S2 :-
     pi x y\ (pi M L S\ comp x y M M L L S S) => 
-      comp (F x) (F1 y) M1 M2 L (L1 y) S S1, 
-    close-links L1 L2.
+      comp (F x) (G y) M1 M2 L1 (L2 y) S1 S2,
+    close-links L2 L3.
 
   type close-links (tm -> links) -> links -> o.
   close-links (_\[]) [].
@@ -130,7 +132,7 @@ namespace comp {
 %SNIP: comp_base
   type comp fm -> tm -> mmap -> mmap -> links -> links ->
     subst -> subst -> o.
-  comp (fcon C) (con C)       M1 M1 L1 L1 S1 S1.
+  comp (fcon C) (con C) M M L L S S.
 %ENDSNIP
 %SNIP: comp_eta
   comp (flam F) (uva A Scope) M1 M2 L1 L3 S1 S3 :-
@@ -141,13 +143,13 @@ namespace comp {
       L3 = [@val-link-eta (uva A Scope) (lam F1)| L2].
 %ENDSNIP
 %SNIP: comp_base
-  comp (flam F) (lam F1)      M1 M2 L1 L2 S1 S2 :- 
+  comp (flam F) (lam F1) M1 M2 L1 L2 S1 S2 :- 
     comp-lam F F1 M1 M2 L1 L2 S1 S2.
-  comp (fuva A) (uva B [])    M1 M2 L L S S1 :- 
-    m-alloc (fv A) (hv B (arity z)) M1 M2 S S1.
-  comp (fapp [fuva A|Ag]) (uva B Ag1) M1 M2 L1 L1 S1 S2 :-
+  comp (fuva A) (uva B []) M1 M2 L L S1 S2 :- 
+    m-alloc (fv A) (hv B (arity z)) M1 M2 S1 S2.
+  comp (fapp [fuva A|Ag]) (uva B Ag1) M1 M2 L L S1 S2 :-
     pattern-fragment Ag, !,
-      fold6 comp Ag Ag1 M1 M1 L1 L1 S1 S1,
+      fold6 comp Ag Ag1 M1 M1 L L S1 S1,
       len Ag Arity, 
       m-alloc (fv A) (hv B (arity Arity)) M1 M2 S1 S2.
 %ENDSNIP
@@ -164,7 +166,7 @@ namespace comp {
     L3 = [@val-link-beta (uva C Scope) Beta | L2].
 %ENDSNIP
 %SNIP: comp_base
-  comp (fapp A) (app A1)      M1 M2 L1 L2 S1 S2 :- 
+  comp (fapp A) (app A1) M1 M2 L1 L2 S1 S2 :- 
     fold6 comp A A1 M1 M2 L1 L2 S1 S2.
 %ENDSNIP
 
@@ -257,9 +259,9 @@ namespace comp {
 
 %SNIP: alloc_mapping
   type m-alloc fvariable -> hvariable -> mmap -> mmap -> 
-    subst -> subst -> o.
-  m-alloc Fv Hv Map Map S S :- mem Map (mapping Fv Hv), !.
-  m-alloc Fv Hv Map [mapping Fv Hv|Map] S S1 :- Hv = hv N _,
+    subst -> subst -> o.                            %~\customlabel{clause:malloc}{(malloc)}~
+  m-alloc Fv Hv M M S S :- mem M (mapping Fv Hv), !.
+  m-alloc Fv Hv M [mapping Fv Hv|M] S S1 :- Hv = hv N _,
     alloc S N S1.
 %ENDSNIP
 
@@ -357,8 +359,8 @@ namespace comp {
 
   progress-beta-link T1 (app[uva _ _ | _] as T2) H H [@val-link-beta T1 T2] :- !, print "No β progress1".
 
-  progress-beta-link T1 (app [Hd | Tl]) S1 S2 B :- % Hd is rigid!
-    ho.beta Hd Tl T3, print "Progress β deep with" {ho.pp T3}, 
+  progress-beta-link T1 (app [Hd | MS]) S1 S2 B :- % Hd is rigid!
+    ho.beta Hd MS T3, print "Progress β deep with" {ho.pp T3}, 
     progress-beta-link-aux T1 T3 S1 S2 B.
 
   type solve-link-abs link -> links -> subst -> subst -> o.
@@ -460,13 +462,13 @@ namespace comp {
 
   type occur-check-links subst -> links -> o.
   occur-check-links _ [].
-  occur-check-links S [Hd | Tl] :-
+  occur-check-links S [Hd | MS] :-
     get-head-link Hd Ad Term, !,
-    not_occ_links Ad Term Tl,
-    occur-check-links S Tl.
-  occur-check-links S [_|Tl] :-
+    not_occ_links Ad Term MS,
+    occur-check-links S MS.
+  occur-check-links S [_|MS] :-
     print "OC is partial: a term is not in PF"
-    occur-check-links S Tl.
+    occur-check-links S MS.
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% CHECK %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -504,34 +506,38 @@ namespace comp {
   commit-links-aux (ho.abs B) H H1 :-
     pi x\ commit-links-aux (B x) H H1.
 
-  type commit-links links -> links -> subst -> subst -> o.
-  commit-links [] [] H H.
-  commit-links [Abs | Links] L H H2 :- 
+  type commit-links links -> subst -> subst -> o.
+  commit-links [] H H.
+  commit-links [Abs | Links] H H2 :- 
     commit-links-aux Abs H H1, !, 
-    commit-links Links L H1 H2.
+    commit-links Links H1 H2.
 
+%SNIP: decompm
   % Invariant: links are only on the form (link VO VM Arity), each VO appears once and each VM appears once
-  type decompl-subst mmap -> mmap -> 
-    subst -> fo.fsubst -> fo.fsubst -> o.
-  decompl-subst _ [A|_] _ _ _ :- print "Solving" {ppmapping A}, fail.
-  decompl-subst _ [] _ F F.
-  decompl-subst Map [mapping (fv VO) (hv VM _)|Tl] H F F2 :- 
-    mem.set? VM H T, !,
-    print {ho.ppsubst H} {ho.ppass T},
-    std.assert!(ho.deref-assmt H T TTT) "Should not fail",
-    abs->lam TTT T', tm->fm Map T' T1, 
-    fo.eta-contract T1 T2, mem.assign VO F T2 F1,
-    decompl-subst Map Tl H F1 F2. 
-  decompl-subst Map [mapping _ (hv VM _)|Tl] H F F2 :- 
-    mem.unset? VM H, decompl-subst Map Tl H F F2.
-  decompl-subst _ [L|_] H _ _ :- halt "Decompl mapping: failed on" {ppmapping L} {ho.ppsubst H}.
+  type decompm mmap -> mmap -> subst -> fsubst -> fsubst -> o.
+  decompm _ [A|_] _ _ _ :- print "Solving" {ppmapping A}, fail. % HIDE
+  decompm _ [] _ F F.
+  decompm M [mapping (fv V) (hv H _)|MS] S F1 F3 :- set? H S A,
+    !, % HIDE
+    print {ho.ppsubst S} {ho.ppass A}, % HIDE
+    std.assert!( % HIDE
+    deref-assmt S A A1,
+    true) "Should not fail", % HIDE
+    abs->lam A1 T, tm->fm M T T1, 
+    eta-contract T1 T2,
+    assign V F1 T2 F2,
+    decompm M MS S F2 F3. 
+  decompm M [mapping _ (hv H _)|MS] S F1 F2 :- unset? H S,
+    decompm M MS S F1 F2.
+  decompm _ [L|_] S _ _ :- halt "Decompl mapping: failed on" {ppmapping L} {ho.ppsubst S}. % HIDE
+%ENDSNIP
 
   type tm->fm mmap -> tm -> fm -> o.
   tm->fm _ (con C)  (fcon C).
   tm->fm L (lam B1) (flam B2) :- 
     pi x y\ tm->fm _ x y => tm->fm L (B1 x) (B2 y).
-  tm->fm L (app L1) T :- map (tm->fm L) L1 [Hd|Tl], 
-    fo.mk-app Hd Tl T.
+  tm->fm L (app L1) T :- map (tm->fm L) L1 [Hd|MS], 
+    fo.mk-app Hd MS T.
   tm->fm L (uva VM TL) T :- mem L (mapping (fv VO) (hv VM _)), 
     map (tm->fm L) TL T1, fo.mk-app (fuva VO) T1 T.
   tm->fm L H _ :- halt "Fail in tm->fm" {ppmappings L} {ho.pp H}.
@@ -568,22 +574,26 @@ namespace comp {
   type complete-mapping subst -> subst -> 
       mmap -> mmap -> fo.fsubst -> fo.fsubst -> o.
   complete-mapping _ [] L L F F.
-  complete-mapping H [none | Tl] L1 L2 F1 F2 :-   
-    complete-mapping H Tl L1 L2 F1 F2.
-  complete-mapping H [some T0 | Tl] L1 L3 F1 F3 :-
+  complete-mapping H [none | MS] L1 L2 F1 F2 :-   
+    complete-mapping H MS L1 L2 F1 F2.
+  complete-mapping H [some T0 | MS] L1 L3 F1 F3 :-
     ho.deref-assmt H T0 T,
     complete-mapping-under-ass H T L1 L2 F1 F2, 
     append L1 L2 LAll,
-    complete-mapping H Tl LAll L3 F2 F3.
+    complete-mapping H MS LAll L3 F2 F3.
 
-  type decompile mmap -> links -> 
-    subst -> fo.fsubst -> fo.fsubst -> o.
-  decompile Map1 L HO FO FO2 :- 
-    commit-links L L1_ HO HO1, !,                                                          % L1 conaints no link-eta (it may contain beta),
-    print "# After decompl-eta, subst is" {ho.ppsubst HO1} "with links" {pplinks L1_},
-    complete-mapping HO1 HO1 Map1 Map2 FO FO1,                                            % Foreach VM not mapped to OL, we build a link
-    print "# After complete-mapping, mmap are" {ppmappings Map2} "with ho-subst" {ho.ppsubst HO1}, 
-    decompl-subst Map2 Map2 HO1 FO1 FO2.
+%SNIP: decomp
+  type decompile mmap -> links -> subst ->
+    fsubst -> fsubst -> o.
+  decompile M1 L S F1 F3 :- 
+    % L1 conaints no link-eta (it may contain beta),
+    commit-links L S S1,
+    !, % HIDE                                                          
+    print "# After decompl-eta, subst is" {ho.ppsubst S1} "with links" {pplinks L}, % HIDE
+    complete-mapping S1 S1 M1 M2 F1 F2,                                            % Foreach VM not mapped to OL, we build a link
+    print "# After complete-mapping, mmap are" {ppmappings M2} "with ho-subst" {ho.ppsubst S1}, % HIDE
+    decompm M2 M2 S1 F2 F3.
+%ENDSNIP
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PRINTER %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -594,7 +604,7 @@ namespace comp {
     S is {fo.ppuva N} ^ " -> " ^ {ho.ppuva M} ^ " (" ^ {ppnat Len} ^ ")".
 
   type ppmappings mmap -> list string -> o.
-  ppmappings Map Str :- forall2 ppmapping Map Str.
+  ppmappings M Str :- forall2 ppmapping M Str.
 
   type pplink-latex-aux link -> list string -> string -> string -> string -> o.
   pplink-latex-aux (ho.abs F) [A|AS] OP B C :- 

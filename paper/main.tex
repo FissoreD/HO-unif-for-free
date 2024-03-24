@@ -795,16 +795,19 @@ has a dedicated link.
 
 \input{code/comp_links}
 
-\begin{invariant}[Link left hand side] The left hand side of a new link
-  is a flexible term.
-\end{invariant}
-
-\marginpar{WARNING: not true if we delay beta}
-
 \noindent
 The right hand side of a link, the problematic term, can occur under binders.
 To accommodate this situation the compiler wraps \elpiIn{baselink} using
 the \elpiIn{inctx} container.
+
+\begin{invariant}[Link left hand side] The left hand side of a new link
+  is a variable.
+\end{invariant}
+
+\noindent
+If the variable is assigned during a run the link is considered for
+progress and possibly eliminated. This is discussed in
+section~\ref{sec:eta}.\marginpar{is this the right section?}
 
 \subsection{Notational conventions}
 
@@ -838,7 +841,7 @@ abs x\ val (link-beta (uva A []) (app[uva F [x],con "a"]))
 \subsection{Equational theory and Unification}
 
 In order to express properties \ref{prop:correct, prop:complete, prop:simulation}
-we need to equip \Fo and \Ho with term equality,
+we need to equip \Fo{} and \Ho with term equality,
 substitution application and unification.
 
 \paragraph{Term equality: \Eo vs. \Ee} We extend the equational theory
@@ -961,12 +964,11 @@ for terms outside \llambda in Section \ref{sec:beta}.
 
 \subsection{Compilation}
 
-The objective of the compilation is to recognize the higher-order variables
-available in \Ho{} when expressed in a first order way in \Fo{}. The compiler
-also generates a map to bring back the substitution from
-\Ho{} to \Fo{}.
-
-\input{code/alloc_mapping}
+The main task of the compiler is to recognize \Fo{} variables standing
+for functions and map them to higher order variables in \Ho.
+In order to bring back the substitution from \Ho{} to \Fo{} the compiler
+builds a ``memory map'' connecting the the kind of variables using routine
+\ref{clause:malloc}.
 
 The signature of the \elpiIn{comp} predicate below allows for the generation of
 links (suspended unification problems) that play no role in this section
@@ -974,23 +976,36 @@ but play a major role in Sections \ref{sec:eta} and \ref{sec:beta}.
 
 \input{code/comp_base}
 
-This preliminary version of \elpiIn{comp} simply recognizes \Fo variables
+\noindent
+This preliminary version of \elpiIn{comp} recognizes \Fo{} variables
 applied to a (possibly empty) duplicate free list of names (i.e.
 \elpiIn{pattern-fragment} detects variables in \llambda). Note tha compiling
-\elpiIn{Ag} cannot create new mappings nor links, see the comp-lam hyp rule.
-
-The auxiliary function \elpiIn{close-links}
+\elpiIn{Ag} cannot create new mappings nor links, since \elpiIn{Ag}
+is made of bound variables and the hypothetical rule loaded by \elpiIn{comp-lam}
+(see below) grants this property.
 
 \input{code/comp_base2}
 
-since we want links to bubble up we use the abs constructor of the inctx data
-type to bind back the variable just crossed, and we do so only if the variable
-v occurs in L.
+\noindent
+The auxiliary function \elpiIn{close-links} tests if the bound variable
+\elpiIn{v} really occurs in the link. If it is the case the link is wrapped into
+an additional \elpiIn{abs} node binding \elpiIn{v}. In this way links generated
+deep inside the compiled terms can be moved outside their original context
+of binders.
+
+Note that \elpiIn{pi x y\..} is syntactic sugar for \elpiIn{pi x\ pi y\..}.
 
 \subsection{Execution}
 
+XXX links are update unlike section 2
+\input{code/hstep}
+
+note \elpiIn{(a = b) c d} is \elpiIn{(=) a b c d}.
 
 \subsection{Decompilation}
+
+\input{code/decomp}
+\input{code/decompm}
 
 
 \subsection{Example}

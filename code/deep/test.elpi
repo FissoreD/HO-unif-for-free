@@ -3,12 +3,29 @@ shorten fo.{(==o) , parse, parse-eq}.
 macro @read :- input_line std_in _.
 
 shorten ho.{(==l)}.
+typeabbrev tm ho.tm.
+typeabbrev subst ho.subst.
+typeabbrev links comp.links.
 
 type valid-error string -> o.
 valid-error uvar :- !, halt "Message error should not be flexible".
 valid-error "unif" :- !.
 valid-error "decompl" :- !.
 valid-error H :- halt "Invalid message error" H.
+
+%BEGIN
+
+%SNIP: hstep
+type hstep tm -> tm -> links -> links -> subst -> subst -> o.
+hstep T1 T2 L1 L2 S1 S3 :-
+  (T1 ==l T2) S1 S2,
+  print "## After unif subst is" {ho.ppsubst H1}, % HIDE
+  print "## Links are" {comp.pplinks Links}, % HIDE
+  printC "solve links?", % HIDE
+  comp.solve-links-fixpoint L1 L2 S2 S3.
+%ENDSNIP
+
+%END
 
 type prolog 
   list (triple diagnostic ho.tm ho.tm) -> 
@@ -19,11 +36,7 @@ type prolog
 prolog [] L L H H ok :- print "end proggram\n".
 prolog [triple ok L R|Us] Links Links2 H H3 D :- !, std.do! [
   print "## prolog unif step" {ho.pp {ho.deref H L}} "=" {ho.pp {ho.deref H R}},
-  (L ==l R) H H1,
-  print "## After unif subst is" {ho.ppsubst H1},
-  print "## Links are" {comp.pplinks Links},
-  printC "solve links?",
-  comp.solve-links-fixpoint Links Links1 H1 H2,
+  hstep L R Links Links1 H H2,
   print "## After solve links, links are" {comp.pplinks Links1},
   print "## After solve links, subst is" {ho.ppsubst H2},
   ],
