@@ -4,8 +4,11 @@ macro @read :- input_line std_in _.
 
 shorten ho.{(==l)}.
 typeabbrev tm ho.tm.
+typeabbrev fm fo.fm.
 typeabbrev subst ho.subst.
+typeabbrev fsubst fo.fsubst.
 typeabbrev links comp.links.
+shorten comp.{ progress , comp , decompm }.
 
 type valid-error string -> o.
 valid-error uvar :- !, halt "Message error should not be flexible".
@@ -19,10 +22,19 @@ valid-error H :- halt "Invalid message error" H.
 type hstep tm -> tm -> links -> links -> subst -> subst -> o.
 hstep T1 T2 L1 L2 S1 S3 :-
   (T1 ==l T2) S1 S2,
-  print "## After unif subst is" {ho.ppsubst H1}, % HIDE
-  print "## Links are" {comp.pplinks Links}, % HIDE
+  print "## After unif subst is" {ho.ppsubst S2}, % HIDE
+  print "## Links are" {comp.pplinks L1}, % HIDE
   printC "solve links?", % HIDE
-  comp.solve-links-fixpoint L1 L2 S2 S3.
+  progress L1 L2 S2 S3.
+%ENDSNIP
+
+%SNIP: unif_fo
+type (===o) fm -> fm -> fsubst -> o.
+(A ===o B) F :-
+  comp A A' [] M1 [] [] [] S1,
+  comp B B' M1 M2 [] [] S1 S2,
+  hstep A' B' [] [] S2 S3,
+  decompm M2 M2 S3 [] F.
 %ENDSNIP
 
 %END
@@ -52,7 +64,7 @@ prolog [triple (error X as E) L R|_] Links Links H H2 E :-
       printC "solve links?",
       % if solve-link has success, then the error is decompl else 
       print "Before solve links fixpoint",
-      if (comp.solve-links-fixpoint Links _ H1 H2) (X = "decompl") (X = "unif"))
+      if (comp.progress Links _ H1 H2) (X = "decompl") (X = "unif"))
      (H2 = H).
 
 type decompile-subst
@@ -569,3 +581,8 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- std
   pr ok "f = λx.(X (Y x))",
   pr ok "Y = λx.x",
 ] ["f","λx.x"].
+
+@sokl 70 [
+  pr ok "λx.λy.(X y x) = λx.λy.x",
+  pr ok "λx.(f (X x) x) = f (λy.y)",
+] ["λx.λy.y"].

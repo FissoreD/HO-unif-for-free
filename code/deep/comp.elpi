@@ -5,7 +5,7 @@ typeabbrev addr mem.addr.
 typeabbrev addr mem.addr.
 
 namespace comp {
-  shorten fo.{ (==o), flam, fapp, fcon, fuva , eta-contract }.
+  shorten fo.{ (==o), flam, fapp, fcon, fuva , eta-contract , beta }.
   shorten ho.{ (==l), lam, app, con, uva , abs , deref-assmt }.
   shorten mem.{ set? , unset? , assign }.
   typeabbrev fm fo.fm.
@@ -115,18 +115,20 @@ namespace comp {
   type rigid fm -> o.
   rigid X :- not (X = fuva _).
 
-%SNIP: comp_base2
+%SNIP: comp_lam
   type comp-lam (fm -> fm) -> (tm -> tm) -> 
     mmap -> mmap -> links -> links -> subst -> subst -> o.
   comp-lam F G M1 M2 L1 L3 S1 S2 :-
     pi x y\ (pi M L S\ comp x y M M L L S S) => 
       comp (F x) (G y) M1 M2 L1 (L2 y) S1 S2,
     close-links L2 L3.
+%ENDSNIP
 
+%SNIP: comp_close_links
   type close-links (tm -> links) -> links -> o.
   close-links (_\[]) [].
   close-links (v\[L|XS v]) [L|YS] :- !, close-links XS YS.
-  close-links (v\[(L v)|XS v]) [abs L|YS] :- !, 
+  close-links (v\[(L v)|XS v]) [abs L|YS] :- 
     close-links XS YS.
 %ENDSNIP
 %SNIP: comp_base
@@ -398,18 +400,18 @@ namespace comp {
     (A' ==l B) H H1.
 
   % Invariant: links received in entry have already been dereferenced
-  type solve-links links -> links -> subst -> subst -> o.
-  solve-links [] [] X X :- print "end solve links".
+  type progress1 links -> links -> subst -> subst -> o.
+  progress1 [] [] X X :- print "end solve links".
 
-  solve-links [A|L1] [A|L3] S S2 :- take-link A L1 B L2, !,
+  progress1 [A|L1] [A|L3] S S2 :- take-link A L1 B L2, !,
     print "deduplicating links:" {pplink A} "===" {pplink B}, 
     same-link-eta A B S S1, 
-    solve-links L2 L3 S1 S2.
-  solve-links [L0|L1] L3 S S2 :- deref-link S L0 L,
+    progress1 L2 L3 S1 S2.
+  progress1 [L0|L1] L3 S S2 :- deref-link S L0 L,
     print "considering link for progress:" {pplink L},
     solve-link-abs L R S S1, !,
     if (R = []) (print {pplink L} "is removed") true,
-    solve-links L1 L2 S1 S2, append R L2 L3.
+    progress1 L1 L2 S1 S2, append R L2 L3.
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% OCC CHECK %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -474,16 +476,21 @@ namespace comp {
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% CHECK %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  type solve-links-fixpoint links -> links -> subst -> subst -> o.
-  solve-links-fixpoint L0 L2 H H2 :-
-    deref-links H L0 L, !,
-    print "\nfixpoint iteration on:" {pplinks L}, !,
-    solve-links L L1 H H1, !,
-    if (occur-check-links H1 L1) true (print "fail by oc in solve-link-fixpoint", fail),
-    if (L = L1, H = H1)
-      (print "end fixpoint", deref-links H L L2 , H2 = H)
-      (print "## Subst is" {ho.ppsubst H1}, print "## Links are" {pplinks {deref-links H1 L1}}, 
-        solve-links-fixpoint L1 L2 H1 H2).
+%SNIP: progress
+  type progress links -> links -> subst -> subst -> o.
+  progress L0 L2 S1 S3 :-
+    deref-links S1 L0 L,
+    !, % HIDE 
+    print "\nfixpoint iteration on:" {pplinks L}, !, % HIDE
+    progress1 L L1 S1 S2, !,
+    if ( % HIDE
+    occur-check-links S2 L1,
+    true) true (print "fail by oc in progress", fail), % HIDE
+    if (L = L1, S1 = S2) (L2 = L1, S3 = S1) (progress L1 L2 S2 S3).
+    %  (print "end fixpoint", deref-links S1 L L2 , S3 = S1)
+    %  (print "## Subst is" {ho.ppsubst S2}, print "## Links are" {pplinks {deref-links S2 L1}}, 
+    %    progress L1 L2 S2 S3).
+%ENDSNIP
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% DECOMPL %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -523,24 +530,25 @@ namespace comp {
     std.assert!( % HIDE
     deref-assmt S A A1,
     true) "Should not fail", % HIDE
-    abs->lam A1 T, tm->fm M T T1, 
+    abs->lam A1 T, decomp M T T1, 
     eta-contract T1 T2,
     assign V F1 T2 F2,
     decompm M MS S F2 F3. 
   decompm M [mapping _ (hv H _)|MS] S F1 F2 :- unset? H S,
     decompm M MS S F1 F2.
   decompm _ [L|_] S _ _ :- halt "Decompl mapping: failed on" {ppmapping L} {ho.ppsubst S}. % HIDE
-%ENDSNIP
 
-  type tm->fm mmap -> tm -> fm -> o.
-  tm->fm _ (con C)  (fcon C).
-  tm->fm L (lam B1) (flam B2) :- 
-    pi x y\ tm->fm _ x y => tm->fm L (B1 x) (B2 y).
-  tm->fm L (app L1) T :- map (tm->fm L) L1 [Hd|MS], 
-    fo.mk-app Hd MS T.
-  tm->fm L (uva VM TL) T :- mem L (mapping (fv VO) (hv VM _)), 
-    map (tm->fm L) TL T1, fo.mk-app (fuva VO) T1 T.
-  tm->fm L H _ :- halt "Fail in tm->fm" {ppmappings L} {ho.pp H}.
+  type decomp mmap -> tm -> fm -> o.
+  decomp _ (con C)  (fcon C).
+  decomp M (app A) R :- map (decomp M) A [H|Ag], beta H Ag R.
+  decomp M (lam F) (flam G) :- 
+    pi x y\ (pi M\ decomp M x y) => decomp M (F x) (G y).
+  decomp M (uva Hv Ag) R :-
+    mem M (mapping (fv Fv) (hv Hv _)), 
+    map (decomp M) Ag Bg,
+    beta (fuva Fv) Bg R.
+  decomp M H _ :- halt "Fail in decomp" {ppmappings M} {ho.pp H}. % HIDE
+%ENDSNIP
 
   type add-new-map-aux subst -> list tm -> mmap -> 
         mmap ->  fo.fsubst -> fo.fsubst -> o.

@@ -481,8 +481,8 @@ $$
 Here \hstep{} is made of two sub-steps: a call to \Ue (on the compiled
 terms) and a call to \progress{} on the set of links. We claim the following:
 
-\begin{proposition}[Simulation]\label{prop:sumul}
-$\forall \mathcal{S}, \forall \mathcal{N}$
+\begin{proposition}[Simulation]\label{prop:simulation}
+$\forall \mathcal{S}, \forall \mathcal{N},$
 $$
   \runF{\mathcal{S}}{\mathcal{N}}{\rho}
   \Leftrightarrow
@@ -495,7 +495,7 @@ That is, the two executions give the same result. Moreover:
 
 \begin{proposition}[Simulation fidelity]\label{prop:fidelity}
 In the context of~ \hrun, if $~\mathcal{T} \subseteq \llambda$ we have that
-$\forall p \in 1 \ldots \mathcal{N}$
+$\forall p \in 1 \ldots \mathcal{N},$
 $$
 \stepF{\mathcal{S}}{p}{\rho_{p-1}}{\rho_p}
 \Leftrightarrow
@@ -531,13 +531,13 @@ $$
 
 \begin{proposition}[Properties of \Uo{}]
 \begin{gather}
-  \unifcorrect{\Eo}{\Uo}{s}\label{prop:correct}\\
-\unifcomplete{\Eo}{\Uo}{s}\label{prop:complete}\\
+  \unifcorrect{\Eo}{\Uo}{s}\customlabel{prop:correct}{(correct)}\\
+\unifcomplete{\Eo}{\Uo}{s}\customlabel{prop:complete}{(complete)}\\
 % \forall \rho'\rho,
   \rho s_1 \Eo \rho s_2 \Rightarrow
   \rho' \subseteq \rho \Rightarrow
   \rho's_i \in \llambda \Rightarrow
-  \rho' s_1 \Uo \rho' s_2 \label{prop:simulation}
+  \rho' s_1 \Uo \rho' s_2 %\label{prop:simulation}
 \end{gather}
 \end{proposition}
 
@@ -545,7 +545,7 @@ Properties \ref{prop:correct} and \ref{prop:complete} state, respectively, that
 in \llambda the implementation of \Uo is correct, complete and returns the most
 general unifier.
 
-Property \ref{prop:simulation} states that \Uo, hence our compilation scheme,
+\marginpar{fix}Property \ref{prop:simulation} states that \Uo, hence our compilation scheme,
 is resilient to unification problems outside \llambda solved by
 a third party. We believe this property is of practical interest since we
 want the user to be able to add heuristics via hand written rules
@@ -838,6 +838,10 @@ kind of \elpiIn{baselink}. For example $\linkbetaM{x}{A}{F_x~a}$ corresponds to:
 abs x\ val (link-beta (uva A []) (app[uva F [x],con "a"]))
 \end{elpicode}
 
+\noindent
+When it is clear from the context we shall use the same syntax for \Fo{} terms
+(although we never subscripts unification variables).
+
 \subsection{Equational theory and Unification}
 
 In order to express properties \ref{prop:correct, prop:complete, prop:simulation}
@@ -963,6 +967,7 @@ $\eta\beta$-conversion is described in Section \ref{sec:eta} and the support
 for terms outside \llambda in Section \ref{sec:beta}.
 
 \subsection{Compilation}
+\marginpar{manca beta normal in entrata}
 
 The main task of the compiler is to recognize \Fo{} variables standing
 for functions and map them to higher order variables in \Ho.
@@ -979,28 +984,38 @@ but play a major role in Sections \ref{sec:eta} and \ref{sec:beta}.
 \noindent
 This preliminary version of \elpiIn{comp} recognizes \Fo{} variables
 applied to a (possibly empty) duplicate free list of names (i.e.
-\elpiIn{pattern-fragment} detects variables in \llambda). Note tha compiling
-\elpiIn{Ag} cannot create new mappings nor links, since \elpiIn{Ag}
+\elpiIn{pattern-fragment} detects variables in \llambda).
+Note tha compiling \elpiIn{Ag} cannot create new mappings nor links, since \elpiIn{Ag}
 is made of bound variables and the hypothetical rule loaded by \elpiIn{comp-lam}
 (see below) grants this property.
 
-\input{code/comp_base2}
+\input{code/comp_lam}
 
 \noindent
+In the code above the syntax \elpiIn{pi x y\..} is syntactic sugar for
+iterated \elpiIn{pi} abstraction, as in \elpiIn{pi x\ pi y\..}.
+
 The auxiliary function \elpiIn{close-links} tests if the bound variable
 \elpiIn{v} really occurs in the link. If it is the case the link is wrapped into
 an additional \elpiIn{abs} node binding \elpiIn{v}. In this way links generated
 deep inside the compiled terms can be moved outside their original context
 of binders.
 
-Note that \elpiIn{pi x y\..} is syntactic sugar for \elpiIn{pi x\ pi y\..}.
+\input{code/comp_close_links}
+
+\noindent
+Note that we could remove the second rule, whose purpose is to make
+links more readable by pruning unneeded abstractions (unused context entries).
 
 \subsection{Execution}
 
 XXX links are update unlike section 2
 \input{code/hstep}
+\input{code/progress}
 
-note \elpiIn{(a = b) c d} is \elpiIn{(=) a b c d}.
+\noindent
+Note thar \elpiIn{((A ~\Ue~B) C D)} is syntactic sugar for
+\elpiIn{((~\Ue~) A B C D)}.
 
 \subsection{Decompilation}
 
@@ -1008,106 +1023,171 @@ note \elpiIn{(a = b) c d} is \elpiIn{(=) a b c d}.
 \input{code/decompm}
 
 
-\subsection{Example}
+\subsection{Definition of \Uo and its properties}
 
-OK
+\input{code/unif_fo}
 
-\begin{elpicode}
-Terms [ flam x\ fapp[fcon"g",fapp[fuva z, x]]
-      , flam x\ fapp[fcon"g", fcon"a"] ]
-Problems = [ pr z (s z) ] % $\lambda x.g (F x) = \lambda x.g a$
-lam x\ app[con"g",uva z [x]] ~\Uo~lam x\ app[con"g", con"a"]
-link z z (s z)
-HS = [some (abs x\con"a")]
-S = [some (flam x\fcon a)]
-\end{elpicode}
+The code given so far applies to terms in $\beta\eta$-normal form where
+unification variables in \Fo{} can occur non linearly but always with
+the same number of arguments, and where their arguments are distinct names
+(as per \llambda).
 
-KO
-
-\begin{elpicode}
-  Terms [ flam x\ fapp[fcon"g",fapp[fuva z, x]]
-  , flam x\ fapp[fcon"g", fcon"a"] ]
-Problems = [ pr 0 1   % $A = \lambda x.x$
-           , pr 2 3 ] % $A a = a$
-lam x\ app[con"g",uva z [x]] ~\Uo~lam x\ app[con"g", con"a"]
-link z z (s z)
-HS = [some (abs x\con"a")]
-S = [some (flam x\fcon a)]
-lam x\ app[f, app[X, x]] = Y,
-  lam x\ x) = X.
-\end{elpicode}
-
-\otext{Goal: $s_1 \Uo s_2$ is compiled into $t_1 \Ue t_2$}
-\otext{What is done: uvars \elpiIn{fo_uv} of OL are replaced into uvars \elpiIn{ho_uv} of the ML}
-\otext{Each \elpiIn{fo_uv} is linked to an \elpiIn{ho_uv} of the OL}
-\otext{Example needing the compiler v0 (tra l'altro lo scope è ignorato):\\ \elpiIn{lam x\ app[con"g",app[uv 0, x]] ~\Uo~lam x\ app[con"g", c"a"]}}
-\otext{Links used to instantiate vars of elpi}
-\otext{After all links, the solution in links are compacted and given to coq}
-\otext{It is not so simple, see next sections (multi-vars, eta, beta)}
+\begin{lemma}[Compilation round trip] If
+  \elpiIn{comp S T [] M [] _ [] _} then \elpiIn{decomp M T S}
+\end{lemma}
+\begin{proof}[Proof sketch]
+trivial, since the terms are beta normal beta just builds an app.
+\end{proof}
 
 
-The compilation step is meant to recover the higher-order variables of the OL,
-expressed in a first order way, by replacing them with higher-order variables in
-the ML. In particular, every time a variable of the OL is encountered in the
-original term, it is replaced with a meta variable, and if the OL variable is
-applied to a list of distinct names $L$, then this list becomes the scope of the variable.
-For all the other constructors of
-\elpiIn{tm}, the same term constructor is returned and its arguments are
-recursively compiled. The predicate in charge for term compilation is:
+\begin{lemma}
+Properties \ref{prop:correct} and
+\ref{prop:complete} hold for the implementation of \Uo above
+\end{lemma}
+\begin{proof}[Proof sketch]
+ In this setting \Ee is as strong as
+\Eo on ground terms. What we have to show is that whenever two different \Fo
+terms can be made equal by a substitution $\rho$ (plus the \ref{clause:beta1}
+and \ref{clause:beta2} if needed) we can find this $\rho$ by finding
+a $\sigma$ via \Ue{} on the corresponding \Ho terms and by decompiling it.
+If we look at the \Fo{} terms, the are two interesting cases:
+\begin{itemize}
+\item \elpiIn{fuva X ~\Uo~ s}. In this case after \elpiIn{comp} we have
+  $Y \Ue t$ that succeeds with $\sigma = \{ Y \mapsto t\}$ and
+  $\sigma$ is decompiled to $\rho = \{ Y \mapsto s\}$.
+\item \elpiIn{fall[fuva X|L] ~\Uo~ s}. In this case
+ we have $Y_{\vec{x}} \Ue t$ that succeeds with
+ $\sigma = \{ \vec{y} \vdash Y \mapsto t[\vec{x}/\vec{y}]\}$ that in turn
+ is decompiled to $\rho = \{ Y \mapsto \lambda \vec{y}.s[\vec{x}/\vec{y}]\}$.
+ Thanks to \ref{clause:beta1}
+ $(\lambda \vec{y}.s[\vec{x}/\vec{y}])~\vec{x} \Eo s$.
+\end{itemize}
+Since the mapping is a bijection occur check in \Ho{} corresponds to occur
+check in \Fo{}.
+\end{proof}
 
-\elpiIn{type comp tm -> tm -> links -> links -> subst -> subst -> o}.
+\begin{lemma} Properties simulation (\ref{prop:simulation}) and
+fidelity (\ref{prop:fidelity}) hold
+\end{lemma}
+\begin{proof}[Proof sketch]
+Since \elpiIn{progress1} is trivial \fstep and \hstep are the same, that is
+in this
+context where input terms are $\beta\eta$-normal and we disregard $\eta$-equivalence
+\Ue is equivalent to \Uo.
+\end{proof}
 
-\noindent
-where, we take the term of the OL, produce the term of the ML, take a list
-of link and produce a list of new links, take a substitution and return a
-new substitution.
+\subsection{Limitations of by this basic scheme}
 
-In particular, due to programming constraints, we need to drag the old subst and
-return a new one extended, if needed, with the new declared meta-variables.
+\begin{gather}
+\lambda x y.F~y~x = \lambda x y.x\\
+\lambda x. f~(F~x)~x = f~(\lambda y.y)
+\end{gather}
+Note that here $F$ is used with different arities, moreover
+in the second problem the left hand side happens to be an
+eta expansion (of $f (\lambda y.y)$) only after we discover that
+$F = \lambda x\lambda y.y$ (i.e. that $F$ discards the $x$ argument).
+Both problems are addressed in the next section.
+  
+% \subsection{Example}
 
-The following code
-%
-\begin{elpicode}
-  kind link type.
-  type link nat -> nat -> nat -> subst.
-\end{elpicode}
-%
-\noindent
-defines a link, which is a relation between to variables indexes, the first
-being the index of a OL variable and the second being the index of a ML
-variable. The third integer\todo{integer or nat?} is the number of term in the
-scope of the two variables, or equivalently, in a typed language, their arity.
+% OK
 
-As an example, let's study the following unification problem (a slightly
-modified version from \cref{sec:intro}):
+% \begin{elpicode}
+% Terms [ flam x\ fapp[fcon"g",fapp[fuva z, x]]
+%       , flam x\ fapp[fcon"g", fcon"a"] ]
+% Problems = [ pr z (s z) ] % $\lambda x.g (F x) = \lambda x.g a$
+% lam x\ app[con"g",uva z [x]] ~\Uo~lam x\ app[con"g", con"a"]
+% link z z (s z)
+% HS = [some (abs x\con"a")]
+% S = [some (flam x\fcon a)]
+% \end{elpicode}
 
-\begin{elpicode}
-  lam x\ app[c"decision", app[c"nfact", x, c"3"]] ~\Uo~
-    lam x\ app [c"decision", app[uv 0, x]]
-\end{elpicode}
+% KO
 
-\noindent
-we have the main unification problem where the nested \elpiIn{app} nodes have
-lists of different lengths making the unification to fail. The compilation of
-these terms produces a new unification problem with the following shape:
+% \begin{elpicode}
+%   Terms [ flam x\ fapp[fcon"g",fapp[fuva z, x]]
+%   , flam x\ fapp[fcon"g", fcon"a"] ]
+% Problems = [ pr 0 1   % $A = \lambda x.x$
+%            , pr 2 3 ] % $A a = a$
+% lam x\ app[con"g",uva z [x]] ~\Uo~lam x\ app[con"g", con"a"]
+% link z z (s z)
+% HS = [some (abs x\con"a")]
+% S = [some (flam x\fcon a)]
+% lam x\ app[f, app[X, x]] = Y,
+%   lam x\ x) = X.
+% \end{elpicode}
 
-\begin{elpicode}
-  lam x\ app[c"decision", app[c"nfact", x, c"3"]] ~\Ue~
-    lam x\ app [c"decision", uv 1 [x]]
-\end{elpicode}
+% \otext{Goal: $s_1 \Uo s_2$ is compiled into $t_1 \Ue t_2$}
+% \otext{What is done: uvars \elpiIn{fo_uv} of OL are replaced into uvars \elpiIn{ho_uv} of the ML}
+% \otext{Each \elpiIn{fo_uv} is linked to an \elpiIn{ho_uv} of the OL}
+% \otext{Example needing the compiler v0 (tra l'altro lo scope è ignorato):\\ \elpiIn{lam x\ app[con"g",app[uv 0, x]] ~\Uo~lam x\ app[con"g", c"a"]}}
+% \otext{Links used to instantiate vars of elpi}
+% \otext{After all links, the solution in links are compacted and given to coq}
+% \otext{It is not so simple, see next sections (multi-vars, eta, beta)}
 
-\noindent
-The main difference is the replacement of the subterm \elpiIn{app[uv 0, x]} of
-the OL with the subterm \elpiIn{uv 0 [x]}. Variable indexes are chosen by the
-ML, that is, the index \elpiIn{0} for that unification variable of the OL term
-has not the sam meaning of the index \elpiIn{0} in the ML. There exists two
-different substitution mapping, one for the OL and one for the ML and the indexes
-of variable point to the respective substitution.
 
-decomp che mappa abs verso lam
-\noindent
-\otext{An other example: \\
-  \elpiIn{lam x\ app[f, app[X, x]] = Y, (lam x\ x) = X.}}
+% The compilation step is meant to recover the higher-order variables of the OL,
+% expressed in a first order way, by replacing them with higher-order variables in
+% the ML. In particular, every time a variable of the OL is encountered in the
+% original term, it is replaced with a meta variable, and if the OL variable is
+% applied to a list of distinct names $L$, then this list becomes the scope of the variable.
+% For all the other constructors of
+% \elpiIn{tm}, the same term constructor is returned and its arguments are
+% recursively compiled. The predicate in charge for term compilation is:
+
+% \elpiIn{type comp tm -> tm -> links -> links -> subst -> subst -> o}.
+
+% \noindent
+% where, we take the term of the OL, produce the term of the ML, take a list
+% of link and produce a list of new links, take a substitution and return a
+% new substitution.
+
+% In particular, due to programming constraints, we need to drag the old subst and
+% return a new one extended, if needed, with the new declared meta-variables.
+
+% The following code
+% %
+% \begin{elpicode}
+%   kind link type.
+%   type link nat -> nat -> nat -> subst.
+% \end{elpicode}
+% %
+% \noindent
+% defines a link, which is a relation between to variables indexes, the first
+% being the index of a OL variable and the second being the index of a ML
+% variable. The third integer\todo{integer or nat?} is the number of term in the
+% scope of the two variables, or equivalently, in a typed language, their arity.
+
+% As an example, let's study the following unification problem (a slightly
+% modified version from \cref{sec:intro}):
+
+% \begin{elpicode}
+%   lam x\ app[c"decision", app[c"nfact", x, c"3"]] ~\Uo~
+%     lam x\ app [c"decision", app[uv 0, x]]
+% \end{elpicode}
+
+% \noindent
+% we have the main unification problem where the nested \elpiIn{app} nodes have
+% lists of different lengths making the unification to fail. The compilation of
+% these terms produces a new unification problem with the following shape:
+
+% \begin{elpicode}
+%   lam x\ app[c"decision", app[c"nfact", x, c"3"]] ~\Ue~
+%     lam x\ app [c"decision", uv 1 [x]]
+% \end{elpicode}
+
+% \noindent
+% The main difference is the replacement of the subterm \elpiIn{app[uv 0, x]} of
+% the OL with the subterm \elpiIn{uv 0 [x]}. Variable indexes are chosen by the
+% ML, that is, the index \elpiIn{0} for that unification variable of the OL term
+% has not the sam meaning of the index \elpiIn{0} in the ML. There exists two
+% different substitution mapping, one for the OL and one for the ML and the indexes
+% of variable point to the respective substitution.
+
+% decomp che mappa abs verso lam
+% \noindent
+% \otext{An other example: \\
+%   \elpiIn{lam x\ app[f, app[X, x]] = Y, (lam x\ x) = X.}}
 
 % \section{Use of multivars}
 

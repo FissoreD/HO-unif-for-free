@@ -137,14 +137,14 @@ Explain builtin name (can be implemented by loading name after each pi)
     Perm => ho.copy A A',
     (A' ==l B) H H1.
 
-  type solve-links links -> links -> ho.subst -> ho.subst -> o.
-  solve-links [] [] X X.
-  solve-links [A|L1] [A|L3] S S2 :- take-link A L1 B L2, !,
+  type progress1 links -> links -> ho.subst -> ho.subst -> o.
+  progress1 [] [] X X.
+  progress1 [A|L1] [A|L3] S S2 :- take-link A L1 B L2, !,
     same-link-eta A B S S1, 
-    solve-links L2 L3 S1 S2.
-  solve-links [L0|L1] L3 S S2 :- deref-link S L0 L,
+    progress1 L2 L3 S1 S2.
+  progress1 [L0|L1] L3 S S2 :- deref-link S L0 L,
     solve-link-abs L R S S1, !,
-    solve-links L1 L2 S1 S2, append R L2 L3.
+    progress1 L1 L2 S1 S2, append R L2 L3.
 \end{elpicode}
 
 \section{The decompiler}
