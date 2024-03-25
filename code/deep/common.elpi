@@ -131,6 +131,10 @@ forall1 _ L :- var L, !.
 forall1 P [X|XS] :- P X, forall1 P XS.
 forall1 _ [].
 
+type none (X -> o) -> list X -> o.
+none _ [].
+none P [X|Xs] :- not (P X), none P Xs.
+
 type len list A -> nat -> o.
 len [] z.
 len [_|L] (s X) :- len L X.

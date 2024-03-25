@@ -51,31 +51,11 @@ namespace comp {
   % a term use a binder B if there exists a sub-term which `surely` reduce to B
   % for example: `f (g x) a` use the binder x
   %       while: `f (A x) a` may not use x, since A can reduce to a constant
-  %% x occurs rigidly in t iff $\forall \sigma, \forall t', t' \Eo{} \sigma t \Rightarrow x \in \subterm{t'}$
-  %%
   type occurs-rigidly fm -> fm -> o.
   occurs-rigidly N N.
   occurs-rigidly _ (fapp [fuva _|_]) :- !, fail.
   occurs-rigidly N (fapp L) :- exists (occurs-rigidly N) L.
   occurs-rigidly N (flam B) :- pi x\ occurs-rigidly N (B x).
-
-  /* maybe-eta N T L succeeds iff T could be an eta expasions for N, that */
-  %%   is $\exists\sigma, \sigma (\lambda n. t) = \lambda n.t' n$ and $n$
-  %%   does not occur rigidly in $t'$
-  % takes a name N a term T and a list of bound variables.
-  % succeeds if T could be an eta expansion, possible cases:
-  %  - T = uva seing N (N is also the last of L)
-  %  - T = app L such that the last args of L are maybe-eta wrt L
-  type maybe-eta fm -> fm -> list fm -> o.
-  maybe-eta N (fapp[fuva _|Args]) _ :- !,
-    % Head is flex -> if N is in Args, we can have eta 
-    exists (x\ maybe-eta-of [] N x) Args, !. 
-  maybe-eta N (flam B) L :- !, pi x\ maybe-eta N (B x) [x | L].
-  maybe-eta _ (fapp [fcon _|Args]) L :-
-    % Head is rigid -> to be an eta we consider also L
-    split-last-n {len L} Args First Last,
-    forall1 (x\ forall1 (y\ not (occurs-rigidly x y)) First) L,
-    forall2 (maybe-eta-of []) {rev L} Last.
 
   % [maybe-eta-of N T L] answer T is a possible eta expansion of N (L is [] when called, and used for fapp)
   %%   is $\exists\sigma, \sigma t \Eo n$
@@ -90,6 +70,22 @@ namespace comp {
     % Head is rigid -> to be an eta we consider also L
     last-n {len L} Args R,
     forall2 (maybe-eta-of []) R {rev L}.
+
+  % takes a name N a term T and a list of bound variables.
+  % succeeds if T could be an eta expansion, possible cases:
+  %  - T = uva seing N (N is also the last of L)
+  %  - T = app L such that the last args of L are maybe-eta wrt L
+  type maybe-eta fm -> fm -> list fm -> o.          % label: rule:maybeeta cnt: \maybeeta
+  maybe-eta N (fapp[fuva _|Args]) _ :- !,
+    % Head is flex -> if N is in Args, we can have eta 
+    exists (x\ maybe-eta-of [] N x) Args, !. 
+  maybe-eta N (flam B) L :- !, pi x\ maybe-eta N (B x) [x | L].
+  maybe-eta _ (fapp [fcon _|Args]) L :-
+    % Head is rigid -> to be an eta we consider also L
+    split-last-n {len L} Args First Last,
+    % forall1 (x\ forall1 (y\ not (occurs-rigidly x y)) First) L,
+    none (x\ exists (y\ occurs-rigidly x y) First) L,
+    forall2 (maybe-eta-of []) {rev L} Last.
 %ENDSNIP
 
 
