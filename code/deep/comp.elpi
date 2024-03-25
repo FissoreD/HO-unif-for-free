@@ -127,9 +127,8 @@ namespace comp {
 %SNIP: comp_close_links
   type close-links (tm -> links) -> links -> o.
   close-links (_\[]) [].
-  close-links (v\[L|XS v]) [L|YS] :- !, close-links XS YS.
-  close-links (v\[(L v)|XS v]) [abs L|YS] :- 
-    close-links XS YS.
+  close-links (v\[X  |L v]) [X|R] :- !, close-links L R.
+  close-links (v\[X v|L v]) [abs X|R] :- close-links L R.
 %ENDSNIP
 %SNIP: comp_base
   type comp fm -> tm -> mmap -> mmap -> links -> links ->
@@ -486,7 +485,9 @@ namespace comp {
     if ( % HIDE
     occur-check-links S2 L1,
     true) true (print "fail by oc in progress", fail), % HIDE
-    if (L = L1, S1 = S2) (L2 = L1, S3 = S1) (progress L1 L2 S2 S3).
+    if (L = L1, S1 = S2)
+       (L2 = L1, S3 = S1)
+       (progress L1 L2 S2 S3).
     %  (print "end fixpoint", deref-links S1 L L2 , S3 = S1)
     %  (print "## Subst is" {ho.ppsubst S2}, print "## Links are" {pplinks {deref-links S2 L1}}, 
     %    progress L1 L2 S2 S3).
