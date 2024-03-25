@@ -3,6 +3,7 @@ shorten fo.{(==o) , parse, parse-eq}.
 macro @read :- input_line std_in _.
 
 shorten ho.{(==l)}.
+shorten fo.{(==o)}.
 typeabbrev tm ho.tm.
 typeabbrev fm fo.fm.
 typeabbrev subst ho.subst.
@@ -19,7 +20,8 @@ valid-error H :- halt "Invalid message error" H.
 %BEGIN
 
 %SNIP: hstep
-type hstep tm -> tm -> links -> links -> subst -> subst -> o.
+type hstep tm -> tm ->
+  links -> links -> subst -> subst -> o.
 hstep T1 T2 L1 L2 S1 S3 :-
   (T1 ==l T2) S1 S2,
   print "## After unif subst is" {ho.ppsubst S2}, % HIDE
@@ -98,7 +100,8 @@ validate-solution [triple (error _) _ _|_] _.
 
 type same-sols list (option fo.fm) -> list (option fo.fm) -> o.
 same-sols [] [].
-same-sols [A|L] [A|M] :- !, same-sols L M.
+same-sols [none|L] [none|M] :- !, same-sols L M.
+same-sols [some A|L] [some A'|M] :- A ==o A', !, same-sols L M.
 same-sols [] L :- std.assert! (forall1 ((=) none) L) "Invalid solution".
 same-sols L [] :- std.assert! (forall1 ((=) none) L) "Invalid solution".
 same-sols A B :- halt "INVALID SOL" {fo.ppsubst A} " =/= " {fo.ppsubst B}.

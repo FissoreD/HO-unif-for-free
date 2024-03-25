@@ -477,9 +477,14 @@ namespace comp {
 
 %SNIP: progress
   type progress links -> links -> subst -> subst -> o.
-  progress L0 L2 S1 S3 :-
-    deref-links S1 L0 L,
-    !, % HIDE 
+%ENDSNIP
+  progress L0 L1 S S1 :- % unessential, could be inlined
+    deref-links S L0 L,
+    not (L0 = L),
+    !,
+    progress L L1 S S1.
+%SNIP: progress
+  progress L L2 S1 S3 :-
     print "\nfixpoint iteration on:" {pplinks L}, !, % HIDE
     progress1 L L1 S1 S2, !,
     if ( % HIDE
@@ -538,10 +543,13 @@ namespace comp {
   decompm M [mapping _ (hv H _)|MS] S F1 F2 :- unset? H S,
     decompm M MS S F1 F2.
   decompm _ [L|_] S _ _ :- halt "Decompl mapping: failed on" {ppmapping L} {ho.ppsubst S}. % HIDE
+%ENDSNIP
 
+%SNIP: decomp
   type decomp mmap -> tm -> fm -> o.
   decomp _ (con C)  (fcon C).
-  decomp M (app A) R :- map (decomp M) A [H|Ag], beta H Ag R.
+  decomp M (app A) (fapp B) :- map (decomp M) A B.
+   % [H|Ag], beta H Ag R.
   decomp M (lam F) (flam G) :- 
     pi x y\ (pi M\ decomp M x y) => decomp M (F x) (G y).
   decomp M (uva Hv Ag) R :-
@@ -591,7 +599,7 @@ namespace comp {
     append L1 L2 LAll,
     complete-mapping H MS LAll L3 F2 F3.
 
-%SNIP: decomp
+%SNIP: decompile
   type decompile mmap -> links -> subst ->
     fsubst -> fsubst -> o.
   decompile M1 L S F1 F3 :- 

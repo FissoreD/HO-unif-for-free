@@ -250,7 +250,7 @@ In this paper we study a more sophisticated encoding of Coq terms allowing
 us to rephrase the problematic rule \ref{clause:r3} as follows:
 
 \begin{elpicode}
-decision (all A x\ Pm x) :- link Pm P A, finite A,   ~\customlabel{clause:r3a}{(r3a)}~
+decision (all A x\ Pm x) :- decomp Pm P A, finite A,   ~\customlabel{clause:r3a}{(r3a)}~
   pi x\ decision (app[P, x]).
 \end{elpicode}
 
@@ -269,7 +269,7 @@ A = app[con"fin", con"7"]              % assignment for A
 
 \noindent
 After unifying the head of rule \ref{clause:r3a} with the goal, Elpi runs
-the premise <<\elpiIn{link Pm A P}>> that is in charge of bringing the
+the premise <<\elpiIn{decomp Pm A P}>> that is in charge of bringing the
 assignment for \elpiIn{Pm} back to the domain \elpiIn{tm} of Coq terms:
 
 \begin{elpicode}
@@ -800,7 +800,8 @@ The right hand side of a link, the problematic term, can occur under binders.
 To accommodate this situation the compiler wraps \elpiIn{baselink} using
 the \elpiIn{inctx} container.
 
-\begin{invariant}[Link left hand side] The left hand side of a new link
+\begin{invariant}[Link left hand side]\ref{inv:linklhs}
+  The left hand side of a new link
   is a variable.
 \end{invariant}
 
@@ -1024,24 +1025,58 @@ links more readable by pruning unneeded abstractions (unused context entries).
 
 \subsection{Execution}
 
-XXX links are update unlike section 2
+A step in \Ho consists in unifying two terms and reconsidering all
+links for progress. If any of the two tasks fail we say that the entire step
+fails, and it is at this granularity that we can relate steps in the
+two languages.
+
+
 \input{code/hstep}
 
-TODOD: discuss signature of progress
+\noindent
+Note tha the notation \elpiIn{((A ~\Ue~B) C D)} is syntactic sugar for
+\elpiIn{((~\Ue~) A B C D)}.
+
+Reconsidering links is a fixpoint, since the progress of a link can update the
+substitution and in turn enable another link to progress.
 
 \input{code/progress}
 
 \noindent
-Note thar \elpiIn{((A ~\Ue~B) C D)} is syntactic sugar for
-\elpiIn{((~\Ue~) A B C D)}.
+In the base compilation scheme \elpiIn{progress1} is the identity
+on both the links and the substitution, so the fixpoint trivially terminates.
+Sections \ref{sec:eta} and \ref{sec:beta} add rules to \elpiIn{progress1}
+and justify why the don't hinder termination.
 
-TODO: why it terminates
+TODO: discuss occur check
 
 \subsection{Substitution decompilation}
 
-\input{code/decomp}
+Decompiling the substitution requires to first force the
+progress of links and then allocating new unassigned variables
+in the substitution for \Fo{} and finally decompiling all
+assignments. Note that \ref{inv:linklhs} and the
+occur check allows us to update the subst.
+
+
+\input{code/decompile}
+
+\noindent
+Decompiling an assignment requires to turn abstractions into
+lambdas. For aestetic purposes we also eta-contract the result
+(not needed since Fo equality can do that)
+
 \input{code/decompm}
 
+\noindent
+Finally decompiling a term is trivial, now that we have an extended
+mapping containing all unassigned variables \Ue may have introduced.
+
+\input{code/decomp}
+
+\noindent
+Note that we use beta to build fapp nodes when needed (if Ag is empty
+no \elpiIn{fapp} node should appear).
 
 \subsection{Definition of \Uo and its properties}
 
