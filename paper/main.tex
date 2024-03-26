@@ -452,7 +452,7 @@ The initial here $\rho_0$ is the empty substitution
 \newcommand{\runHD}[3]{\ensuremath{%
 \bigwedge_{p = 1}^{#2} \stepH{#1}{p}{\sigma_{p-1}}{#3_{p-1}}{\sigma_{p}}{#3_p}}}
 \newcommand{\deff}{\ensuremath{\stackrel{{\scriptscriptstyle def}}{=\!=\!\!\!=}}}
-\def\linkStore{\ensuremath{\mathbb{L}}}
+\def\linkStore{\ensuremath{\mathbb{L}}\xspace}
 
 $$
 \begin{array}{l}
@@ -1277,15 +1277,18 @@ on the constructors of these terms. As a very concise example, \Ue can't unify
 the \Fo{} terms \elpiIn{lam x\ app[con "f", x]} and \elpiIn{con "f"} since the
 rigid constructor \elpiIn{lam} is different from the rigid constructor
 \elpiIn{con}. In conclusion, we need to adapt our \elpiIn{comp} relation in
-order to address this problem.
+order to address this problem. In the sections below, we explain how we detect
+and compile \maybeeta terms with the corresponding \linketa and how these links
+are used to make unification progress. The same explanation structure will be 
+used for \maybebeta terms.
 
 \subsection{Compilation}
 
 \paragraph{Detection of \maybeeta} The main modification of the compiler to solve this
 unification issue consists in identifying all the subterms of a term $t$ that
 are \maybeeta. In particular, a term $t$ is a \maybeeta, if it can reduce to a
-$\eta$-expansion under a certain substitution $\sigma$, the code verifying this
-property is given by the following code:
+$\eta$-expansion under a certain substitution $\sigma$. The code verifying this
+property is given below:
 
 \input{code/maybe_eta}
 
@@ -1366,25 +1369,73 @@ is defined as
 
 \elpiIn{type link-eta tm -> tm -> baselink}
 
-\noindent
-We call the two terms carried by the link respectively left and right hand side.
+\newcommand{\lhs}{\ensuremath{\mathrm{lhs}}\xspace}
+\newcommand{\rhs}{\ensuremath{\mathrm{rhs}}\xspace}
 
-\begin{invariant}[\linketa left hand side]
-  The left hand side of a \linketa is a variable.
+\noindent
+We call the two terms carried by the link respectively left and right hand side,
+called respectively \lhs and \rhs.
+
+\begin{invariant}[\linketa \lhs]
+  The \lhs of a \linketa is a variable.
   \label{invariant:link-eta-left}
 \end{invariant}
 
-\begin{invariant}[\linketa right hand side]
-  The right hand side of a \linketa having the shape $\lambda x.F \appsep x$
+TODO: motivate this?
+
+\begin{invariant}[\linketa \rhs]
+  The \rhs of a \linketa having the shape $\lambda x.F \appsep x$
   where $F \appsep x$ is a term not starting with the \elpiIn{lam} constructor.
   \label{invariant:link-eta-right}
 \end{invariant}
 
+TODO: motivate this?
+
 \subsection{Progress}
 
+\linketa are meant to suspend the unification of two terms, that is, if we have
+a \maybeeta term $t$ which should be unified with a term $t'$ we don't want to
+unify them with \Ue. As said before this would break unification but it can also
+introduce \maybeeta in the substitution of \Ho.
+
+In order to activate a \linketa, we need to implement new rules for the
+\elpiIn{progress1} predicate. There are two cases making a \linketa to progress,
+1) \lhs is instantiated to a rigid term, in this case \lhs is unified with \rhs.
+TODO: the right eta hand side is eta-expanbded if it is an app/con; 2) \rhs can
+be $\eta$-reduced to a term with rigid head, in this case \lhs and \rhs are
+again unified. If one of these two condition is satisfied, the link has
+fulfilled is task and can be removed from the list of suspended links; if none
+the condition succeeds, the link is kept for a further iteration of
+\elpiIn{progress}.
+
+TODO: dire che scendiamo sotto i vari abs che formano il contesto? 
+
+We can note that the insertion of these rules for \elpiIn{progress1} do not
+prevent the termination of \elpiIn{progress}, since, if the link is woken up,
+the unification of the terms and the suppression of the link form \linkStore
+are terminating operation. Note that if the link remain suspend
+\elpiIn{progress} continues to terminate, since, it would mean that the
+condition of the \elpiIn{if}-branchement succeds and the \elpiIn{progress}
+terminates its execution.
+
+A second way to progress \linketa is to check if \linkStore contains two
+\linketa $l_1$ and $l_2$ with same \lhs. In this case we are allowed to unify
 
 
-We want maintain invariants~\ref{invariant:link-eta-left} and \ref{invariant:link-eta-right}
+TODO: dire che termina
+
+
+\begin{lemma}
+  We never add eta-expansions in the substitution
+\end{lemma}
+
+\begin{proof}[Proof sketch]
+\end{proof}
+
+
+
+TODO: we can however have $\lambda x. F_x$ if we know that $F$ does not reduce
+to $T x$ where x is not free in $T$.
 
 \begin{textcode}
   La deduplicate eta:
@@ -1437,6 +1488,10 @@ we will call $h$ and $t$ respectively the left hand side (\lhs)
 and the right hand side (\rhs) of the \linkbeta.
 
 \subsection{Compilation}
+
+\paragraph{Detection of \maybebeta} TODO: \dots
+
+\paragraph{Compilation with \linkbeta}
 
 In order to build a \linkbeta, we need to adapt the compiler so that it can
 recognize these ``problematic'' subterms. The following code snippet illustrate
