@@ -15,12 +15,26 @@
 		],
 		"description": "beta"
 	},
-	"eta": {
+	"sigma": {
 		"scope": "elpi",
-		"prefix": ["eta","\\eta"],
-		"body": [
-			"η"
+		"prefix": [
+			"sigma",
+			"\\sigma"
 		],
-		"description": "eta"
+		"body": [
+			"𝜎"
+		],
+		"description": "sigma"
+	},
+	"exists": {
+		"scope": "elpi",
+		"prefix": [
+			"exists",
+			"\\exists"
+		],
+		"body": [
+			"∃"
+		],
+		"description": "exists"
 	}
 }

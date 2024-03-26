@@ -57,19 +57,18 @@ namespace comp {
   occurs-rigidly N (fapp L) :- exists (occurs-rigidly N) L.
   occurs-rigidly N (flam B) :- pi x\ occurs-rigidly N (B x).
 
-  % [maybe-eta-of N T L] answer T is a possible eta expansion of N (L is [] when called, and used for fapp)
-  %%   is $\exists\sigma, \sigma t \Eo n$
-  type maybe-eta-of list fm -> fm -> fm -> o.
-  maybe-eta-of _ N N :- !.
-  maybe-eta-of L N (fapp[fuva _|Args]) :- !, 
+  % [reducible-to L N T] it ∃𝜎, 𝜎t = n
+  type reducible-to list fm -> fm -> fm -> o.
+  reducible-to _ N N :- !.
+  reducible-to L N (fapp[fuva _|Args]) :- !, 
     % Head is flex -> if N is in Args, we can have eta
-    forall1 (x\ exists (maybe-eta-of [] x) Args) [N|L]. 
-  maybe-eta-of L N (flam B) :- !, 
-    pi x\ maybe-eta-of [x | L] N (B x).
-  maybe-eta-of L N (fapp [N|Args]) :-
+    forall1 (x\ exists (reducible-to [] x) Args) [N|L]. 
+  reducible-to L N (flam B) :- !, 
+    pi x\ reducible-to [x | L] N (B x).
+  reducible-to L N (fapp [N|Args]) :-
     % Head is rigid -> to be an eta we consider also L
     last-n {len L} Args R,
-    forall2 (maybe-eta-of []) R {rev L}.
+    forall2 (reducible-to []) R {rev L}.
 
   % takes a name N a term T and a list of bound variables.
   % succeeds if T could be an eta expansion, possible cases:
@@ -78,14 +77,14 @@ namespace comp {
   type maybe-eta fm -> fm -> list fm -> o.          % label: rule:maybeeta cnt: \maybeeta
   maybe-eta N (fapp[fuva _|Args]) _ :- !,
     % Head is flex -> if N is in Args, we can have eta 
-    exists (x\ maybe-eta-of [] N x) Args, !. 
+    exists (x\ reducible-to [] N x) Args, !. 
   maybe-eta N (flam B) L :- !, pi x\ maybe-eta N (B x) [x | L].
   maybe-eta _ (fapp [fcon _|Args]) L :-
     % Head is rigid -> to be an eta we consider also L
     split-last-n {len L} Args First Last,
     % forall1 (x\ forall1 (y\ not (occurs-rigidly x y)) First) L,
     none (x\ exists (y\ occurs-rigidly x y) First) L,
-    forall2 (maybe-eta-of []) {rev L} Last.
+    forall2 (reducible-to []) {rev L} Last.
 %ENDSNIP
 
 
@@ -137,7 +136,7 @@ namespace comp {
       alloc S1 A S2,
       comp-lam F F1 M1 M2 L1 L2 S2 S3,
       get-scope (lam F1) Scope, 
-      L3 = [@val-link-eta (uva A Scope) (lam F1)| L2].
+      L3 = [@val-link-eta (uva A Scope) (lam F1) | L2].
 %ENDSNIP
 %SNIP: comp_base
   comp (flam F) (lam F1) M1 M2 L1 L2 S1 S2 :- 
@@ -279,6 +278,7 @@ namespace comp {
 
   % invariante: a sx non c'è mai una eta espansione, a destra c'è una lam, altrimenti il link eta è buttato via
   type progress-eta-link tm -> tm -> subst -> subst -> links -> o.
+  % progress-eta-link (app _ as T) (lam x\ lam y\ _) _ _ _ :- halt "STOP ". 
   progress-eta-link (app _ as T) (lam x\ _ as T1) H H1 [] :- !, 
     print "progress η app left", ({eta-expand T @one} ==l T1) H H1.
   progress-eta-link (con _ as T) (lam x\ _ as T1) H H1 [] :- !, 
@@ -603,7 +603,7 @@ namespace comp {
     commit-links L S S1,
     !, % HIDE                                                          
     print "# After decompl-eta, subst is" {ho.ppsubst S1} "with links" {pplinks L}, % HIDE
-    complete-mapping S1 S1 M1 M2 F1 F2,                                            % Foreach VM not mapped to OL, we build a link
+    complete-mapping S1 S1 M1 M2 F1 F2,
     print "# After complete-mapping, mmap are" {ppmappings M2} "with ho-subst" {ho.ppsubst S1}, % HIDE
     decompm M2 M2 S1 F2 F3.
 %ENDSNIP

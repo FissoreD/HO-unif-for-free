@@ -37,6 +37,7 @@
 \def\ho{\acronym{ho}} % higher order
 \def\Forall{$\forall$}
 
+\newcommand{\appsep}{\ensuremath{\textcolor{lightgray}{\cdot}}}
 \newcommand{\EqualRel}{\ensuremath{=}}
 \newcommand{\nEqualRel}{\ensuremath{\new}}
 \newcommand{\UnifRel}{\ensuremath{\simeq}}
@@ -789,7 +790,7 @@ approximation, and then makes the mapping bijective by introducing
 \linketa; this detail is discussed in section \ref{sec:eta}.
 
 As we mentioned in section~\ref{sec:nutshell} the compiler
-replaces terms in \maybebeta and \maybebeta with fresh variables
+replaces terms in \maybeeta and \maybebeta with fresh variables
 linked to the problematic terms. Each class of problematic terms
 has a dedicated link.
 
@@ -805,6 +806,9 @@ the \elpiIn{inctx} container.
   is a variable.
 \end{invariant}
 
+% TODO: io sposteri l'invariante sopra nella maybe-eta, perchè  
+% la proprietà è vera solo per i link eta
+% per i link beta, questo non è vero se sospendiamo i link
 \noindent
 If the variable is assigned during a run the link is considered for
 progress and possibly eliminated. This is discussed in
@@ -1107,10 +1111,10 @@ and \ref{clause:beta2} if needed) we can find this $\rho$ by finding
 a $\sigma$ via \Ue{} on the corresponding \Ho terms and by decompiling it.
 If we look at the \Fo{} terms, the are two interesting cases:
 \begin{itemize}
-\item \elpiIn{fuva X ~\Uo~ s}. In this case after \elpiIn{comp} we have
+\item \elpiIn{fuva X ~\Uo~s}. In this case after \elpiIn{comp} we have
   $Y \Ue t$ that succeeds with $\sigma = \{ Y \mapsto t\}$ and
   $\sigma$ is decompiled to $\rho = \{ Y \mapsto s\}$.
-\item \elpiIn{fall[fuva X|L] ~\Uo~ s}. In this case
+\item \elpiIn{fapp[fuva X|L] ~\Uo~s}. In this case
  we have $Y_{\vec{x}} \Ue t$ that succeeds with
  $\sigma = \{ \vec{y} \vdash Y \mapsto t[\vec{x}/\vec{y}]\}$ that in turn
  is decompiled to $\rho = \{ Y \mapsto \lambda \vec{y}.s[\vec{x}/\vec{y}]\}$.
@@ -1262,28 +1266,125 @@ Both problems are addressed in the next section.
 
 \section{Handling of \maybeeta}\label{sec:eta}
 
-Even though the unification process explained in the previous sections is able
-to solve a large number of unification problems, it remains still incomplete:
-\wellb is only a subset of terms in \Ho. In order to capture all the unification
-properties of \Eo, we need ad-hoc compilation strategies over those subterms
-that have been defined as ``problematic''.
-
+$\eta$-reduction is a property by which a term $t$ is of the form $\lambda x. T
+x$ and $x$ is not free in $T$. In this case we case say that $T$ is equal to its
+$\eta$-expanded version represented by the term $t$. Both the meta and the
+object language accept terms unification up to $\eta$ equivalence, but as
+sketched in the small code snippet in \cref{sec:problem-statement}, \Ue is not
+able to capture this equivalence property when using terms in \Fo. The main
+reason is that the unification of two terms in \Fo{} appears to be syntactical
+on the constructors of these terms. As a very concise example, \Ue can't unify
+the \Fo{} terms \elpiIn{lam x\ app[con "f", x]} and \elpiIn{con "f"} since the
+rigid constructor \elpiIn{lam} is different from the rigid constructor
+\elpiIn{con}. In conclusion, we need to adapt our \elpiIn{comp} relation in
+order to address this problem.
 
 \subsection{Compilation}
-\subsection{Progress}
 
-\input{code/comp_eta}
-
-and aux
+\paragraph{Detection of \maybeeta} The main modification of the compiler to solve this
+unification issue consists in identifying all the subterms of a term $t$ that
+are \maybeeta. In particular, a term $t$ is a \maybeeta, if it can reduce to a
+$\eta$-expansion under a certain substitution $\sigma$, the code verifying this
+property is given by the following code:
 
 \input{code/maybe_eta}
 
-\otext{The following goal necessita v1 (lo scope è usato):\\ \elpiIn{X = lam x\ lam y\ Y y x, X = lam x\ f}}
-\otext{The snd unif pb, we have to unif \elpiIn{lam x\ lam y\ Y x y} with \elpiIn{lam x\ f}}
-\otext{It is not doable, with the same elpi var}
+The entry point is depicted by the rule~\ref{rule:maybeeta} which takes a name
+$n$, a term $t$ and a list of bound variables $L$ (originally it is the
+singleton containing $n$). This rule checks if $t$ is a term of the form $T
+\appsep n$ (for a term $T$), together with the auxiliary predicate
+\elpiIn{reducible-to} which ensures if a term $t$ can reduce to a name $n$.
+\marginpar{explain better: we start from $\lambda x.F x$}
+The \elpiIn{maybe-eta} predicate dispatches the calls to \elpiIn{reducible-to};
+three cases should be considered: 1) $t$ is a variable $v$, then $t$ can be an
+$\eta$-expansion if at least one of the terms in the scope of $v$ is a
+$\maybeeta$ of $n$; 2) $t$ is a lambda-term, then we recursively call
+\elpiIn{maybe-eta} on the body of $t$ under a local name $x$ which is added to
+the list $L$; 3) $t$ is an application, then $t$ is an $\eta$ expansion if i)
+the last arguments of $t$ can be reduced one by one to the binders in the list
+$L$ (we reverse the list in rule, since, by construction, this list is built in
+reversed order) and ii) none of the first arguments of the application contain a
+rigid occurrence of name in $L$.
 
-Invarianti:
-A destra della eta abbiamo sempre un termine che comincia per $\lambda x. bla$
+As rapidly said before, \elpiIn{reducible-to} tells if a term $t$ reduce to a
+name $n$, or equivalently if $\exists \sigma, \sigma t = n$. This predicate also
+takes the list of all the binders explored (this list is originally empty). A
+term $t$ reduces to a name $n$ if 1) $n = t$; 2) $t$ is a variable $v$, then $t$
+reduce to a $n$ if it exists an arugment in the scope of $v$ reducing to $n$ and
+forall name $n'$ in $L$, there is an argument reducing to $n'$ \marginpar{Note
+that this function is partial: the arg in the scope should be distinct}; 3) $t$
+is a lambda abstraction, then we call recursively \elpiIn{reducible-to} on the
+body of the abstraction with a new local name added to the list $L$; 4) $t$ is
+an application of $n$ to a list of arguments $L'$, then all the arguments should
+reduce to the respective name in the list $L$.
+
+Finally, a name $n$ occurs rigidly in a term $t$ if $n$ occurs in a subterm $t'$
+of $t$ such that $t'$ does not appear in the scope of a variable.
+
+An example of \maybeeta detection over the bound variable $x$ is the following:
+\marginpar{maybe more examples in appendix}
+%
+\begin{gather}
+  T = \lambda y. f \appsep A_{xy} \appsep (B \appsep a \appsep (\lambda z.y\appsep C_z)) \appsep D_x
+\end{gather}
+
+The correct call to \elpiIn{maybe-eta} is \elpiIn{maybe-eta x T L} with
+\elpiIn{L = [x]}. At first we go under the abstraction $\lambda y$ adding $y$ to
+$L$. Then we find an application, where we verify that 1) $A_{xy}$ does not
+contain $x$ and $y$ rigidly which is the case; 2) $B \appsep a \appsep (\lambda z.y\appsep (C_z))$
+and $D_x$ can respectively reduce to $y$ and $x$. The latter reduction is
+evident, since $D$ has $x$ in scope; the former subterm can reduce to $y$ since
+$B$ is a variable and it exists an argument ($\lambda z.y\appsep C_z$) reducible to
+$y$: under the binder $z$, we have the application of $y$ with a variable with
+$z$ in scope. Note that \maybeeta, only tells if it exists a substitution making
+a term an eta expansion on any term $t$, i.e, $t$ can be in $\maybeeta \cup
+\maybebeta$ without the constraint of being in \llambda, as our example shows. A
+possible substitution making the term $T$ in the example an $\eta$-expansion is
+$\sigma = \{A \mapsto \lambda x.\lambda y.a, B \mapsto \lambda x.\lambda y.y,
+C \mapsto \lambda x.x, D \mapsto \lambda x.x\}$.
+
+\paragraph{Compilation with \linketa} Thanks to the \elpiIn{maybe-eta}
+predicate, we can detect ``$\eta$-problematic'' terms and, consequently replace
+them with a fresh \Ho unification variable at compilation time. The code
+below illustrate this dedicated compilation:
+% TODO: maybe ref to \cref{sec:nutshell}
+
+\input{code/comp_eta}
+
+\marginpar{Where This rule is put in the code ?}
+This rule is applied on \Fo{} lambda-abstractions, tests if their body $F$ is an
+\maybeeta wrt to a local fresh binder $x$, and if so, it compiles $F$ to the \Ho
+term \elpiIn{F1} and returns a \Ho fresh variable $A$ having in scope the free
+names occurring in \elpiIn{F1}. As sketch at the very end of
+\cref{sec:lang-spec}, each time a subterm $t$ in \Fo is replaced with a \Ho
+variable $v$, we build a \elpiIn{link-eta} between $v$ and and the term $t'$
+obtained by the compilation of $t$.
+
+A \elpiIn{link-eta}\footnote{\elpiIn{@val-link-eta A B} is syntactic sugar for
+\elpiIn{val (link-eta A B)}}
+is defined as
+
+\elpiIn{type link-eta tm -> tm -> baselink}
+
+\noindent
+We call the two terms carried by the link respectively left and right hand side.
+
+\begin{invariant}[\linketa left hand side]
+  The left hand side of a \linketa is a variable.
+  \label{invariant:link-eta-left}
+\end{invariant}
+
+\begin{invariant}[\linketa right hand side]
+  The right hand side of a \linketa having the shape $\lambda x.F \appsep x$
+  where $F \appsep x$ is a term not starting with the \elpiIn{lam} constructor.
+  \label{invariant:link-eta-right}
+\end{invariant}
+
+\subsection{Progress}
+
+
+
+We want maintain invariants~\ref{invariant:link-eta-left} and \ref{invariant:link-eta-right}
 
 \begin{textcode}
   La deduplicate eta:
