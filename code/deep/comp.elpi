@@ -366,7 +366,8 @@ namespace comp {
 
   solve-link-abs (@val-link-eta A B) NewLinks S S1 :- !,
     print "In progress eta link for" {ho.pp A} {ho.pp B}, %HIDE
-    progress-eta-link A B S S1 NewLinks.
+    progress-eta-link A B S S1 NewLinks,
+    print "After progress the subst is" {ho.ppsubst S1}.
 
   solve-link-abs (@val-link-beta A B) NewLinks S S1 :- !,
     print "In progress beta link for" {ho.pp A} {ho.pp B} "in" {ho.ppsubst S}, %HIDE
@@ -624,6 +625,8 @@ namespace comp {
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   type ppmapping mapping -> string -> o.
+  ppmapping (mapping (fv N) (hv M (arity Len))) S :- tex, !,
+    S is "\\mapping{" ^ {fo.ppuva N} ^ "}{" ^ {ho.ppuva M} ^ "}{" ^ {ppnat Len} ^ "}".
   ppmapping (mapping (fv N) (hv M (arity Len))) S :-
     S is {fo.ppuva N} ^ " -> " ^ {ho.ppuva M} ^ " (" ^ {ppnat Len} ^ ")".
 
