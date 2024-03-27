@@ -1322,7 +1322,7 @@ given substitution $\sigma$, we have $\sigma (\lambda x.T_x) = t$. This
 In the examples above, the first expression is a \maybeeta since $A_x$ can
 reduce to $x$, the second one is not a \maybeeta since for any substitution for
 $A_x$, $x$ is not free in $f \appsep x$. The third equation is a bit more
-complicated since, we have a vector of lambdas, this means that the whole term
+complicated since, we have a spine of lambdas, this means that the whole term
 is a \maybeeta, if the inner $\lambda$-term is an $\eta$-expansion of a term
 $t$, and $t$ can be reduced to a term on the form $t' x$ where $x$ is not free
 in $t'$. Indeed, eq.~\ref{eq:lamlam} is a \maybeeta under the substitution 
@@ -1339,20 +1339,48 @@ We can now define more formally the two auxiliary relation we need for \maybeeta
 detection:
 
 \begin{definition}[reduce-to]
-  For any term $t$, $\lambda x_1 \ldots x_n.t_{x_0\ldots x_n}$ reduces to a bound
-  variable $x$ if one of the three following cases is satisfied: 1)
-  $n = 0$ and $t = x$; 2) $t$ is the application of $x$ to a list
+  A term $t$ reduce to a name $x$, if $\exists \sigma, \sigma t = x$. In
+  particular, for any term $t$, $\lambda x_1 \ldots x_n.t_{x_1\ldots x_n}$
+  reduces to a bound variable $x$ if one of the three following cases is
+  satisfied: 1) $n = 0$ and $t = x$; 2) $t$ is the application of $x$ to a list
   of term $l$ and each $l_i$ reduces to $x_i$; 3) $t$ is a variable with scope
   $s$, and for any $bv \in [x|\vec{x}]$, it exists a $s_i$, such that $s_i$
   reduces to $bv$
 \end{definition}
 
 \begin{definition}[occurs-rigidly]
-  Given a term $t$, a bund variable ``rigidly'' occurs in \subterm{t} this
-  term does not appear in the scope of a variable
+  A name $x$ occurs rigidly in a term $t$, if $\forall \sigma, \exists t' \in
+  \subterm{t}, t' = x$, i.e. $x$ does not appear in the scope of any variable
+  in $t$.
 \end{definition}
 
-TODO: maybe eta is over-approximation
+Finally, we can derive the implementation for \maybeeta detection:
+
+\begin{definition}[\maybeeta detection]
+  For any term $t$, $\lambda x_1 \ldots x_n.t_{x_1\ldots x_n}$ is a \maybeeta if
+  1) either $t$ is the application of a term with argument $l_1 \ldots l_m$ such that 
+  $m \geq n$, every $l_{m-n+i}$ reduce to $x_i$, and no $l_{1\ldots m-n-1}$
+  reduces to a name in $\vec{x}$; 2) or $t$ is a variable with scope $s$ and
+  each $x_i$ it exists $s_j$ such that $s_j$ reduces $x_i$.
+\end{definition}
+
+As a final remark, the \maybeeta detection defined just before is an
+over-approximation, in the sense that there exists some terms $t$ considered as
+\maybeeta, such that forall substitution $\sigma$, $\sigma t$ is not an
+$\eta$-expansion. A small example is $\lambda x. f \appsep A_x \appsep A_x$. On
+the other hand, we also point out that the \maybeeta detection spot out
+potential $\eta$-expansion for terms that are not in \llambda. For example,
+$\lambda x.F \appsep G_x$ is considered as \maybeeta, since we have the
+application of term whose argument can reduce to $x$.
+
+The implementation we propose for the \maybeeta relation is given below.
+
+\input{code/maybe_eta}
+
+% Here a complex maybeeta example
+% \begin{gather}
+%   T = \lambda y. f \appsep A_{xy} \appsep (B \appsep a \appsep (\lambda z.y\appsep C_z)) \appsep D_x
+% \end{gather}
 
 \subsection{Compilation}
 
@@ -1362,7 +1390,6 @@ are \maybeeta. In particular, a term $t$ is a \maybeeta, if it can reduce to a
 $\eta$-expansion under a certain substitution $\sigma$. The code verifying this
 property is given below:
 
-\input{code/maybe_eta}
 
 The entry point is depicted by the rule~\ref{rule:maybeeta} which takes a name
 $n$, a term $t$ and a list of bound variables $L$ (originally it is the
