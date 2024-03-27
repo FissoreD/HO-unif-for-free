@@ -1357,25 +1357,32 @@ detection:
   particular, for any term $t$, $\lambda x_1 \ldots x_n.t_{x_1\ldots x_n}$
   reduces to a bound variable $x$ if one of the three following cases is
   satisfied: 1) $n = 0$ and $t = x$; 2) $t$ is the application of $x$ to a list
-  of term $l$ and each $l_i$ reduces to $x_i$; 3) $t$ is a variable with scope
-  $s$, and for any $bv \in [x|\vec{x}]$, it exists a $s_i$, such that $s_i$
-  reduces to $bv$
+  of terms $l$ and each $l_i$ reduces to $x_i$
+  (since $\lambda x_1 \ldots x_n.x_{x_1\ldots x_n} = x$) ; 3) $t$ is a unification
+  variable in \llambda with scope
+  $s$, and for any $v \in \{ x, x_1 \ldots x_n \}$,
+  there exists a $s_i \in s$, such that $s_i$ reduces to $v$
 \end{definition}
 
 \begin{definition}[occurs-rigidly]
-  A name $x$ occurs rigidly in a term $t$, if $\forall \sigma, \exists t' \in
-  \subterm{t}, t' = x$, i.e. $x$ does not appear in the scope of any variable
-  in $t$.
+  A name $x$ occurs rigidly in a term $t$, if $\forall \sigma, x \in
+  \subterm{\sigma t}$
 \end{definition}
+In other words $x$ \emph{occurs-rigidly} in $t$ if it occurs in $t$
+outside of the scope of unification variables since theirs instantiations
+are allowed to discard their scope.
 
 Finally, we can derive the implementation for \maybeeta detection:
 
 \begin{definition}[\maybeeta detection]
-  For any term $t$, $\lambda x_1 \ldots x_n.t_{x_1\ldots x_n}$ is a \maybeeta if
-  1) either $t$ is the application of a term with argument $l_1 \ldots l_m$ such that 
-  $m \geq n$, every $l_{m-n+i}$ reduce to $x_i$, and no $l_{1\ldots m-n-1}$
-  reduces to a name in $\vec{x}$; 2) or $t$ is a variable with scope $s$ and
-  each $x_i$ it exists $s_j$ such that $s_j$ reduces $x_i$.
+  A term $\lambda x_1 \ldots x_n.t$ where each $x_i$ occurs in $t$ is a
+  \maybeeta if
+  either: 1) $t$ is a constant applied to arguments
+  $l_1 \ldots l_m$ such that 
+  $m \geq n$ and every $l_{m-n+i}$ reduces-to $x_i$ and
+  no $x_i$ occurs-rigidly in $l_{1\ldots m-n-1}$; or 2) $t$ is a
+  unification variable with scope $s$ and
+  for each $x_i$ there exists a $s_j \in s$ such that $s_j$ reduces-to $x_i$.
 \end{definition}
 
 As a final remark, the \maybeeta detection defined just before is an
