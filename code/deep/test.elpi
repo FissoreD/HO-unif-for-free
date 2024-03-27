@@ -102,8 +102,8 @@ type same-sols list (option fo.fm) -> list (option fo.fm) -> o.
 same-sols [] [].
 same-sols [none|L] [none|M] :- !, same-sols L M.
 same-sols [some A|L] [some A'|M] :- A ==o A', !, same-sols L M.
-same-sols [] L :- std.assert! (forall1 ((=) none) L) "Invalid solution".
-same-sols L [] :- std.assert! (forall1 ((=) none) L) "Invalid solution".
+same-sols [] L :- if (forall1 ((=) none) L) true (halt "Invalid solution:" {fo.ppsubst L}).
+same-sols L [] :- if (forall1 ((=) none) L) true (halt "Invalid solution:" {fo.ppsubst L}).
 same-sols A B :- halt "INVALID SOL" {fo.ppsubst A} " =/= " {fo.ppsubst B}.
 
 
@@ -589,3 +589,21 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- std
   pr ok "λx.λy.(X y x) = λx.λy.x",
   pr ok "λx.(f (X x) x) = f (λy.y)",
 ] ["λx.λy.y"].
+
+
+% @sokl 71 [
+%   pr ok "λz.λx.λy.(X y x z) = Z",
+%   pr ok "λz.λx.λy.(Y x y z) = W",
+%   pr ok "W = Z"
+% ] [].
+
+% Fatal error: Invalid solution: 
+% [C0 := λc0.λc1.(@ C4 c1 c0), C1 := C4, 
+%  C2 := λc0.λc1.λc2.(@ C4 c1 c2 c0), C3 := λc0.λc1.λc2.(@ C4 c1 c2 c0), 
+%  C4 := _]
+
+% @sokl 72 [
+%   pr ok "λx.λy.(X y x) = Z",
+%   pr ok "λz.λx.λy.(Y x z y) = W",
+%   pr ok "W = Z"
+% ] [].

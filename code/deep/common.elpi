@@ -135,6 +135,11 @@ type none (X -> o) -> list X -> o.
 none _ [].
 none P [X|Xs] :- not (P X), none P Xs.
 
+type undup list A -> list A -> o.
+undup [] [].
+undup [X|Xs] [X|R] :- not-in Xs X, !, undup Xs R.
+undup [_|Xs] R :- undup Xs R.
+
 type len list A -> nat -> o.
 len [] z.
 len [_|L] (s X) :- len L X.

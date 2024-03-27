@@ -74,12 +74,12 @@ namespace comp {
   % succeeds if T could be an eta expansion, possible cases:
   %  - T = uva seing N (N is also the last of L)
   %  - T = app L such that the last args of L are maybe-eta wrt L
-  type maybe-eta fm -> fm -> list fm -> o.          % label: rule:maybeeta cnt: \maybeeta
-  maybe-eta N (fapp[fuva _|Args]) _ :- !,
+  type maybe-eta fm -> list fm -> o.          % label: rule:maybeeta cnt: \maybeeta
+  maybe-eta (fapp[fuva _|Args]) L :- !,
     % Head is flex -> if N is in Args, we can have eta 
-    exists (x\ reducible-to [] N x) Args, !. 
-  maybe-eta N (flam B) L :- !, pi x\ maybe-eta N (B x) [x | L].
-  maybe-eta _ (fapp [fcon _|Args]) L :-
+    forall1 (x\ exists (reducible-to [] x) Args) L, !. 
+  maybe-eta (flam B) L :- !, pi x\ maybe-eta (B x) [x | L].
+  maybe-eta (fapp [fcon _|Args]) L :-
     % Head is rigid -> to be an eta we consider also L
     split-last-n {len L} Args First Last,
     % forall1 (x\ forall1 (y\ not (occurs-rigidly x y)) First) L,
@@ -102,11 +102,16 @@ namespace comp {
   get-scope-aux X [X] :- name X, not (locally-bound X).
   get-scope-aux X [] :- name X, (locally-bound X).
 
-  %% TODO: scrivere undup
+  type names1 list tm -> o.
+  names1 L :-
+    names L1, 
+    new_int N,
+    if (1 is N mod 2) (L1 = L) (rev L1 L).
+
   type get-scope tm -> list tm -> o.
   get-scope T Scope :-
     get-scope-aux T ScopeDuplicata,
-    names N, filter N (mem ScopeDuplicata) Scope.
+    names N, undup ScopeDuplicata Scope.
   type rigid fm -> o.
   rigid X :- not (X = fuva _).
 
@@ -132,7 +137,7 @@ namespace comp {
 %ENDSNIP
 %SNIP: comp_eta
   comp (flam F) (uva A Scope) M1 M2 L1 L3 S1 S3 :-
-    (pi x\ maybe-eta x (F x) [x]), !,
+    maybe-eta (flam F) [], !,
       alloc S1 A S2,
       comp-lam F F1 M1 M2 L1 L2 S2 S3,
       get-scope (lam F1) Scope, 
@@ -385,28 +390,42 @@ namespace comp {
   link-abs-same-lhs (@val-link-eta (uva N _) _) (@val-link-eta (uva N _) _).
 
   type same-link-eta link -> link -> subst -> subst -> o.
-  same-link-eta (ho.abs F) B H H1 :- !, pi x\ same-link-eta (F x) B H H1.
+  % same-link-eta (ho.abs F) (ho.abs G) H H1 :- !, pi x\ same-link-eta (F x) (G x) H H1.
+  same-link-eta (ho.abs F) G H H1 :- !, pi x\ same-link-eta (F x) G H H1.
   same-link-eta A (ho.abs G) H H1 :- !, pi x\ same-link-eta A (G x) H H1.
   same-link-eta (@val-link-eta (uva N S1) A)
                 (@val-link-eta (uva N S2) B) H H1 :-
     std.assert! (std.length S1 {std.length S2}) "no same scope",
     std.map2 S1 S2 (x\y\r\ r = ho.copy x y) Perm,
     Perm => ho.copy A A',
+    % halt "Error here",
+    % print "Hello" {ho.pp A} {ho.pp B},
     (A' ==l B) H H1.
 
-  % Invariant: links received in entry have already been dereferenced
+%SNIP: progress1
   type progress1 links -> links -> subst -> subst -> o.
-  progress1 [] [] X X :- print "end solve links".
+%ENDSNIP
 
+  % Note: a progress of a link, may instantiate a variable and therefore a 
+  %       link deref is needed
+  progress1 L0 L1 S S1 :- % unessential, could be inlined
+    deref-links S L0 L,
+    not (L0 = L),
+    !,
+    progress1 L L1 S S1.
+
+%SNIP: progress1
+  progress1 [] [] X X :- print "end solve links".
   progress1 [A|L1] [A|L3] S S2 :- take-link A L1 B L2, !,
-    print "deduplicating links:" {pplink A} "===" {pplink B}, 
+    print "deduplicating links:" {pplink A} "===" {pplink B}, % HIDE
     same-link-eta A B S S1, 
     progress1 L2 L3 S1 S2.
-  progress1 [L0|L1] L3 S S2 :- deref-link S L0 L,
-    print "considering link for progress:" {pplink L},
-    solve-link-abs L R S S1, !,
-    if (R = []) (print {pplink L} "is removed") true,
+  progress1 [L0|L1] L3 S S2 :-
+    print "considering link for progress:" {pplink L0}, % HIDE
+    solve-link-abs L0 R S S1, !,
+    if (R = []) (print {pplink L0} "is removed") true, % HIDE
     progress1 L1 L2 S1 S2, append R L2 L3.
+%ENDSNIP
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% OCC CHECK %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -457,15 +476,15 @@ namespace comp {
     not_occ_links_aux Ad Links (app L).
   not_occ_links _ N _ :- name N.
 
-  type occur-check-links subst -> links -> o.
-  occur-check-links _ [].
-  occur-check-links S [Hd | MS] :-
+  type occur-check-links links -> o.
+  occur-check-links [].
+  occur-check-links [Hd | MS] :-
     get-head-link Hd Ad Term, !,
     not_occ_links Ad Term MS,
-    occur-check-links S MS.
-  occur-check-links S [_|MS] :-
+    occur-check-links MS.
+  occur-check-links [_|MS] :-
     print "OC is partial: a term is not in PF"
-    occur-check-links S MS.
+    occur-check-links MS.
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% CHECK %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -484,7 +503,7 @@ namespace comp {
     print "\nfixpoint iteration on:" {pplinks L}, !, % HIDE
     progress1 L L1 S1 S2, !,
     if ( % HIDE
-    occur-check-links S2 L1,
+    occur-check-links L1,
     true) true (print "fail by oc in progress", fail), % HIDE
     if (L = L1, S1 = S2)
        (L2 = L1, S3 = S1)
@@ -636,6 +655,7 @@ namespace comp {
     S is "\\link" ^ Op ^ "M{" ^ {ppctx Ctx} ^ "}{" ^ Left ^ "}{" ^ Right ^ "}".
 
   type pplink link -> string -> o.
+  pplink uvar _ :- halt "passed var to pplink".
   pplink L S :- tex, !, pplink-latex L S.
   pplink (ho.abs F) S :- pi x\ std.any->string x N, pplink (F x) S1, S is N ^ " " ^ S1.
   pplink (@val-link-eta A B) S :- S is "|- " ^ {ho.pp A} ^ " =η= " ^ {ho.pp B}.
@@ -667,11 +687,11 @@ namespace comp {
     forall1 test-maybe-eta-ko TESTS_KO.
 
   type test-maybe-eta-ok string -> o.
-  test-maybe-eta-ok S :- fo.parse S (flam B),
-    if (pi x\ maybe-eta x (B x) [x]) true (print "Fail" S, fail).
+  test-maybe-eta-ok S :- fo.parse S B,
+    if (maybe-eta B []) true (print "Fail" S, fail).
 
   type test-maybe-eta-ko string -> o.
-  test-maybe-eta-ko S :- fo.parse S (flam B),
-    if (pi x\ maybe-eta x (B x) [x]) (print "Succeed" S, fail) true.
+  test-maybe-eta-ko S :- fo.parse S B,
+    if (maybe-eta B []) (print "Succeed" S, fail) true.
 
 }
