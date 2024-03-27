@@ -31,6 +31,8 @@
 
 \newcommand*{\acronym}[1]{\texttt{#1}\xspace}
 
+\newtheorem{invariant}{Invariant}
+
 \def\ol{\acronym{ol}} % object language
 \def\ml{\acronym{ml}} % meta language
 \def\lf{\acronym{lf}} % logical framework
@@ -66,6 +68,9 @@
 \newcommand{\linkbetaM}[3]{\ensuremath{#1 \vdash #2 =_\beta #3}}
 \newcommand{\substCell}[3]{\ensuremath{#1 \vdash #2 = #3}}
 \newcommand{\mapping}[3]{\ensuremath{#1 \mapsto #2^#3}}
+
+\newcommand{\lhs}{\ensuremath{\mathrm{lhs}}\xspace}
+\newcommand{\rhs}{\ensuremath{\mathrm{rhs}}\xspace}
 
 \begin{document}
 
@@ -452,7 +457,7 @@ The initial here $\rho_0$ is the empty substitution
 \newcommand{\runHD}[3]{\ensuremath{%
 \bigwedge_{p = 1}^{#2} \stepH{#1}{p}{\sigma_{p-1}}{#3_{p-1}}{\sigma_{p}}{#3_p}}}
 \newcommand{\deff}{\ensuremath{\stackrel{{\scriptscriptstyle def}}{=\!=\!\!\!=}}}
-\def\linkStore{\ensuremath{\mathbb{L}}\xspace}
+\newcommand{\linkStore}{\ensuremath{\mathbb{L}}\xspace}
 
 $$
 \begin{array}{l}
@@ -764,8 +769,6 @@ Other invariant: the terms in ho\_subst never contains eta and beta expansion
 
 \input{code/comp_base_types}
 
-\newtheorem{invariant}{Invariant}
-
 \begin{invariant}[Unification variable arity]\label{inv:uvaarity}
 Each variable \elpiIn{A}
 in \Ho has a (unique) arity \elpiIn{N} and each occurrence~
@@ -801,14 +804,11 @@ The right hand side of a link, the problematic term, can occur under binders.
 To accommodate this situation the compiler wraps \elpiIn{baselink} using
 the \elpiIn{inctx} container.
 
-\begin{invariant}[Link left hand side]\ref{inv:linklhs}
+\begin{invariant}[Link left hand side]\label{inv:linklhs}
   The left hand side of a new link
   is a variable.
 \end{invariant}
 
-% TODO: io sposteri l'invariante sopra nella maybe-eta, perchè  
-% la proprietà è vera solo per i link eta
-% per i link beta, questo non è vero se sospendiamo i link
 \noindent
 If the variable is assigned during a run the link is considered for
 progress and possibly eliminated. This is discussed in
@@ -1028,6 +1028,7 @@ Note that we could remove the second rule, whose purpose is to make
 links more readable by pruning unneeded abstractions (unused context entries).
 
 \subsection{Execution}
+\label{sec:execution}
 
 A step in \Ho consists in unifying two terms and reconsidering all
 links for progress. If any of the two tasks fail we say that the entire step
@@ -1266,21 +1267,46 @@ Both problems are addressed in the next section.
 
 \section{Handling of \maybeeta}\label{sec:eta}
 
-$\eta$-reduction is a property by which a term $t$ is of the form $\lambda x. T
-x$ and $x$ is not free in $T$. In this case we case say that $T$ is equal to its
-$\eta$-expanded version represented by the term $t$. Both the meta and the
-object language accept terms unification up to $\eta$ equivalence, but as
-sketched in the small code snippet in \cref{sec:problem-statement}, \Ue is not
-able to capture this equivalence property when using terms in \Fo. The main
-reason is that the unification of two terms in \Fo{} appears to be syntactical
-on the constructors of these terms. As a very concise example, \Ue can't unify
-the \Fo{} terms \elpiIn{lam x\ app[con "f", x]} and \elpiIn{con "f"} since the
-rigid constructor \elpiIn{lam} is different from the rigid constructor
-\elpiIn{con}. In conclusion, we need to adapt our \elpiIn{comp} relation in
-order to address this problem. In the sections below, we explain how we detect
-and compile \maybeeta terms with the corresponding \linketa and how these links
-are used to make unification progress. The same explanation structure will be 
-used for \maybebeta terms.
+$\eta$-reduction is an equivalence relation over terms where a term of the form
+$\lambda x.t \appsep x$ can be converted to $t$ any time $x$ does not occur as a
+free variable in $t$. We call $\lambda x. t \appsep x$ the $\eta$-expanded
+version of $t$. The implementation of the \elpiIn{comp} relation given in
+\cref{sec:compilation} compiles the \Fo{} terms $t_1 = $\elpiIn{flam x\ fapp
+[fuva A, x]} and $t_2 =$ \elpiIn{fcon "f"} into the \Ho terms $t'_1 =
+$\elpiIn{lam x\ uva A' x} and $t'_2 =$ \elpiIn{fcon "f"} with mapping
+\mapping{A}{A'}{1}. However, if the oracle sets \elpiIn{A'} to the constant
+\elpiIn{"f"}, the unification of $t'_1$ and $t'_2$ in the meta language will
+fail even though $t_1 \Eo t_2$. The reason of this failure is attributed to the
+fact that $t'_1 =$\elpiIn{lam x\ app[con "f", x]} cannot be unified with $t'_2
+=$\elpiIn{con "f"} since the two terms have different rigid heads. We solve this
+unification problem by adapting the \elpiIn{comp} relation such that it
+recognizes \maybeeta subterms $s$ and replaces them with fresh \Ho variables
+$v$. This link between the variable $v$ and the subterm $t$ is stored in what we
+call \linketa which is an object with the following type
+
+\elpiIn{type link-eta tm -> tm -> baselink}
+
+\noindent
+where, as sketched in \cref{sec:lang-spec}, the term on the left hand side
+(\lhs) is linked with its left counterpart (\rhs).
+
+\linketa are added in the link store (\linkStore) and activated when special
+conditions are satisfied on \lhs or \rhs. These link activations are managed by
+extending the \elpiIn{progress1} predicate (see \cref{sec:execution}).
+We claim that \linketa progression does not contradict \cref{inv:linklhs} and we
+add the following invariant:
+
+\begin{invariant}[\linketa \rhs]
+  The \rhs of a \linketa having the shape $\lambda x.F_x$
+  where $F_x$ is a term not starting with the \elpiIn{lam} constructor.
+  \label{invariant:link-eta-right}
+\end{invariant}
+
+In the next three subsections we explain how we detect \maybeeta terms, how we
+compile them and how \linketa are activated during the execution of the program
+and provide justification for why these two invariants remain true.
+
+\subsection{Detection of \maybeeta}
 
 \subsection{Compilation}
 
@@ -1369,27 +1395,10 @@ is defined as
 
 \elpiIn{type link-eta tm -> tm -> baselink}
 
-\newcommand{\lhs}{\ensuremath{\mathrm{lhs}}\xspace}
-\newcommand{\rhs}{\ensuremath{\mathrm{rhs}}\xspace}
 
 \noindent
 We call the two terms carried by the link respectively left and right hand side,
 called respectively \lhs and \rhs.
-
-\begin{invariant}[\linketa \lhs]
-  The \lhs of a \linketa is a variable.
-  \label{invariant:link-eta-left}
-\end{invariant}
-
-TODO: motivate this?
-
-\begin{invariant}[\linketa \rhs]
-  The \rhs of a \linketa having the shape $\lambda x.F \appsep x$
-  where $F \appsep x$ is a term not starting with the \elpiIn{lam} constructor.
-  \label{invariant:link-eta-right}
-\end{invariant}
-
-TODO: motivate this?
 
 \subsection{Progress}
 
@@ -1409,20 +1418,27 @@ the condition succeeds, the link is kept for a further iteration of
 \elpiIn{progress}.
 
 TODO: dire che scendiamo sotto i vari abs che formano il contesto? 
+TODO: example for case 1: $\lambda x. \lambda y. F \appsep y \appsep x = f$
+TODO: example for case 2: $\lambda x. \lambda y. F \appsep y \appsep x = G, F = \lambda x. \lambda y. a$
 
-We can note that the insertion of these rules for \elpiIn{progress1} do not
-prevent the termination of \elpiIn{progress}, since, if the link is woken up,
-the unification of the terms and the suppression of the link form \linkStore
-are terminating operation. Note that if the link remain suspend
-\elpiIn{progress} continues to terminate, since, it would mean that the
-condition of the \elpiIn{if}-branchement succeds and the \elpiIn{progress}
-terminates its execution.
+A second way to progress \linketa, that we call \linketa deduplication, is to
+check if \linkStore contains two \linketa $l_1$ and $l_2$ with same \lhs. This
+situation occurs if two \maybeeta terms are unified with a same unification
+variable. In this case, we can unify the $l_1$ and $l_2$ \rhs (that, by
+construction are both on the form $\lambda x. T_x$) and remove one of the two
+links.
 
-A second way to progress \linketa is to check if \linkStore contains two
-\linketa $l_1$ and $l_2$ with same \lhs. In this case we are allowed to unify
+TODO: example for this: $\lambda x. \lambda y. F \appsep y \appsep x = X,
+\lambda x. \lambda y. F \appsep y \appsep x = Y$
 
-
-TODO: dire che termina
+We can note that the 1) insertion of these rules for \elpiIn{progress1} do not
+prevent the termination of \elpiIn{progress}, since, a link activation runs
+terminating operations (such as term unification and link-removal); 2) \linketa
+deduplication runs again terminating operations and 3) if none of these two 
+situations is performed, then the substitution and \linkStore
+Note that if the link remain suspended \elpiIn{progress} continues to terminate,
+since, it would mean that the condition of the \elpiIn{if}-branchement succeds
+and the \elpiIn{progress} terminates its execution.
 
 
 \begin{lemma}
@@ -1436,18 +1452,6 @@ TODO: dire che termina
 
 TODO: we can however have $\lambda x. F_x$ if we know that $F$ does not reduce
 to $T x$ where x is not free in $T$.
-
-\begin{textcode}
-  La deduplicate eta:
-  - viene chiamata che della forma [variable] -> [eta1] e [variable] -> [eta2]
-    (a destra non c'è mai un termine con testa rigida)
-  - i due termini a dx vengono unificati con la unif e uno dei due link viene buttato
-    NOTA!! A dx abbiamo sempre un termine della forma lam x.VAR x!!!
-    Altrimenti il link sarebbe stato risolto!!
-  - dopo l'unificazione rimane un link [variabile] -> [etaX]
-  - nella progress-eta, se a sx abbiamo una constante o un'app, allora eta-espandiamo
-    di uno per poter unificare con il termine di dx.
-\end{textcode}
 
 \section{Enforcing Invariant~\ref{invariant:arity}}
 \label{sec:invariant1}
