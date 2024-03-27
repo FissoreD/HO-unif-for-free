@@ -32,6 +32,8 @@
 \newcommand*{\acronym}[1]{\texttt{#1}\xspace}
 
 \newtheorem{invariant}{Invariant}
+\crefname{invariant}{invariant}{invariants}
+
 
 \def\ol{\acronym{ol}} % object language
 \def\ml{\acronym{ml}} % meta language
@@ -1299,12 +1301,12 @@ add the following invariant:
 \begin{invariant}[\linketa \rhs]
   The \rhs of a \linketa having the shape $\lambda x.F_x$
   where $F_x$ is a term not starting with the \elpiIn{lam} constructor.
-  \label{invariant:link-eta-right}
+  \label{inv:link-eta-right}
 \end{invariant}
 
 In the next three subsections we explain how we detect \maybeeta terms, how we
 compile them and how \linketa are activated during the execution of the program
-and provide justification for why these two invariants remain true.
+and provide justification for why \cref{inv:linklhs,inv:link-eta-right} remain true.
 
 \subsection{Detection of \maybeeta}
 
@@ -1328,6 +1330,7 @@ $t$, and $t$ can be reduced to a term on the form $t' x$ where $x$ is not free
 in $t'$. Indeed, eq.~\ref{eq:lamlam} is a \maybeeta under the substitution 
 $\sigma = \{A \mapsto \lambda x.x, B \mapsto \lambda x. \lambda y. x\}$.
 
+TODO: clarify this
 As a remark, note that $\lambda x. f \appsep A_x \appsep x$ is a \maybeeta,
 since, despite, $x$ occurs in $f \appsep A_x$, it is still possible that this
 subterm does not use $x$, for example if $A$ is a function on the form $\lambda
@@ -1384,94 +1387,26 @@ The implementation we propose for the \maybeeta relation is given below.
 
 \subsection{Compilation}
 
-\paragraph{Detection of \maybeeta} The main modification of the compiler to solve this
-unification issue consists in identifying all the subterms of a term $t$ that
-are \maybeeta. In particular, a term $t$ is a \maybeeta, if it can reduce to a
-$\eta$-expansion under a certain substitution $\sigma$. The code verifying this
-property is given below:
-
-
-The entry point is depicted by the rule~\ref{rule:maybeeta} which takes a name
-$n$, a term $t$ and a list of bound variables $L$ (originally it is the
-singleton containing $n$). This rule checks if $t$ is a term of the form $T
-\appsep n$ (for a term $T$), together with the auxiliary predicate
-\elpiIn{reducible-to} which ensures if a term $t$ can reduce to a name $n$.
-\marginpar{explain better: we start from $\lambda x.F x$}
-The \elpiIn{maybe-eta} predicate dispatches the calls to \elpiIn{reducible-to};
-three cases should be considered: 1) $t$ is a variable $v$, then $t$ can be an
-$\eta$-expansion if at least one of the terms in the scope of $v$ is a
-$\maybeeta$ of $n$; 2) $t$ is a lambda-term, then we recursively call
-\elpiIn{maybe-eta} on the body of $t$ under a local name $x$ which is added to
-the list $L$; 3) $t$ is an application, then $t$ is an $\eta$ expansion if i)
-the last arguments of $t$ can be reduced one by one to the binders in the list
-$L$ (we reverse the list in rule, since, by construction, this list is built in
-reversed order) and ii) none of the first arguments of the application contain a
-rigid occurrence of name in $L$.
-
-As rapidly said before, \elpiIn{reducible-to} tells if a term $t$ reduce to a
-name $n$, or equivalently if $\exists \sigma, \sigma t = n$. This predicate also
-takes the list of all the binders explored (this list is originally empty). A
-term $t$ reduces to a name $n$ if 1) $n = t$; 2) $t$ is a variable $v$, then $t$
-reduce to a $n$ if it exists an arugment in the scope of $v$ reducing to $n$ and
-forall name $n'$ in $L$, there is an argument reducing to $n'$ \marginpar{Note
-that this function is partial: the arg in the scope should be distinct}; 3) $t$
-is a lambda abstraction, then we call recursively \elpiIn{reducible-to} on the
-body of the abstraction with a new local name added to the list $L$; 4) $t$ is
-an application of $n$ to a list of arguments $L'$, then all the arguments should
-reduce to the respective name in the list $L$.
-
-Finally, a name $n$ occurs rigidly in a term $t$ if $n$ occurs in a subterm $t'$
-of $t$ such that $t'$ does not appear in the scope of a variable.
-
-An example of \maybeeta detection over the bound variable $x$ is the following:
-\marginpar{maybe more examples in appendix}
-%
-\begin{gather}
-  T = \lambda y. f \appsep A_{xy} \appsep (B \appsep a \appsep (\lambda z.y\appsep C_z)) \appsep D_x
-\end{gather}
-
-The correct call to \elpiIn{maybe-eta} is \elpiIn{maybe-eta x T L} with
-\elpiIn{L = [x]}. At first we go under the abstraction $\lambda y$ adding $y$ to
-$L$. Then we find an application, where we verify that 1) $A_{xy}$ does not
-contain $x$ and $y$ rigidly which is the case; 2) $B \appsep a \appsep (\lambda z.y\appsep (C_z))$
-and $D_x$ can respectively reduce to $y$ and $x$. The latter reduction is
-evident, since $D$ has $x$ in scope; the former subterm can reduce to $y$ since
-$B$ is a variable and it exists an argument ($\lambda z.y\appsep C_z$) reducible to
-$y$: under the binder $z$, we have the application of $y$ with a variable with
-$z$ in scope. Note that \maybeeta, only tells if it exists a substitution making
-a term an eta expansion on any term $t$, i.e, $t$ can be in $\maybeeta \cup
-\maybebeta$ without the constraint of being in \llambda, as our example shows. A
-possible substitution making the term $T$ in the example an $\eta$-expansion is
-$\sigma = \{A \mapsto \lambda x.\lambda y.a, B \mapsto \lambda x.\lambda y.y,
-C \mapsto \lambda x.x, D \mapsto \lambda x.x\}$.
-
-\paragraph{Compilation with \linketa} Thanks to the \elpiIn{maybe-eta}
-predicate, we can detect ``$\eta$-problematic'' terms and, consequently replace
-them with a fresh \Ho unification variable at compilation time. The code
-below illustrate this dedicated compilation:
-% TODO: maybe ref to \cref{sec:nutshell}
+Thanks to the \elpiIn{maybe-eta} predicate, we can detect ``$\eta$-problematic''
+terms and, consequently replace them with fresh \Ho unification variables at
+compilation time. The code below illustrate how this relation is used to for
+term compilation.
 
 \input{code/comp_eta}
 
-\marginpar{Where This rule is put in the code ?}
-This rule is applied on \Fo{} lambda-abstractions, tests if their body $F$ is an
-\maybeeta wrt to a local fresh binder $x$, and if so, it compiles $F$ to the \Ho
-term \elpiIn{F1} and returns a \Ho fresh variable $A$ having in scope the free
-names occurring in \elpiIn{F1}. As sketch at the very end of
-\cref{sec:lang-spec}, each time a subterm $t$ in \Fo is replaced with a \Ho
-variable $v$, we build a \elpiIn{link-eta} between $v$ and and the term $t'$
-obtained by the compilation of $t$.
-
-A \elpiIn{link-eta}\footnote{\elpiIn{@val-link-eta A B} is syntactic sugar for
-\elpiIn{val (link-eta A B)}}
-is defined as
-
-\elpiIn{type link-eta tm -> tm -> baselink}
-
-
-\noindent
-We call the two terms carried by the link respectively left and right hand side,
-called respectively \lhs and \rhs.
+This rule, to be inserted just before rule~\ref{rule:complam} from the code in
+\cref{sec:compilation}, verifies if the \Fo{} term $t$ received in entry is a
+\maybeeta. Let $\lambda t'$ be the compiled version of $t$, then the fresh
+variable \elpiIn{A} returned as the new \Ho term as in scope all the free names
+in $t'$. The critical part of this compilation is the creation of the \linketa,
+which links the variable \elpiIn{A} with $t$. This link creation enforce
+\cref{inv:linklhs} and \cref{inv:link-eta-right}, since clearly the \lhs is a
+variable and the \rhs is a term starting with the \elpiIn{lam} constructor. We
+can also note that for any name $x$, $tx = t' \appsep x$ never start with
+\elpiIn{lam}, since by contradiction, if 1) $tx$ is an $\eta$-expansion, then
+the recursive call to \elpiIn{comp} would have replaced $tx$ with a fresh
+variable, which contradict the hypothesis and if 2) $t'$ is not an
+$\eta$-expansion, then neither $\lambda t'$ is.
 
 \subsection{Progress}
 

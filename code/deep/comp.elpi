@@ -144,7 +144,7 @@ namespace comp {
       L3 = [@val-link-eta (uva A Scope) (lam F1) | L2].
 %ENDSNIP
 %SNIP: comp_base
-  comp (flam F) (lam F1) M1 M2 L1 L2 S1 S2 :- 
+  comp (flam F) (lam F1) M1 M2 L1 L2 S1 S2 :-            % label: rule:complam cnt: \ensuremath{c_\lambda}
     comp-lam F F1 M1 M2 L1 L2 S1 S2.
   comp (fuva A) (uva B []) M1 M2 L L S1 S2 :- 
     m-alloc (fv A) (hv B (arity z)) M1 M2 S1 S2.
