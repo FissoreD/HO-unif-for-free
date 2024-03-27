@@ -74,7 +74,7 @@ namespace comp {
   % succeeds if T could be an eta expansion, possible cases:
   %  - T = uva seing N (N is also the last of L)
   %  - T = app L such that the last args of L are maybe-eta wrt L
-  type maybe-eta fm -> list fm -> o.          % label: rule:maybeeta cnt: \maybeeta
+  type maybe-eta fm -> list fm -> o.                  % label: rule:maybeeta cnt: \maybeeta
   maybe-eta (fapp[fuva _|Args]) L :- !,
     % Head is flex -> if N is in Args, we can have eta 
     forall1 (x\ exists (reducible-to [] x) Args) L, !. 
@@ -381,19 +381,17 @@ namespace comp {
     pi x\ link-abs-same-lhs (F x) B.
   link-abs-same-lhs A (ho.abs G) :- 
     pi x\ link-abs-same-lhs A (G x).
-  link-abs-same-lhs (@val-link-eta (uva N _) _) (@val-link-eta (uva N _) _).
+  link-abs-same-lhs (val (link-eta (uva N _) _)) (val (link-eta (uva N _) _)).
 
   type same-link-eta link -> link -> subst -> subst -> o.
   % same-link-eta (ho.abs F) (ho.abs G) H H1 :- !, pi x\ same-link-eta (F x) (G x) H H1.
   same-link-eta (ho.abs F) G H H1 :- !, pi x\ same-link-eta (F x) G H H1.
   same-link-eta A (ho.abs G) H H1 :- !, pi x\ same-link-eta A (G x) H H1.
-  same-link-eta (@val-link-eta (uva N S1) A)
-                (@val-link-eta (uva N S2) B) H H1 :-
-    std.assert! (std.length S1 {std.length S2}) "no same scope",
-    std.map2 S1 S2 (x\y\r\ r = ho.copy x y) Perm,
+  same-link-eta (val (link-eta (uva N S1) A))
+                (val (link-eta (uva N S2) B)) H H1 :-
+    std.assert! (std.length S1 {std.length S2}) "no same scope", % HIDE
+    forall3 (x\y\r\ r = ho.copy x y) S1 S2 Perm,
     Perm => ho.copy A A',
-    % halt "Error here",
-    % print "Hello" {ho.pp A} {ho.pp B},
     (A' ==l B) H H1.
 
 %SNIP: progress1

@@ -67,6 +67,10 @@ type forall2 (A -> B -> o) -> list A -> list B -> o.
 forall2 _ [] [].
 forall2 F [X|XS] [Y|YS] :- F X Y, forall2 F XS YS.
 
+type forall3 (A -> B -> C -> o) -> list A -> list B -> list C -> o.
+forall3 _ [] [] [].
+forall3 F [X|XS] [Y|YS] [Z|ZS] :- F X Y Z, forall3 F XS YS ZS.
+
 /* same as forall2, sometimes more intuitive name */
 type map (A -> B -> o) -> list A -> list B -> o.
 map _ [] [].
