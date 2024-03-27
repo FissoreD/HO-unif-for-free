@@ -766,8 +766,21 @@ On the contrary a solution to a \Fo variable is a plain term.
 \noindent
 We call \elpiIn{fsubst} the memory of \Fo{}, while we call \elpiIn{subst}
 the one of \Ho.
-Both have the invariant that they are not cyclic, TODO explain.
-Other invariant: the terms in ho\_subst never contains eta and beta expansion
+Both have the invariant that they are not cyclic, TODO: explain.
+
+\begin{invariant}
+  Any term in the substitution of \Ho is in normal form.
+  TODO: move this to the right place
+  TODO: definire normal form, maybe in definition 2.7
+  \label{inv:subst-nf}
+\end{invariant}
+\begin{invariant}
+
+  Any variable in the substitution with arity \elpiIn{N} is always fully applied
+  TODO: move this to the right place
+  TODO: definire normal form, maybe in definition 2.7
+  \label{inv:fully-applied-vars}
+\end{invariant}
 
 \input{code/comp_base_types}
 
@@ -1073,16 +1086,19 @@ guarantee \cref{prop:fidelity} (simulation fidelity).
 Decompiling the substitution requires to first force the
 progress of links and then allocating new unassigned variables
 in the substitution for \Fo{} and finally decompiling all
-assignments. Note that \ref{inv:linklhs} and the
+assignments. Note that \cref{inv:linklhs} and the
 occur check allows us to update the subst.
 
 
 \input{code/decompile}
 
+TODO: What is commit-links and complete-mapping?, maybe complete-mapping can be
+hidden in the code rendering?
+
 \noindent
 Decompiling an assignment requires to turn abstractions into
 lambdas. For aestetic purposes we also eta-contract the result
-(not needed since Fo equality can do that)
+(not needed since \Fo{} equality can do that)
 
 \input{code/decompm}
 
@@ -1152,8 +1168,8 @@ context where input terms are $\beta\eta$-normal and we disregard $\eta$-equival
 \subsection{Limitations of by this basic scheme}
 
 \begin{gather}
-\lambda x y.F~y~x = \lambda x y.x\\
-\lambda x. f~(F~x)~x = f~(\lambda y.y)
+\lambda x y.F \appsep y \appsep x = \lambda x y.x \label{eq:unif-eta1}\\
+\lambda x. f \appsep (F \appsep x) \appsep x = f \appsep (\lambda y.y) \label{eq:unif-eta2}
 \end{gather}
 Note that here $F$ is used with different arities, moreover
 in the second problem the left hand side happens to be an
@@ -1428,56 +1444,107 @@ $\eta$-expansion, then neither $\lambda t'$ is.
 
 \subsection{Progress}
 
-\linketa are meant to suspend the unification of two terms, that is, if we have
-a \maybeeta term $t$ which should be unified with a term $t'$ we don't want to
-unify them with \Ue. As said before this would break unification but it can also
-introduce \maybeeta in the substitution of \Ho.
+\linketa are meant to delay the unification of ``problematic'' terms. In the
+following, we call \linkStore the list of suspended links.
 
-In order to activate a \linketa, we need to implement new rules for the
-\elpiIn{progress1} predicate. There are two cases making a \linketa to progress,
-1) \lhs is instantiated to a rigid term, in this case \lhs is unified with \rhs.
-TODO: the right eta hand side is eta-expanbded if it is an app/con; 2) \rhs can
-be $\eta$-reduced to a term with rigid head, in this case \lhs and \rhs are
-again unified. If one of these two condition is satisfied, the link has
-fulfilled is task and can be removed from the list of suspended links; if none
-the condition succeeds, the link is kept for a further iteration of
-\elpiIn{progress}.
+In order to activate a \linketa $l$, we need to implement new rules for the
+\elpiIn{progress1} predicate. After passing under all the \elpiIn{abs}
+constructors of $l$, there are two cases making a \linketa to progress, 1) \lhs
+is instantiated to a rigid term 2) \rhs can be $\eta$-reduced to a term with
+rigid head. If \lhs is instantiated to a rigid term $t$, by \cref{inv:subst-nf},
+we know that $t$ does not contain any \maybeeta. Let $t'$ the right hand side,
+if $t$ is a constant or a function application, then, $t'$, which by
+construction has \elpiIn{lam} as head, should be an $\eta$-expansion. We are
+therefore allowed to unify $\lambda x. t \appsep x$ (the $\eta$-expanded version
+of $t$) with $t'$. Finally, if \lhs starts has \elpiIn{lam} as constructor, then
+$t$ is not an $\eta$-expansion and therefore, $t$ can be unified with $t'$. 
 
-TODO: dire che scendiamo sotto i vari abs che formano il contesto? 
+The second way to activate a \linketa is when the \rhs can $\eta$-reduced to a
+term $t$ with rigid head, i.e. $t'$ is not a \maybeeta. This means that we can
+unify \lhs with $t'$.
+
+Once a \linketa is activated, it can be removed from \linkStore,
+otherwise, the link is kept for a further iteration of \elpiIn{progress}. Note
+that this link progression enforce
+\cref{inv:subst-nf,inv:linklhs,inv:link-eta-right}: we never commit a term in
+the \Ho substitution, since we make unification only when we know that the 
+terms are no more \maybeeta, and when \lhs is no more a variable or \rhs is 
+no more a \maybeeta, the link is removed from \linkStore.
+
 TODO: example for case 1: $\lambda x. \lambda y. F \appsep y \appsep x = f$
 TODO: example for case 2: $\lambda x. \lambda y. F \appsep y \appsep x = G, F = \lambda x. \lambda y. a$
 
-A second way to progress \linketa, that we call \linketa deduplication, is to
-check if \linkStore contains two \linketa $l_1$ and $l_2$ with same \lhs. This
-situation occurs if two \maybeeta terms are unified with a same unification
-variable. In this case, we can unify the $l_1$ and $l_2$ \rhs (that, by
-construction are both on the form $\lambda x. T_x$) and remove one of the two
-links.
+A second way to progress \linketa, that we call \linketa deduplication, is when
+\linkStore contains two \linketa $l_1$ and $l_2$ with a \lhs having the same
+variable address. Let the \lhs of $l_1$ be \elpiIn{uva U R} and the \lhs of
+$l_2$ be \elpiIn{uva V S}, then, by \cref{inv:fully-applied-vars}, \elpiIn{R}
+and \elpiIn{S} have same scope. Let $t$ be the term obtained by replacing all
+each name \elpiIn{S}$_i$ in the \rhs of $l_1$ with \elpiIn{R}$_i$, $t$ is
+unified with the \rhs of $l_2$ and one of the two links between $l_1$ and $l_2$
+is removed from \linkStore. 
 
 TODO: example for this: $\lambda x. \lambda y. F \appsep y \appsep x = X,
 \lambda x. \lambda y. F \appsep y \appsep x = Y$
 
-We can note that the 1) insertion of these rules for \elpiIn{progress1} do not
-prevent the termination of \elpiIn{progress}, since, a link activation runs
-terminating operations (such as term unification and link-removal); 2) \linketa
-deduplication runs again terminating operations and 3) if none of these two 
-situations is performed, then the substitution and \linkStore
-Note that if the link remain suspended \elpiIn{progress} continues to terminate,
-since, it would mean that the condition of the \elpiIn{if}-branchement succeds
-and the \elpiIn{progress} terminates its execution.
+We can note that the insertion of these rules for \elpiIn{progress1} do not
+prevent the termination of \elpiIn{progress}, since: if a link is activated it
+is removed from \linkStore and the recursive call to \elpiIn{progress} will have
+a smaller list of links to recurse on. Moreover, link activation only runs
+unification which are terminating instructions. If a link is deduplicated, the
+termination of \elpiIn{progress} is still guaranteed since again we reduce
+\linkStore and the instructions run by link deduplications are all terminating.
+Finally, if a link is neither activated nor deduplicated, i.e. it remains
+suspended, then the condition of the \elpiIn{if}-statement of \elpiIn{progress}
+succeeds making it to terminate.
+
+TODO: we can have $\lambda x. F_x$ in the substitution if we know that $F$ does
+not reduce to $T x$ where x is not free in $T$.
+
+\subsection{Example}
+
+In this subsection we show two complete runs of the extended version of \Ue.
+
+\paragraph{Example 1}
+\begin{center}
+  \elpiIn{flam x\ flam y\ fapp[fuva A, y, x] = flam x\ flam y\ x}
+\end{center}
+% $$\flambda xy.F \appsep y \appsep x = \lambda xy.x$$
+\begin{itemize}
+  \item After compilation: terms are $X0 = \lambda c0.\lambda c1.c0$ with links
+        $\linketaM{c0}{X1_{c0}}{\lambda c1.X2_{c1~c0}}, \linketaM{}{X0}{\lambda
+        c0.X1_{c0}}$ and mappings: $\mapping{C0}{X2}{2}$
+  \item After unification $X0$ is set to $\lambda c0.\lambda c1.c0$
+  \item This unification wakes up the second link, since its \lhs is now
+        instantiated. $X0$ is unified with its \rhs, which assigns $X1_{c0} :=
+        \lambda c1.c0$
+  \item The instantiation of $X1$ wakes the first link, and $\lambda c1.c0$ is
+        unified with $\lambda c1.X2_{c1~c0}$, setting $X2 _{c1~c2} := c2$ by
+        pruning.
+  \item All the links have been solved and the decompilation, assigns the \Fo{}
+        variable \elpiIn{A} to $\lambda xy.y$ 
+\end{itemize}
+
+\paragraph{Example 2}
+\begin{center}
+  \elpiIn{flam x\ fapp[f, fapp[fuva F, x], x] = fapp[f, flam x\ x]}
+\end{center}
+% $$\flambda xy.F \appsep y \appsep x = \lambda xy.x$$
+\begin{itemize}
+  \item After compilation: terms are $X0 = f~\lambda c0.c0$ with links
+        $\linketaM{}{X0}{\lambda c0.(f~X1_{c0}~c0)}$ and mappings:
+        $\mapping{C0}{X1}{1}$
+  \item After unification $X0$ is set to $f~\lambda c0.c0$
+  \item This unification wakes up the link, since its \lhs is now
+        instantiated. $X0$ is unified with its \rhs, which assigns $X1_{c0} :=
+        \lambda c1.c0$
+  \item The instantiation of $X1$ wakes the first link, and $\lambda c1.c0$ is
+        unified with $\lambda c1.X2_{c1~c0}$, setting $X2 _{c1~c2} := c2$ by
+        pruning.
+  \item All the links have been solved and the decompilation, assigns the \Fo{}
+        variable \elpiIn{A} to $\lambda xy.y$ 
+\end{itemize}
 
 
-\begin{lemma}
-  We never add eta-expansions in the substitution
-\end{lemma}
-
-\begin{proof}[Proof sketch]
-\end{proof}
-
-
-
-TODO: we can however have $\lambda x. F_x$ if we know that $F$ does not reduce
-to $T x$ where x is not free in $T$.
 
 \section{Enforcing Invariant~\ref{invariant:arity}}
 \label{sec:invariant1}
