@@ -807,14 +807,15 @@ To accommodate this situation the compiler wraps \elpiIn{baselink} using
 the \elpiIn{inctx} container.
 
 \begin{invariant}[Link left hand side]\label{inv:linklhs}
-  The left hand side of a new link
+  The left hand side of a suspended link
   is a variable.
 \end{invariant}
 
 \noindent
-If the variable is assigned during a run the link is considered for
-progress and possibly eliminated. This is discussed in
-section~\ref{sec:eta}.\marginpar{is this the right section?}
+New links are suspended by construction.
+If the left hand side variable is assigned during a step, then 
+the link is considered for progress and possibly eliminated.
+This is discussed in \cref{sec:eta} and \cref{sc:beta}.
 
 \subsection{Notational conventions}
 
@@ -1055,7 +1056,17 @@ on both the links and the substitution, so the fixpoint trivially terminates.
 Sections \ref{sec:eta} and \ref{sec:beta} add rules to \elpiIn{progress1}
 and justify why the don't hinder termination.
 
-TODO: discuss occur check
+Since compilation moves problematic terms out of the compiled terms,
+\Ue{} can only perform a partial occur check. For example the
+unification problem $X \Ue f~Y$ cannot generate a cyclic substitution alone,
+but should be disallowed if a $\linkStore$ contains a link like
+$\linketaM{}{Y}{\lambda z.X_z}$: We don't know yet if $Y$ will feature
+a lambda in head position, but we surely know it contains $X$, hence
+$f~Y$ and that triggers occur check.
+The procedure \elpiIn{occur-check-links} is in charge of ensuring that
+each link does not represent a (suspended) unification problem doomed
+to fail because of occur check. This check is needed in order to
+guarantee \cref{prop:fidelity} (simulation fidelity).
 
 \subsection{Substitution decompilation}
 
