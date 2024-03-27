@@ -6,7 +6,7 @@ typeabbrev addr mem.addr.
 
 namespace comp {
   shorten fo.{ (==o), flam, fapp, fcon, fuva , eta-contract , beta }.
-  shorten ho.{ (==l), lam, app, con, uva , abs , deref-assmt }.
+  shorten ho.{ (==l), lam, app, con, uva , abs , val , deref-assmt }.
   shorten mem.{ set? , unset? , assign }.
   typeabbrev fm fo.fm.
   typeabbrev tm ho.tm.
@@ -141,7 +141,7 @@ namespace comp {
       alloc S1 A S2,
       comp-lam F F1 M1 M2 L1 L2 S2 S3,
       get-scope (lam F1) Scope, 
-      L3 = [@val-link-eta (uva A Scope) (lam F1) | L2].
+      L3 = [val (link-eta (uva A Scope) (lam F1)) | L2].
 %ENDSNIP
 %SNIP: comp_base
   comp (flam F) (lam F1) M1 M2 L1 L2 S1 S2 :-            % label: rule:complam cnt: \ensuremath{c_\lambda}
@@ -196,11 +196,11 @@ namespace comp {
   type make-eta-link-aux nat -> addr -> addr -> 
     list tm -> links -> subst -> subst -> o.
   make-eta-link-aux z Ad1 Ad2 Scope1 L H1 H1  :-
-    rev Scope1 Scope, eta-expand (uva Ad2 Scope) @one T1,
+    rev Scope1 Scope, eta-expand (uva Ad2 Scope) T1,
     L = [@val-link-eta (uva Ad1 Scope) T1].
   make-eta-link-aux (s N) Ad1 Ad2 Scope1 L H1 H3 :-
     rev Scope1 Scope, alloc H1 Ad H2, 
-    eta-expand (uva Ad Scope) @one T2,
+    eta-expand (uva Ad Scope) T2,
     (pi x\ make-eta-link-aux N Ad Ad2 [x|Scope1] (L1 x) H2 H3),
     close-links L1 L2,
     L = [@val-link-eta (uva Ad1 Scope) T2 | L2].
@@ -253,10 +253,14 @@ namespace comp {
   mk-app (con C) T (app [con C, T]).
   mk-app (app L) T (app R) :- append L [T] R.
 
-  type eta-expand tm -> nat -> tm -> o.
-  eta-expand T z T.
-  eta-expand T (s N) (lam R2) :- 
-    pi x\ mk-app T x (R1 x), eta-expand (R1 x) N (R2 x). 
+  type eta-expand-n tm -> nat -> tm -> o.
+  eta-expand-n T z T.
+  eta-expand-n T (s N) (lam R2) :- 
+    pi x\ mk-app T x (R1 x), eta-expand-n (R1 x) N (R2 x). 
+
+  type eta-expand tm -> tm -> o.
+  eta-expand T (lam T') :- pi x\ mk-app T x (T' x). 
+
 
 %SNIP: alloc_mapping
   type m-alloc fvariable -> hvariable -> mmap -> mmap -> 
@@ -285,9 +289,9 @@ namespace comp {
   type progress-eta-link tm -> tm -> subst -> subst -> links -> o.
   % progress-eta-link (app _ as T) (lam x\ lam y\ _) _ _ _ :- halt "STOP ". 
   progress-eta-link (app _ as T) (lam x\ _ as T1) H H1 [] :- !, 
-    print "progress η app left", ({eta-expand T @one} ==l T1) H H1.
+    print "progress η app left", ({eta-expand T} ==l T1) H H1.
   progress-eta-link (con _ as T) (lam x\ _ as T1) H H1 [] :- !, 
-    print "progress η con left", ({eta-expand T @one} ==l T1) H H1.
+    print "progress η con left", ({eta-expand T} ==l T1) H H1.
   progress-eta-link (lam _ as T) T1 H H1 [] :- !, 
     print "progress η lam left", (T ==l T1) H H1.
   progress-eta-link (uva _ _ as X) T H H1 [] :- 
