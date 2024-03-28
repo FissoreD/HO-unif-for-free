@@ -201,7 +201,7 @@ namespace ho {
   pp (lam F) S :- tex, !, pi x\ std.any->string x N, pp (F x) S1, S is "\\lambda " ^ N ^ "." ^ S1.
   pp (lam F) S :- !, pi x\ std.any->string x N, pp (F x) S1, S is "λ" ^ N ^ "." ^ S1.
   pp (uva N []) S :- !, S is {ppuva N}.
-  pp (uva N L) S :- tex, !, std.string.concat "~" {std.map L pp} X, !, S is {ppuva N} ^ "_{" ^ X ^ "}".
+  pp (uva N L) S :- tex, !, std.string.concat " " {std.map L pp} X, !, S is {ppuva N} ^ "_{" ^ X ^ "}".
   pp (uva N L) S :- !, std.string.concat " " {std.map L pp} X, !, S is "`" ^ {ppuva N} ^ " " ^ X ^ "'".
   pp X S :- name X, !, std.any->string X S.
   pp _ "ERROR".

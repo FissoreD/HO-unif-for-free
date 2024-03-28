@@ -460,7 +460,7 @@ The initial here $\rho_0$ is the empty substitution
 \newcommand{\deff}{\ensuremath{\stackrel{{\scriptscriptstyle def}}{=\!=\!\!\!=}}}
 \newcommand{\linkStore}{\ensuremath{\mathbb{L}}\xspace}
 \newcommand{\mapStore}{\ensuremath{\mathbb{M}}\xspace}
-
+%
 $$
 \begin{array}{l}
 \stepF{\mathcal{S}}{p}{\rho}{\rho''}
@@ -1313,17 +1313,17 @@ $\eta$-reduction is an equivalence relation over terms where a term of the form
 $\lambda x.t \appsep x$ can be converted to $t$ any time $x$ does not occur as a
 free variable in $t$. We call $\lambda x. t \appsep x$ the $\eta$-expanded
 version of $t$. The implementation of the \elpiIn{comp} relation given in
-\cref{sec:compilation} compiles the \Fo{} terms $t_1 = $\elpiIn{flam x\ fapp
+\cref{sec:compilation} compiles the \Fo{} terms $t_1 =$ \elpiIn{flam x\ fapp
 [fuva A, x]} and $t_2 =$ \elpiIn{fcon "f"} into the \Ho terms $t'_1 =
-$\elpiIn{lam x\ uva A' x} and $t'_2 =$ \elpiIn{fcon "f"} with mapping
-\mapping{A}{A'}{1}. However, if the oracle sets \elpiIn{A'} to the constant
+$ \elpiIn{lam x\ uva A' x} and $t'_2 =$ \elpiIn{fcon "f"} with mapping
+\mapping{\elpiIn{A}}{\elpiIn{A'}}{1}. However, if the oracle sets \elpiIn{A'} to the constant
 \elpiIn{"f"}, the unification of $t'_1$ and $t'_2$ in the meta language will
 fail even though $t_1 \Eo t_2$. The reason of this failure is attributed to the
-fact that $t'_1 =$\elpiIn{lam x\ app[con "f", x]} cannot be unified with $t'_2
-=$\elpiIn{con "f"} since the two terms have different rigid heads. We solve this
+fact that $t'_1 =$~\elpiIn{lam x\ app[con "f", x]} cannot be unified with $t'_2
+=$~\elpiIn{con "f"} since the two terms have different rigid heads. We solve this
 unification problem by adapting the \elpiIn{comp} relation such that it
-recognizes \maybeeta subterms $s$ and replaces them with fresh \Ho variables
-$v$. This link between the variable $v$ and the subterm $t$ is stored in what we
+recognizes \maybeeta subterms and replaces them with fresh \Ho variables. 
+This link between the variable $v$ and the subterm $t$ is stored in what we
 call \linketa which is an object with the following type
 
 \elpiIn{type link-eta tm -> tm -> baselink}
@@ -1354,31 +1354,37 @@ Compiling term with \maybeeta terms forces us to determine if, $\lambda x. T_x$,
 for any term $T$ having $x$ in scope, can be a $\eta$-expansion, i.e. under a
 given substitution $\sigma$, we have $\sigma (\lambda x.T_x) = t$. This
 \maybeeta detection is not a trivial operation as it may seems.
-%
-\begin{gather}
-  \lambda x. f \appsep A_x\\
-  \lambda x. f \appsep x \appsep A_x\\
-  \lambda x. \lambda y. f \appsep A_x \appsep B_{y x} \label{eq:lamlam}
-\end{gather}
+\\
+\noindent
+\begin{minipage}{.5\linewidth}
+  \begin{gather}
+    \lambda x. f \appsep A_x\\
+    \lambda x. f \appsep x \appsep A_x
+  \end{gather}
+\end{minipage}% This must go next to `\end{minipage}`
+\begin{minipage}{.5\linewidth}
+  \begin{gather}
+    \lambda x. \lambda y. f \appsep A_x \appsep B_{y x} \label{eq:lamlam}\\
+    \lambda x. f \appsep A_x \appsep x \label{eq:lamdisc}
+  \end{gather}
+\end{minipage}
 
 In the examples above, the first expression is a \maybeeta since $A_x$ can
-reduce to $x$, the second one is not a \maybeeta since for any substitution for
-$A_x$, $x$ is not free in $f \appsep x$. The third equation is a bit more
+reduce to $x$, the second one is not a \maybeeta since it exists no substitution
+for $A_x$ such that $A_x$ reduces to $x$ and $x$ is not free in the subterm $f \appsep x$.
+Eq.~\ref{eq:lamlam} is a bit more
 complicated since, we have a spine of lambdas, this means that the whole term
 is a \maybeeta, if the inner $\lambda$-term is an $\eta$-expansion of a term
 $t$, and $t$ can be reduced to a term on the form $t' x$ where $x$ is not free
 in $t'$. Indeed, eq.~\ref{eq:lamlam} is a \maybeeta under the substitution 
 $\sigma = \{A \mapsto \lambda x.x, B \mapsto \lambda x. \lambda y. x\}$.
 
-TODO: clarify this
-As a remark, note that $\lambda x. f \appsep A_x \appsep x$ is a \maybeeta,
-since, despite, $x$ occurs in $f \appsep A_x$, it is still possible that this
-subterm does not use $x$, for example if $A$ is a function on the form $\lambda
-x.a$, where $a$ is a defined constant. In this case, the \maybeeta should
-consider that the bound variable \elpiIn{x} does not ``rigidly'' occur in 
-the given subterm.
+As a final remark, note that eq.~\ref{eq:lamdisc} is a \maybeeta even if $x$
+occurs in the subterm $t' = f \appsep A_x$. It exists in fact a substitution
+$\sigma = \{A \mapsto \lambda x.a\}$, for any constant $a$, such that $\sigma t'
+= f \appsep a$ is a term where $x$ does not appears as a free variable. 
 
-We can now define more formally the two auxiliary relation we need for \maybeeta
+We can now define more formally the two auxiliary relations needed for \maybeeta
 detection:
 
 \begin{definition}[reduce-to]
@@ -1623,7 +1629,7 @@ variable $u$ with higher arity in the two mappings being considered.
 
 If we take back the example give at the beginning of this section, we can
 deduplicate $\mapping{F}{G}{1}, \mapping{F}{H}{2}$ by removing the first mapping
-and adding the auxiliary \linketa: \linketaM{x}{G_{x}}{\lambda y.H_{x~y}}.
+and adding the auxiliary \linketa: \linketaM{x}{G_{x}}{\lambda y.H_{x y}}.
 
 The complete problem to run for resolution is now:
 
