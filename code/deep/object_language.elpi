@@ -30,16 +30,8 @@ namespace fo {
 
   type fderef fsubst -> fm -> fm -> o.                 %~($\customlabel{pred:fder}{\rho s}$)~
   fderef S T T2 :- fder S T T1, napp T1 T2.
-
-  type napp fm -> fm -> o.
-  napp (fcon C) (fcon C).
-  napp (fuva A) (fuva A).
-  napp (flam F) (flam F1) :-
-    pi x\ napp x x => napp (F x) (F1 x).
-  napp (fapp [fapp L1 |L2]) T :- !,
-    append L1 L2 L3, napp (fapp L3) T.
-  napp (fapp L) (fapp L1) :- map napp L L1.
 %ENDSNIP
+
 
 %SNIP: feq
   type (==o) fm -> fm -> o.                             %~($\customlabel{pred:fequal}{\Eo}$)~
@@ -68,11 +60,20 @@ namespace fo {
 %SNIP: beta_fo
   type beta fm -> list fm -> fm -> o.
   beta A [] A.
-  beta (flam Bo) [H | L] R :- beta (Bo H) L R.
+  beta (flam Bo) [H | L] R :- napp (Bo H) F, beta F L R.
   beta (fapp A) L (fapp X) :- append A L X.
   beta (fuva N) L (fapp [fuva N | L]).
   beta (fcon H) L (fapp [fcon H | L]).
   beta N L (fapp [N | L]) :- name N.
+
+  type napp fm -> fm -> o.
+  napp (fcon C) (fcon C).
+  napp (fuva A) (fuva A).
+  napp (flam F) (flam G) :- pi x\ napp (F x) (G x).
+  napp (fapp [fapp L1 |L2]) T :- !,
+    append L1 L2 L3, napp (fapp L3) T.
+  napp (fapp L) (fapp L1) :- map napp L L1.
+  napp N N :- name N.
 %ENDSNIP
 
   type mk-app fm -> list fm -> fm -> o.
