@@ -190,6 +190,7 @@ namespace comp {
     mmap -> links -> subst -> o.
   compile-terms T H M L S :- 
     fold6 compile-terms-diagnostic T H [] M_ [] L_ [] S_,
+    print "Deduplicate mappings on" {ppmappings M_} {pplinks L_}, % HIDE
     deduplicate-map M_ M S_ S L_ L.
 
   % Ad1 is the variable with smaller arity, Ad2 is eta expanded N times
@@ -197,13 +198,13 @@ namespace comp {
     list tm -> links -> subst -> subst -> o.
   make-eta-link-aux z Ad1 Ad2 Scope1 L H1 H1  :-
     rev Scope1 Scope, eta-expand (uva Ad2 Scope) T1,
-    L = [@val-link-eta (uva Ad1 Scope) T1].
+    L = [val (link-eta (uva Ad1 Scope) T1)].
   make-eta-link-aux (s N) Ad1 Ad2 Scope1 L H1 H3 :-
     rev Scope1 Scope, alloc H1 Ad H2, 
     eta-expand (uva Ad Scope) T2,
     (pi x\ make-eta-link-aux N Ad Ad2 [x|Scope1] (L1 x) H2 H3),
     close-links L1 L2,
-    L = [@val-link-eta (uva Ad1 Scope) T2 | L2].
+    L = [val (link-eta (uva Ad1 Scope) T2) | L2].
 
   % [make-eta-link ArityAd1, ArityAd2, Ad1, Ad2 Vars, Link]
   % as long as the arities are > 0, we eat one arity by putting a variable in the ctx

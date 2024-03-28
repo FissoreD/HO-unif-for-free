@@ -459,6 +459,7 @@ The initial here $\rho_0$ is the empty substitution
 \bigwedge_{p = 1}^{#2} \stepH{#1}{p}{\sigma_{p-1}}{#3_{p-1}}{\sigma_{p}}{#3_p}}}
 \newcommand{\deff}{\ensuremath{\stackrel{{\scriptscriptstyle def}}{=\!=\!\!\!=}}}
 \newcommand{\linkStore}{\ensuremath{\mathbb{L}}\xspace}
+\newcommand{\mapStore}{\ensuremath{\mathbb{M}}\xspace}
 
 $$
 \begin{array}{l}
@@ -478,9 +479,9 @@ $$
 \stepH{\mathcal{T}}{p}{\sigma}{\linkStore}{\sigma''}{\linkStore'} \deff\vspace{2pt}\\
   \qquad\stepHD{\mathcal{T}}{p}{\sigma}{\sigma'}{\sigma''}{\linkStore}\vspace{2pt}\\
 \runH{\mathcal{S}}{\mathcal{N}}{\rho} \deff \vspace{2pt}\\
-  \qquad \mathcal{T} \times \mathbb{M} \times \linkStore_0 = \{ (t_j,m_j,l_j) | s_j \in \mathcal{S}, \C{s_j}{t_j}{m_j}{l_j} \}\vspace{2pt}\\
+  \qquad \mathcal{T} \times \mapStore \times \linkStore_0 = \{ (t_j,m_j,l_j) | s_j \in \mathcal{S}, \C{s_j}{t_j}{m_j}{l_j} \}\vspace{2pt}\\
   \qquad \runHD{\mathcal{T}}{\mathcal{N}}{\linkStore}\vspace{2pt}\\
-  \qquad \D{\sigma_{\mathcal{N}}}{\mathbb{M}}{\linkStore_{\mathcal{N}}}{\rho_{\mathcal{N}}}
+  \qquad \D{\sigma_{\mathcal{N}}}{\mapStore}{\linkStore_{\mathcal{N}}}{\rho_{\mathcal{N}}}
 \end{array}
 $$
 
@@ -1548,7 +1549,7 @@ not reduce to $T x$ where x is not free in $T$.
 % \end{itemize}
 
 
-\section{Enforcing Invariant~\ref{invariant:arity}}
+\section{Enforcing Invariant~\ref{inv:uvaarity}}
 \label{sec:invariant1}
 
 In \cref{sec:basic-comp-limitations}, we have given two unification problems to
@@ -1567,11 +1568,84 @@ We see that the \elpiIn{maybe-eta} as detected $\lambda xy.F \appsep y \appsep
 x$ and $\lambda x.f\appsep (F \appsep x) \appsep x$ and replaced them with
 respectively the \Ho vars $X$ and $Z$. $X$ is linked with $\lambda x.Y_x$, $Y$
 has arity $1$ and is $\eta$-linked with $\lambda y.H\appsep y \appsep x$ and $Z$
-is linked to the term $\lambda x.f \appsep G_{x}~x$. However, we can remark that
-this compilation breaks \cref{inv:map-bijective}, since 
+is linked to the term $\lambda x.f \appsep G_{x}~x$. However, the mapping
+returned by the compilation, does not breaks \cref{inv:map-bijective}: the \Fo{}
+variable $F$ is mapped to two different \Ho variables. To address this problem
+and enforce \cref{inv:map-bijective}, we clean the mapping with a second phase
+after the compilation. This phase is called \elpiIn{map-deduplication}.
 
+\newcommand{\cv}{\ensuremath{\mathrm{cv}}}
+\newcommand{\ev}{\ensuremath{\mathrm{ev}}}
+\newcommand{\ar}{\ensuremath{\mathrm{ar}}}
 
-Deduplicate mapping code etc...
+Before formally defining this procedure, we need to define some auxiliary
+relations. Let \mapStore be the list of mapping and let $m \in \mapStore$, such
+that $m = \mapping{A}{\textbf{A}}{n}$, we define $\cv, \ev, ar$ such that
+$\cv(m) = A$, $\ev(m) = \textbf{A}$ and $\ar(m) = n$. Let $\langle m_1, m_2
+\rangle \in \mapStore$ such that $\ar(m_1) < \ar(m_2)$ and $n = ar(m_1) -
+ar(m_2) - 1$. We also let $A^i$ be a fresh \Ho variable. We define the
+\elpiIn{make-eta-link} relation taking two mappings $\langle m_1, m_2 \rangle$
+and returning  \linketa such that:
+
+$$ 
+  \forall i \in [0 \dots n], \left\{ 
+    \begin{array}{ll}
+      \linketaM{\phantom{\Gamma:x_0\dots x_{i-1}}}
+              {\ev(m_1)}
+              {\lambda x.A^0_x} & if~ i = 0 \\
+      \linketaM{\Gamma:x_0\dots x_{i-1}}
+               {A^i_{\Gamma}}
+               {\lambda x.A^{i+1}_{\Gamma\cup x}} & if~ 0 < i < n\\
+      \linketaM{\Gamma:x_0\dots x_{i}\phantom{_{-1}}}
+               {A^{i-1}_{\Gamma}}
+               {\lambda x.\ev(m_2)_{\Gamma\cup x}} & if~ i = n\\
+    \end{array} 
+  \right. 
+$$
+
+More concretely, we are saying that for any two mappings, we build as many
+\linketa as the difference of the arities between the two mappings. This links
+are constructed in such a way that the \Ho variable $v$ with lowest arity is
+linked to a fresh variable eta-expended variable $A^0$ having the scope of $v$.
+This variable $A^0$ is then linked to a fresh variable $A^{1}$ with same scope
+of $A^0$ and so on. The last link is built between the $A^{n-1}$ (where $n$ is
+the difference of arities between the two mappings) and the \Ho variable $u$
+with higher arity in the two mappings being considered.
+
+\begin{definition}[map-deduplication]
+  Forall mappings $\langle m_1, m_2 \rangle \in \mapStore$, such that $\cv(m_1) =
+  \cv(m_2)$, the list of \linketa $L$ is created thanks to
+  \elpiIn{make-eta-link}$m_1~m_2~L$ and is added to \linkStore. Then $m_1$ is
+  removed from \mapStore.
+\end{definition}
+
+If we take back the example give at the beginning of this section, we can
+deduplicate $\mapping{F}{G}{1}, \mapping{F}{H}{2}$ by removing the first mapping
+and adding the auxiliary \linketa: \linketaM{x}{G_{x}}{\lambda y.H_{x~y}}.
+
+The complete problem to run for resolution is now:
+
+\begin{description}
+  \item[Unif problems:] $X = \lambda x.\lambda y.x, Z = f\appsep(\lambda x.x)$
+  \item[Mappings:] $\mapping{F}{H}{2}$  
+  \item[Links:] $l_1 = \linketaM{x}{Y_{x}}{\lambda y.H_{y~x}}$,\\
+                $l_2 = \linketaM{}{X}{\lambda x.Y_{x}}$,\\
+                $l_3 = \linketaM{}{Z}{\lambda x.f \appsep G_{x}~x}$\\
+                $l_4 = \linketaM{x}{G_{x}}{\lambda y.H_{x~y}}$
+\end{description}
+
+After unification of the two terms, $X$ is assigned to $\lambda x.\lambda y.x$.
+This assignment makes $l_2$ to progress since the \lhs is materialized and by
+unification, between $X$ and $\lambda x.Y_{x}$, $Y_x$ is instantiate to $\lambda
+y.x$. Once $Y_x$ is instantiated, $l_1$ can progress, and set $H_{xy}$ to $x$.
+After all these progresses, $l_1$ and $l_2$ are remove from \linkStore and the
+\elpiIn{progress} fixpoint terminates. Next, the second unification problem is
+run, and $Z$ is set to $f\appsep(\lambda x.x)$. This unification wakes up $l_3$
+and since $Z$ starts with the \elpiIn{app} node, the $\eta$-expanded version of
+$Z$ is unified with $\lambda x.f \appsep G_{x}~x$ and $G_x$ is set to $x$.
+As last step, we can note that $G$
+
+TODO: dire che preserviamo l'invariante che tutte le variable sono fully-applied
   
 \section{Handling of \maybebeta}\label{sec:beta}
 
