@@ -89,7 +89,7 @@
     }
 }
 
-\newcommand{\printLinks}[3]{
+\newcommand{\printCompPb}[3]{
   \noindent
   \begin{description}[leftmargin=!,labelwidth=\widthof{\bfseries Mapping:}]
     \item[Unif pb:] \printMinipage{p}{#1}
@@ -1601,7 +1601,7 @@ In \cref{sec:basic-comp-limitations}, we have given two unification problems to
 be run one after the other. The compilation of each term would generate the
 following result:
 
-\printLinks
+\printCompPb
   {{X = \lambda x.\lambda y.x, Z = f\appsep(\lambda x.x)}}
   {{\mapping{F}{G}{1}, \mapping{F}{H}{2}}}
   {{\linketaM{x}{Y_{x}}{\lambda y.H_{y~x}},
@@ -1662,7 +1662,7 @@ and adding the auxiliary \linketa: \linketaM{x}{G_{x}}{\lambda y.H_{x y}}.
 
 The complete problem to run for resolution is now:
 
-\printLinks
+\printCompPb
   {{X = \lambda x.\lambda y.x, 
     Z = f\appsep(\lambda x.x)}}
   {{\mapping{F}{H}{2}}}
