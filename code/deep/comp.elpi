@@ -1,5 +1,4 @@
 internal-test comp.test-maybe-eta.
-% internal-test comp.test-maybe-eta-ho.
 
 typeabbrev (mem A) (mem.mem A).
 typeabbrev addr mem.addr.
@@ -719,32 +718,4 @@ namespace comp {
   type test-maybe-eta-ko string -> o.
   test-maybe-eta-ko S :- fo.parse S B,
     if (maybe-eta B []) (print "Succeed" S, fail) true.
-
-  % type test-maybe-eta-ho o.
-  % test-maybe-eta-ho :-
-  %   TESTS_OK = [
-  %     lam (x\ app[con _, uva _ [], x]),
-  %     lam (x\ app[con _, (lam y\ y), x]),
-  %   ],
-  %   TESTS_KO = [
-  %     lam (x\ app[con _, (lam y\ uva _ [x, y]), x]),
-  %     lam (x\ app[con _, uva _ [x], uva _ [x]]),
-  %     lam (x\ app[con _, uva _ [x], x]),
-  %     lam (x\ uva _ [x]),
-  %     lam (x\ lam y\ uva _ [x]),
-  %     lam (x\ app[con _, x, x]),
-  %     lam (x\ app[con _, (lam y\ app[x, y]), x]),
-  %     lam (x\ app[con _, (lam y\ app[con _, uva _ [x], y]), x]),
-  %   ],
-  %   forall1 test-maybe-eta-ho-ok TESTS_OK,
-  %   forall1 test-maybe-eta-ho-ko TESTS_KO.
-
-  % type test-maybe-eta-ho-ok tm -> o.
-  % test-maybe-eta-ho-ok S :-
-  %   if (maybe-eta-ho S []) true (print "Fail" S, fail).
-
-  % type test-maybe-eta-ho-ko tm -> o.
-  % test-maybe-eta-ho-ko S :-
-  %   if (maybe-eta-ho S []) (print "Succeed" S, fail) true.
-
 }
