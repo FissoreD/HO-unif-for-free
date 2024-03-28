@@ -192,19 +192,25 @@ namespace ho {
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PRINTER %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+  macro @binder-names :- ["x", "y", "z", "w"].
+
+  type pp1 list string -> tm -> string -> o.
   type pp tm -> string -> o.
-  pp (app [lam F|L]) S :- tex, !, pp (lam F) H, std.string.concat "~" {std.map L pp} X, S is "((" ^ H ^ ") " ^ X ^ ")".
-  pp (app [lam F|L]) S :- !, pp (lam F) H, std.string.concat " " {std.map L pp} X, S is "((" ^ H ^ ") " ^ X ^ ")".
-  pp (app L) S :- tex, !, std.string.concat "~" {std.map L pp} X, S is "(" ^ X ^ ")".
-  pp (app L) S :- !, std.string.concat " " {std.map L pp} X, S is "(" ^ X ^ ")".
-  pp (con S) S :- !.
-  pp (lam F) S :- tex, !, pi x\ std.any->string x N, pp (F x) S1, S is "\\lambda " ^ N ^ "." ^ S1.
-  pp (lam F) S :- !, pi x\ std.any->string x N, pp (F x) S1, S is "λ" ^ N ^ "." ^ S1.
-  pp (uva N []) S :- !, S is {ppuva N}.
-  pp (uva N L) S :- tex, !, std.string.concat " " {std.map L pp} X, !, S is {ppuva N} ^ "_{" ^ X ^ "}".
-  pp (uva N L) S :- !, std.string.concat " " {std.map L pp} X, !, S is "`" ^ {ppuva N} ^ " " ^ X ^ "'".
-  pp X S :- name X, !, std.any->string X S.
-  pp _ "ERROR".
+  pp T S :- pp1 @binder-names T S.
+  pp1 BN (app [lam F|L]) S :- tex, !, pp1 BN (lam F) H, std.string.concat "~" {std.map L (pp1 BN)} X, S is "((" ^ H ^ ") " ^ X ^ ")".
+  pp1 BN (app [lam F|L]) S :- !, pp1 BN (lam F) H, std.string.concat " " {std.map L (pp1 BN)} X, S is "((" ^ H ^ ") " ^ X ^ ")".
+  pp1 BN (app L) S :- tex, !, std.string.concat "~" {std.map L (pp1 BN)} X, S is "(" ^ X ^ ")".
+  pp1 BN (app L) S :- !, std.string.concat " " {std.map L (pp1 BN)} X, S is "(" ^ X ^ ")".
+  pp1 _ (con S) S :- !.
+  pp1 [X|XS] (lam F) S :- tex, !, pi x\ pp1 _ x X => pp1 XS (F x) S1, S is "\\lambda " ^ X ^ "." ^ S1.
+  pp1 [] (lam F) S :- tex, !, pi x\ pp1 _ x X, pp1 [] (F x) S1, S is "\\lambda " ^ X ^ "." ^ S1.
+  pp1 [X|XS] (lam F) S :- !, pi x\  pp1 _ x X => pp1 XS (F x) S1, S is "λ" ^ X ^ "." ^ S1.
+  pp1 [] (lam F) S :- !, pi x\ pp1 _ x X, pp1 [] (F x) S1, S is "λ" ^ X ^ "." ^ S1.
+  pp1 _ (uva N []) S :- !, S is {ppuva N}.
+  pp1 BN (uva N L) S :- tex, !, std.string.concat " " {std.map L (pp1 BN)} X, !, S is {ppuva N} ^ "_{" ^ X ^ "}".
+  pp1 BN (uva N L) S :- !, std.string.concat " " {std.map L (pp1 BN)} X, !, S is "`" ^ {ppuva N} ^ " " ^ X ^ "'".
+  pp1 _ X S :- name X, !, std.any->string X S.
+  pp1 _ _ "ERROR".
 
   type ppuva addr -> string -> o.
   ppuva N S :- S is "X" ^ {mem.ppaddr N}.
@@ -219,8 +225,12 @@ namespace ho {
 
   type ppass assignment -> string -> o.
   ppass A S :- tex, !, ppass-tex A [] S.
-  ppass (abs F) S :- pi x\ std.any->string x N, ppass (F x) S1, S is N ^ " " ^ S1.
-  ppass (val T) S :- S is ":= " ^ {pp T}.
+  ppass A S :- ppass1 @binder-names A S.
+
+  type ppass1 list string -> assignment -> string -> o.
+  ppass1 [] (abs F) S :- pi x\ std.any->string x N, ppass1 [] (F x) S1, S is N ^ " " ^ S1.
+  ppass1 [X|XS] (abs F) S :- pi x\ pp1 _ x X => ppass1 XS (F x) S1, S is X ^ " " ^ S1.
+  ppass1 XS (val T) S :- S is ":= " ^ {pp1 XS T}.
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% TESTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

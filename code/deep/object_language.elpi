@@ -100,14 +100,20 @@ namespace fo {
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PRINTER %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+  macro @binder-names :- ["x", "y", "z", "w"].
+
   type pp fm -> string -> o.
-  pp X "_" :- var X, !.
-  pp (fapp L) S :- !, std.string.concat " " {std.map L pp} X, S is "(@ " ^ X ^ ")".
-  pp (fcon S) S :- !.
-  pp (flam F) S :- !, pi x\ std.any->string x N, pp (F x) S1, S is "λ" ^ N ^ "." ^ S1.
-  pp (fuva N) S :- !, ppuva N S.
-  pp X S :- name X, !, std.any->string X S.
-  pp _ "fo.pp ERROR".
+  pp T S :- pp1 @binder-names T S.
+
+  type pp1 list string -> fm -> string -> o.
+  pp1 _ X "_" :- var X, !.
+  pp1 XS (fapp L) S :- !, std.string.concat " " {std.map L (pp1 XS)} X, S is "(@ " ^ X ^ ")".
+  pp1 _ (fcon S) S :- !.
+  pp1 [] (flam F) S :- !, pi x\ std.any->string x N, pp1 [] (F x) S1, S is "λ" ^ N ^ "." ^ S1.
+  pp1 [X|XS] (flam F) S :- !, pi x\ pp1 _ x X => pp1 XS (F x) S1, S is "λ" ^ X ^ "." ^ S1.
+  pp1 _ (fuva N) S :- !, ppuva N S.
+  pp1 _ X S :- name X, !, std.any->string X S.
+  pp1 _ _ "fo.pp1 ERROR".
 
   type ppuva addr -> string -> o.
   ppuva N S :- mem.ppaddr N X, S is "C" ^ X.
