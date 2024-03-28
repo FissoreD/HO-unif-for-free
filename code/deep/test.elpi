@@ -601,6 +601,16 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- std
   pr ok "λx.λy.(f (X x) (X x y)) = λx.(f (λx.x))"
 ] ["λx.λy.y"].
 
+@sokl 74 [
+  pr ok "λx.(f (X x) x) = Y",
+  pr ok "X = λx.x" 
+] ["λx.x", "λx.(f x x)"].
+
+@sokl 75 [
+  pr ok "λx.λy.(f (X y) (X x) y) = Y",
+  pr ok "X = λx.x" 
+] ["λx.x", "λx.λy.(f y x y)"].
+
 % @sokl 71 [
 %   pr ok "λz.λx.λy.(X y x z) = Z",
 %   pr ok "λz.λx.λy.(Y x y z) = W",

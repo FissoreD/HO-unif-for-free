@@ -277,15 +277,41 @@ namespace comp {
 
   macro @one :- s z.
 
+  type occurs-rigidly-ho tm -> tm -> o.
+  occurs-rigidly-ho N N.
+  occurs-rigidly-ho _ (uva _ _) :- !, fail.
+  occurs-rigidly-ho N (app L) :- exists (occurs-rigidly-ho N) L.
+  occurs-rigidly-ho N (lam B) :- pi x\ occurs-rigidly-ho N (B x).
+
+  type reducible-to-ho list tm -> tm -> tm -> o.
+  reducible-to-ho _ N N :- !.
+  reducible-to-ho L N (uva _ Args) :- !, forall1 (mem Args) [N|L]. 
+  reducible-to-ho L N (lam B) :- !, pi x\ reducible-to-ho [x | L] N (B x).
+  reducible-to-ho L N (app [N|Args]) :- last-n {len L} Args R,
+    forall2 (reducible-to-ho []) R {rev L}.
+
+  type maybe-eta-ho tm -> list tm -> o.
+  maybe-eta-ho (uva _ Args) L :- !, forall1 (mem Args) L, !. 
+  maybe-eta-ho (lam B) L :- !, pi x\ maybe-eta-ho (B x) [x | L].
+  maybe-eta-ho (app [_|Args]) L :-
+    split-last-n {len L} Args First Last,
+    none (x\ exists (occurs-rigidly-ho x) First) L,
+    forall2 (reducible-to-ho []) {rev L} Last.
+
+  type close-term tm -> list tm -> tm -> o.
+  close-term T [] T' :- (pi x\ ho.copy x x :- name x) => ho.copy T T'.
+  close-term T [X|Xs] (lam T') :- pi x\ ho.copy X x => close-term T Xs (T' x).
+
   % if there exists a subst s such that contract-rigid st t', then
   % maybe-eta t must succeed
   type contract-rigid list tm -> tm -> tm -> o.
-  contract-rigid L (lam F) T :- 
+  contract-rigid L (lam F) T :- !,
     pi x\ contract-rigid [x|L] (F x) T. % also checks H Prefix does not see x
-  contract-rigid L (app [H|Args]) T :- 
+  contract-rigid L (app [H|Args]) T :-
     rev L LRev, append Prefix LRev Args,
     if (Prefix = []) (T = H) (T = app [H|Prefix]).
-  % contract-rigid [X] X (lam x\ x).
+  contract-rigid L T T' :- not (maybe-eta-ho T L), !, print "It is not a maybe-eta", 
+    close-term T {std.rev L} T'.
 
   % invariante: a sx non c'è mai una eta espansione, a destra c'è una lam, altrimenti il link eta è buttato via
   type progress-eta-link tm -> tm -> subst -> subst -> links -> o.
@@ -300,7 +326,7 @@ namespace comp {
     (T ==l T1) H H1.
   progress-eta-link (uva _ _ as X) T H H1 [] :- 
     contract-rigid [] T T1, !, 
-    print "progress η app right", % HIDE
+    print "progress η right", % HIDE
     (X ==l T1) H H1.
   progress-eta-link T1 T2 H H [val (link-eta T1 T2)].
 
