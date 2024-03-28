@@ -74,7 +74,7 @@ namespace comp {
   % succeeds if T could be an eta expansion, possible cases:
   %  - T = uva seing N (N is also the last of L)
   %  - T = app L such that the last args of L are maybe-eta wrt L
-  type maybe-eta fm -> list fm -> o.          % label: rule:maybeeta cnt: \maybeeta
+  type maybe-eta fm -> list fm -> o.                  % label: rule:maybeeta cnt: \maybeeta
   maybe-eta (fapp[fuva _|Args]) L :- !,
     % Head is flex -> if N is in Args, we can have eta 
     forall1 (x\ exists (reducible-to [] x) Args) L, !. 
@@ -111,7 +111,7 @@ namespace comp {
   type get-scope tm -> list tm -> o.
   get-scope T Scope :-
     get-scope-aux T ScopeDuplicata,
-    names N, undup ScopeDuplicata Scope.
+    undup ScopeDuplicata Scope.
   type rigid fm -> o.
   rigid X :- not (X = fuva _).
 
@@ -287,18 +287,20 @@ namespace comp {
 
   % invariante: a sx non c'è mai una eta espansione, a destra c'è una lam, altrimenti il link eta è buttato via
   type progress-eta-link tm -> tm -> subst -> subst -> links -> o.
-  % progress-eta-link (app _ as T) (lam x\ lam y\ _) _ _ _ :- halt "STOP ". 
   progress-eta-link (app _ as T) (lam x\ _ as T1) H H1 [] :- !, 
-    print "progress η app left", ({eta-expand T} ==l T1) H H1.
+    print "progress η app left", % HIDE
+    ({eta-expand T} ==l T1) H H1.
   progress-eta-link (con _ as T) (lam x\ _ as T1) H H1 [] :- !, 
-    print "progress η con left", ({eta-expand T} ==l T1) H H1.
+    print "progress η con left", % HIDE
+    ({eta-expand T} ==l T1) H H1.
   progress-eta-link (lam _ as T) T1 H H1 [] :- !, 
-    print "progress η lam left", (T ==l T1) H H1.
+    print "progress η lam left", % HIDE 
+    (T ==l T1) H H1.
   progress-eta-link (uva _ _ as X) T H H1 [] :- 
-    contract-rigid [] T T1, !, print "progress η app right", (X ==l T1) H H1.
-  progress-eta-link (uva Ad _ as T1) T2 H H [@val-link-eta T1 T2] :- !, 
-    if (ho.not_occ Ad H T2) (print "no progress η") (print "progress η fail of occur-check", fail).
-  progress-eta-link T _ _ _ _ :- halt "Error in progress-eta link: unreachable branch" T.
+    contract-rigid [] T T1, !, 
+    print "progress η app right", % HIDE
+    (X ==l T1) H H1.
+  progress-eta-link T1 T2 H H [val (link-eta T1 T2)].
 
   type is-in-pf tm -> o.
   is-in-pf uvar :- halt "passed var to is-in-pf".
@@ -312,15 +314,6 @@ namespace comp {
   type arity tm -> nat -> o.
   arity (con _) z.
   arity (app L) A :- len L A.
-
-  type occur-check-err tm -> tm -> subst -> o.
-  occur-check-err A _ _ :- var A, halt "Invalid call to occur-check-err".
-  occur-check-err (con _) _ _ :- !.
-  occur-check-err (app _) _ _ :- !.
-  occur-check-err (lam _) _ _ :- !.
-  occur-check-err (uva Ad _) T S :-
-    not (ho.not_occ Ad S T),
-    print "progress β fail of occur-check between".
 
   type progress-beta-link-aux tm -> tm -> subst -> subst -> links -> o.
   progress-beta-link-aux T1 T2 S1 S2 [] :-  is-in-pf T2, !,
@@ -360,9 +353,6 @@ namespace comp {
   progress-beta-link T1 (app[uva _ _ | _] as T2) S S [@val-link-beta T1 T2] :- not (T1 = uva _ _), !,
     print "unification outside PF for β:" {pplink (@val-link-beta T1 T2)} /*, fail */.
 
-  progress-beta-link (uva _ _ as T) (app[uva _ _ | _] as T2) S1 _ _ :- 
-    occur-check-err T T2 S1, !, fail.
-
   progress-beta-link T1 (app[uva _ _ | _] as T2) H H [@val-link-beta T1 T2] :- !, print "No β progress1".
 
   progress-beta-link T1 (app [Hd | MS]) S1 S2 B :- % Hd is rigid!
@@ -376,7 +366,8 @@ namespace comp {
 
   solve-link-abs (@val-link-eta A B) NewLinks S S1 :- !,
     print "In progress eta link for" {ho.pp A} {ho.pp B}, %HIDE
-    progress-eta-link A B S S1 NewLinks.
+    progress-eta-link A B S S1 NewLinks,
+    print "After progress the subst is" {ho.ppsubst S1}.
 
   solve-link-abs (@val-link-beta A B) NewLinks S S1 :- !,
     print "In progress beta link for" {ho.pp A} {ho.pp B} "in" {ho.ppsubst S}, %HIDE
@@ -391,19 +382,17 @@ namespace comp {
     pi x\ link-abs-same-lhs (F x) B.
   link-abs-same-lhs A (ho.abs G) :- 
     pi x\ link-abs-same-lhs A (G x).
-  link-abs-same-lhs (@val-link-eta (uva N _) _) (@val-link-eta (uva N _) _).
+  link-abs-same-lhs (val (link-eta (uva N _) _)) (val (link-eta (uva N _) _)).
 
   type same-link-eta link -> link -> subst -> subst -> o.
   % same-link-eta (ho.abs F) (ho.abs G) H H1 :- !, pi x\ same-link-eta (F x) (G x) H H1.
   same-link-eta (ho.abs F) G H H1 :- !, pi x\ same-link-eta (F x) G H H1.
   same-link-eta A (ho.abs G) H H1 :- !, pi x\ same-link-eta A (G x) H H1.
-  same-link-eta (@val-link-eta (uva N S1) A)
-                (@val-link-eta (uva N S2) B) H H1 :-
-    std.assert! (std.length S1 {std.length S2}) "no same scope",
-    std.map2 S1 S2 (x\y\r\ r = ho.copy x y) Perm,
+  same-link-eta (val (link-eta (uva N S1) A))
+                (val (link-eta (uva N S2) B)) H H1 :-
+    std.assert! (std.length S1 {std.length S2}) "no same scope", % HIDE
+    forall3 (x\y\r\ r = ho.copy x y) S1 S2 Perm,
     Perm => ho.copy A A',
-    % halt "Error here",
-    % print "Hello" {ho.pp A} {ho.pp B},
     (A' ==l B) H H1.
 
 %SNIP: progress1
@@ -636,6 +625,8 @@ namespace comp {
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   type ppmapping mapping -> string -> o.
+  ppmapping (mapping (fv N) (hv M (arity Len))) S :- tex, !,
+    S is "\\mapping{" ^ {fo.ppuva N} ^ "}{" ^ {ho.ppuva M} ^ "}{" ^ {ppnat Len} ^ "}".
   ppmapping (mapping (fv N) (hv M (arity Len))) S :-
     S is {fo.ppuva N} ^ " -> " ^ {ho.ppuva M} ^ " (" ^ {ppnat Len} ^ ")".
 
