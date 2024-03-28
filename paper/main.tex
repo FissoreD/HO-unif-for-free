@@ -8,6 +8,7 @@
 
 \usepackage{myTools}
 \usepackage{macros}
+\usepackage{enumitem}
 
 % TODO: set this fields
 %\setcopyright{cc}
@@ -1465,8 +1466,9 @@ following, we call \linkStore the list of suspended links.
 In order to activate a \linketa $l$, we need to implement new rules for the
 \elpiIn{progress1} predicate. After passing under all the \elpiIn{abs}
 constructors of $l$, there are two cases making a \linketa to progress, 1) \lhs
-is instantiated to a rigid term 2) \rhs can be $\eta$-reduced to a term with
-rigid head. If \lhs is instantiated to a rigid term $t$, by \cref{inv:subst-nf},
+is instantiated to a rigid term 2) \rhs is no more a \maybeeta or it is a term
+which can be reduced to a term with rigid head. 
+If \lhs is instantiated to a rigid term $t$, by \cref{inv:subst-nf},
 we know that $t$ does not contain any \maybeeta. Let $t'$ the right hand side,
 if $t$ is a constant or a function application, then, $t'$, which by
 construction has \elpiIn{lam} as head, should be an $\eta$-expansion. We are
@@ -1638,14 +1640,36 @@ and adding the auxiliary \linketa: \linketaM{x}{G_{x}}{\lambda y.H_{x y}}.
 
 The complete problem to run for resolution is now:
 
-\begin{description}
-  \item[Unif problems:] $X = \lambda x.\lambda y.x, Z = f\appsep(\lambda x.x)$
-  \item[Mappings:] $\mapping{F}{H}{2}$  
-  \item[Links:] $l_1 = \linketaM{x}{Y_{x}}{\lambda y.H_{y~x}}$,\\
-                $l_2 = \linketaM{}{X}{\lambda x.Y_{x}}$,\\
-                $l_3 = \linketaM{}{Z}{\lambda x.f \appsep G_{x}~x}$\\
-                $l_4 = \linketaM{x}{G_{x}}{\lambda y.H_{x~y}}$
-\end{description}
+\newcommand{\printMinipage}[1]{
+  \listlength{#1}
+  \foreach \x [count=\i] in #1
+    {
+      \begin{minipage}{2.8cm}
+        $\x$ %
+      \end{minipage}
+      \ifthenelse{\equal{\i}{\thellength}}{}{
+        \ifthenelse{\isodd{\i}}{|}{\\}
+      }
+    }
+}
+
+\newcommand{\printLinks}[3]{
+  \noindent
+  \begin{description}[leftmargin=!,labelwidth=\widthof{\bfseries Unif problems:}]
+    \item[Unif problems:] \printMinipage{#1}
+    \item[Mappings:] \printMinipage{#2}
+    \item[Links:] \printMinipage{#3}
+  \end{description}
+}
+
+\printLinks{{
+  X = \lambda x.\lambda y.x, 
+  Z = f\appsep(\lambda x.x)}}
+  {{\mapping{F}{H}{2}}}{{
+  \linketaM{x}{Y_{x}}{\lambda y.H_{y x}},
+  \linketaM{\phantom{x}}{X}{\lambda x.Y_{x}},
+  \linketaM{\phantom{x}}{Z}{\lambda x.f \appsep G_{x}~x},
+  \linketaM{x}{G_{x}}{\lambda y.H_{x~y}}}}
 
 After unification of the two terms, $X$ is assigned to $\lambda x.\lambda y.x$.
 This assignment makes $l_2$ to progress since the \lhs is materialized and by
