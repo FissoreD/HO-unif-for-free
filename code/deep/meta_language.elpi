@@ -212,7 +212,13 @@ namespace ho {
   type ppsubst subst -> list string -> o.
   ppsubst L S :- mem.pp L "X" ppass S.
 
+  type ppass-tex assignment -> list string -> string -> o.
+  ppass-tex (abs F) L S :- pi x\ ppass-tex (F x) [{std.any->string x} | L] S.
+  ppass-tex (val T) L S :- 
+    S is "_{" ^ {std.string.concat "~" L} ^ "} \\mapsto " ^ {pp T}. 
+
   type ppass assignment -> string -> o.
+  ppass A S :- tex, !, ppass-tex A [] S.
   ppass (abs F) S :- pi x\ std.any->string x N, ppass (F x) S1, S is N ^ " " ^ S1.
   ppass (val T) S :- S is ":= " ^ {pp T}.
 
