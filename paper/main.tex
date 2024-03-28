@@ -581,7 +581,8 @@ contradict \Eo as it would otherwise do on ``problematic'' terms.
 We now define ``problematic'' and ``well behaved'' more formally.
 
 \newcommand{\maybeeta}{\ensuremath{\Diamond\eta}\xspace}
-\newcommand{\maybebeta}{\ensuremath{\Diamond\beta}\xspace}
+\newcommand{\maybebeta}{\ensuremath{\overline{\llambda}}\xspace}
+%\newcommand{\maybebeta}{\ensuremath{\Diamond\beta}\xspace}
 \begin{definition}[\maybeeta]
   $\maybeeta = \{ t ~|~ \exists \rho, \rho t ~\mathrm{is~an~eta~expansion} \}$
 \end{definition}
@@ -603,7 +604,7 @@ unification failure against, say, a constant.
 \noindent
 An example of $t$ in \maybebeta{} is $F a$ for a constant $a$. Note however tha
 an oracle could provide an assignment $\rho = \{ F \mapsto \lambda x.x\}$
-that makes the resulting term fall outside of \maybebeta.
+that makes the resulting term fall back in \llambda.
 
 \newcommand{\subterm}[1]{\ensuremath{\mathcal{P}(#1)}}
 \begin{definition}[Subterms \subterm{t}] The set of sub terms of $t$ is the
@@ -633,9 +634,14 @@ $$
 \begin{proposition}[\wellb{}-preservation]\label{prop:nf}
 $\forall \mathcal{T}, \forall \linkStore, \forall p, \forall \sigma, \forall \sigma'$
 $$
+\begin{array}{l}
 \wellb(\sigma\mathcal{T}) \land
-\stepH{\mathcal{T}}{p}{\sigma}{\linkStore}{\sigma'}
-\Rightarrow \wellb(\sigma' \mathcal{T})
+  \stepH{\mathcal{T}}{p}{\sigma}{\linkStore}{\sigma'}
+  \Rightarrow \wellb(\sigma' \mathcal{T})\\
+\wellb(\sigma\mathcal{T}) \land
+  \progress~(\linkStore,\sigma) \mapsto (\_,\sigma')
+  \Rightarrow \wellb(\sigma' \mathcal{T})
+\end{array}
 $$
 \end{proposition}
 
