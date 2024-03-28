@@ -1640,12 +1640,12 @@ and adding the auxiliary \linketa: \linketaM{x}{G_{x}}{\lambda y.H_{x y}}.
 
 The complete problem to run for resolution is now:
 
-\newcommand{\printMinipage}[1]{
-  \listlength{#1}
-  \foreach \x [count=\i] in #1
+\newcommand{\printMinipage}[2]{
+  \listlength{#2}
+  \foreach \x [count=\i] in #2
     {
-      \begin{minipage}{2.8cm}
-        $\x$ %
+      \begin{minipage}{3cm}
+        $#1_\i : \x$ %
       \end{minipage}
       \ifthenelse{\equal{\i}{\thellength}}{}{
         \ifthenelse{\isodd{\i}}{|}{\\}
@@ -1655,10 +1655,10 @@ The complete problem to run for resolution is now:
 
 \newcommand{\printLinks}[3]{
   \noindent
-  \begin{description}[leftmargin=!,labelwidth=\widthof{\bfseries Unif problems:}]
-    \item[Unif problems:] \printMinipage{#1}
-    \item[Mappings:] \printMinipage{#2}
-    \item[Links:] \printMinipage{#3}
+  \begin{description}[leftmargin=!,labelwidth=\widthof{\bfseries Mapping:}]
+    \item[Unif pb:] \printMinipage{p}{#1}
+    \item[Mapping:] \printMinipage{m}{#2}
+    \item[Links:] \printMinipage{l}{#3}
   \end{description}
 }
 
