@@ -1643,7 +1643,14 @@ After all these progresses, $l_1$ and $l_2$ are remove from \linkStore and the
 run, and $Z$ is set to $f\appsep(\lambda x.x)$. This unification wakes up $l_3$
 and since $Z$ starts with the \elpiIn{app} node, the $\eta$-expanded version of
 $Z$ is unified with $\lambda x.f \appsep G_{x}~x$ and $G_x$ is set to $x$.
-As last step, we can note that $G$
+As last step, the last link is progressed and the final \Ho substitution is
+$\{X _{} \mapsto \lambda x.\lambda y.x, Y _{x} \mapsto \lambda y.x, 
+G _{yx} \mapsto y, Z _{} \mapsto f~\lambda x.x, 
+H _{x} \mapsto \lambda y.y\}$.
+
+The decompilation phase is only charged, in this example to solve the mappings,
+since no suspended links remain. The only mapping in the list is
+\mapping{F}{H}{2}, which will assign the $F$ variable in \Fo{} to $\lambda xy.y$
 
 TODO: dire che preserviamo l'invariante che tutte le variable sono fully-applied
   
