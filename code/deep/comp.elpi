@@ -126,9 +126,9 @@ namespace comp {
 
 %SNIP: comp_close_links
   type close-links (tm -> links) -> links -> o.
-  close-links (_\[]) [].
   close-links (v\[X  |L v]) [X|R] :- !, close-links L R.
   close-links (v\[X v|L v]) [abs X|R] :- close-links L R.
+  close-links (_\[]) [].
 %ENDSNIP
 %SNIP: comp_base
   type comp fm -> tm -> mmap -> mmap -> links -> links ->
@@ -496,7 +496,8 @@ namespace comp {
 %SNIP: progress
   progress L L2 S1 S3 :-
     print "\nfixpoint iteration on:" {pplinks L}, !, % HIDE
-    progress1 L L1 S1 S2, !,
+    progress1 L L1 S1 S2,
+    !, % HIDE
     if ( % HIDE
     occur-check-links L1,
     true) true (print "fail by oc in progress", fail), % HIDE

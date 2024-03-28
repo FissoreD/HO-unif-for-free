@@ -908,11 +908,10 @@ an application in the head of an application should be amended by
 \footnote{Note that \elpiIn{napp} is an artefact of formalization of \Fo{}
 we do in this presentation and, as we explain later,
 no equivalent of \elpiIn{napp} is needed in \Ho.}
-Finally note
-Note that the cut operator is inessential, it could be
+Finally note that the cut operator is inessential, it could be
 removed at the cost of a verbose test on the head of \elpiIn{L}
-in the last rule (\elpiIn{L} head
-can be \elpiIn{fcon}, \elpiIn{flam} or a name).
+in the second rule about \elpiIn{fapp}: \elpiIn{L}'s head
+can be \elpiIn{fcon}, \elpiIn{flam} or a name.
 
 
 \paragraph{Substitution application: $\rho s$ and $\sigma t$}
@@ -1015,19 +1014,19 @@ builds a ``memory map'' connecting the the kind of variables using routine
 
 The signature of the \elpiIn{comp} predicate below allows for the generation of
 links (suspended unification problems) that play no role in this section
-but play a major role in Sections \ref{sec:eta} and \ref{sec:beta}.
-With respect to \ref{sec:problem-statement} the signature also allows
-for updates to the substitution.  The code below only allocates space
-for the variables, i.e. sets their memory address to \elpiIn{none},
-a details not worth mentioning in the previous discussion.
+but play a major role in \cref{sec:eta} and \cref{sec:beta}.
+With respect to \cref{sec:problem-statement} the signature also allows
+for updates to the substitution.  The code below uses that possibility
+in order to allocate space for the variables, i.e. sets their memory
+address to \elpiIn{none} (a details not worth mentioning in the
+previous discussion).
 
 \input{code/comp_base}
 
 \noindent
 This preliminary version of \elpiIn{comp} recognizes \Fo{} variables
-applied to a (possibly empty) duplicate free list of names (i.e.
-\elpiIn{pattern-fragment} detects variables in \llambda).
-Note tha compiling \elpiIn{Ag} cannot create new mappings nor links, since \elpiIn{Ag}
+applied to a (possibly empty) duplicate free list of names.
+Note that compiling \elpiIn{Ag} cannot create new mappings nor links, since \elpiIn{Ag}
 is made of bound variables and the hypothetical rule loaded by \elpiIn{comp-lam}
 (see below) grants this property.
 
@@ -1046,8 +1045,8 @@ of binders.
 \input{code/comp_close_links}
 
 \noindent
-Note that we could remove the second rule, whose purpose is to make
-links more readable by pruning unneeded abstractions (unused context entries).
+Note that we could remove the first rule, whose solve purpose is to make
+links more readable by pruning unused context entries.
 
 \subsection{Execution}
 \label{sec:execution}
@@ -1075,13 +1074,13 @@ on both the links and the substitution, so the fixpoint trivially terminates.
 Sections \ref{sec:eta} and \ref{sec:beta} add rules to \elpiIn{progress1}
 and justify why the don't hinder termination.
 
-Since compilation moves problematic terms out of the compiled terms,
-\Ue{} can only perform a partial occur check. For example the
+Since compilation moves problematic terms out of the sigh of \Ue{},
+that procedure can only perform a partial occur check. For example the
 unification problem $X \Ue f~Y$ cannot generate a cyclic substitution alone,
 but should be disallowed if a $\linkStore$ contains a link like
 $\linketaM{}{Y}{\lambda z.X_z}$: We don't know yet if $Y$ will feature
 a lambda in head position, but we surely know it contains $X$, hence
-$f~Y$ and that triggers occur check.
+$f~Y$ and that fails the occur check.
 The procedure \elpiIn{occur-check-links} is in charge of ensuring that
 each link does not represent a (suspended) unification problem doomed
 to fail because of occur check. This check is needed in order to
