@@ -335,9 +335,8 @@ just $\eta\beta$, and that solves higher-order problems
 restricted to the pattern fragment $\llambda$~\cite{miller92jsc}.
 We call this unification procedure \Uo{}.
 
-The equational theory of the meta language Elpi that we want to use to
-implement a form of proof automation is strikingly similar, since it
-it comprises $\eta\beta$ (for the meta language functions), and the
+The equational theory of the meta language Elpi is strikingly similar,
+since it it comprises $\eta\beta$ (for the meta language functions), and the
 unification procedure \Ue{} solves higher-order problems in
 $\llambda$.
 
@@ -532,7 +531,7 @@ $$
 s_1 \Uo s_2 \mapsto \rho \deff \vspace{2pt}\\
 \quad\C{s_1}{t_1}{m_1}{l_1} \land \C{s_2}{t_2}{m_2}{l_2}\vspace{2pt}\\
 \quad    t_1 \Ue t_2 \mapsto \sigma' \land
-    \progress~(\{l_1,l_2\},\sigma') \mapsto (L,\sigma'') \land\vspace{2pt}\\
+    \progress(\{l_1,l_2\},\sigma') \mapsto (L,\sigma'') \land\vspace{2pt}\\
 \quad \D{\sigma''}{\{m_1,m_2\}}{L}{\rho}
 \end{array}
 $$
@@ -636,26 +635,26 @@ $\forall \mathcal{T}, \forall \linkStore, \forall p, \forall \sigma, \forall \si
 $$
 \begin{array}{l}
 \wellb(\sigma\mathcal{T}) \land
-  \stepH{\mathcal{T}}{p}{\sigma}{\linkStore}{\sigma'}
+  \sigma\mathcal{T}_{p_l} \Ue \sigma\mathcal{T}_{p_r} \mapsto {\sigma'}
   \Rightarrow \wellb(\sigma' \mathcal{T})\\
 \wellb(\sigma\mathcal{T}) \land
-  \progress~(\linkStore,\sigma) \mapsto (\_,\sigma')
+  \progress(\linkStore,\sigma) \mapsto (\_,\sigma')
   \Rightarrow \wellb(\sigma' \mathcal{T})
 \end{array}
 $$
 \end{proposition}
 
 \noindent
-A less formal way to state \ref{prop:nf} is that \hstep{} never
-``commits'' an unneeded $\lambda$-abstraction in $\sigma$ (a $\lambda$
+A less formal way to state \ref{prop:nf} is that \hstep{} and \progress never
+``commit'' an unneeded $\lambda$-abstraction in $\sigma$ (a $\lambda$
 that could be erased by an $\eta$-contraction),
-nor puts in $\sigma$ a flexible application outside \llambda{} (an application
-node that could be erased by a $\beta$-reduction).
+nor put in $\sigma$ a flexible application outside \llambda{}
+(an application node that could be erased by a $\beta$-reduction).
 
-Note that proposition \ref{prop:nf} does not hold for \Uo{} since
-decompilation can introduce (actually restore) terms in
-\maybeeta or \maybebeta that were move out of the way (put in $\linkStore$)
-during compilation.
+Note that proposition \ref{prop:nf} does not hold for \Uo{} as a whole
+since decompilation can introduce (actually restore) terms in
+\maybeeta or \maybebeta that were move out of the way
+(put in $\linkStore$) during compilation.
 
 \section{Alternative encodings and related work}
 
@@ -746,9 +745,6 @@ predicate to test this condition is called \elpiIn{pattern-fragment}:
 \input{code/pattern_fragment}
 
 \noindent
-The \elpiIn{name} builtin predicate tests if a term is a bound variable.
-\footnote{one could always load name x for every x under a pi and get rid of the name builtin}
-
 In both languages unification variables are identified by a natural number
 representing a memory address.
 The memory and its associated operations are described below:
@@ -816,7 +812,7 @@ has a dedicated link.
 \noindent
 The right hand side of a link, the problematic term, can occur under binders.
 To accommodate this situation the compiler wraps \elpiIn{baselink} using
-the \elpiIn{inctx} container.
+the \elpiIn{inctx} container (see, \ref{data:inctx}).
 
 \begin{invariant}[Link left hand side]\label{inv:linklhs}
   The left hand side of a suspended link
