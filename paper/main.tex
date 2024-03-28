@@ -1420,14 +1420,10 @@ Finally, we can derive the implementation for \maybeeta detection:
   for each $x_i$ there exists a $s_j \in s$ such that $s_j$ reduces-to $x_i$.
 \end{definition}
 
-As a final remark, the \maybeeta detection defined just before is an
+Finally, the \maybeeta detection defined just before is an
 over-approximation, in the sense that there exists some terms $t$ considered as
 \maybeeta, such that forall substitution $\sigma$, $\sigma t$ is not an
-$\eta$-expansion. A small example is $\lambda x. f \appsep A_x \appsep A_x$. On
-the other hand, we also point out that the \maybeeta detection spot out
-potential $\eta$-expansion for terms that are not in \llambda. For example,
-$\lambda x.F \appsep G_x$ is considered as \maybeeta, since we have the
-application of term whose argument can reduce to $x$.
+$\eta$-expansion. A small example is $\lambda x. f \appsep A_x \appsep A_x$.
 
 The implementation we propose for the \maybeeta relation is given below.
 
@@ -1505,16 +1501,25 @@ is removed from \linkStore.
 TODO: example for this: $\lambda x. \lambda y. F \appsep y \appsep x = X,
 \lambda x. \lambda y. F \appsep y \appsep x = Y$
 
-We can note that the insertion of these rules for \elpiIn{progress1} do not
-prevent the termination of \elpiIn{progress}, since: if a link is activated it
-is removed from \linkStore and the recursive call to \elpiIn{progress} will have
-a smaller list of links to recurse on. Moreover, link activation only runs
-terminating instructions (such as unification). If a link is deduplicated, the
-termination of \elpiIn{progress} is still guaranteed since again we reduce
-\linkStore and the instructions run by link deduplications are all terminating.
-Finally, if a link is neither activated nor deduplicated, i.e. it remains
-suspended, then the condition of the \elpiIn{if}-statement of \elpiIn{progress}
-succeeds making it to terminate.
+\begin{lemma}
+  Forall list of links \elpiIn{L} and \elpiIn{S}, \elpiIn{progress L _ S _}
+  terminates
+\end{lemma}
+
+\begin{proof}[Proof sketch]
+  The addition of rules for \elpiIn{progres1} complicates the function
+  \elpiIn{progress}. We can note, however, that they do not prevent the
+  termination of \elpiIn{progress}. 1) If a link is activated it is removed from
+  \linkStore and the recursive call to \elpiIn{progress} will have a smaller
+  list of links to recurse on. Moreover, link activation only runs terminating
+  instructions (such as unification). 2) If a link is deduplicated, the
+  termination of \elpiIn{progress} is still guaranteed since again we reduce
+  \linkStore and the instructions run by link deduplications are all
+  terminating. 3) If a link is neither activated nor deduplicated, i.e. it
+  remains suspended, then \linkStore remains unchanged like the substitution;
+  therefore, \elpiIn{if (L = L1, S1 = S2)} succeeds and \elpiIn{progress}
+  terminates.
+\end{proof}
 
 TODO: we can have $\lambda x. F_x$ in the substitution if we know that $F$ does
 not reduce to $T x$ where x is not free in $T$.
@@ -1664,14 +1669,25 @@ TODO: dire che preserviamo l'invariante che tutte le variable sono fully-applied
   
 \section{Handling of \maybebeta}\label{sec:beta}
 
-$\beta$-reduction problems (\maybebeta) appears any time we deal with a subterm $t
-= X t_1 \dots t_n$, where $X$ is flexible and the list $[t_1 \dots t_n]$ in not
-in \llambda. This unification problem is not solvable without loss of
-generality, since there is not a most general unifier. If we take back the
-example given in \cref{sec:nutshell}, the unification $F a = a$ admits two solutions for $F$:
-$\rho_1 = \{F \mapsto \lambda x.x\}$ and $\rho_2 = \{F \mapsto \lambda \_.a\}$.
-Despite this, it is possible to work with $\maybebeta$ if an oracle provides a
-substitution $\rho$ such that $\rho t$ falls again in the \llambda.
+TODO: say that maybe-eta also work in not(llambda)
+
+% On
+% the other hand, we also point out that the \maybeeta detection spot out
+% potential $\eta$-expansion for terms that are not in \llambda. For example,
+% $\lambda x.F \appsep G_x$ is considered as \maybeeta, since we have the
+% application of term whose argument can reduce to $x$.
+
+All the previous sections we have dealt with terms in \llambda, however, it is
+often possible to work with terms in \maybebeta and wish to unify them. There
+are situtation, for example, where the oracle has given  which $\beta$-reduction problems (\maybebeta) appears any
+time we deal with a subterm $t = X t_1 \dots t_n$, where $X$ is flexible and the
+list $[t_1 \dots t_n]$ in not in \llambda. This unification problem is not
+solvable without loss of generality, since there is not a most general unifier.
+If we take back the example given in \cref{sec:nutshell}, the unification $F a =
+a$ admits two solutions for $F$: $\rho_1 = \{F \mapsto \lambda x.x\}$ and
+$\rho_2 = \{F \mapsto \lambda \_.a\}$. Despite this, it is possible to work with
+$\maybebeta$ if an oracle provides a substitution $\rho$ such that $\rho t$
+falls again in the \llambda.
 
 On the other hand, the \Ue is not designed to understand how the $\beta$-redexes
 work in the object language. Therefore, even if we know that $F$ is assigned
