@@ -190,6 +190,7 @@ namespace comp {
     mmap -> links -> subst -> o.
   compile-terms T H M L S :- 
     fold6 compile-terms-diagnostic T H [] M_ [] L_ [] S_,
+    print "Deduplicate mappings on" {ppmappings M_} {pplinks L_}, % HIDE
     deduplicate-map M_ M S_ S L_ L.
 
   % Ad1 is the variable with smaller arity, Ad2 is eta expanded N times
@@ -197,13 +198,13 @@ namespace comp {
     list tm -> links -> subst -> subst -> o.
   make-eta-link-aux z Ad1 Ad2 Scope1 L H1 H1  :-
     rev Scope1 Scope, eta-expand (uva Ad2 Scope) T1,
-    L = [@val-link-eta (uva Ad1 Scope) T1].
+    L = [val (link-eta (uva Ad1 Scope) T1)].
   make-eta-link-aux (s N) Ad1 Ad2 Scope1 L H1 H3 :-
     rev Scope1 Scope, alloc H1 Ad H2, 
     eta-expand (uva Ad Scope) T2,
     (pi x\ make-eta-link-aux N Ad Ad2 [x|Scope1] (L1 x) H2 H3),
     close-links L1 L2,
-    L = [@val-link-eta (uva Ad1 Scope) T2 | L2].
+    L = [val (link-eta (uva Ad1 Scope) T2) | L2].
 
   % [make-eta-link ArityAd1, ArityAd2, Ad1, Ad2 Vars, Link]
   % as long as the arities are > 0, we eat one arity by putting a variable in the ctx
@@ -277,13 +278,14 @@ namespace comp {
   macro @one :- s z.
 
   % if there exists a subst s such that contract-rigid st t', then
-  % maybe-eta t must scucceed
+  % maybe-eta t must succeed
   type contract-rigid list tm -> tm -> tm -> o.
   contract-rigid L (lam F) T :- 
     pi x\ contract-rigid [x|L] (F x) T. % also checks H Prefix does not see x
   contract-rigid L (app [H|Args]) T :- 
     rev L LRev, append Prefix LRev Args,
     if (Prefix = []) (T = H) (T = app [H|Prefix]).
+  % contract-rigid [X] X (lam x\ x).
 
   % invariante: a sx non c'è mai una eta espansione, a destra c'è una lam, altrimenti il link eta è buttato via
   type progress-eta-link tm -> tm -> subst -> subst -> links -> o.
@@ -367,7 +369,7 @@ namespace comp {
   solve-link-abs (@val-link-eta A B) NewLinks S S1 :- !,
     print "In progress eta link for" {ho.pp A} {ho.pp B}, %HIDE
     progress-eta-link A B S S1 NewLinks,
-    print "After progress the subst is" {ho.ppsubst S1}.
+    if (NewLinks = []) (print "After progress the subst is" {ho.ppsubst S1}) (print "No progress").
 
   solve-link-abs (@val-link-beta A B) NewLinks S S1 :- !,
     print "In progress beta link for" {ho.pp A} {ho.pp B} "in" {ho.ppsubst S}, %HIDE
