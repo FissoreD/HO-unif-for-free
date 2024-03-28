@@ -774,21 +774,14 @@ Both have the invariant that they are not cyclic, TODO: explain.
   TODO: definire normal form, maybe in definition 2.7
   \label{inv:subst-nf}
 \end{invariant}
-\begin{invariant}
-
-  Any variable in the substitution with arity \elpiIn{N} is always fully applied
-  TODO: move this to the right place
-  TODO: definire normal form, maybe in definition 2.7
-  \label{inv:fully-applied-vars}
-\end{invariant}
 
 \input{code/comp_base_types}
 
-\begin{invariant}[Unification variable arity]\label{inv:uvaarity}
-Each variable \elpiIn{A}
-in \Ho has a (unique) arity \elpiIn{N} and each occurrence~
-\elpiIn{(uva A L)} is such that \elpiIn{(len L N)} holds
-\label{invariant:arity}
+\begin{invariant}[Unification variable arity]
+  Each variable \elpiIn{A}
+  in \Ho has a (unique) arity \elpiIn{N} and each occurrence~
+  \elpiIn{(uva A L)} is such that \elpiIn{(len L N)} holds
+  \label{inv:uvaarity}
 \end{invariant}
 
 \noindent
@@ -1112,6 +1105,13 @@ mapping containing all unassigned variables \Ue may have introduced.
 Note that we use beta to build fapp nodes when needed (if Ag is empty
 no \elpiIn{fapp} node should appear).
 
+
+\begin{invariant}
+
+  TODO: dire che il mapping è bijective
+  \label{inv:map-bijective}
+\end{invariant}
+
 \subsection{Definition of \Uo and its properties}
 
 \input{code/unif_fo}
@@ -1166,6 +1166,7 @@ context where input terms are $\beta\eta$-normal and we disregard $\eta$-equival
 \end{proof}
 
 \subsection{Limitations of by this basic scheme}
+\label{sec:basic-comp-limitations}
 
 \begin{gather}
 \lambda x y.F \appsep y \appsep x = \lambda x y.x \label{eq:unif-eta1}\\
@@ -1345,7 +1346,7 @@ given substitution $\sigma$, we have $\sigma (\lambda x.T_x) = t$. This
 \begin{gather}
   \lambda x. f \appsep A_x\\
   \lambda x. f \appsep x \appsep A_x\\
-  \lambda x. \lambda y. f \appsep A_x \appsep B_{y x}\\ \label{eq:lamlam}
+  \lambda x. \lambda y. f \appsep A_x \appsep B_{y x} \label{eq:lamlam}
 \end{gather}
 
 In the examples above, the first expression is a \maybeeta since $A_x$ can
@@ -1477,7 +1478,7 @@ TODO: example for case 2: $\lambda x. \lambda y. F \appsep y \appsep x = G, F = 
 A second way to progress \linketa, that we call \linketa deduplication, is when
 \linkStore contains two \linketa $l_1$ and $l_2$ with a \lhs having the same
 variable address. Let the \lhs of $l_1$ be \elpiIn{uva U R} and the \lhs of
-$l_2$ be \elpiIn{uva V S}, then, by \cref{inv:fully-applied-vars}, \elpiIn{R}
+$l_2$ be \elpiIn{uva V S}, then, by \cref{inv:uvaarity}, \elpiIn{R}
 and \elpiIn{S} have same scope. Let $t$ be the term obtained by replacing all
 each name \elpiIn{S}$_i$ in the \rhs of $l_1$ with \elpiIn{R}$_i$, $t$ is
 unified with the \rhs of $l_2$ and one of the two links between $l_1$ and $l_2$
@@ -1490,7 +1491,7 @@ We can note that the insertion of these rules for \elpiIn{progress1} do not
 prevent the termination of \elpiIn{progress}, since: if a link is activated it
 is removed from \linkStore and the recursive call to \elpiIn{progress} will have
 a smaller list of links to recurse on. Moreover, link activation only runs
-unification which are terminating instructions. If a link is deduplicated, the
+terminating instructions (such as unification). If a link is deduplicated, the
 termination of \elpiIn{progress} is still guaranteed since again we reduce
 \linkStore and the instructions run by link deduplications are all terminating.
 Finally, if a link is neither activated nor deduplicated, i.e. it remains
@@ -1500,54 +1501,74 @@ succeeds making it to terminate.
 TODO: we can have $\lambda x. F_x$ in the substitution if we know that $F$ does
 not reduce to $T x$ where x is not free in $T$.
 
-\subsection{Example}
+% \subsection{Example}
 
-In this subsection we show two complete runs of the extended version of \Ue.
+% In this subsection we show two complete runs of the extended version of \Ue.
 
-\paragraph{Example 1}
-\begin{center}
-  \elpiIn{flam x\ flam y\ fapp[fuva A, y, x] = flam x\ flam y\ x}
-\end{center}
-% $$\flambda xy.F \appsep y \appsep x = \lambda xy.x$$
-\begin{itemize}
-  \item After compilation: terms are $X0 = \lambda c0.\lambda c1.c0$ with links
-        $\linketaM{c0}{X1_{c0}}{\lambda c1.X2_{c1~c0}}, \linketaM{}{X0}{\lambda
-        c0.X1_{c0}}$ and mappings: $\mapping{C0}{X2}{2}$
-  \item After unification $X0$ is set to $\lambda c0.\lambda c1.c0$
-  \item This unification wakes up the second link, since its \lhs is now
-        instantiated. $X0$ is unified with its \rhs, which assigns $X1_{c0} :=
-        \lambda c1.c0$
-  \item The instantiation of $X1$ wakes the first link, and $\lambda c1.c0$ is
-        unified with $\lambda c1.X2_{c1~c0}$, setting $X2 _{c1~c2} := c2$ by
-        pruning.
-  \item All the links have been solved and the decompilation, assigns the \Fo{}
-        variable \elpiIn{A} to $\lambda xy.y$ 
-\end{itemize}
+% \paragraph{Example 1}
+% \begin{center}
+%   \elpiIn{flam x\ flam y\ fapp[fuva A, y, x] = flam x\ flam y\ x}
+% \end{center}
+% % $$\flambda xy.F \appsep y \appsep x = \lambda xy.x$$
+% \begin{itemize}
+%   \item After compilation: terms are $X0 = \lambda c0.\lambda c1.c0$ with links
+%         $\linketaM{c0}{X1_{c0}}{\lambda c1.X2_{c1~c0}}, \linketaM{}{X0}{\lambda
+%         c0.X1_{c0}}$ and mappings: $\mapping{C0}{X2}{2}$
+%   \item After unification $X0$ is set to $\lambda c0.\lambda c1.c0$
+%   \item This unification wakes up the second link, since its \lhs is now
+%         instantiated. $X0$ is unified with its \rhs, which assigns $X1_{c0} :=
+%         \lambda c1.c0$
+%   \item The instantiation of $X1$ wakes the first link, and $\lambda c1.c0$ is
+%         unified with $\lambda c1.X2_{c1~c0}$, setting $X2 _{c1~c2} := c2$ by
+%         pruning.
+%   \item All the links have been solved and the decompilation, assigns the \Fo{}
+%         variable \elpiIn{A} to $\lambda xy.y$ 
+% \end{itemize}
 
-\paragraph{Example 2}
-\begin{center}
-  \elpiIn{flam x\ fapp[f, fapp[fuva F, x], x] = fapp[f, flam x\ x]}
-\end{center}
-% $$\flambda xy.F \appsep y \appsep x = \lambda xy.x$$
-\begin{itemize}
-  \item After compilation: terms are $X0 = f~\lambda c0.c0$ with links
-        $\linketaM{}{X0}{\lambda c0.(f~X1_{c0}~c0)}$ and mappings:
-        $\mapping{C0}{X1}{1}$
-  \item After unification $X0$ is set to $f~\lambda c0.c0$
-  \item This unification wakes up the link, since its \lhs is now
-        instantiated. $X0$ is unified with its \rhs, which assigns $X1_{c0} :=
-        \lambda c1.c0$
-  \item The instantiation of $X1$ wakes the first link, and $\lambda c1.c0$ is
-        unified with $\lambda c1.X2_{c1~c0}$, setting $X2 _{c1~c2} := c2$ by
-        pruning.
-  \item All the links have been solved and the decompilation, assigns the \Fo{}
-        variable \elpiIn{A} to $\lambda xy.y$ 
-\end{itemize}
-
+% \paragraph{Example 2}
+% \begin{center}
+%   \elpiIn{flam x\ fapp[f, fapp[fuva F, x], x] = fapp[f, flam x\ x]}
+% \end{center}
+% % $$\flambda xy.F \appsep y \appsep x = \lambda xy.x$$
+% \begin{itemize}
+%   \item After compilation: terms are $X0 = f~\lambda c0.c0$ with links
+%         $\linketaM{}{X0}{\lambda c0.(f~X1_{c0}~c0)}$ and mappings:
+%         $\mapping{C0}{X1}{1}$
+%   \item After unification $X0$ is set to $f~\lambda c0.c0$
+%   \item This unification wakes up the link, since its \lhs is now
+%         instantiated. $X0$ is unified with its \rhs, which assigns $X1_{c0} :=
+%         \lambda c1.c0$
+%   \item The instantiation of $X1$ wakes the first link, and $\lambda c1.c0$ is
+%         unified with $\lambda c1.X2_{c1~c0}$, setting $X2 _{c1~c2} := c2$ by
+%         pruning.
+%   \item All the links have been solved and the decompilation, assigns the \Fo{}
+%         variable \elpiIn{A} to $\lambda xy.y$ 
+% \end{itemize}
 
 
 \section{Enforcing Invariant~\ref{invariant:arity}}
 \label{sec:invariant1}
+
+In \cref{sec:basic-comp-limitations}, we have given two unification problems to
+be run one after the other. The compilation of each term would generate the
+following result:
+
+\begin{description}
+  \item[Unif problems:] $X = \lambda x.\lambda y.x, Z = f\appsep(\lambda x.x)$
+  \item[Mappings:] $\mapping{F}{G}{1}, \mapping{F}{H}{2}$  
+  \item[Links:] $\linketaM{x}{Y_{x}}{\lambda y.H_{y~x}}$,\\
+                $\linketaM{}{X}{\lambda x.Y_{x}}$,\\
+                $\linketaM{}{Z}{\lambda x.f \appsep G_{x}~x}$
+\end{description}
+
+We see that the \elpiIn{maybe-eta} as detected $\lambda xy.F \appsep y \appsep
+x$ and $\lambda x.f\appsep (F \appsep x) \appsep x$ and replaced them with
+respectively the \Ho vars $X$ and $Z$. $X$ is linked with $\lambda x.Y_x$, $Y$
+has arity $1$ and is $\eta$-linked with $\lambda y.H\appsep y \appsep x$ and $Z$
+is linked to the term $\lambda x.f \appsep G_{x}~x$. However, we can remark that
+this compilation breaks \cref{inv:map-bijective}, since 
+
+
 Deduplicate mapping code etc...
   
 \section{Handling of \maybebeta}\label{sec:beta}
