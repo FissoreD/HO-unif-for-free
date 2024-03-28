@@ -1157,8 +1157,8 @@ context where input terms are $\beta\eta$-normal and we disregard $\eta$-equival
 \end{gather}
 Note that here $F$ is used with different arities, moreover
 in the second problem the left hand side happens to be an
-eta expansion (of $f (\lambda y.y)$) only after we discover that
-$F = \lambda x\lambda y.y$ (i.e. that $F$ discards the $x$ argument).
+eta expansion (of $f (\lambda y.y)$) only after we discover (at run time)
+that $F = \lambda x\lambda y.y$ (i.e. that $F$ discards the $x$ argument).
 Both problems are addressed in the next section.
   
 % \subsection{Example}
@@ -1358,7 +1358,7 @@ detection:
   reduces to a bound variable $x$ if one of the three following cases is
   satisfied: 1) $n = 0$ and $t = x$; 2) $t$ is the application of $x$ to a list
   of terms $l$ and each $l_i$ reduces to $x_i$
-  (since $\lambda x_1 \ldots x_n.x_{x_1\ldots x_n} = x$) ; 3) $t$ is a unification
+  (e.g. $\lambda x_1 \ldots x_n.x_{x_1\ldots x_n} = x$) ; 3) $t$ is a unification
   variable in \llambda with scope
   $s$, and for any $v \in \{ x, x_1 \ldots x_n \}$,
   there exists a $s_i \in s$, such that $s_i$ reduces to $v$
