@@ -816,13 +816,6 @@ We call \elpiIn{fsubst} the memory of \Fo{}, while we call \elpiIn{subst}
 the one of \Ho.
 Both have the invariant that they are not cyclic, TODO: explain.
 
-\begin{invariant}
-  Any term in the substitution of \Ho is in normal form.
-  TODO: move this to the right place
-  TODO: definire normal form, maybe in definition 2.7
-  \label{inv:subst-nf}
-\end{invariant}
-
 \input{code/comp_base_types}
 
 \begin{invariant}[Unification variable arity]
@@ -1462,7 +1455,7 @@ In other words $x$ \emph{occurs-rigidly} in $t$ if it occurs in $t$
 outside of the scope of unification variables since theirs instantiations
 are allowed to discard their scope.
 
-Finally, we can derive the implementation for \maybeeta detection:
+We can now derive the implementation for \maybeeta detection:
 
 \begin{definition}[\maybeeta detection]
   A term $\lambda x_1 \ldots x_n.t$ where each $x_i$ occurs in $t$ is a
@@ -1475,14 +1468,20 @@ Finally, we can derive the implementation for \maybeeta detection:
   for each $x_i$ there exists a $s_j \in s$ such that $s_j$ reduces-to $x_i$.
 \end{definition}
 
-Finally, the \maybeeta detection defined just before is an
+As a final remark, the \maybeeta detection defined just before is an
 over-approximation, in the sense that there exists some terms $t$ considered as
 \maybeeta, such that forall substitution $\sigma$, $\sigma t$ is not an
-$\eta$-expansion. A small example is $\lambda x. f \appsep A_x \appsep A_x$.
+$\eta$-expansion. A small example is $\lambda x. f \appsep A_x \appsep A_x$
+which is considered a \maybeeta. Thi is because, we suppose at the same time
+that the second $A_x$ can reduce to $x$, to the first $A_x$ is not reducible to
+$A_x$. This is however not considered as a problem, since, adding holes to 
+the compiled term does not break \cref{prop:simulation}, since each hole is
+connected to a \linketa which is activated exactly when the hole is instantiated
+the \linketa, as explain below is activated.
 
-The implementation we propose for the \maybeeta relation is given below.
+% The implementation we propose for the \maybeeta relation is given below.
 
-\input{code/maybe_eta}
+% \input{code/maybe_eta}
 
 % Here a complex maybeeta example
 % \begin{gather}
@@ -1504,21 +1503,31 @@ This rule, to be inserted just before rule~\ref{rule:complam} from the code in
 variable \elpiIn{A} returned as the new \Ho term as in scope all the free names
 in $t'$. The critical part of this compilation is the creation of the \linketa,
 which links the variable \elpiIn{A} with $t$. This link creation enforce
-\cref{inv:linklhs} and \cref{inv:link-eta-right}, since clearly the \lhs is a
-variable and the \rhs is a term starting with the \elpiIn{lam} constructor. We
-can also note that for any name $x$, $tx = t' \appsep x$ never start with
-\elpiIn{lam}, since by contradiction, if 1) $tx$ is an $\eta$-expansion, then
-the recursive call to \elpiIn{comp} would have replaced $tx$ with a fresh
-variable, which contradict the hypothesis and if 2) $t'$ is not an
-$\eta$-expansion, then neither $\lambda t'$ is.
+\cref{inv:linklhs} and \cref{inv:link-eta-right}, since \lhs is a trivially a
+variable and the \rhs is a term $t$ starting with the \elpiIn{lam} constructor where
+$x$ is free in $t$ otherwise $t$ would not have been detected as a \maybeeta. 
+
+\begin{corollary}
+  The \rhs of any \linketa has exactly one lambda abstraction.
+\end{corollary}
+
+\begin{proof}[Proof sketch]
+  By contradiction, suppose that a \linketa $l$ has $t$ as \rhs and $t = \lambda
+  x.\lambda y.t'_{xy}$. Two cases are to be analyses: 1) $\lambda y.t'_{xy}$ is
+  a $\maybeeta$, then, by construction, \rhs would have been replaced with a the
+  $\eta$-expansion of fresh variable $v$, which is a contradiction, since
+  $\lambda y.t'_{xy} \neq \lambda x.v_{x}$; 2) $\lambda y.t'_{xy}$ is not an a
+  \maybeeta, then neither $t$ is, which is a contradiction since \rhs is always
+  a \maybeeta by construction.
+\end{proof}
 
 \subsection{Progress}
 
 \linketa are meant to delay the unification of ``problematic'' terms. In the
 following, we call \linkStore the list of suspended links.
 
-In order to activate a \linketa $l$, we need to implement new rules for the
-\elpiIn{progress1} predicate. After passing under all the \elpiIn{abs}
+In order to activate a \linketa $l$, we need to extend the \elpiIn{progress1} predicate
+by adding new rules. After passing under all the \elpiIn{abs}
 constructors of $l$, there are two cases making a \linketa to progress, 1) \lhs
 is instantiated to a rigid term 2) \rhs is no more a \maybeeta or it is a term
 which can be reduced to a term with rigid head. 
@@ -1527,20 +1536,22 @@ we know that $t$ does not contain any \maybeeta. Let $t'$ the right hand side,
 if $t$ is a constant or a function application, then, $t'$, which by
 construction has \elpiIn{lam} as head, should be an $\eta$-expansion. We are
 therefore allowed to unify $\lambda x. t \appsep x$ (the $\eta$-expanded version
-of $t$) with $t'$. Finally, if \lhs starts has \elpiIn{lam} as constructor, then
-$t$ is not an $\eta$-expansion and therefore, $t$ can be unified with $t'$. 
+of $t$) with $t'$. Finally, if $t$ is a term with \elpiIn{lam} as head, then
+it is not an $\eta$-expansion and therefore, $t$ can be unified with $t'$. 
 
-The second way to activate a \linketa is when the \rhs can $\eta$-reduced to a
-term $t$ with rigid head, i.e. $t'$ is not a \maybeeta. This means that we can
-unify \lhs with $t'$.
+The second way to activate a \linketa is when the \rhs is no more a \maybeeta or
+\rhs can be $\eta$-reduced to a term $t$ with rigid head. In both cases, \lhs is
+unified with $t'$.
 
 Once a \linketa is activated, it can be removed from \linkStore,
 otherwise, the link is kept for a further iteration of \elpiIn{progress}. Note
 that this link progression enforce
-\cref{inv:subst-nf,inv:linklhs,inv:link-eta-right}: we never commit a term in
+\cref{prop:nf,inv:linklhs,inv:link-eta-right}: we never commit a term in
 the \Ho substitution, since we make unification only when we know that the 
 terms are no more \maybeeta, and when \lhs is no more a variable or \rhs is 
 no more a \maybeeta, the link is removed from \linkStore.
+
+An example 
 
 TODO: example for case 1: $\lambda x. \lambda y. F \appsep y \appsep x = f$
 TODO: example for case 2: $\lambda x. \lambda y. F \appsep y \appsep x = G, F = \lambda x. \lambda y. a$
