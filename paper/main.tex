@@ -1354,21 +1354,29 @@ Both problems are addressed in the next section.
 
 \section{Handling of \maybeeta}\label{sec:eta}
 
-$\eta$-reduction is an equivalence relation over terms where a term of the form
+$\eta$-reduction is an equivalence relation where a term of the form
 $\lambda x.t \appsep x$ can be converted to $t$ any time $x$ does not occur as a
-free variable in $t$. We call $\lambda x. t \appsep x$ the $\eta$-expanded
-version of $t$. The implementation of the \elpiIn{comp} relation given in
-\cref{sec:compilation} compiles the \Fo{} terms $t_1 =$ \elpiIn{flam x\ fapp
-[fuva A, x]} and $t_2 =$ \elpiIn{fcon "f"} into the \Ho terms $t'_1 =
-$ \elpiIn{lam x\ uva A' x} and $t'_2 =$ \elpiIn{fcon "f"} with mapping
-\mapping{\elpiIn{A}}{\elpiIn{A'}}{1}. However, if the oracle sets \elpiIn{A'} to the constant
-\elpiIn{"f"}, the unification of $t'_1$ and $t'_2$ in the meta language will
-fail even though $t_1 \Eo t_2$. The reason of this failure is attributed to the
-fact that $t'_1 =$~\elpiIn{lam x\ app[con "f", x]} cannot be unified with $t'_2
-=$~\elpiIn{con "f"} since the two terms have different rigid heads. We solve this
-unification problem by adapting the \elpiIn{comp} relation such that it
-recognizes \maybeeta subterms and replaces them with fresh \Ho variables. 
-This link between the variable $v$ and the subterm $t$ is stored in what we
+free variable in $t$. We call $\lambda x. t \appsep x$ the $\eta$-expansion of $t$. 
+\printAll
+  {{\elpiIn{flam x\ fapp [fuva A, x]} \Uo \elpiIn{fcon "f"}}}
+  {{\lambda x. A'_x \Ue f}}
+  {{\mapping{\elpiIn{A}}{A'}{1}}}
+  {{}}
+Following the implementation of \elpiIn{comp} given in
+\cref{sec:compilation}, the unification problem $\mathcal{P}_1$ given 
+above, is compiled into the unification problem $\mathcal{T}_1$. 
+We can note that all the terms appearing in $\mathcal{P}_1$ are
+unifiable by \Uo, but, despite this, \Ue, is not able to solve $\mathcal{T}_1$:
+its left and right hand sides have both different rigid head:
+$\lambda x.A'_x$ corresponds to the \Ho term \elpiIn{lam x\ app[con "f", x]} 
+and $f$ corresponds to \elpiIn{con"f"}. 
+This failure is motivated by the fact that \elpiIn{flam x\ fapp [fuva A, x]}
+is a term belonging to \maybeeta. 
+
+In order to guarantee \cref{prop:simulation}, we need to modify the way terms are
+compiled. The goal is to recognize
+every \maybeeta subterm $t$ and replace it with fresh \Ho variables $v$. 
+This connection between the variable $v$ and the subterm $t$ is stored in what we
 call \linketa which is an object with the following type
 
 \elpiIn{type link-eta tm -> tm -> baselink}
@@ -1384,24 +1392,25 @@ We claim that \linketa progression does not contradict \cref{inv:linklhs} and we
 add the following invariant:
 
 \begin{invariant}[\linketa \rhs]
-  The \rhs of a \linketa having the shape $\lambda x.F_x$
-  where $F_x$ is a term not starting with the \elpiIn{lam} constructor.
+  The \rhs of any \linketa in \linkStore has the shape $\lambda x.t_x$
+  where $t_x$ is a \maybeeta term and $x$ is free in $t$.
   \label{inv:link-eta-right}
 \end{invariant}
 
 In the next three subsections we explain how we detect \maybeeta terms, how we
-compile them and how \linketa are activated during the execution of the program
-and provide justification for why \cref{inv:linklhs,inv:link-eta-right} remain true.
+compile them and how the generated \linketa are activated during the \elpiIn{progress}.
+Moreover, we provide justification for why \cref{inv:linklhs,inv:link-eta-right} remain true.
 
 \subsection{Detection of \maybeeta}
 
-Compiling term with \maybeeta terms forces us to determine if, $\lambda x. T_x$,
-for any term $T$ having $x$ in scope, can be a $\eta$-expansion, i.e. under a
-given substitution $\sigma$, we have $\sigma (\lambda x.T_x) = t$. This
+Compiling a term $t$ forces us to determine if there exists a $t' \in \subterm{t}$,
+such that $t' = \lambda x. t''_x$,
+for any term $t''$, can be a $\eta$-expansion, i.e. under a
+given substitution $\sigma$, we have $\sigma (\lambda x.t''_x) = t'$. This
 \maybeeta detection is not a trivial operation as it may seems.
 \\
 \noindent
-\begin{minipage}{.5\linewidth}
+\begin{minipage}{.5\linewidth}%
   \begin{gather}
     \lambda x. f \appsep A_x\\
     \lambda x. f \appsep x \appsep A_x
