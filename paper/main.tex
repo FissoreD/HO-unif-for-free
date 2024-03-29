@@ -1424,6 +1424,17 @@ given substitution $\sigma$, we have $\sigma (\lambda x.t''_x) = t'$. This
   \end{gather}
 \end{minipage}
 
+\begin{center}
+  \begin{tabular}{lll}
+    Term & Status & Evidence \\\hline
+    $\lambda x. f \appsep A_x$ & $\in\maybeeta$ & $\sigma = \{~ A_x \mapsto x ~\}$ \\
+    $\lambda x. f \appsep x \appsep A_x$ & $\not\in\maybeeta$ &\\
+    $\lambda x. \lambda y. f \appsep A_x \appsep B_{y x}$ & $\in\maybeeta$ & $\sigma = \{~ A_x \mapsto x,~ B_{yx} \mapsto y ~\}$\\
+    $\lambda x. f \appsep A_x \appsep x$ & $\in\maybeeta$ & $\sigma = \{~ A_x \mapsto a ~\}$
+  \end{tabular}
+\end{center}
+
+
 In the examples above, the first term is a \maybeeta since $A_x$ can
 reduce to $x$ by setting $A_x = \lambda x.x$, 
 the second one is not a \maybeeta since it exists no substitution
