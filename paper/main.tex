@@ -1551,7 +1551,14 @@ the \Ho substitution, since we make unification only when we know that the
 terms are no more \maybeeta, and when \lhs is no more a variable or \rhs is 
 no more a \maybeeta, the link is removed from \linkStore.
 
-An example 
+\printAll
+  {{\elpiIn{flam x\ fapp [fuva X, x] == fcon"f"}}}
+  {{E0 == f}}
+  {{\mapping{X}{E1}{1}}}
+  {{\linketaM{}{E0}{\lambda x.E1_{x}}}}
+
+The example above is meant to illustrate the activation of a link when \lhs is 
+instantiated to a rigid term.
 
 TODO: example for case 1: $\lambda x. \lambda y. F \appsep y \appsep x = f$
 TODO: example for case 2: $\lambda x. \lambda y. F \appsep y \appsep x = G, F = \lambda x. \lambda y. a$

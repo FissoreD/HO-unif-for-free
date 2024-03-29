@@ -686,9 +686,8 @@ namespace comp {
   pplink (@val-link-beta A B) S :- S is "|- " ^ {ho.pp A} ^ " =β= " ^ {ho.pp B}.
 
   type pplinks links -> list string -> o.
-  pplinks L [R] :- tex, !, 
-    forall2 pplink L R1,
-    fold (x\y\z\ z is x ^ "\\\\\n" ^ y) R1 "" R.
+  pplinks L R :- tex, !, 
+    forall2 pplink L R.
   pplinks L R :- forall2 pplink L R.
 
 

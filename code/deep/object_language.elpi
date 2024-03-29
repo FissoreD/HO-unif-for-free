@@ -101,8 +101,26 @@ namespace fo {
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   macro @binder-names :- ["x", "y", "z", "w"].
+  macro @fuva N :- fuva (mem.addr {int->nat N}).
+
+  type pp-var-clean string -> string -> o.
+  pp-var-clean S1 S2 :-
+    std.any->string (@fuva 0) T1,
+    std.any->string (@fuva 1) T2,
+    std.any->string (@fuva 2) T3,
+    std.any->string (@fuva 3) T4,
+    L1 = [T1,T2,T3,T4, "c0", "c1", "c2", "c3"],
+    L2 = ["fuva X", "fuva Y", "fuva Z", "fuva W", "x", "y", "z", "w"],
+    std.map2 L1 L2 (x\y\z\z = pr x y) L3,
+    fold (x\a\r\ sigma A B\ x = pr A B, rex.replace A B a r) L3 S1 S2.
 
   type pp fm -> string -> o.
+  pp T S :- tex, !, 
+    std.any->string T S1, 
+    pp-var-clean S1 S2,
+    rex.replace "fo." "" S2 S3,
+    rex.replace " \\\\" "\\\\" S3 S4,
+    rex.replace "fcon \(.\)" "fcon\"\1\"" S4 S.
   pp T S :- pp1 @binder-names T S.
 
   type pp1 list string -> fm -> string -> o.
@@ -116,7 +134,9 @@ namespace fo {
   pp1 _ _ "fo.pp1 ERROR".
 
   type ppuva addr -> string -> o.
-  ppuva N S :- mem.ppaddr N X, S is "C" ^ X.
+  ppuva (mem.addr N) S :- 
+    if (nth N ["X", "Y", "Z", "W"] S) true 
+      (ppnat N X, S is "C" ^ X).
 
   type ppsubst fsubst -> list string -> o.
   ppsubst L S :- mem.pp L "C" (x\s\sigma y\pp x y, s is ":= " ^ y)  S.

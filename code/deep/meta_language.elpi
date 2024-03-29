@@ -213,10 +213,10 @@ namespace ho {
   pp1 _ _ "ERROR".
 
   type ppuva addr -> string -> o.
-  ppuva N S :- S is "X" ^ {mem.ppaddr N}.
+  ppuva N S :- S is "E" ^ {mem.ppaddr N}.
 
   type ppsubst subst -> list string -> o.
-  ppsubst L S :- mem.pp L "X" ppass S.
+  ppsubst L S :- mem.pp L "E" ppass S.
 
   type ppass-tex assignment -> list string -> string -> o.
   ppass-tex (abs F) L S :- pi x\ ppass-tex (F x) [{std.any->string x} | L] S.
