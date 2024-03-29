@@ -89,12 +89,33 @@
     }
 }
 
-\newcommand{\printCompPb}[3]{
-  \noindent
+\newcommand{\printEntry}[1]{
+  \listlength{#1}%
+  \ifthenelse{\equal{0}{\thellength}}{}{
+    \item[Entry pb:] 
+    \foreach \x [count=\i] in #1
+      {%
+        \begin{minipage}{8cm}%
+          $\mathcal{P}_\i : \x$ %
+        \end{minipage}%
+        \ifthenelse{\equal{\i}{\thellength}}{}{\\}%
+      }%
+  }%
+}
+\newcommand{\printItemComp}[3]{
+  \listlength{#3}%
+  \ifthenelse{\equal{0}{\thellength}}{}{
+    \item[#1] \printMinipage{#2}{#3}
+  }%
+}
+
+\newcommand{\printAll}[4]{
+  \noindent%
   \begin{description}[leftmargin=!,labelwidth=\widthof{\bfseries Mapping:}]
-    \item[Unif pb:] \printMinipage{p}{#1}
-    \item[Mapping:] \printMinipage{m}{#2}
-    \item[Links:] \printMinipage{l}{#3}
+    \printEntry{#1}%
+    \printItemComp{Compil:}{\mathcal{T}}{#2}%
+    \printItemComp{Mapping:}{m}{#3}%
+    \printItemComp{Links:}{l}{#4}
   \end{description}
 }
 
@@ -1598,10 +1619,12 @@ not reduce to $T x$ where x is not free in $T$.
 \label{sec:invariant1}
 
 In \cref{sec:basic-comp-limitations}, we have given two unification problems to
-be run one after the other. The compilation of each term would generate the
-following result:
-
-\printCompPb
+be run one after the other. In the following table we present the entry problem,
+its compiled version, with the corresponding list of mapping and links.
+%
+\printAll
+  {{\elpiIn{flam x\flam y\fapp[fuva F,y,x] = flam x\flam y\x},
+    \elpiIn{flam x\fapp[fcon"f", fapp[fuva F, x], x] = fapp[fcon"f", flam x\x]}}}
   {{X = \lambda x.\lambda y.x, Z = f\appsep(\lambda x.x)}}
   {{\mapping{F}{G}{1}, \mapping{F}{H}{2}}}
   {{\linketaM{x}{Y_{x}}{\lambda y.H_{y~x}},
@@ -1661,8 +1684,9 @@ deduplicate $\mapping{F}{G}{1}, \mapping{F}{H}{2}$ by removing the first mapping
 and adding the auxiliary \linketa: \linketaM{x}{G_{x}}{\lambda y.H_{x y}}.
 
 The complete problem to run for resolution is now:
-
-\printCompPb
+%
+\printAll
+  {{}}
   {{X = \lambda x.\lambda y.x, 
     Z = f\appsep(\lambda x.x)}}
   {{\mapping{F}{H}{2}}}

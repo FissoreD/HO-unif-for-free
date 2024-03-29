@@ -103,6 +103,6 @@
 
 \newcounter{llength}
 \newcommand{\listlength}[1]{
-  \setcounter{llength}{0}
-  \foreach \i in #1 {\stepcounter{llength}}
+  \setcounter{llength}{0}%
+  \foreach \i in #1 {\stepcounter{llength}}%
 }
