@@ -202,10 +202,10 @@ namespace ho {
   pp1 BN (app L) S :- tex, !, std.string.concat "~" {std.map L (pp1 BN)} X, S is "(" ^ X ^ ")".
   pp1 BN (app L) S :- !, std.string.concat " " {std.map L (pp1 BN)} X, S is "(" ^ X ^ ")".
   pp1 _ (con S) S :- !.
-  pp1 [X|XS] (lam F) S :- tex, !, pi x\ pp1 _ x X => pp1 XS (F x) S1, S is "\\lambda " ^ X ^ "." ^ S1.
-  pp1 [] (lam F) S :- tex, !, pi x\ pp1 _ x X, pp1 [] (F x) S1, S is "\\lambda " ^ X ^ "." ^ S1.
-  pp1 [X|XS] (lam F) S :- !, pi x\  pp1 _ x X => pp1 XS (F x) S1, S is "λ" ^ X ^ "." ^ S1.
-  pp1 [] (lam F) S :- !, pi x\ pp1 _ x X, pp1 [] (F x) S1, S is "λ" ^ X ^ "." ^ S1.
+  pp1 [X|XS] (lam F) S :- tex, !, pi x\ (pp1 _ x X :- !) => pp1 XS (F x) S1, S is "\\lambda " ^ X ^ "." ^ S1.
+  pp1 [] (lam F) S :- tex, !, pi x\ (pp1 _ x X :- !), pp1 [] (F x) S1, S is "\\lambda " ^ X ^ "." ^ S1.
+  pp1 [X|XS] (lam F) S :- !, pi x\  (pp1 _ x X :- !) => pp1 XS (F x) S1, S is "λ" ^ X ^ "." ^ S1.
+  pp1 [] (lam F) S :- !, pi x\ (pp1 _ x X :- !), pp1 [] (F x) S1, S is "λ" ^ X ^ "." ^ S1.
   pp1 _ (uva N []) S :- !, S is {ppuva N}.
   pp1 BN (uva N L) S :- tex, !, std.string.concat " " {std.map L (pp1 BN)} X, !, S is {ppuva N} ^ "_{" ^ X ^ "}".
   pp1 BN (uva N L) S :- !, std.string.concat " " {std.map L (pp1 BN)} X, !, S is "`" ^ {ppuva N} ^ " " ^ X ^ "'".
