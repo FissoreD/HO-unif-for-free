@@ -1351,9 +1351,9 @@ $\eta$-reduction is an equivalence relation where a term of the form
 $\lambda x.t \appsep x$ can be converted to $t$ any time $x$ does not occur as a
 free variable in $t$. We call $\lambda x. t \appsep x$ the $\eta$-expansion of $t$. 
 \printAll
-  {{\elpiIn{flam x\ fapp [fuva A, x]} \Uo \elpiIn{fcon "f"}}}
-  {{\lambda x. A'_x \Ue f}}
-  {{\mapping{\elpiIn{A}}{A'}{1}}}
+  {{\elpiIn{flam x\ fapp [fuva X, x]} \Uo \elpiIn{fcon"f"}}}
+  {{\lambda x. X'_x \Ue f}}
+  {{\mapping{\elpiIn{X}}{X'}{1}}}
   {{}}
 Following the implementation of \elpiIn{comp} given in
 \cref{sec:compilation}, the unification problem $\mathcal{P}_1$ given 
@@ -1531,7 +1531,7 @@ by adding new rules. After passing under all the \elpiIn{abs}
 constructors of $l$, there are two cases making a \linketa to progress, 1) \lhs
 is instantiated to a rigid term 2) \rhs is no more a \maybeeta or it is a term
 which can be reduced to a term with rigid head. 
-If \lhs is instantiated to a rigid term $t$, by \cref{inv:subst-nf},
+If \lhs is instantiated to a rigid term $t$, by \cref{prop:nf},
 we know that $t$ does not contain any \maybeeta. Let $t'$ the right hand side,
 if $t$ is a constant or a function application, then, $t'$, which by
 construction has \elpiIn{lam} as head, should be an $\eta$-expansion. We are
@@ -1552,15 +1552,28 @@ terms are no more \maybeeta, and when \lhs is no more a variable or \rhs is
 no more a \maybeeta, the link is removed from \linkStore.
 
 \printAll
-  {{\elpiIn{flam x\ fapp [fuva X, x] == fcon"f"}}}
-  {{E0 == f}}
-  {{\mapping{X}{E1}{1}}}
-  {{\linketaM{}{E0}{\lambda x.E1_{x}}}}
+  {{\elpiIn{flam x\ fapp [fuva X, x] ~\Uo~fcon"f"}}}
+  {{A \Ue f}}
+  {{\mapping{X}{X'}{1}}}
+  {{\linketaM{}{A}{\lambda x.X'_{x}}}}
 
-The example above is meant to illustrate the activation of a link when \lhs is 
-instantiated to a rigid term.
+The example above shows the new compilation of the unification problem given at
+the beginning of \cref{sec:eta}. This time, we see that the the left hand side
+$t$ of $\mathcal{P}_1$ has been detected as a \maybeeta and replaced with the
+fresh variable $A$. Moreover, \linkStore contains the link $l_1$ connecting $A$
+with $\lambda x.X'_{x}$, the compiled version of $t$. After the resolution of
+$\mathcal{T}_1$, $A$ is assigned to $f$. Therefore \lhs of $l_1$ is a term with
+\elpiIn{con} as constructor. This means that \rhs of $l_1$ is a $\eta$-expansion
+and therefore we can unify $\lambda x.f x$ with \rhs, which instantiate $X'_x$
+to $f \appsep x$. $l_1$ is removed from \linkStore which is now empty,
+\elpiIn{progress} terminate, and the decompilation, will instantiate the $X$
+variable to $f$ (which is the $\eta$-contracted version of $\lambda x.f \appsep
+x$). 
 
-TODO: example for case 1: $\lambda x. \lambda y. F \appsep y \appsep x = f$
+A second example, showing the activation of a link when the \rhs is no more a
+\maybeeta, is given in \cref{sec:invariant1}, since we need to work with
+variables used with different arities.
+
 TODO: example for case 2: $\lambda x. \lambda y. F \appsep y \appsep x = G, F = \lambda x. \lambda y. a$
 
 A second way to progress \linketa, that we call \linketa deduplication, is when
