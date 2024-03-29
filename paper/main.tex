@@ -1220,7 +1220,8 @@ context where input terms are $\beta\eta$-normal and we disregard $\eta$-equival
 
 \begin{gather}
 \lambda x y.F \appsep y \appsep x = \lambda x y.x \label{eq:unif-eta1}\\
-\lambda x. f \appsep (F \appsep x) \appsep x = f \appsep (\lambda y.y) \label{eq:unif-eta2}
+\lambda x. f \appsep (F \appsep x) \appsep x = G \label{eq:unif-eta2}
+% \lambda x. f \appsep (F \appsep x) \appsep x = f \appsep (\lambda y.y) \label{eq:unif-eta2}
 \end{gather}
 Note that here $F$ is used with different arities, moreover
 in the second problem the left hand side happens to be an
@@ -1664,13 +1665,16 @@ be run one after the other. In the following table we present the entry problem,
 its compiled version, with the corresponding list of mapping and links.
 %
 \printAll
-  {{\elpiIn{flam x\flam y\fapp[fuva F,y,x] = flam x\flam y\x},
-    \elpiIn{flam x\fapp[fcon"f", fapp[fuva F, x], x] = fapp[fcon"f", flam x\x]}}}
-  {{X = \lambda x.\lambda y.x, Z = f\appsep(\lambda x.x)}}
-  {{\mapping{F}{G}{1}, \mapping{F}{H}{2}}}
-  {{\linketaM{x}{Y_{x}}{\lambda y.H_{y~x}},
-    \linketaM{\phantx}{X}{\lambda x.Y_{x}},
-    \linketaM{\phantx}{Z}{\lambda x.f \appsep G_{x}~x}}}
+  {{\elpiIn{flam x\ flam y\ fapp [fuva X, y, x] == flam x\ flam y\ x},
+    \elpiIn{flam x\ fapp [fcon"f", fapp [fuva X, x], x] == fuva Y}}}
+  {{E0 == \lambda x.\lambda y.x,
+    E3 == E5}}
+  {{\mapping{Y}{E5}{0},
+    \mapping{X}{E2}{2}}}
+  {{\linketaM{c0}{E4_{c0}}{\lambda x.E2_{c0 x}},
+    \linketaM{}{E3}{\lambda x.(f~E4_{x}~x)},
+    \linketaM{}{E0}{\lambda x.E1_{x}},
+    \linketaM{c0}{E1_{c0}}{\lambda x.E2_{x c0}}}}
 
 We see that the \elpiIn{maybe-eta} as detected $\lambda xy.F \appsep y \appsep
 x$ and $\lambda x.f\appsep (F \appsep x) \appsep x$ and replaced them with
