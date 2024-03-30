@@ -136,16 +136,12 @@ pppbsc F (triple (error _) A B) S :- F A AS, F B BS, S is AS ^ " =/= " ^ BS.
 
 type print-compil-result list (diagn fo.fm) -> list (diagn ho.tm) -> comp.links -> comp.mmap -> o.
 print-compil-result C P L M :- tex, !, 
-  Sep = ",\n    ",
-  std.string.concat Sep {std.map C (x\r\ sigma y\ pppbsc fo.pp x y, r is "\\elpiIn{"^ y ^"}")} Cpp,
-  std.string.concat Sep {std.map P (pppbsc ho.pp)} Ppp, 
-  std.string.concat Sep {comp.pplinks L} Lpp, 
-  std.string.concat Sep {comp.ppmappings M} Mpp,
-  R is "\\printAll
-  {{" ^ Cpp ^ "}}
-  {{" ^ Ppp ^ "}}
-  {{" ^ Mpp ^ "}}
-  {{" ^ Lpp ^ "}}",
+  Sep = "\n  ", Sep1 is "," ^ Sep ^ "  ",
+  std.string.concat Sep1 {std.map C (x\r\ sigma y\ pppbsc fo.pp x y, r is "\\elpiIn{"^ y ^"}")} Cpp,
+  std.string.concat Sep1 {std.map P (pppbsc ho.pp)} Ppp, 
+  std.string.concat Sep1 {comp.pplinks L} Lpp, 
+  std.string.concat Sep1 {comp.ppmappings M} Mpp,
+  R is "\\printAll" ^ Sep ^ "{{" ^ Cpp ^ "}}" ^ Sep ^ "{{" ^ Ppp ^ "}}" ^ Sep ^ "{{" ^ Mpp ^ "}}" ^ Sep ^ "{{" ^ Lpp ^ "}}",
   print "The result of the compilation is",
   print R.
 
@@ -627,19 +623,23 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- std
 ] ["λx.x", "λx.λy.(f y x y)"].
 
 
+@sokl 78 [
+  pr ok "λx.λy.(X y x) = λx.λy.x",
+  pr (error "unif") "λx.λy.(f (X x) x) = f (λx.x)",
+] [].
+
 % From the paper
-@sokl 76 [
+@sokl 7000 [
   pr ok "λx.(X x) = f"
 ] ["f"].
 
-@sokl 77 [
+@sokl 7001 [
   pr ok "λx.λy.(X y x) = λx.λy.x",
   pr ok "λx.(f (X x) x) = Y",
 ] ["λx.λy.y", "f (λx.x)"].
 
-@sokl 78 [
-  pr ok "λx.λy.(X y x) = λx.λy.x",
-  pr (error "unif") "λx.λy.(f (X x) x) = f (λx.x)",
+@sokl 7002 [
+  pr ok "λx.(X x) = λx.(X x)"
 ] [].
 
 % @sokl 71 [

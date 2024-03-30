@@ -1591,11 +1591,10 @@ x$).
 
 A second example, showing the activation of a link when the \rhs is no more a
 \maybeeta, is given in \cref{sec:invariant1}, since we need to work with
-variables used with different arities.
+variables used with different arities. This example represent the run of the
+unification problems proposed at \cref{sec:basic-comp-limitations}
 
-TODO: example for case 2: $\lambda x. \lambda y. F \appsep y \appsep x = G, F = \lambda x. \lambda y. a$
-
-A second way to progress \linketa, that we call \linketa deduplication, is when
+Another, way to progress \linketa, that we call \linketa deduplication, is when
 \linkStore contains two \linketa $l_1$ and $l_2$ with a \lhs having the same
 variable address. Let the \lhs of $l_1$ be \elpiIn{uva U R} and the \lhs of
 $l_2$ be \elpiIn{uva V S}, then, by \cref{inv:uvaarity}, \elpiIn{R}
@@ -1604,8 +1603,16 @@ each name \elpiIn{S}$_i$ in the \rhs of $l_1$ with \elpiIn{R}$_i$, $t$ is
 unified with the \rhs of $l_2$ and one of the two links between $l_1$ and $l_2$
 is removed from \linkStore. 
 
-TODO: example for this: $\lambda x. \lambda y. F \appsep y \appsep x = X,
-\lambda x. \lambda y. F \appsep y \appsep x = Y$
+A very basic example of \linketa deduplication, is given below:
+
+\printAll
+  {{\elpiIn{flam x\ fapp [fuva X, x] == flam x\ fapp [fuva X, x]}}}
+  {{E0 == E2}}
+  {{\mapping{X}{X'}{1}}}
+  {{\linketaM{}{E2}{\lambda x.X'_{x}},
+    \linketaM{}{E0}{\lambda x.X'_{x}}}}
+
+TODO: explain
 
 \begin{lemma}
   Forall list of links \elpiIn{L} and \elpiIn{S}, \elpiIn{progress L _ S _}
@@ -1629,51 +1636,6 @@ TODO: example for this: $\lambda x. \lambda y. F \appsep y \appsep x = X,
 
 TODO: we can have $\lambda x. F_x$ in the substitution if we know that $F$ does
 not reduce to $T x$ where x is not free in $T$.
-
-% \subsection{Example}
-
-% In this subsection we show two complete runs of the extended version of \Ue.
-
-% \paragraph{Example 1}
-% \begin{center}
-%   \elpiIn{flam x\ flam y\ fapp[fuva A, y, x] = flam x\ flam y\ x}
-% \end{center}
-% % $$\flambda xy.F \appsep y \appsep x = \lambda xy.x$$
-% \begin{itemize}
-%   \item After compilation: terms are $X0 = \lambda c0.\lambda c1.c0$ with links
-%         $\linketaM{c0}{X1_{c0}}{\lambda c1.X2_{c1~c0}}, \linketaM{}{X0}{\lambda
-%         c0.X1_{c0}}$ and mappings: $\mapping{C0}{X2}{2}$
-%   \item After unification $X0$ is set to $\lambda c0.\lambda c1.c0$
-%   \item This unification wakes up the second link, since its \lhs is now
-%         instantiated. $X0$ is unified with its \rhs, which assigns $X1_{c0} :=
-%         \lambda c1.c0$
-%   \item The instantiation of $X1$ wakes the first link, and $\lambda c1.c0$ is
-%         unified with $\lambda c1.X2_{c1~c0}$, setting $X2 _{c1~c2} := c2$ by
-%         pruning.
-%   \item All the links have been solved and the decompilation, assigns the \Fo{}
-%         variable \elpiIn{A} to $\lambda xy.y$ 
-% \end{itemize}
-
-% \paragraph{Example 2}
-% \begin{center}
-%   \elpiIn{flam x\ fapp[f, fapp[fuva F, x], x] = fapp[f, flam x\ x]}
-% \end{center}
-% % $$\flambda xy.F \appsep y \appsep x = \lambda xy.x$$
-% \begin{itemize}
-%   \item After compilation: terms are $X0 = f~\lambda c0.c0$ with links
-%         $\linketaM{}{X0}{\lambda c0.(f~X1_{c0}~c0)}$ and mappings:
-%         $\mapping{C0}{X1}{1}$
-%   \item After unification $X0$ is set to $f~\lambda c0.c0$
-%   \item This unification wakes up the link, since its \lhs is now
-%         instantiated. $X0$ is unified with its \rhs, which assigns $X1_{c0} :=
-%         \lambda c1.c0$
-%   \item The instantiation of $X1$ wakes the first link, and $\lambda c1.c0$ is
-%         unified with $\lambda c1.X2_{c1~c0}$, setting $X2 _{c1~c2} := c2$ by
-%         pruning.
-%   \item All the links have been solved and the decompilation, assigns the \Fo{}
-%         variable \elpiIn{A} to $\lambda xy.y$ 
-% \end{itemize}
-
 
 \section{Enforcing Invariant~\ref{inv:uvaarity}}
 \label{sec:invariant1}
