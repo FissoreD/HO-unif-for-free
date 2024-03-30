@@ -628,7 +628,7 @@ We now define ``problematic'' and ``well behaved'' more formally.
 \newcommand{\maybeeta}{\ensuremath{\Diamond\eta}\xspace}
 \newcommand{\maybebeta}{\ensuremath{\overline{\llambda}}\xspace}
 %\newcommand{\maybebeta}{\ensuremath{\Diamond\beta}\xspace}
-\begin{definition}[\maybeeta]
+\begin{definition}[\maybeeta]\label{def:maybeeta}
   $\maybeeta = \{ t ~|~ \exists \rho, \rho t ~\mathrm{is~an~eta~expansion} \}$
 \end{definition}
 
@@ -642,7 +642,7 @@ that is the eta long form of $f$. This term is problematic since
 its rigid part, the $\lambda$-abstractions, cannot justify a
 unification failure against, say, a constant.
 
-\begin{definition}[\maybebeta]
+\begin{definition}[\maybebeta]\label{def:maybebeta}
   $\maybebeta = \{ X t_1 \ldots t_n ~|~ X t_1 \ldots t_n \not\in \llambda \}$.
 \end{definition}
 
@@ -1354,7 +1354,7 @@ Both problems are addressed in the next section.
 % sequenza)
 
 \section{Handling of \maybeeta}\label{sec:eta}
-
+\marginpar{TODO: fix syntax}
 $\eta$-reduction is an equivalence relation where a term of the form
 $\lambda x.t \appsep x$ can be converted to $t$ any time $x$ does not occur as a
 free variable in $t$. We call $\lambda x. t \appsep x$ the $\eta$-expansion of $t$. 
@@ -1455,49 +1455,99 @@ $\eta$-expansion.\\
 We can now define more formally how \maybeeta terms are detected together with
 its auxiliary functions:
 
-\begin{definition}[reduce-to]
-  A term $t$ reduce to a name $x$, if $\exists \sigma, \sigma t = x$. In
-  particular, for any term $t$, $\lambda x_1 \ldots x_n.t_{x_1\ldots x_n}$
-  reduces to a bound variable $x$ if one of the three following cases is
-  satisfied: 1) $n = 0$ and $t = x$; 2) $t$ is the application of $x$ to a list
-  of terms $l$ and each $l_i$ reduces to $x_i$
-  (e.g. $\lambda x_1 \ldots x_n.x_{x_1\ldots x_n} = x$) ; 3) $t$ is a unification
-  variable in \llambda with scope
-  $s$, and for any $v \in \{ x, x_1 \ldots x_n \}$,
-  there exists a $s_i \in s$, such that $s_i$ reduces to $v$
+\marginpar{the compiler must do beta normal!!!!}
+\newcommand{\reduceto}{\emph{may-contract-to}}
+\begin{definition}[\reduceto]
+  A term $s$ \reduceto{} a name $x$ if there exists a
+  substitution $\rho$ such that $\rho s \Eo{} x$.
 \end{definition}
 
-\begin{definition}[occurs-rigidly]
-  A name $x$ occurs rigidly in a term $t$, if $\forall \sigma, x \in
-  \subterm{\sigma t}$
+\begin{lemma}\label{lem:reduceto}
+A $\beta$-normal term $s = \lambda x_1 \ldots x_n.t$
+%, where $x, x_1\ldots x_n$ can occur in $t$, 
+\reduceto{} $x$ only if one of the following three conditions holds:
+\begin{enumerate}
+  \item $n = 0$ and $t = x$;
+  \item $t$ is the application of $x$ to a list
+     of terms $l$ and each $l_i$ \reduceto{} $x_i$
+     (e.g. $\lambda x_1 \ldots x_n.x \appsep x_1 \ldots x_n \Eo{} x$) ;
+  \item $t$ is a unification variable with scope
+    $W$, and for any $v \in \{ x, x_1 \ldots x_n \}$,
+    there exists a $w_i \in W$, such that $w_i$ \reduceto{} $v$
+    (if $n = 0$ this is equivalent to $x \in W$).
+\end{enumerate}
+\end{lemma}
+\begin{proof}[Proof sketch]
+Since our terms are in $\beta$-normal form there is only
+one rule that can play a role (namely \ref{clause:eta1}),
+hence if the term $s$ is not exactly $x$ (case 1)
+it can only be an $\eta$-expansion of it, or a unification
+variable that can be assigned to it, or a combination of both.
+If $s$ begins with a lambda, then the lambda can only disappear by $\eta$
+contraction. In that case the term $t$ under the spine of binders for
+$x_1\ldots x_n$ can either be $x$ itself applied to terms that can
+\reduceto{} these variables (case 2), or a unification variable
+that can be assigned to that application (case 3).
+\end{proof}
+
+\noindent
+Note that this condition does not require the term to be in \llambda.
+\marginpar{Is this relevant}
+
+\newcommand{\occursrigid}{\emph{occurs-rigidly}}
+\begin{definition}[\occursrigid]\label{def:occrigid}
+  A name $x$ \occursrigid{} in a $\beta$-normal term $t$, if $\forall \rho, x \in
+  \subterm{\rho t}$
 \end{definition}
-In other words $x$ \emph{occurs-rigidly} in $t$ if it occurs in $t$
-outside of the scope of unification variables since theirs instantiations
-are allowed to discard their scope.
+In other words $x$ \emph{\occursrigid} in $t$ if it occurs in $t$
+outside of the scope of unification variables since an instantiation
+is allowed to discard $x$ from the scope of the unification variable.
+Note that $\eta$-contraction cannot make $x$ disappear, since the
+variables being erased by $\eta$-contraction are locally bound inside $t$.
 
 We can now derive the implementation for \maybeeta detection:
 
-\begin{definition}[\maybeeta detection]
-  A term $\lambda x_1 \ldots x_n.t$ where each $x_i$ occurs in $t$ is a
-  \maybeeta if
-  either: 1) $t$ is a constant applied to arguments
-  $l_1 \ldots l_m$ such that 
-  $m \geq n$ and every $l_{m-n+i}$ reduces-to $x_i$ and
-  no $x_i$ occurs-rigidly in $l_{1\ldots m-n-1}$; or 2) $t$ is a
-  unification variable with scope $s$ and
-  for each $x_i$ there exists a $s_j \in s$ such that $s_j$ reduces-to $x_i$.
-\end{definition}
+\begin{lemma}[\maybeeta detection]\label{lem:maybeeta}
+  A $\beta$-normal term
+  $\lambda x_1 \ldots x_n.t \in \maybeeta$ (as per \cref{def:maybeeta})
+  % where each $x_i$ occurs in $t$ is a
+  %\maybeeta if
+  %either: 
+  if one of the following holds:
+  \begin{enumerate}
+    \item $t$ is a constant or variable applied to arguments
+      $l_1 \ldots l_m$ such that 
+      $m \geq n$ and for every $i$ such that $1 \leq i \leq m-n$
+      the term  $l_i$
+      \reduceto{} $x_i$, and
+      no $x_i$ \occursrigid{} in $l_1 \ldots l_{m-n-1}$;
+    \item $t$ is a
+      unification variable with scope $W$ and
+      for each $x_i$ there exists a $w_j \in W$ such that $w_j$
+      \reduceto{} $x_i$.
+  \end{enumerate}
+\end{lemma}
+\begin{proof}[Proof sketch]
+Follows from \cref{def:occrigid} and \cref{lem:reduceto}
+\end{proof}
 
-As a final remark, the \maybeeta detection defined just before is an
-over-approximation, in the sense that there exists some terms $t$ considered as
-\maybeeta, such that forall substitution $\sigma$, $\sigma t$ is not an
-$\eta$-expansion. A small example is $\lambda x. f \appsep A_x \appsep A_x$
-which is considered a \maybeeta. Thi is because, we suppose at the same time
-that the second $A_x$ can reduce to $x$, to the first $A_x$ is not reducible to
-$A_x$. This is however not considered as a problem, since, adding holes to 
-the compiled term does not break \cref{prop:simulation}, since each hole is
-connected to a \linketa which is activated exactly when the hole is instantiated
-the \linketa, as explain below is activated.
+\noindent
+Remark that the converse of \cref{lem:maybeeta} does not hold: 
+there exists a term $t \in \maybeeta$
+such that forall substitution $\rho$, $\rho t$ is not an
+$\eta$-expansion. A simple counter example is
+$\lambda x. f \appsep (A \appsep x) \appsep (A \appsep x)$
+which is in \maybeeta{} since $x$ does not \occursrigid{} in the first argument
+of $f$,
+and the second argument of $f$ \reduceto{} $x$. In other words $A \appsep x$
+may either use $x$ or discard it.\\
+This is however not a problem in the sense that it does not break
+\cref{prop:simulation}. Terms in \maybeeta{} are compiled to
+unification variables and a link (see \cref{sec:etacomp}):
+the link makes progress (see \cref{sec:etaprogress})
+in the same step in which the
+variable is instantiated, and that compensates for the
+potential misclassification.
 
 % The implementation we propose for the \maybeeta relation is given below.
 
@@ -1508,7 +1558,7 @@ the \linketa, as explain below is activated.
 %   T = \lambda y. f \appsep A_{xy} \appsep (B \appsep a \appsep (\lambda z.y\appsep C_z)) \appsep D_x
 % \end{gather}
 
-\subsection{Compilation}
+\subsection{Compilation}\label{sec:etacomp}
 
 Thanks to the \elpiIn{maybe-eta} predicate, we can detect ``$\eta$-problematic''
 terms and, consequently replace them with fresh \Ho unification variables at
@@ -1541,7 +1591,7 @@ $x$ is free in $t$ otherwise $t$ would not have been detected as a \maybeeta.
   a \maybeeta by construction.
 \end{proof}
 
-\subsection{Progress}
+\subsection{Progress}\label{sec:etaprogress}
 
 \linketa are meant to delay the unification of ``problematic'' terms. In the
 following, we call \linkStore the list of suspended links.
