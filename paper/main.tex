@@ -1495,6 +1495,7 @@ Note that this condition does not require the term to be in \llambda.
 \marginpar{Is this relevant}
 
 \newcommand{\occursrigid}{\emph{occurs-rigidly}}
+\newcommand{\occurrigid}{\emph{occur-rigidly}}
 \begin{definition}[\occursrigid]\label{def:occrigid}
   A name $x$ \occursrigid{} in a $\beta$-normal term $t$, if $\forall \rho, x \in
   \subterm{\rho t}$
@@ -1537,17 +1538,17 @@ there exists a term $t \in \maybeeta$
 such that forall substitution $\rho$, $\rho t$ is not an
 $\eta$-expansion. A simple counter example is
 $\lambda x. f \appsep (A \appsep x) \appsep (A \appsep x)$
-which is in \maybeeta{} since $x$ does not \occursrigid{} in the first argument
+which is in \maybeeta{} since $x$ does not \occurrigid{} in the first argument
 of $f$,
 and the second argument of $f$ \reduceto{} $x$. In other words $A \appsep x$
-may either use $x$ or discard it.\\
+may either use or discard $x$, but our analysis does not know that \emph{the same
+term} cannot have two contrasting behaviors.\\
 This is however not a problem in the sense that it does not break
 \cref{prop:simulation}. Terms in \maybeeta{} are compiled to
 unification variables and a link (see \cref{sec:etacomp}):
 the link makes progress (see \cref{sec:etaprogress})
 in the same step in which the
-variable is instantiated, and that compensates for the
-potential misclassification.
+variable is instantiated, and that compensates for this coarse analysis.
 
 % The implementation we propose for the \maybeeta relation is given below.
 
