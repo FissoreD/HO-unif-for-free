@@ -96,7 +96,7 @@
     \foreach \x [count=\i] in #1
       {%
         \begin{minipage}{8cm}%
-          $\mathcal{P}_\i : \x$ %
+          $\mathbb{P}_\i : \x$ %
         \end{minipage}%
         \ifthenelse{\equal{\i}{\thellength}}{}{\\}%
       }%
@@ -113,7 +113,7 @@
   \noindent%
   \begin{description}[leftmargin=!,labelwidth=\widthof{\bfseries Mapping:}]
     \printEntry{#1}%
-    \printItemComp{Compil:}{\mathcal{T}}{#2}%
+    \printItemComp{Compil:}{\mathbb{T}}{#2}%
     \printItemComp{Mapping:}{m}{#3}%
     \printItemComp{Links:}{l}{#4}
   \end{description}
@@ -475,8 +475,8 @@ compiled term. These links are checked for or progress XXX improve....
 
 We represent a logic program \emph{run} in \Fo{} as
 a list \emph{steps} $p$ of length $\mathcal{N}$. Each step is a
-unification problem between terms $\mathcal{S}_{p_l}$ and
-$\mathcal{S}_{p_r}$ taken from the set of all terms $\mathcal{S}$.
+unification problem between terms $\mathbb{S}_{p_l}$ and
+$\mathbb{S}_{p_r}$ taken from the set of all terms $\mathbb{S}$.
 The composition of these steps starting from the
 empty substitution $\rho_0$ produces the final
 substitution $\rho_\mathcal{N}$.
@@ -508,12 +508,12 @@ The initial here $\rho_0$ is the empty substitution
 %
 $$
 \begin{array}{l}
-\stepF{\mathcal{S}}{p}{\rho}{\rho''}
+\stepF{\mathbb{S}}{p}{\rho}{\rho''}
 \deff
-\stepFD{\mathcal{S}}{p}{\rho}{\rho'}{\rho''}\vspace{2pt}\\
-\runF{\mathcal{S}}{\mathcal{N}}{\rho}
+\stepFD{\mathbb{S}}{p}{\rho}{\rho'}{\rho''}\vspace{2pt}\\
+\runF{\mathbb{S}}{\mathcal{N}}{\rho}
 \deff
-\runFD{\mathcal{S}}{\mathcal{N}}
+\runFD{\mathbb{S}}{\mathcal{N}}
 \end{array}
 $$
 
@@ -521,11 +521,11 @@ We simulate each run in \Fo{} with a run in \Ho as follows.
 Note that $\sigma_0$ is the empty substitution.
 $$
 \begin{array}{l}
-\stepH{\mathcal{T}}{p}{\sigma}{\linkStore}{\sigma''}{\linkStore'} \deff\vspace{2pt}\\
-  \qquad\stepHD{\mathcal{T}}{p}{\sigma}{\sigma'}{\sigma''}{\linkStore}\vspace{2pt}\\
-\runH{\mathcal{S}}{\mathcal{N}}{\rho} \deff \vspace{2pt}\\
-  \qquad \mathcal{T} \times \mapStore \times \linkStore_0 = \{ (t_j,m_j,l_j) | s_j \in \mathcal{S}, \C{s_j}{t_j}{m_j}{l_j} \}\vspace{2pt}\\
-  \qquad \runHD{\mathcal{T}}{\mathcal{N}}{\linkStore}\vspace{2pt}\\
+\stepH{\mathbb{T}}{p}{\sigma}{\linkStore}{\sigma''}{\linkStore'} \deff\vspace{2pt}\\
+  \qquad\stepHD{\mathbb{T}}{p}{\sigma}{\sigma'}{\sigma''}{\linkStore}\vspace{2pt}\\
+\runH{\mathbb{S}}{\mathcal{N}}{\rho} \deff \vspace{2pt}\\
+  \qquad \mathbb{T} \times \mapStore \times \linkStore_0 = \{ (t_j,m_j,l_j) | s_j \in \mathbb{S}, \C{s_j}{t_j}{m_j}{l_j} \}\vspace{2pt}\\
+  \qquad \runHD{\mathbb{T}}{\mathcal{N}}{\linkStore}\vspace{2pt}\\
   \qquad \D{\sigma_{\mathcal{N}}}{\mapStore}{\linkStore_{\mathcal{N}}}{\rho_{\mathcal{N}}}
 \end{array}
 $$
@@ -535,11 +535,11 @@ Here \hstep{} is made of two sub-steps: a call to \Ue (on the compiled
 terms) and a call to \progress{} on the set of links. We claim the following:
 
 \begin{proposition}[Simulation]\label{prop:simulation}
-$\forall \mathcal{S}, \forall \mathcal{N},$
+$\forall \mathbb{S}, \forall \mathcal{N},$
 $$
-  \runF{\mathcal{S}}{\mathcal{N}}{\rho}
+  \runF{\mathbb{S}}{\mathcal{N}}{\rho}
   \Leftrightarrow
-  \runH{\mathcal{S}}{\mathcal{N}}{\rho}
+  \runH{\mathbb{S}}{\mathcal{N}}{\rho}
 $$
 \end{proposition}
 
@@ -547,12 +547,12 @@ $$
 That is, the two executions give the same result. Moreover:
 
 \begin{proposition}[Simulation fidelity]\label{prop:fidelity}
-In the context of~ \hrun, if $~\mathcal{T} \subseteq \llambda$ we have that
+In the context of~ \hrun, if $~\mathbb{T} \subseteq \llambda$ we have that
 $\forall p \in 1 \ldots \mathcal{N},$
 $$
-\stepF{\mathcal{S}}{p}{\rho_{p-1}}{\rho_p}
+\stepF{\mathbb{S}}{p}{\rho_{p-1}}{\rho_p}
 \Leftrightarrow
-\stepH{\mathcal{T}}{p}{\sigma_{p-1}}{\linkStore}{\sigma_p}{\_}
+\stepH{\mathbb{T}}{p}{\sigma_{p-1}}{\linkStore}{\sigma_p}{\_}
 $$
 \end{proposition}
 \noindent
@@ -570,7 +570,7 @@ a non MGU too early
 
 
 We can define $s_1 \Uo{} s_2$ by specializing the code of \hrun{} to
-$\mathcal{S} = \{ s_1, s_2 \}$ as follows:
+$\mathbb{S} = \{ s_1, s_2 \}$ as follows:
 %
 $$
 \begin{array}{l}
@@ -653,7 +653,7 @@ that makes the resulting term fall back in \llambda.
 
 \newcommand{\subterm}[1]{\ensuremath{\mathcal{P}(#1)}}
 \begin{definition}[Subterms \subterm{t}] The set of sub terms of $t$ is the
-  largest set $\mathcal{P(t)}$ that can be obtained by the following rules.
+  largest set $\\subterm{t}$ that can be obtained by the following rules.
 $$
 \begin{array}{l}
 t \in \subterm{t}\\
@@ -677,15 +677,15 @@ $$
 \noindent
 
 \begin{proposition}[\wellb{}-preservation]\label{prop:nf}
-$\forall \mathcal{T}, \forall \linkStore, \forall p, \forall \sigma, \forall \sigma'$
+$\forall \mathbb{T}, \forall \linkStore, \forall p, \forall \sigma, \forall \sigma'$
 $$
 \begin{array}{l}
-\wellb(\sigma\mathcal{T}) \land
-  \sigma\mathcal{T}_{p_l} \Ue \sigma\mathcal{T}_{p_r} \mapsto {\sigma'}
-  \Rightarrow \wellb(\sigma' \mathcal{T})\\
-\wellb(\sigma\mathcal{T}) \land
+\wellb(\sigma\mathbb{T}) \land
+  \sigma\mathbb{T}_{p_l} \Ue \sigma\mathbb{T}_{p_r} \mapsto {\sigma'}
+  \Rightarrow \wellb(\sigma' \mathbb{T})\\
+\wellb(\sigma\mathbb{T}) \land
   \progress(\linkStore,\sigma) \mapsto (\_,\sigma')
-  \Rightarrow \wellb(\sigma' \mathcal{T})
+  \Rightarrow \wellb(\sigma' \mathbb{T})
 \end{array}
 $$
 \end{proposition}
@@ -1364,10 +1364,10 @@ free variable in $t$. We call $\lambda x. t \appsep x$ the $\eta$-expansion of $
   {{\mapping{\elpiIn{X}}{X'}{1}}}
   {{}}
 Following the implementation of \elpiIn{comp} given in
-\cref{sec:compilation}, the unification problem $\mathcal{P}_1$ given 
-above, is compiled into the unification problem $\mathcal{T}_1$. 
-We can note that all the terms appearing in $\mathcal{P}_1$ are
-unifiable by \Uo, but, despite this, \Ue, is not able to solve $\mathcal{T}_1$:
+\cref{sec:compilation}, the unification problem $\mathbb{P}_1$ given 
+above, is compiled into the unification problem $\mathbb{T}_1$. 
+We can note that all the terms appearing in $\mathbb{P}_1$ are
+unifiable by \Uo, but, despite this, \Ue, is not able to solve $\mathbb{T}_1$:
 its left and right hand sides have both different rigid head:
 $\lambda x.A'_x$ corresponds to the \Ho term \elpiIn{lam x\ app[con "f", x]} 
 and $f$ corresponds to \elpiIn{con"f"}. 
@@ -1628,8 +1628,8 @@ no more a \maybeeta, the link is removed from \linkStore.
 %   {{\linketaM{}{A}{\lambda x.X'_{x}}}}
 $$
 \begin{array}{l}
-  \mathcal{P} = \{~ \lambda x.X \appsep x \Uo f ~\}\\
-  \mathcal{T} = \{~ A \Ue f ~\}\\
+  \mathbb{P} = \{~ \lambda x.X \appsep x \Uo f ~\}\\
+  \mathbb{T} = \{~ A \Ue f ~\}\\
   \mathbb{M} = \{~ \mapping{X}{B}{1} ~\}\\
   \linkStore \;= \{~ \linketaM{}{A}{\lambda x.B_{x ~\}}}
 \end{array}
@@ -1637,10 +1637,10 @@ $$
 
 The example above shows the new compilation of the unification problem given at
 the beginning of \cref{sec:eta}. This time, we see that the the left hand side
-$t$ of $\mathcal{P}_1$ has been detected as a \maybeeta and replaced with the
+$t$ of $\mathbb{P}_1$ has been detected as a \maybeeta and replaced with the
 fresh variable $A$. Moreover, \linkStore contains the link $l_1$ connecting $A$
 with $\lambda x.X'_{x}$, the compiled version of $t$. After the resolution of
-$\mathcal{T}_1$, $A$ is assigned to $f$. Therefore \lhs of $l_1$ is a term with
+$\mathbb{T}_1$, $A$ is assigned to $f$. Therefore \lhs of $l_1$ is a term with
 \elpiIn{con} as constructor. This means that \rhs of $l_1$ is a $\eta$-expansion
 and therefore we can unify $\lambda x.f x$ with \rhs, which instantiate $X'_x$
 to $f \appsep x$. $l_1$ is removed from \linkStore which is now empty,
@@ -1716,10 +1716,10 @@ its compiled version, with the corresponding list of mapping and links.
     \linketaM{c0}{E1_{c0}}{\lambda x.E2_{x c0}}}}
 $$
 {\arraycolsep=2pt \begin{array}{rrclrcl}
-    \mathcal{P} = \{ &
+    \mathbb{P} = \{ &
        \lambda x.\lambda y.X \appsep y \appsep x & \Uo & \lambda x.\lambda y. x & \quad
        \lambda x. f \appsep (X \appsep x) \appsep x & \Uo&  Y ~\}\\
-    \mathcal{T} = \{ &
+    \mathbb{T} = \{ &
        A &\Ue& \lambda x.\lambda y.x & \quad
        D &\Ue& F ~\}\\
     \mathbb{M} = \{ & \multicolumn{6}{l}{
