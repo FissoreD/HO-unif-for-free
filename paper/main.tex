@@ -875,22 +875,22 @@ to its scope and the application of a term to a list of arguments.
 We write the scope of unification variables in subscript
 while we use juxtaposition for regular application.
 Here a few examples:
-\vspace{5pt}
+\vspace{4pt}
 
 \begin{tabular}{ll}
-  $f~ a$ &  \elpiIn{app[con "f", con "a"]}\\
+  $f\appsep a$ &  \elpiIn{app[con "f", con "a"]}\\
   $\lambda x.\lambda y.F_{x y}$ & \elpiIn{lam x\ lam y\ uva F [x, y]} \\
-  $\lambda x.F_{x} ~ a$ & \elpiIn{lam x\ app[uva F [x], con "a"]} \\
-  $\lambda x.F_{x} ~ x$ & \elpiIn{lam x\ app[uva F [x], x]} \\
+  $\lambda x.F_{x} \appsep a$ & \elpiIn{lam x\ app[uva F [x], con "a"]} \\
+  $\lambda x.F_{x} \appsep x$ & \elpiIn{lam x\ app[uva F [x], x]} \\
 \end{tabular}
-\vspace{5pt}
+\vspace{4pt}
 
 \noindent
 When variables $x$ and $y$ can occur in term $t$ we shall write
 $t_{xy}$ to stress this fact. 
 
-We write $\sigma = \{ A_{xy} \mapsto y\}$ for the assignment
-\elpiIn{abs x\abs y\y} and $\sigma = \{ A \mapsto \lambda x.\lambda y.y\}$
+We write $\sigma = \{~ A_{xy} \mapsto y ~\}$ for the assignment
+\elpiIn{abs x\abs y\y} and $\sigma = \{~ A \mapsto \lambda x.\lambda y.y ~\}$
 for \elpiIn{lam x\lam y\y}.
 
 When detailing examples we write links as equations between two
