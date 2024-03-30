@@ -1570,12 +1570,19 @@ that this link progression enforce
 the \Ho substitution, since we make unification only when we know that the 
 terms are no more \maybeeta, and when \lhs is no more a variable or \rhs is 
 no more a \maybeeta, the link is removed from \linkStore.
-
-\printAll
-  {{\elpiIn{flam x\ fapp [fuva X, x] ~\Uo~fcon"f"}}}
-  {{A \Ue f}}
-  {{\mapping{X}{X'}{1}}}
-  {{\linketaM{}{A}{\lambda x.X'_{x}}}}
+% \printAll
+%   {{\elpiIn{flam x\ fapp [fuva X, x] ~\Uo~fcon"f"}}}
+%   {{A \Ue f}}
+%   {{\mapping{X}{X'}{1}}}
+%   {{\linketaM{}{A}{\lambda x.X'_{x}}}}
+$$
+\begin{array}{l}
+  \mathcal{P} = \{~ \lambda x.X \appsep x \Uo f ~\}\\
+  \mathcal{T} = \{~ A \Ue f ~\}\\
+  \mathbb{M} = \{~ \mapping{X}{B}{1} ~\}\\
+  \linkStore \;= \{~ \linketaM{}{A}{\lambda x.B_{x ~\}}}
+\end{array}
+$$
 
 The example above shows the new compilation of the unification problem given at
 the beginning of \cref{sec:eta}. This time, we see that the the left hand side
@@ -1645,17 +1652,34 @@ In \cref{sec:basic-comp-limitations}, we have given two unification problems to
 be run one after the other. In the following table we present the entry problem,
 its compiled version, with the corresponding list of mapping and links.
 %
-\printAll
-  {{\elpiIn{flam x\ flam y\ fapp [fuva X, y, x] == flam x\ flam y\ x},
-    \elpiIn{flam x\ fapp [fcon"f", fapp [fuva X, x], x] == fuva Y}}}
-  {{E0 == \lambda x.\lambda y.x,
-    E3 == E5}}
-  {{\mapping{Y}{E5}{0},
-    \mapping{X}{E2}{2}}}
-  {{\linketaM{c0}{E4_{c0}}{\lambda x.E2_{c0 x}},
-    \linketaM{}{E3}{\lambda x.(f~E4_{x}~x)},
-    \linketaM{}{E0}{\lambda x.E1_{x}},
-    \linketaM{c0}{E1_{c0}}{\lambda x.E2_{x c0}}}}
+% \printAll
+%   {{\elpiIn{flam x\ flam y\ fapp [fuva X, y, x] == flam x\ flam y\ x},
+%     \elpiIn{flam x\ fapp [fcon"f", fapp [fuva X, x], x] == fuva Y}}}
+%   {{E0 == \lambda x.\lambda y.x,
+%     E3 == E5}}
+%   {{\mapping{Y}{E5}{0},
+%     \mapping{X}{E2}{2}}}
+%   {{\linketaM{c0}{E4_{c0}}{\lambda x.E2_{c0 x}},
+%     \linketaM{}{E3}{\lambda x.(f~E4_{x}~x)},
+%     \linketaM{}{E0}{\lambda x.E1_{x}},
+%     \linketaM{c0}{E1_{c0}}{\lambda x.E2_{x c0}}}}
+$$
+{\arraycolsep=2pt  
+  \begin{array}{rrclrcl}
+    \mathcal{P} = \{ & \lambda x.\lambda y.X \appsep y \appsep x & \Uo & \lambda x.\lambda y. x &
+         \quad\lambda x. f \appsep (X \appsep x) \appsep x & \Uo&  Y ~\}\\
+    \mathcal{T} = \{ & A &\Ue& \lambda x.\lambda y.x & \quad D &\Ue& F ~\}\\
+    \mathbb{M} = \{ & \multicolumn{6}{l}{\mapping{Y}{F}{0} \quad \mapping{X}{C}{2} ~\}}\\
+    \linkStore \;= \Big\{  & \multicolumn{6}{l}{
+  \begin{array}{ll}
+    \linketaM{}{A}{\lambda y.B_{y}} &
+    \quad\linketaM{x}{B_{x}}{\lambda y.C_{y x}}\\
+    \linketaM{}{D}{\lambda y.(f~E_{y}~y)} &
+    \quad\linketaM{x}{E_{x}}{\lambda y.C_{x y}}
+  \end{array}
+  ~\Big\}}
+\end{array}}
+$$
 
 We see that the \elpiIn{maybe-eta} as detected $\lambda xy.F \appsep y \appsep
 x$ and $\lambda x.f\appsep (F \appsep x) \appsep x$ and replaced them with
