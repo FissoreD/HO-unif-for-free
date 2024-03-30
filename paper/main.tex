@@ -1664,23 +1664,26 @@ its compiled version, with the corresponding list of mapping and links.
     \linketaM{}{E0}{\lambda x.E1_{x}},
     \linketaM{c0}{E1_{c0}}{\lambda x.E2_{x c0}}}}
 $$
-{\arraycolsep=2pt  
-  \begin{array}{rrclrcl}
-    \mathcal{P} = \{ & \lambda x.\lambda y.X \appsep y \appsep x & \Uo & \lambda x.\lambda y. x &
-         \quad\lambda x. f \appsep (X \appsep x) \appsep x & \Uo&  Y ~\}\\
-    \mathcal{T} = \{ & A &\Ue& \lambda x.\lambda y.x & \quad D &\Ue& F ~\}\\
-    \mathbb{M} = \{ & \multicolumn{6}{l}{\mapping{Y}{F}{0} \quad \mapping{X}{C}{2} ~\}}\\
-    \linkStore \;= \Big\{  & \multicolumn{6}{l}{
-  \begin{array}{ll}
-    \linketaM{}{A}{\lambda x.B_{x}} &
-    \quad\linketaM{x}{B_{x}}{\lambda y.C_{y x}}\\
-    \linketaM{}{D}{\lambda x.(f~E_{x}~x)} &
-    \quad\linketaM{y}{E_{y}}{\lambda w.C_{y w}}
-  \end{array}
-  ~\Big\}}
+{\arraycolsep=2pt \begin{array}{rrclrcl}
+    \mathcal{P} = \{ &
+       \lambda x.\lambda y.X \appsep y \appsep x & \Uo & \lambda x.\lambda y. x & \quad
+       \lambda x. f \appsep (X \appsep x) \appsep x & \Uo&  Y ~\}\\
+    \mathcal{T} = \{ &
+       A &\Ue& \lambda x.\lambda y.x & \quad
+       D &\Ue& F ~\}\\
+    \mathbb{M} = \{ & \multicolumn{6}{l}{
+      \mapping{Y}{F}{0} \quad
+      \mapping{X}{C}{2} ~\}}\\
+    \linkStore \;= \Big\{  &
+      \multicolumn{6}{l}{ \begin{array}{ll}
+          \linketaM{}{A}{\lambda x.B_{x}} & \quad
+          \linketaM{x}{B_{x}}{\lambda y.C_{y x}}\\
+          \linketaM{}{D}{\lambda x.(f~E_{x}~x)} & \quad
+          \linketaM{y}{E_{y}}{\lambda w.C_{y w}}
+      \end{array} ~\Big\}}
 \end{array}}
 $$
-
+\marginpar{aggiustare i nomi delle variabili nel testo}
 We see that the \elpiIn{maybe-eta} as detected $\lambda xy.F \appsep y \appsep
 x$ and $\lambda x.f\appsep (F \appsep x) \appsep x$ and replaced them with
 respectively the \Ho vars $X$ and $Z$. $X$ is linked with $\lambda x.Y_x$, $Y$
