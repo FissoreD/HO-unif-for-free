@@ -1404,52 +1404,53 @@ Moreover, we provide justification for why \cref{inv:linklhs,inv:link-eta-right}
 
 \subsection{Detection of \maybeeta}
 
-Compiling a term $t$ forces us to determine if there exists a $t' \in \subterm{t}$,
-such that $t' = \lambda x. t''_x$,
-for any term $t''$, can be a $\eta$-expansion, i.e. under a
-given substitution $\sigma$, we have $\sigma (\lambda x.t''_x) = t'$. This
-\maybeeta detection is not a trivial operation as it may seems.
-\\
-\noindent
-\begin{minipage}{.5\linewidth}%
-  \begin{gather}
-    \lambda x. f \appsep A_x\\
-    \lambda x. f \appsep x \appsep A_x
-  \end{gather}
-\end{minipage}% This must go next to `\end{minipage}`
-\begin{minipage}{.5\linewidth}
-  \begin{gather}
-    \lambda x. \lambda y. f \appsep A_x \appsep B_{y x} \label{eq:lamlam}\\
-    \lambda x. f \appsep A_x \appsep x \label{eq:lamdisc}
-  \end{gather}
-\end{minipage}
-
+When compiling a term $t$ we need to determine if any
+subterm $s \in \subterm{t}$ that is of the form $\lambda x. r$,
+where $x$ occurs in $r$, can be a $\eta$-expansion, i.e. if
+there exists a substitution $\rho$ such that $\rho (\lambda x.r) \Eo s$.
+The detection of lambda abstractions that can ``disappear''
+is not as trivial as it may seems, here a few examples:
+% \\
+% \noindent
+% \begin{minipage}{.5\linewidth}%
+%   \begin{gather}
+%     \lambda x. f \appsep A_x\\
+%     \lambda x. f \appsep x \appsep A_x
+%   \end{gather}
+% \end{minipage}% This must go next to `\end{minipage}`
+% \begin{minipage}{.5\linewidth}
+%   \begin{gather}
+%     \lambda x. \lambda y. f \appsep A_x \appsep B_{y x} \label{eq:lamlam}\\
+%     \lambda x. f \appsep A_x \appsep x \label{eq:lamdisc}
+%   \end{gather}
+% \end{minipage}
+%
 \begin{center}
   \begin{tabular}{lll}
-    Term & Status & Evidence \\\hline
-    $\lambda x. f \appsep A_x$ & $\in\maybeeta$ & $\sigma = \{~ A_x \mapsto x ~\}$ \\
-    $\lambda x. f \appsep x \appsep A_x$ & $\not\in\maybeeta$ &\\
-    $\lambda x. \lambda y. f \appsep A_x \appsep B_{y x}$ & $\in\maybeeta$ & $\sigma = \{~ A_x \mapsto x,~ B_{yx} \mapsto y ~\}$\\
-    $\lambda x. f \appsep A_x \appsep x$ & $\in\maybeeta$ & $\sigma = \{~ A_x \mapsto a ~\}$
+    %Term & Status & Evidence \\\hline
+    $\lambda x. f \appsep (A \appsep x)$ & $\in\maybeeta$ & $\rho = \{~ A \mapsto \lambda x.x ~\}$ \\
+    $\lambda x. f \appsep (A \appsep x) \appsep x$ & $\in\maybeeta$ & $\rho = \{~ A \mapsto \lambda x.a ~\}$\\
+    $\lambda x. f \appsep x \appsep (A \appsep x)$ & $\not\in\maybeeta$ &\\
+    $\lambda x. \lambda y. f \appsep (A \appsep x) \appsep (B \appsep y \appsep x)$ & $\in\maybeeta$ & $\rho = \{~ A \mapsto \lambda x.x,~ B \mapsto \lambda y.\lambda x.y ~\}$
   \end{tabular}
 \end{center}
+\vspace{4pt}
 
-
-In the examples above, the first term is a \maybeeta since $A_x$ can
-reduce to $x$ by setting $A_x = \lambda x.x$, 
-the second one is not a \maybeeta since it exists no substitution
-for $A_x$ such that $A_x$ reduces to $x$ and $x$ is not free in the subterm $f \appsep x$.
-It is a bit more complicated to determine if eq.~\ref{eq:lamlam} a \maybeeta since,
-we have a spine of lambdas, this means that the whole term
-is a \maybeeta, if the inner $\lambda$-term $\lambda y.f\appsep A_x\appsep B_yx$,
-is an $\eta$-expansion and, if so, we need to verify if the $\eta$-reduced 
-subterm, i.e. $f \appsep A_x$, can make $\lambda x.f \appsep A_x$ an $\eta$-expansion.
-Indeed, eq.~\ref{eq:lamlam} is a \maybeeta under the substitution 
-$\sigma = \{A \mapsto \lambda x.x, B \mapsto \lambda x. \lambda y. x\}$.
-Lastly, eq.~\ref{eq:lamdisc} is a \maybeeta even if $x$
-occurs in the subterm $t' = f \appsep A_x$, since it exists a substitution
-$\sigma = \{A \mapsto \lambda x.a\}$, for any constant $a$, such that $\sigma t'
-= f \appsep a$ is a term where $x$ does not appears as a free variable. 
+% In the examples above, the first term is a \maybeeta since $A_x$ can
+% reduce to $x$ by setting $A_x = \lambda x.x$, 
+% the second one is not a \maybeeta since it exists no substitution
+% for $A_x$ such that $A_x$ reduces to $x$ and $x$ is not free in the subterm $f \appsep x$.
+\noindent
+The first two examples are easy, and show how a unification variable can expose
+or erase a variable and turn the resulting term in an $\eta$-expansion or not.\\
+The third example shows when a variable occurs outside the scope of a unification
+variable cannot be erased and hence prevent a term from being an $\eta$-expansion.\\
+The last example shows the recursive nature of the check we need to implement.
+The term starts with a spine of two lambdas hence the whole term
+is in \maybeeta iff the inner term $\lambda y.f\appsep (A \appsep x) \appsep (B \appsep y \appsep x)$
+is in \maybeeta itself, that means it could $\eta$-contract to
+$f \appsep (A \appsep x)$ making $\lambda x.f \appsep (A \appsep x)$ a potential
+$\eta$-expansion.\\
 
 We can now define more formally how \maybeeta terms are detected together with
 its auxiliary functions:
