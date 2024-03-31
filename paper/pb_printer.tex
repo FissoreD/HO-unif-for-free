@@ -75,17 +75,22 @@
   }
 }
 
+\newcommand{\putBigPar}[1]{
+  \listlength{#1}
+  \ifthenelse{\equal{\thellength}{1}}{}{\Big}
+}
+
 \newcommand{\printAlll}[4]{
   \arraycolsep=2pt
   $$
-  \begin{array}{rrclrcl}
-    \mathbb{P} = \{ & \printPb{\Uo}{#1} ~\}\\
-    \mathbb{T} = \{ & \printPb{\Uo}{#2} ~\}\\
-    \mapStore = \{ & \multicolumn{6}{l}{
-      \printMap{#3} ~\}
+  \begin{array}{rrclrcll}
+    \mathbb{P} = \{ & \printPb{\Uo}{#1} &\}\\
+    \mathbb{T} = \{ & \printPb{\Uo}{#2} &\}\\
+    \mapStore = \putBigPar{#3}\{ & \multicolumn{7}{l}{
+      \printMap{#3} ~\putBigPar{#3}\}
     }\\
-    \linkStore = \{ & \multicolumn{6}{l}{
-      \printLink{#4} ~\}
+    \linkStore = \putBigPar{#4}\{ & \multicolumn{7}{l}{
+      \printLink{#4} ~\putBigPar{#4}\}
     }
   \end{array}
   $$
