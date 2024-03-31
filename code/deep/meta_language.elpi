@@ -194,21 +194,28 @@ namespace ho {
 
   macro @binder-names :- ["x", "y", "z", "w"].
 
+  type lambda string -> o.
+  lambda "\\lambda " :- tex, !.
+  lambda "λ".
+
+  type appsep string -> o.
+  appsep "\\appsep " :- tex, !.
+  appsep " ".
+
+  type print_uva_scope mem.addr -> string -> string -> o.
+  print_uva_scope N S R :- tex, !, R is {ppuva N} ^ "_{" ^ S ^ "}".
+  print_uva_scope N S R :- R is "`" ^ {ppuva N} ^ " " ^ S ^ "'".
+
   type pp1 list string -> tm -> string -> o.
   type pp tm -> string -> o.
   pp T S :- pp1 @binder-names T S.
-  pp1 BN (app [lam F|L]) S :- tex, !, pp1 BN (lam F) H, std.string.concat "~" {std.map L (pp1 BN)} X, S is "((" ^ H ^ ") " ^ X ^ ")".
-  pp1 BN (app [lam F|L]) S :- !, pp1 BN (lam F) H, std.string.concat " " {std.map L (pp1 BN)} X, S is "((" ^ H ^ ") " ^ X ^ ")".
-  pp1 BN (app L) S :- tex, !, std.string.concat "~" {std.map L (pp1 BN)} X, S is "(" ^ X ^ ")".
-  pp1 BN (app L) S :- !, std.string.concat " " {std.map L (pp1 BN)} X, S is "(" ^ X ^ ")".
+  pp1 BN (app [lam F|L]) S :- !, pp1 BN (lam F) H, std.string.concat {appsep} {std.map L (pp1 BN)} X, S is "((" ^ H ^ ") " ^ X ^ ")".
+  pp1 BN (app L) S :- !, std.string.concat {appsep} {std.map L (pp1 BN)} X, S is "(" ^ X ^ ")".
   pp1 _ (con S) S :- !.
-  pp1 [X|XS] (lam F) S :- tex, !, pi x\ (pp1 _ x X :- !) => pp1 XS (F x) S1, S is "\\lambda " ^ X ^ "." ^ S1.
-  pp1 [] (lam F) S :- tex, !, pi x\ (pp1 _ x X :- !), pp1 [] (F x) S1, S is "\\lambda " ^ X ^ "." ^ S1.
-  pp1 [X|XS] (lam F) S :- !, pi x\  (pp1 _ x X :- !) => pp1 XS (F x) S1, S is "λ" ^ X ^ "." ^ S1.
-  pp1 [] (lam F) S :- !, pi x\ (pp1 _ x X :- !), pp1 [] (F x) S1, S is "λ" ^ X ^ "." ^ S1.
+  pp1 [X|XS] (lam F) S :- !, pi x\ (pp1 _ x X :- !) => pp1 XS (F x) S1, S is {lambda} ^ X ^ "." ^ S1.
+  pp1 [] (lam F) S :- !, pi x\ (pp1 _ x X :- !), pp1 [] (F x) S1, S is {lambda} ^ X ^ "." ^ S1.
   pp1 _ (uva N []) S :- !, S is {ppuva N}.
-  pp1 BN (uva N L) S :- tex, !, std.string.concat " " {std.map L (pp1 BN)} X, !, S is {ppuva N} ^ "_{" ^ X ^ "}".
-  pp1 BN (uva N L) S :- !, std.string.concat " " {std.map L (pp1 BN)} X, !, S is "`" ^ {ppuva N} ^ " " ^ X ^ "'".
+  pp1 BN (uva N L) S :- !, std.string.concat " " {std.map L (pp1 BN)} X, !, print_uva_scope N X S.
   pp1 _ X S :- name X, !, std.any->string X S.
   pp1 _ _ "ERROR".
 
@@ -216,15 +223,16 @@ namespace ho {
   ppuva N S :- S is "E" ^ {mem.ppaddr N}.
 
   type ppsubst subst -> list string -> o.
-  ppsubst L S :- mem.pp L "E" ppass S.
+  ppsubst L S :- mem.pp L ppuva ppass S.
 
-  type ppass-tex assignment -> list string -> string -> o.
-  ppass-tex (abs F) L S :- pi x\ ppass-tex (F x) [{std.any->string x} | L] S.
-  ppass-tex (val T) L S :- 
-    S is "_{" ^ {std.string.concat "~" L} ^ "} \\mapsto " ^ {pp T}. 
+  type ppass-tex list string -> assignment -> list string -> string -> o.
+  ppass-tex [A|As] (abs F) L S :- !, pi x\ (pp1 _ x A :- !) => ppass-tex As (F x) [A | L] S.
+  ppass-tex [] (abs F) L S :- pi x\ ppass-tex [] (F x) [{std.any->string x} | L] S.
+  ppass-tex BN (val T) L S :- 
+    S is "_{" ^ {std.string.concat "~" L} ^ "} \\mapsto " ^ {pp1 BN T}. 
 
   type ppass assignment -> string -> o.
-  ppass A S :- tex, !, ppass-tex A [] S.
+  ppass A S :- tex, !, ppass-tex @binder-names A [] S.
   ppass A S :- ppass1 @binder-names A S.
 
   type ppass1 list string -> assignment -> string -> o.

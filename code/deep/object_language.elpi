@@ -103,32 +103,40 @@ namespace fo {
   macro @binder-names :- ["x", "y", "z", "w"].
   macro @fuva N :- fuva (mem.addr {int->nat N}).
 
-  type pp-var-clean string -> string -> o.
-  pp-var-clean S1 S2 :-
-    std.any->string (@fuva 0) T1,
-    std.any->string (@fuva 1) T2,
-    std.any->string (@fuva 2) T3,
-    std.any->string (@fuva 3) T4,
-    L1 = [T1,T2,T3,T4, "c0", "c1", "c2", "c3"],
-    L2 = ["fuva X", "fuva Y", "fuva Z", "fuva W", "x", "y", "z", "w"],
-    std.map2 L1 L2 (x\y\z\z = pr x y) L3,
-    fold (x\a\r\ sigma A B\ x = pr A B, rex.replace A B a r) L3 S1 S2.
+  % type pp-var-clean string -> string -> o.
+  % pp-var-clean S1 S2 :-
+  %   std.any->string (@fuva 0) T1,
+  %   std.any->string (@fuva 1) T2,
+  %   std.any->string (@fuva 2) T3,
+  %   std.any->string (@fuva 3) T4,
+  %   L1 = [T1,T2,T3,T4, "c0", "c1", "c2", "c3"],
+  %   L2 = ["fuva X", "fuva Y", "fuva Z", "fuva W", "x", "y", "z", "w"],
+  %   std.map2 L1 L2 (x\y\z\z = pr x y) L3,
+  %   fold (x\a\r\ sigma A B\ x = pr A B, rex.replace A B a r) L3 S1 S2.
+
+  type lambda string -> o.
+  lambda "\\lambda " :- tex, !.
+  lambda "λ".
+
+  type appsep string -> o.
+  appsep "\\appsep " :- tex, !.
+  appsep " ".
 
   type pp fm -> string -> o.
-  pp T S :- tex, !, 
-    std.any->string T S1, 
-    pp-var-clean S1 S2,
-    rex.replace "fo." "" S2 S3,
-    rex.replace " \\\\" "\\\\" S3 S4,
-    rex.replace "fcon \(.\)" "fcon\"\1\"" S4 S.
+  % pp T S :- tex, !, 
+  %   std.any->string T S1, 
+  %   pp-var-clean S1 S2,
+  %   rex.replace "fo." "" S2 S3,
+  %   rex.replace " \\\\" "\\\\" S3 S4,
+  %   rex.replace "fcon \(.\)" "fcon\"\1\"" S4 S.
   pp T S :- pp1 @binder-names T S.
 
   type pp1 list string -> fm -> string -> o.
   pp1 _ X "_" :- var X, !.
-  pp1 XS (fapp L) S :- !, std.string.concat " " {std.map L (pp1 XS)} X, S is "(@ " ^ X ^ ")".
+  pp1 XS (fapp L) S :- !, std.string.concat {appsep} {std.map L (pp1 XS)} X, S is "(" ^ X ^ ")".
   pp1 _ (fcon S) S :- !.
-  pp1 [] (flam F) S :- !, pi x\ std.any->string x N, pp1 [] (F x) S1, S is "λ" ^ N ^ "." ^ S1.
-  pp1 [X|XS] (flam F) S :- !, pi x\ (pp1 _ x X :- !) => pp1 XS (F x) S1, S is "λ" ^ X ^ "." ^ S1.
+  pp1 [] (flam F) S :- !, pi x\ std.any->string x N, pp1 [] (F x) S1, S is {lambda} ^ N ^ "." ^ S1.
+  pp1 [X|XS] (flam F) S :- !, pi x\ (pp1 _ x X :- !) => pp1 XS (F x) S1, S is {lambda} ^ X ^ "." ^ S1.
   pp1 _ (fuva N) S :- !, ppuva N S.
   pp1 _ X S :- name X, !, std.any->string X S.
   pp1 _ _ "fo.pp1 ERROR".
@@ -139,7 +147,7 @@ namespace fo {
       (ppnat N X, S is "C" ^ X).
 
   type ppsubst fsubst -> list string -> o.
-  ppsubst L S :- mem.pp L "C" (x\s\sigma y\pp x y, s is ":= " ^ y)  S.
+  ppsubst L S :- mem.pp L ppuva (x\s\sigma y\pp x y, s is ":= " ^ y)  S.
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PARSER %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

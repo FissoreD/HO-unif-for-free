@@ -56,12 +56,12 @@ namespace mem {
   type ppaddr addr -> string -> o.
   ppaddr (addr A) S :- ppnat A S.
 
-  type pp mem A -> string -> (A -> string -> o) -> list string -> o.
-  pp L Pref PP S :- ppmem.aux z Pref PP L S.
+  type pp mem A -> (addr -> string -> o) -> (A -> string -> o) -> list string -> o.
+  pp L PP_AD PP S :- ppmem.aux z PP_AD PP L S.
 
-  type ppmem.aux nat -> string -> (A -> string -> o) -> mem A -> list string -> o.
+  type ppmem.aux nat -> (addr -> string -> o) -> (A -> string -> o) -> mem A -> list string -> o.
   ppmem.aux _ _ _ [] [].
-  ppmem.aux N Pref PP [some X|XS] [L|LS] :- PP X Cnt, L is Pref ^ {ppnat N} ^ " " ^ Cnt, ppmem.aux (s N) Pref PP XS LS.
-  ppmem.aux N Pref PP [none|XS] [L|LS] :- L is Pref ^ {ppnat N} ^ " := _", ppmem.aux (s N) Pref PP XS LS.
+  ppmem.aux N PP_AD PP [some X|XS] [L|LS] :- PP X Cnt, PP_AD (addr N) AD, L is AD ^ " " ^ Cnt, ppmem.aux (s N) PP_AD PP XS LS.
+  ppmem.aux N PP_AD PP [none|XS] [L|LS] :-  PP_AD (addr N) AD, L is AD ^ " := _", ppmem.aux (s N) PP_AD PP XS LS.
 }
 

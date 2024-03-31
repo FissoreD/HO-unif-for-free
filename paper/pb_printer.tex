@@ -1,0 +1,93 @@
+
+\makeatletter
+\newcommand{\addXdef}[2]{\protected@xdef#1{#1 #2}}
+
+\newcommand{\nth}[3]{
+  \foreach \x [count=\k] in #2 {\ifnum\k=#3 \addXdef{#1}{\x} \fi}
+}
+
+% takes a unif symbol (\Ue or \Uo) and a list of pairs: (lhs, rhs) of unif pb
+\newcommand{\printPb}[2]{
+  \listlength{#2}
+  \def\tableData{}% empty table
+  \foreach \x [count=\i] in #2
+    {
+      \foreach \y [count=\j] in \x {
+        \ifthenelse{\isodd{\j}}
+          {\addXdef{\tableData}{\y & #1 &}}
+          {\addXdef{\tableData}{\y}}
+      } 
+      \ifthenelse{\equal{\i}{2}}{}{
+        \ifthenelse{\equal{\i}{\thellength}}{}{\addXdef{\tableData}{&\quad}}
+      }
+    }
+  \tableData
+}
+
+% Takes a list of triple: coq-var, elpi-var, arity
+\newcommand{\printMap}[1]{
+  \def\tableData{}% empty table
+
+  \newcommand{\printMapAux}[1]{
+    \nth{\tableData}{##1}{1} \addXdef{\tableData}{\mapsto} 
+    \nth{\tableData}{##1}{2} \addXdef{\tableData}{^} \nth{\tableData}{##1}{3}}
+
+  \listlength{#1}
+  \foreach \x [count=\i] in #1
+    {
+      \printMapAux{\x}
+      \ifthenelse{\equal{\thellength}{\i}}{}{
+        \ifthenelse{\isodd{\i}}
+          {\addXdef{\tableData}{&\quad}}
+          {\addXdef{\tableData}{\\}}
+        }
+    }
+  \ensuremath{
+    \begin{array}{ll}
+      \tableData
+    \end{array}
+  }
+}
+
+% Take a list of triple for eta-links: (ctx, lhs, rhs)
+\newcommand{\printLink}[1]{
+  \listlength{#1}
+  \def\tableData{}% empty table
+
+  \newcommand{\printLinkAux}[1]{
+    \nth{\tableData}{##1}{1} \addXdef{\tableData}{\vdash&} 
+    \nth{\tableData}{##1}{2} \addXdef{\tableData}{&=_\eta&} \nth{\tableData}{##1}{3}
+  }
+
+  \foreach \x [count=\i] in #1
+    {
+      \printLinkAux{\x}
+      \ifthenelse{\equal{\thellength}{\i}}{}{
+        \ifthenelse{\isodd{\i}}
+          {\addXdef{\tableData}{&\quad}}
+          {\addXdef{\tableData}{\\}}
+      }
+    }
+  \ensuremath{
+    \begin{array}{rcclrccl}
+      \tableData
+    \end{array}
+  }
+}
+
+\newcommand{\printAlll}[4]{
+  \arraycolsep=2pt
+  $$
+  \begin{array}{rrclrcl}
+    \mathbb{P} = \{ & \printPb{\Uo}{#1} ~\}\\
+    \mathbb{T} = \{ & \printPb{\Uo}{#2} ~\}\\
+    \mapStore = \{ & \multicolumn{6}{l}{
+      \printMap{#3} ~\}
+    }\\
+    \linkStore = \{ & \multicolumn{6}{l}{
+      \printLink{#4} ~\}
+    }
+  \end{array}
+  $$
+}
+\makeatother

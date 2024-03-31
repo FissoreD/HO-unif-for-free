@@ -131,13 +131,14 @@ ptest (test _ (pr Pbs none)) S :-
   S is {std.string.concat "\n" S1} ^ "\n==> _".
 
 type pppbsc (A -> string -> o) -> diagn A -> string -> o.
+pppbsc F (triple _ A B) S :- tex, !, F A AS, F B BS, S is "{" ^ AS ^ "," ^ BS ^ "}".
 pppbsc F (triple ok A B) S :- F A AS, F B BS, S is AS ^ " == " ^ BS.
 pppbsc F (triple (error _) A B) S :- F A AS, F B BS, S is AS ^ " =/= " ^ BS.
 
 type print-compil-result list (diagn fo.fm) -> list (diagn ho.tm) -> comp.links -> comp.mmap -> o.
 print-compil-result C P L M :- tex, !, 
   Sep = "\n  ", Sep1 is "," ^ Sep ^ "  ",
-  std.string.concat Sep1 {std.map C (x\r\ sigma y\ pppbsc fo.pp x y, r is "\\elpiIn{"^ y ^"}")} Cpp,
+  std.string.concat Sep1 {std.map C (pppbsc fo.pp)} Cpp,
   std.string.concat Sep1 {std.map P (pppbsc ho.pp)} Ppp, 
   std.string.concat Sep1 {comp.pplinks L} Lpp, 
   std.string.concat Sep1 {comp.ppmappings M} Mpp,
