@@ -1313,53 +1313,54 @@ Both problems are addressed in the next section.
 % sequenza)
 
 \section{Handling of \maybeeta}\label{sec:eta}
-\marginpar{TODO: fix syntax}
 $\eta$-reduction is an equivalence relation where a term of the form
 $\lambda x.t \appsep x$ can be converted to $t$ any time $x$ does not occur as a
-free variable in $t$. We call $\lambda x. t \appsep x$ the $\eta$-expansion of $t$. 
+free variable in $t$. We call $t$ the $\eta$-contraction of
+$\lambda x. t \appsep x$.
+
+Following the compilation scheme of \cref{sec:compilation} the
+unification problem $\mathbb{P}$ is compiled as follows:
+%
 \printAlll
   {{{\lambda x. X \appsep x, f}}}
   {{{\lambda x. A_x, f}}}
   {{{X,A,1}}}
   {{}}
-Following the implementation of \elpiIn{comp} given in
-\cref{sec:compilation}, the unification problem $\mathbb{P}_1$ given 
-above, is compiled into the unification problem $\mathbb{T}_1$. 
-We can note that all the terms appearing in $\mathbb{P}_1$ are
-unifiable by \Uo, but, despite this, \Ue, is not able to solve $\mathbb{T}_1$:
-its left and right hand sides have both different rigid head:
-$\lambda x.A'_x$ corresponds to the \Ho term \elpiIn{lam x\ app[con "f", x]} 
-and $f$ corresponds to \elpiIn{con"f"}. 
-This failure is motivated by the fact that \elpiIn{flam x\ fapp [fuva A, x]}
-is a term belonging to \maybeeta. 
 
-In order to guarantee \cref{prop:simulation}, we need to modify the way terms are
-compiled. The goal is to recognize
-every \maybeeta subterm $t$ and replace it with fresh \Ho variables $v$. 
-This connection between the variable $v$ and the subterm $t$ is stored in what we
-call \linketa which is an object with the following type
+\noindent
+While the original problem should be solved by \Uo{} (by assigning $f$ to $X$)
+\Ue{} is not able to solve the problem in $\mathbb{T}$:
+its left and right hand sides have different rigid heads:
+$\lambda x.A_x$ corresponds to the \Ho{} term
+\elpiIn{lam x\ uva A [x]} 
+while $f$ corresponds to
+\elpiIn{con"f"}. 
+
+In order to guarantee \cref{prop:simulation} we detect
+lambdas that can disappear by eta contraction (the \maybeeta set
+introduced in \cref{sec:nutshell}); then 
+we modify the way terms are compiled and move terms in \maybeeta
+from  $\mathbb{T}$ to the \linkStore and put fresh unification variables
+in their place.
 
 \elpiIn{type link-eta tm -> tm -> baselink}
 
 \noindent
-where, as sketched in \cref{sec:lang-spec}, the term on the left hand side
-(\lhs) is linked with its left counterpart (\rhs).
-
-\linketa are added in the link store (\linkStore) and activated when special
-conditions are satisfied on \lhs or \rhs. These link activations are managed by
-extending the \elpiIn{progress1} predicate (see \cref{sec:execution}).
-We claim that \linketa progression does not contradict \cref{inv:linklhs} and we
-add the following invariant:
+As per \cref{inv:linklhs} the term on the left hand side
+(\lhs) is a variable, and its right counterpart (\rhs) is the
+term in \maybeeta and it has the following property:
 
 \begin{invariant}[\linketa \rhs]
-  The \rhs of any \linketa in \linkStore has the shape $\lambda x.t_x$
-  where $t_x$ is a \maybeeta term and $x$ is free in $t$.
+  The \rhs of any \linketa in \linkStore has the shape $\lambda x.t$
+  and $t$ is not a lambda. 
+  %where $t_x$ is a \maybeeta term and $x$ is free in $t$.
   \label{inv:link-eta-right}
 \end{invariant}
 
-In the next three subsections we explain how we detect \maybeeta terms, how we
-compile them and how the generated \linketa are activated during the \elpiIn{progress}.
-Moreover, we provide justification for why \cref{inv:linklhs,inv:link-eta-right} remain true.
+\linketa are kept in the link store (\linkStore) during execution
+and activated when some conditions hold on \lhs or \rhs.
+Link activation is implemented by extending the \elpiIn{progress1}
+predicate (defined in \cref{sec:execution}).
 
 \subsection{Detection of \maybeeta}
 
@@ -1467,13 +1468,11 @@ variables being erased by $\eta$-contraction are locally bound inside $t$.
 
 We can now derive the implementation for \maybeeta detection:
 
-\begin{lemma}[\maybeeta detection]\label{lem:maybeeta}
-  A $\beta$-normal term
-  $\lambda x_1 \ldots x_n.t \in \maybeeta$ (as per \cref{def:maybeeta})
-  % where each $x_i$ occurs in $t$ is a
-  %\maybeeta if
-  %either: 
-  if one of the following holds:
+\newcommand{\testmaybeeta}{\emph{maybe-eta}}
+\begin{definition}[\testmaybeeta]\label{def:testmaybeeta}
+  Given a $\beta$-normal term
+  $s = \lambda x_1 \ldots x_n.t$, \testmaybeeta{} $s$ holds if any
+  of the following holds:
   \begin{enumerate}
     \item $t$ is a constant or variable applied to arguments
       $l_1 \ldots l_m$ such that 
@@ -1486,6 +1485,10 @@ We can now derive the implementation for \maybeeta detection:
       for each $x_i$ there exists a $w_j \in W$ such that $w_j$
       \reduceto{} $x_i$.
   \end{enumerate}
+\end{definition}
+\begin{lemma}[\maybeeta detection]\label{lem:maybeeta}
+  If $t$ is a $\beta$-normal term and \testmaybeeta{} $t$ holds,
+  then $t \in \maybeeta$.
 \end{lemma}
 \begin{proof}[Proof sketch]
 Follows from \cref{def:occrigid} and \cref{lem:reduceto}
@@ -1493,8 +1496,8 @@ Follows from \cref{def:occrigid} and \cref{lem:reduceto}
 
 \noindent
 Remark that the converse of \cref{lem:maybeeta} does not hold: 
-there exists a term $t$ satisfying the criteria (1) above
-that is not in $\maybeeta$, i.e.
+there exists a term $t$ satisfying the criteria (1) of
+\cref{def:testmaybeeta} that is not in $\maybeeta$, i.e.
 there exists no substitution $\rho$ such that $\rho t$ is an
 $\eta$-expansion. A simple counter example is
 $\lambda x. f \appsep (A \appsep x) \appsep (A \appsep x)$
@@ -1527,16 +1530,18 @@ since it does not break
 
 \subsection{Compilation}\label{sec:etacomp}
 
-Thanks to the \elpiIn{maybe-eta} predicate, we can detect ``$\eta$-problematic''
-terms and, consequently replace them with fresh \Ho unification variables at
-compilation time. The code below illustrate how this relation is used to for
-term compilation.
+% Thanks to the \elpiIn{maybe-eta} predicate, we can detect ``$\eta$-problematic''
+% terms and, consequently replace them with fresh \Ho unification variables at
+% compilation time. The code below illustrate how this relation is used to for
+% term compilation.
+The following rule is inserted just before rule~\ref{rule:complam} from the code in
+\cref{sec:compilation}.
 
 \input{code/comp_eta}
 
-This rule, to be inserted just before rule~\ref{rule:complam} from the code in
-\cref{sec:compilation}, verifies if the \Fo{} term $t$ received in entry is a
-\maybeeta. Let $\lambda t'$ be the compiled version of $t$, then the fresh
+\noindent
+The rule verifies if the \Fo{} term $\lambda t$ in input is in
+\maybeeta. Let $\lambda t'$ be the compiled version of $\lambda t$, then the fresh
 variable \elpiIn{A} returned as the new \Ho term as in scope all the free names
 in $t'$. The critical part of this compilation is the creation of the \linketa,
 which links the variable \elpiIn{A} with $t$. This link creation enforce
