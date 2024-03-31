@@ -1592,14 +1592,14 @@ no more a \maybeeta, the link is removed from \linkStore.
 %   {{A \Ue f}}
 %   {{\mapping{X}{X'}{1}}}
 %   {{\linketaM{}{A}{\lambda x.X'_{x}}}}
-$$
-\begin{array}{l}
-  \mathbb{P} = \{~ \lambda x.X \appsep x \Uo f ~\}\\
-  \mathbb{T} = \{~ A \Ue f ~\}\\
-  \mathbb{M} = \{~ \mapping{X}{B}{1} ~\}\\
-  \linkStore \;= \{~ \linketaM{}{A}{\lambda x.B_{x ~\}}}
-\end{array}
-$$
+% $$
+% \begin{array}{l}
+%   \mathbb{P} = \{~ \lambda x.X \appsep x \Uo f ~\}\\
+%   \mathbb{T} = \{~ A \Ue f ~\}\\
+%   \mathbb{M} = \{~ \mapping{X}{B}{1} ~\}\\
+%   \linkStore \;= \{~ \linketaM{}{A}{\lambda x.B_{x ~\}}}
+% \end{array}
+% $$
 
 \printAlll
   {{{\lambda x.X \appsep x,f}}}
@@ -1674,50 +1674,18 @@ not reduce to $T x$ where x is not free in $T$.
 In \cref{sec:basic-comp-limitations}, we have given two unification problems to
 be run one after the other. In the following table we present the entry problem,
 its compiled version, with the corresponding list of mapping and links.
-
-% \printAll
-%   {{\elpiIn{flam x\ flam y\ fapp [fuva X, y, x] == flam x\ flam y\ x},
-%     \elpiIn{flam x\ fapp [fcon"f", fapp [fuva X, x], x] == fuva Y}}}
-%   {{E0 == \lambda x.\lambda y.x,
-%     E3 == E5}}
-%   {{\mapping{Y}{E5}{0},
-%     \mapping{X}{E2}{2}}}
-%   {{\linketaM{c0}{E4_{c0}}{\lambda x.E2_{c0 x}},
-%     \linketaM{}{E3}{\lambda x.(f~E4_{x}~x)},
-%     \linketaM{}{E0}{\lambda x.E1_{x}},
-%     \linketaM{c0}{E1_{c0}}{\lambda x.E2_{x c0}}}}
-$$
-{\arraycolsep=2pt \begin{array}{rrclrcl}
-    \mathbb{P} = \{ &
-       \lambda x.\lambda y.X \appsep y \appsep x & \Uo & \lambda x.\lambda y. x & \quad
-       \lambda x. f \appsep (X \appsep x) \appsep x & \Uo&  Y ~\}\\
-    \mathbb{T} = \{ &
-       A &\Ue& \lambda x.\lambda y.x & \quad
-       D &\Ue& F ~\}\\
-    \mathbb{M} = \{ & \multicolumn{6}{l}{
-      \mapping{Y}{F}{0} \quad
-      \mapping{X}{C}{2} ~\}}\\
-    \linkStore \;= \Big\{  &
-      \multicolumn{6}{l}{ \begin{array}{ll}
-          \linketaM{}{A}{\lambda x.B_{x}} & \quad
-          \linketaM{x}{B_{x}}{\lambda y.C_{y x}}\\
-          \linketaM{}{D}{\lambda x.(f~E_{x}~x)} & \quad
-          \linketaM{y}{E_{y}}{\lambda w.C_{y w}}
-      \end{array} ~\Big\}}
-\end{array}}
-$$
-
+% make test ONLY=7001 TEX=tex
 \printAlll
   {{{\lambda x.\lambda y.(X\appsep y\appsep x),\lambda x.\lambda y.x},
     {\lambda x.(f\appsep (X\appsep x)\appsep x),Y}}}
-  {{{E0,\lambda x.\lambda y.x},
-    {E3,E5}}}
-  {{{Y,E5,0},
-    {X,E4,1},
-    {X,E2,2}}}
-  {{{,E3,\lambda x.(f\appsep E4_{x}\appsep x)},
-    {,E0,\lambda x.E1_{x}},
-    {x,E1_{x},\lambda y.E2_{y x}}}}
+  {{{A,\lambda x.\lambda y.x},
+    {D,F}}}
+  {{{Y,F,0},
+    {X,E,1},
+    {X,C,2}}}
+  {{{,D,\lambda x.(f\appsep E_{x}\appsep x)},
+    {,A,\lambda x.B_{x}},
+    {x,B_{x},\lambda y.C_{y x}}}}
 
 \marginpar{aggiustare i nomi delle variabili nel testo}
 We see that the \elpiIn{maybe-eta} as detected $\lambda xy.F \appsep y \appsep
@@ -1773,18 +1741,18 @@ deduplicate $\mapping{F}{G}{1}, \mapping{F}{H}{2}$ by removing the first mapping
 and adding the auxiliary \linketa: \linketaM{x}{G_{x}}{\lambda y.H_{x y}}.
 
 The complete problem to run for resolution is now:
-%
+% make test ONLY=7001 TEX=tex
 \printAlll
   {{{\lambda x.\lambda y.(X\appsep y\appsep x),\lambda x.\lambda y.x},
     {\lambda x.(f\appsep (X\appsep x)\appsep x),Y}}}
-  {{{E0,\lambda x.\lambda y.x},
-    {E3,E5}}}
-  {{{Y,E5,0},
-    {X,E2,2}}}
-  {{{x,E4_{x},\lambda y.E2_{x y}},
-    {,E3,\lambda x.(f\appsep E4_{x}\appsep x)},
-    {,E0,\lambda x.E1_{x}},
-    {x,E1_{x},\lambda y.E2_{y x}}}}
+  {{{A,\lambda x.\lambda y.x},
+    {D,F}}}
+  {{{Y,F,0},
+    {X,C,2}}}
+  {{{x,E_{x},\lambda y.C_{x y}},
+    {,D,\lambda x.(f\appsep E_{x}\appsep x)},
+    {,A,\lambda x.B_{x}},
+    {x,B_{x},\lambda y.C_{y x}}}}
 
 After unification of the two terms, $X$ is assigned to $\lambda x.\lambda y.x$.
 This assignment makes $l_2$ to progress since the \lhs is materialized and by
