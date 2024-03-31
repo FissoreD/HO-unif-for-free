@@ -1493,21 +1493,28 @@ Follows from \cref{def:occrigid} and \cref{lem:reduceto}
 
 \noindent
 Remark that the converse of \cref{lem:maybeeta} does not hold: 
-there exists a term $t \in \maybeeta$
-such that forall substitution $\rho$, $\rho t$ is not an
+there exists a term $t$ satisfying the criteria (1) above
+that is not in $\maybeeta$, i.e.
+there exists no substitution $\rho$ such that $\rho t$ is an
 $\eta$-expansion. A simple counter example is
 $\lambda x. f \appsep (A \appsep x) \appsep (A \appsep x)$
-which is in \maybeeta{} since $x$ does not \occurrigid{} in the first argument
+since $x$ does not \occurrigid{} in the first argument
 of $f$,
-and the second argument of $f$ \reduceto{} $x$. In other words $A \appsep x$
-may either use or discard $x$, but our analysis does not know that \emph{the same
-term} cannot have two contrasting behaviors.\\
-This is however not a problem in the sense that it does not break
-\cref{prop:simulation}. Terms in \maybeeta{} are compiled to
-unification variables and a link (see \cref{sec:etacomp}):
-the link makes progress (see \cref{sec:etaprogress})
-in the same step in which the
-variable is instantiated, and that compensates for this coarse analysis.
+and the second argument of $f$ \reduceto{} $x$.
+In other words $A \appsep x$
+may either use or discard $x$, but our analysis does not
+take into account that \emph{the same
+term} cannot have two contrasting behaviors.
+
+As we will see in the rest of this section this is not a problem
+since it does not break
+\cref{prop:simulation} nor \cref{prop:fidelity}.
+% A term in \maybeeta{} is compiled to a
+% unification variable and a link (see \cref{sec:etacomp}):
+% the link makes progress (see \cref{sec:etaprogress})
+% in the same step in which the
+% variable is instantiated, and that compensates
+% for this coarse analysis.
 
 % The implementation we propose for the \maybeeta relation is given below.
 
