@@ -85,13 +85,15 @@
   $$
   \begin{array}{rrclrcll}
     \mathbb{P} = \{ & \printPb{\Uo}{#1} &\}\\
-    \mathbb{T} = \{ & \printPb{\Uo}{#2} &\}\\
-    \mapStore = \putBigPar{#3}\{ & \multicolumn{7}{l}{
-      \printMap{#3} ~\putBigPar{#3}\}
-    }\\
-    \linkStore = \putBigPar{#4}\{ & \multicolumn{7}{l}{
-      \printLink{#4} ~\putBigPar{#4}\}
-    }
+    \mathbb{T} = \{ & \printPb{\Uo}{#2} &\}
+    \ifthenelse{\equal{#3}{{}}}{}{\\
+      \mapStore = \putBigPar{#3}\{ & \multicolumn{7}{l}{
+        \printMap{#3} ~\putBigPar{#3}\}
+    }}
+    \ifthenelse{\equal{#4}{{}}}{}{\\
+      \linkStore = \putBigPar{#4}\{ & \multicolumn{7}{l}{
+        \printLink{#4} ~\putBigPar{#4}\}
+    }}
   \end{array}
   $$
 }
