@@ -1553,10 +1553,48 @@ This link clearly validates \cref{inv:linklhs}.
   the assumption that the rule triggered.
 \end{proof}
 
+TODO: W preservation \cref{prop:nf}
+
 \subsection{Progress}\label{sec:etaprogress}
 
 \linketa are meant to delay the unification of ``problematic'' terms until
 we know for sure if the head lambda has to be $\eta$-contracted or not.
+
+\newcommand{\progressetaleft}{\emph{progress-$\eta$-left}}
+\begin{definition}[\progressetaleft]\label{def:progressetaleft}
+A link \linketaM{\Gamma}{X}{T} is removed from \linkStore when
+$X$ becomes rigid. There are two cases:
+\begin{enumerate}
+  \item if $X = a$ or $X = f \appsep a_1\ldots a_n$
+    we unify the $\eta$-expansion of the $X$ with $T$, that is we run
+    $\lambda x.X \appsep x\Ue{} T$  (under
+    the context $\Gamma$)
+  \item if $X = \lambda x.t$ we run $X \Ue{} T$.
+\end{enumerate}
+\end{definition}
+
+\newcommand{\progressetaright}{\emph{progress-$\eta$-right}}
+\begin{definition}[\progressetaright]\label{def:progressetaright}
+A link \linketaM{\Gamma}{X}{T} is removed from \linkStore when
+$\testmaybeeta{} T$ does not hold (anymore) and by $\eta$-contracting
+$T$ to $T'$ (if possible, else $T' = T$) and executing $X \Ue{} T'$ (under
+the context $\Gamma$).
+\end{definition}
+
+There is a third case in which a link is removed from \linkStore, namely
+when the \lhs is assigned to another variable that is the \lhs of another
+\linketa.
+
+\newcommand{\progressetadedup}{\emph{progress-$\eta$-deduplicate}}
+\begin{definition}[\progressetadedup]\label{def:progressetadedup}
+  A link \linketaM{\Gamma}{X_{\vec{s}}}{T} is removed from \linkStore when
+  another link \linketaM{\Delta}{X_{\vec{r}}}{T'} is in  \linkStore.
+  By \cref{inv:uvaarity} the length of $\vec{s}$ and $\vec{r}$ is the same
+  hence we can move the term $T'$ from $\Delta$ to $\Gamma$ by renaming its
+  bound variables, i.e. $T'' = T[\vec{r}/\vec{s}]$.
+  We then run $X_S \Ue{} T''$ (under the context $\Gamma$).
+\end{definition}
+  
 
 We extend the \elpiIn{progress1} predicate
 by adding new rules. After passing under all the \elpiIn{abs}
