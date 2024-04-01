@@ -223,14 +223,14 @@ namespace ho {
   ppuva N S :- 
     mem.ppaddr N M,
     ppuva.aux M S.
-  ppuva.aux "0" "A".
-  ppuva.aux "1" "B".
-  ppuva.aux "2" "C".
-  ppuva.aux "3" "D".
-  ppuva.aux "4" "E".
-  ppuva.aux "5" "F".
-  ppuva.aux "6" "G".
-  ppuva.aux "7" "H".
+  ppuva.aux "0" "A" :- !.
+  ppuva.aux "1" "B" :- !.
+  ppuva.aux "2" "C" :- !.
+  ppuva.aux "3" "D" :- !.
+  ppuva.aux "4" "E" :- !.
+  ppuva.aux "5" "F" :- !.
+  ppuva.aux "6" "G" :- !.
+  ppuva.aux "7" "H" :- !.
   ppuva.aux N S :- S is "E" ^ N.
 
   type ppsubst subst -> list string -> o.

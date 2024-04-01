@@ -1565,11 +1565,12 @@ we know for sure if the head lambda has to be $\eta$-contracted or not.
 A link \linketaM{\Gamma}{X}{T} is removed from \linkStore when
 $X$ becomes rigid. There are two cases:
 \begin{enumerate}
-  \item if $X = a$ or $X = f \appsep a_1\ldots a_n$
+  \item if $X = a$ or $X = y$ or $X = f \appsep a_1\ldots a_n$
     we unify the $\eta$-expansion of the $X$ with $T$, that is we run
     $\lambda x.X \appsep x\Ue{} T$  (under
     the context $\Gamma$)
   \item if $X = \lambda x.t$ we run $X \Ue{} T$.
+  \marginpar{do we have the name case in the code?}
 \end{enumerate}
 \end{definition}
 
@@ -1579,6 +1580,7 @@ A link \linketaM{\Gamma}{X}{T} is removed from \linkStore when
 $\testmaybeeta{} T$ does not hold (anymore) and by $\eta$-contracting
 $T$ to $T'$ (if possible, else $T' = T$) and executing $X \Ue{} T'$ (under
 the context $\Gamma$).
+\marginpar{there was a note about T' having a rigid head, TO BE FIXED}
 \end{definition}
 
 There is a third case in which a link is removed from \linkStore, namely
@@ -1591,74 +1593,14 @@ when the \lhs is assigned to another variable that is the \lhs of another
   another link \linketaM{\Delta}{X_{\vec{r}}}{T'} is in  \linkStore.
   By \cref{inv:uvaarity} the length of $\vec{s}$ and $\vec{r}$ is the same
   hence we can move the term $T'$ from $\Delta$ to $\Gamma$ by renaming its
-  bound variables, i.e. $T'' = T[\vec{r}/\vec{s}]$.
-  We then run $X_S \Ue{} T''$ (under the context $\Gamma$).
+  bound variables, i.e. $T'' = T'[\vec{r}/\vec{s}]$.
+  We then run $T \Ue{} T''$ (under the context $\Gamma$).
 \end{definition}
   
-
-We extend the \elpiIn{progress1} predicate
-by adding new rules. After passing under all the \elpiIn{abs}
-constructors of $l$, there are two cases making a \linketa to progress, 1) \lhs
-is instantiated to a rigid term 2) \rhs is no more a \maybeeta or it is a term
-which can be reduced to a term with rigid head. 
-If \lhs is instantiated to a rigid term $t$, by \cref{prop:nf},
-we know that $t$ does not contain any \maybeeta. Let $t'$ the right hand side,
-if $t$ is a constant or a function application, then, $t'$, which by
-construction has \elpiIn{lam} as head, should be an $\eta$-expansion. We are
-therefore allowed to unify $\lambda x. t \appsep x$ (the $\eta$-expanded version
-of $t$) with $t'$. Finally, if $t$ is a term with \elpiIn{lam} as head, then
-it is not an $\eta$-expansion and therefore, $t$ can be unified with $t'$. 
-
-The second way to activate a \linketa is when the \rhs is no more a \maybeeta or
-\rhs can be $\eta$-reduced to a term $t$ with rigid head. In both cases, \lhs is
-unified with $t'$.
-
-Once a \linketa is activated, it can be removed from \linkStore,
-otherwise, the link is kept for a further iteration of \elpiIn{progress}. Note
-that this link progression enforce
-\cref{prop:nf,inv:linklhs,inv:link-eta-right}: we never commit a term in
-the \Ho substitution, since we make unification only when we know that the 
+TODO: prove \cref{prop:nf}: we never commit a \maybeeta{} term in
+$\sigma$ since we run \Ue{} only when we know that the 
 terms are no more \maybeeta, and when \lhs is no more a variable or \rhs is 
 no more a \maybeeta, the link is removed from \linkStore.
-
-
-The example above shows the new compilation of the unification problem given at
-the beginning of \cref{sec:eta}. This time, we see that the the left hand side
-$t$ of $\mathbb{P}_1$ has been detected as a \maybeeta and replaced with the
-fresh variable $A$. Moreover, \linkStore contains the link $l_1$ connecting $A$
-with $\lambda x.X'_{x}$, the compiled version of $t$. After the resolution of
-$\mathbb{T}_1$, $A$ is assigned to $f$. Therefore \lhs of $l_1$ is a term with
-\elpiIn{con} as constructor. This means that \rhs of $l_1$ is a $\eta$-expansion
-and therefore we can unify $\lambda x.f x$ with \rhs, which instantiate $X'_x$
-to $f \appsep x$. $l_1$ is removed from \linkStore which is now empty,
-\elpiIn{progress} terminate, and the decompilation, will instantiate the $X$
-variable to $f$ (which is the $\eta$-contracted version of $\lambda x.f \appsep
-x$). 
-
-A second example, showing the activation of a link when the \rhs is no more a
-\maybeeta, is given in \cref{sec:invariant1}, since we need to work with
-variables used with different arities. This example represent the run of the
-unification problems proposed at \cref{sec:basic-comp-limitations}
-
-Another, way to progress \linketa, that we call \linketa deduplication, is when
-\linkStore contains two \linketa $l_1$ and $l_2$ with a \lhs having the same
-variable address. Let the \lhs of $l_1$ be \elpiIn{uva U R} and the \lhs of
-$l_2$ be \elpiIn{uva V S}, then, by \cref{inv:uvaarity}, \elpiIn{R}
-and \elpiIn{S} have same scope. Let $t$ be the term obtained by replacing all
-each name \elpiIn{S}$_i$ in the \rhs of $l_1$ with \elpiIn{R}$_i$, $t$ is
-unified with the \rhs of $l_2$ and one of the two links between $l_1$ and $l_2$
-is removed from \linkStore. 
-
-A very basic example of \linketa deduplication, is given below:
-
-\printAlll
-  {{{\lambda x. X \appsep x, \lambda x. X \appsep x}}}
-  {{{E0, E2}}}
-  {{{X,A1,1}}}
-  {{{,E2,\lambda x.A1_{x}},
-    {,E0,\lambda x.A1_{x}}}}
-
-TODO: explain
 
 \begin{lemma}
   Forall list of links \elpiIn{L} and \elpiIn{S}, \elpiIn{progress L _ S _}
@@ -1679,6 +1621,47 @@ TODO: explain
   therefore, \elpiIn{if (L = L1, S1 = S2)} succeeds and \elpiIn{progress}
   terminates.
 \end{proof}
+
+\paragraph{example 1}
+
+The example above shows the new compilation of the unification problem given at
+the beginning of \cref{sec:eta}. This time, we see that the the left hand side
+$t$ of $\mathbb{P}_1$ has been detected as a \maybeeta and replaced with the
+fresh variable $A$. Moreover, \linkStore contains the link $l_1$ connecting $A$
+with $\lambda x.X'_{x}$, the compiled version of $t$. After the resolution of
+$\mathbb{T}_1$, $A$ is assigned to $f$. Therefore \lhs of $l_1$ is a term with
+\elpiIn{con} as constructor. This means that \rhs of $l_1$ is a $\eta$-expansion
+and therefore we can unify $\lambda x.f x$ with \rhs, which instantiate $X'_x$
+to $f \appsep x$. $l_1$ is removed from \linkStore which is now empty,
+\elpiIn{progress} terminate, and the decompilation, will instantiate the $X$
+variable to $f$ (which is the $\eta$-contracted version of $\lambda x.f \appsep
+x$). 
+
+\paragraph{example 2}
+
+A second example, showing the activation of a link when the \rhs is no more a
+\maybeeta, is given in \cref{sec:invariant1}, since we need to work with
+variables used with different arities. This example represent the run of the
+unification problems proposed at \cref{sec:basic-comp-limitations}
+
+\paragraph{example 3}
+
+A very basic example of \linketa deduplication, is given below:
+% make test ONLY=7002 TEX=tex
+\printAlll
+  {{{\lambda x.(X\appsep x),\lambda x.(Y\appsep x)}}}
+  {{{A,C}}}
+  {{{X,B,1},
+    {Y,D,1}}}
+  {{{,A,\lambda x.B_{x}},
+    {,C,\lambda x.D_{x}}}}
+
+\noindent
+The result of $A \Ue{} C$ is that the two \linketa share the same \lhs.
+By unifying the two \rhs we get
+$\sigma = \{ A~ \mapsto C, B \mapsto D ~\}$.
+In turn, given the map $\mathbb{M}$, this second assignment is decompiled to
+$\rho = \{~ X \mapsto Y ~\}$ as expected.
 
 TODO: we can have $\lambda x. F_x$ in the substitution if we know that $F$ does
 not reduce to $T x$ where x is not free in $T$.

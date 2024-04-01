@@ -548,11 +548,11 @@ namespace comp {
   type commit-links-aux link -> subst -> subst -> o.
   commit-links-aux (@val-link-eta T1 T2) H1 H2 :- 
     ho.deref H1 T1 T1', ho.deref H1 T2 T2',
-    print "Start decompl-η of" {ho.pp T1'} "and" {ho.pp T2'} "in" {ho.ppsubst H1}, 
+    print "Start decompl-η of" {ho.pp T1'} "and" {ho.pp T2'} "in" {ho.ppsubst H1}, !,
     (T1' ==l T2') H1 H2.
   commit-links-aux (@val-link-beta T1 T2) H1 H2 :- 
     ho.deref H1 T1 T1', ho.deref H1 T2 T2',
-    print "Start decompl-β of" {ho.pp T1'} "and" {ho.pp T2'}, 
+    print "Start decompl-β of" {ho.pp T1'} "and" {ho.pp T2'}, !,
     (T1' ==l T2') H1 H2.
   commit-links-aux (ho.abs B) H H1 :-
     pi x\ commit-links-aux (B x) H H1.

@@ -27,7 +27,7 @@ hstep T1 T2 L1 L2 S1 S3 :-
   (T1 ==l T2) S1 S2,
   print "## After unif subst is" {ho.ppsubst S2}, % HIDE
   print "## Links are" {comp.pplinks L1}, % HIDE
-  printC "solve links?", % HIDE
+  printC "solve links?", !, % HIDE
   progress L1 L2 S2 S3.
 %ENDSNIP
 
@@ -640,8 +640,8 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- std
 ] ["λx.λy.y", "f (λx.x)"].
 
 @sokl 7002 [
-  pr ok "λx.(X x) = λx.(X x)"
-] [].
+  pr ok "λx.(X x) = λx.(Y x)"
+] ["Y"].
 
 % @sokl 71 [
 %   pr ok "λz.λx.λy.(X y x z) = Z",
