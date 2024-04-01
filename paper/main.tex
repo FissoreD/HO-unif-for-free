@@ -1328,41 +1328,45 @@ unification problem $\mathbb{P}$ is compiled as follows:
   {{}}
 
 \noindent
-While the original problem should be solved by \Uo{} (by assigning $f$ to $X$)
-\Ue{} is not able to solve the problem in $\mathbb{T}$:
-its left and right hand sides have different rigid heads:
-$\lambda x.A_x$ corresponds to the \Ho{} term
-\elpiIn{lam x\ uva A [x]} 
-while $f$ corresponds to
-\elpiIn{con"f"}. 
+While $\lambda x.X \appsep x \Uo{} f$ does admit the solution
+$\rho = \{~ X \mapsto f ~\}$, the corresponding problem in
+$\mathbb{T}$ does not:
+\elpiIn{lam x\ uva A [x]} and
+\elpiIn{con"f"} start with different, rigid, term constructors hence
+\Ue{} fails.
 
 In order to guarantee \cref{prop:simulation} we detect
-lambdas that can disappear by eta contraction (the \maybeeta set
-introduced in \cref{sec:nutshell}); then 
-we modify the way terms are compiled and move terms in \maybeeta
-from  $\mathbb{T}$ to the \linkStore and put fresh unification variables
-in their place.
-
-\elpiIn{type link-eta tm -> tm -> baselink}
+lambdas that can disappear by eta contraction (\cref{sec:etadetection}) and
+we modify the term compiler put fresh unification variables
+in their place: the problematic term is moved from 
+from  $\mathbb{T}$ to \linkStore (\cref{sec:etacomp}). The compilation
+of the problem $\mathbb{P}$ above is refined to: 
+%
+\printAlll
+  {{{\lambda x.X \appsep x,f}}}
+  {{{A,f}}}
+  {{{X,B,1}}}
+  {{{,A,\lambda x.B_x}}}
 
 \noindent
-As per \cref{inv:linklhs} the term on the left hand side
-(\lhs) is a variable, and its right counterpart (\rhs) is the
-term in \maybeeta and it has the following property:
+As per \cref{inv:linklhs} the term on the left is a variable, and its
+right counterpart is the
+term in \maybeeta, and that term has the following property:
 
 \begin{invariant}[\linketa \rhs]
-  The \rhs of any \linketa in \linkStore has the shape $\lambda x.t$
+  The \rhs of any \linketa %in \linkStore 
+  has the shape $\lambda x.t$
   and $t$ is not a lambda. 
   %where $t_x$ is a \maybeeta term and $x$ is free in $t$.
   \label{inv:link-eta-right}
 \end{invariant}
 
-\linketa are kept in the link store (\linkStore) during execution
+\linketa are kept in the link store \linkStore during execution
 and activated when some conditions hold on \lhs or \rhs.
 Link activation is implemented by extending the \elpiIn{progress1}
 predicate (defined in \cref{sec:execution}).
 
-\subsection{Detection of \maybeeta}
+\subsection{Detection of \maybeeta}\label{sec:etadetection}
 
 When compiling a term $t$ we need to determine if any
 subterm $s \in \subterm{t}$ that is of the form $\lambda x. r$,
@@ -1370,20 +1374,6 @@ where $x$ occurs in $r$, can be a $\eta$-expansion, i.e. if
 there exists a substitution $\rho$ such that $\rho (\lambda x.r) \Eo s$.
 The detection of lambda abstractions that can ``disappear''
 is not as trivial as it may seems, here a few examples:
-% \\
-% \noindent
-% \begin{minipage}{.5\linewidth}%
-%   \begin{gather}
-%     \lambda x. f \appsep A_x\\
-%     \lambda x. f \appsep x \appsep A_x
-%   \end{gather}
-% \end{minipage}% This must go next to `\end{minipage}`
-% \begin{minipage}{.5\linewidth}
-%   \begin{gather}
-%     \lambda x. \lambda y. f \appsep A_x \appsep B_{y x} \label{eq:lamlam}\\
-%     \lambda x. f \appsep A_x \appsep x \label{eq:lamdisc}
-%   \end{gather}
-% \end{minipage}
 %
 \begin{center}
   \begin{tabular}{lll}
@@ -1403,12 +1393,12 @@ is not as trivial as it may seems, here a few examples:
 \noindent
 The first two examples are easy, and show how a unification variable can expose
 or erase a variable and turn the resulting term in an $\eta$-expansion or not.\\
-The third example shows when a variable occurs outside the scope of a unification
-variable cannot be erased and hence prevent a term from being an $\eta$-expansion.\\
+The third example shows that when a variable occurs outside the scope of a unification
+variable it cannot be erased and can hence prevent a term from being an $\eta$-expansion.\\
 The last example shows the recursive nature of the check we need to implement.
 The term starts with a spine of two lambdas hence the whole term
 is in \maybeeta iff the inner term $\lambda y.f\appsep (A \appsep x) \appsep (B \appsep y \appsep x)$
-is in \maybeeta itself, that means it could $\eta$-contract to
+is in \maybeeta itself. If it is, it could $\eta$-contract to
 $f \appsep (A \appsep x)$ making $\lambda x.f \appsep (A \appsep x)$ a potential
 $\eta$-expansion.\\
 
@@ -1540,35 +1530,35 @@ The following rule is inserted just before rule~\ref{rule:complam} from the code
 \input{code/comp_eta}
 
 \noindent
-The rule verifies if the \Fo{} term $\lambda t$ in input is in
-\maybeeta. Let $\lambda t'$ be the compiled version of $\lambda t$, then the fresh
-variable \elpiIn{A} returned as the new \Ho term as in scope all the free names
-in $t'$. The critical part of this compilation is the creation of the \linketa,
-which links the variable \elpiIn{A} with $t$. This link creation enforce
-\cref{inv:linklhs} and \cref{inv:link-eta-right}, since \lhs is a trivially a
-variable and the \rhs is a term $t$ starting with the \elpiIn{lam} constructor where
-$x$ is free in $t$ otherwise $t$ would not have been detected as a \maybeeta. 
+The rule triggers when the input term \elpiIn{flam F} is in
+\maybeeta. It compiles it to \elpiIn{lam F1} but puts the fresh
+variable \elpiIn{A} in its place. The variable sees all the names free in
+\elpiIn{lam F1}. The critical part of this rule is the creation of the \linketa,
+which relates the variable \elpiIn{A} with \elpiIn{lam F1}.
+This link clearly validates \cref{inv:linklhs}.
 
 \begin{corollary}
-  The \rhs of any \linketa has exactly one lambda abstraction.
+  The \rhs of any \linketa has exactly one lambda abstraction, hence
+  the rule above respects \cref{inv:link-eta-right}.
 \end{corollary}
 
 \begin{proof}[Proof sketch]
-  By contradiction, suppose that a \linketa $l$ has $t$ as \rhs and $t = \lambda
-  x.\lambda y.t'_{xy}$. Two cases are to be analyses: 1) $\lambda y.t'_{xy}$ is
-  a $\maybeeta$, then, by construction, \rhs would have been replaced with a the
-  $\eta$-expansion of fresh variable $v$, which is a contradiction, since
-  $\lambda y.t'_{xy} \neq \lambda x.v_{x}$; 2) $\lambda y.t'_{xy}$ is not an a
-  \maybeeta, then neither $t$ is, which is a contradiction since \rhs is always
-  a \maybeeta by construction.
+  By contradiction, suppose that the rule above triggered and that
+  the \rhs of the link is $\lambda x.\lambda y.t_{xy}$.
+  If $\testmaybeeta{}~\lambda y.t_{xy}$ holds the recursive call to
+  \elpiIn{comp} (made by \elpiIn{comp-lam}) must have put a fresh variable
+  in its place, so this case is impossible.
+  Otherwise, if $\testmaybeeta{}~\lambda y.t_{xy}$ does not hold, also
+  $\testmaybeeta{}~\lambda x.\lambda y.t_{xy}$ does not hold, contradicting
+  the assumption that the rule triggered.
 \end{proof}
 
 \subsection{Progress}\label{sec:etaprogress}
 
-\linketa are meant to delay the unification of ``problematic'' terms. In the
-following, we call \linkStore the list of suspended links.
+\linketa are meant to delay the unification of ``problematic'' terms until
+we know for sure if the head lambda has to be $\eta$-contracted or not.
 
-In order to activate a \linketa $l$, we need to extend the \elpiIn{progress1} predicate
+We extend the \elpiIn{progress1} predicate
 by adding new rules. After passing under all the \elpiIn{abs}
 constructors of $l$, there are two cases making a \linketa to progress, 1) \lhs
 is instantiated to a rigid term 2) \rhs is no more a \maybeeta or it is a term
@@ -1592,25 +1582,7 @@ that this link progression enforce
 the \Ho substitution, since we make unification only when we know that the 
 terms are no more \maybeeta, and when \lhs is no more a variable or \rhs is 
 no more a \maybeeta, the link is removed from \linkStore.
-% \printAll
-%   {{\elpiIn{flam x\ fapp [fuva X, x] ~\Uo~fcon"f"}}}
-%   {{A \Ue f}}
-%   {{\mapping{X}{X'}{1}}}
-%   {{\linketaM{}{A}{\lambda x.X'_{x}}}}
-% $$
-% \begin{array}{l}
-%   \mathbb{P} = \{~ \lambda x.X \appsep x \Uo f ~\}\\
-%   \mathbb{T} = \{~ A \Ue f ~\}\\
-%   \mathbb{M} = \{~ \mapping{X}{B}{1} ~\}\\
-%   \linkStore \;= \{~ \linketaM{}{A}{\lambda x.B_{x ~\}}}
-% \end{array}
-% $$
 
-\printAlll
-  {{{\lambda x.X \appsep x,f}}}
-  {{{A,f}}}
-  {{{X,B,1}}}
-  {{{,A,\lambda x.B_x}}}
 
 The example above shows the new compilation of the unification problem given at
 the beginning of \cref{sec:eta}. This time, we see that the the left hand side
