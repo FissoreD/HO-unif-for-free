@@ -1011,6 +1011,7 @@ $\eta\beta$-conversion is described in Section \ref{sec:eta} and the support
 for terms outside \llambda in Section \ref{sec:beta}.
 
 \subsection{Compilation}
+\label{sec:compilation}
 \marginpar{manca beta normal in entrata}
 
 The main task of the compiler is to recognize \Fo{} variables standing
@@ -1848,32 +1849,54 @@ following property:
 
 \subsection{Compilation}
 
-Detection of \maybebeta is quite simple to implement in the compiler, it is 
-sufficient to 
-
-Dire che maybebeta is simple to detect e che maybe eta funziona bene and su 
-termini che non sono il llambda
-
-\begin{corollary}
-  Right hand side is $X_{scope} t_1 \dots t_n$ and $t_1$ is in $scope$ or
-  $t_1$ is not a name
-\end{corollary}
+Detection of \maybebeta is quite simple to implement in the compiler, since it
+is sufficient to capture applications with flexible head and argument that
+are not in \llambda.
 
 \input{code/comp_beta}
 
-A term is \maybebeta if it has the shape \elpiIn{fapp[fuva A|Ag]} and
-\elpiIn{distinct Ag} does not hold. In that case, \elpiIn{Ag} is split in two
-sublist \elpiIn{Pf} and \elpiIn{Extra} such that former is the longest prefix of
-\elpiIn{Ag} such that \elpiIn{distinct Pf} holds. \elpiIn{Extra} is the list
-such that \elpiIn{append Pf Extra Ag}. Next important step is to compile
-recursively the terms of these lists and allocate a memory adress \elpiIn{B}
-from the substitution in order to map the \Fo variable \elpiIn{fuva A} to
-the \Ho variable \elpiIn{uva B}. The \linkbeta to return in the end is given
-by the term \elpiIn{Beta = app[uva B Scope1 | Extra1]} constituting the \rhs,
-and a fresh variable \elpiIn{C} having in scope all the free variables occurring
-in \elpiIn{Beta} (this is \lhs). We point out that the \rhs is intentionally
-built as an \elpiIn{uva} where \elpiIn{Extra1} are not in scope, since by
-invariant, we want all the variables appearing in \Ho to be in \llambda.
+The list \elpiIn{Ag} is split into the list \elpiIn{Pf} and \elpiIn{Extra} such
+that \elpiIn{append Pf Extra Ag} and \elpiIn{Pf} is the largest prefix of
+\elpiIn{Ag} such that \elpiIn{Pf} is in \llambda. The \rhs of the \linkbeta is
+the application of a fresh variable \elpiIn{C} having in scope all the compiled
+list of terms obtained from \elpiIn{Pf} and \elpiIn{Extra1} as arguments. The
+variable \elpiIn{B} returned has compiled terms is a fresh variable having in
+scope all the free variables used in \rhs.
+
+\begin{invariant}
+  The \rhs of a \linkbeta has the shape \elpiIn{app[uva N S|L]}.
+\end{invariant}
+
+\begin{corollary}
+  Let \elpiIn{app[uva N S|L]} be the \rhs of a \linkbeta, then \elpiIn{L} is not
+  empty.
+\end{corollary}
+
+\begin{proof}[Proof sketch]
+  By contradiction, if \elpiIn{L} is a empty list, then the original \Fo{}
+  term has the shape \elpiIn{fapp[fuva M | Ag]} where \elpiIn{Ag} is a list of 
+  disting names. This case is however captured by rule~\ref{rule:complam} (from
+  \cref{sec:compilation}) and no \linkbeta is produced: a contradiction.
+\end{proof}
+
+\begin{corollary}
+  Let \elpiIn{app[uva N S|L]} be the \rhs of a \linkbeta, then the 
+  first argument $t$ in \elpiIn{L} either appears in \elpiIn{S} or it is 
+  not a name.
+\end{corollary}
+
+\begin{proof}[Proof sketch]
+  By construction, the lists \elpiIn{S} and \elpiIn{L} are built by splitting
+  the list \elpiIn{Ag} from the original term \elpiIn{fapp [fuva A|Ag]}.
+  \elpiIn{S} is the longest prefix of the compiled terms in \elpiIn{Ag} which is
+  in \llambda. Therefore, by definition of \llambda, either the first element of
+  \elpiIn{L} is a name appearing in \elpiIn{S} or it a term with a constructor
+  of \elpiIn{tm} as functor.  
+\end{proof}
+
+TODO: Dire che maybe eta fa il detect anche su 
+termini che non sono il llambda, oppure dirlo in section of maybeeta + dare un
+esempio?
 
 \subsection{Progress}
 
