@@ -37,13 +37,13 @@
     {
       \printMapAux{\x}
       \ifthenelse{\equal{\thellength}{\i}}{}{
-        \ifthenelse{\isodd{\i}}
-          {\addXdef{\tableData}{&\quad}}
-          {\addXdef{\tableData}{\\}}
+        \ifthenelse{\equal{\intcalcMod{\i}{3}}{0}}
+        {\addXdef{\tableData}{\\}}
+        {\addXdef{\tableData}{&\quad}}
         }
     }
   \ensuremath{
-    \begin{array}{ll}
+    \begin{array}{ccc}
       \tableData
     \end{array}
   }
@@ -75,24 +75,30 @@
   }
 }
 
-\newcommand{\putBigPar}[1]{
+\newcommand{\putBigPar}[2]{
   \listlength{#1}
-  \ifthenelse{\equal{\thellength}{1}}{}{\Big}
+  \ifthenelse{\thellength>#2}{\Big}{}
+}
+
+\newcommand{\hideEmpty}[2]{
+  \ifthenelse{\equal{#1}{{}}}{}{#2}
 }
 
 \newcommand{\printAlll}[4]{
   \arraycolsep=2pt
   $$
   \begin{array}{rrclrcll}
-    \mathbb{P} = \{ & \printPb{\Uo}{#1} &\}\\
-    \mathbb{T} = \{ & \printPb{\Ue}{#2} &\}
-    \ifthenelse{\equal{#3}{{}}}{}{\\
-      \mapStore = \putBigPar{#3}\{ & \multicolumn{7}{l}{
-        \printMap{#3} ~\putBigPar{#3}\}
+    \foUnifPb = \{ & \printPb{\Uo}{#1} &\}
+    \hideEmpty{#2}{\\
+      \hoUnifPb = \{ & \printPb{\Ue}{#2} &\}
+    }
+    \hideEmpty{#3}{\\
+      \mapStore = \putBigPar{#3}{3}\{ & \multicolumn{7}{l}{
+        \printMap{#3} ~\putBigPar{#3}{3}\}
     }}
-    \ifthenelse{\equal{#4}{{}}}{}{\\
-      \linkStore = \putBigPar{#4}\{ & \multicolumn{7}{l}{
-        \printLink{#4} ~\putBigPar{#4}\}
+    \hideEmpty{#4}{\\
+      \linkStore = \putBigPar{#4}{2}\{ & \multicolumn{7}{l}{
+        \printLink{#4} ~\putBigPar{#4}{2}\}
     }}
   \end{array}
   $$

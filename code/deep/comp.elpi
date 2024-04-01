@@ -192,6 +192,7 @@ namespace comp {
     fold6 compile-terms-diagnostic T H [] M_ [] L_ [] S_,
     print-compil-result T H L_ M_, 
     print "Deduplicate mappings on" {ppmappings M_} {pplinks L_}, % HIDE
+    % print-compil-result T H L_ M_, 
     deduplicate-map M_ M S_ S L_ L.
 
   % Ad1 is the variable with smaller arity, Ad2 is eta expanded N times

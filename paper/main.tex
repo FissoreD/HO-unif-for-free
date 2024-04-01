@@ -9,6 +9,7 @@
 \usepackage{myTools}
 \usepackage{macros}
 \usepackage{enumitem}
+\usepackage{intcalc}
 
 % TODO: set this fields
 %\setcopyright{cc}
@@ -74,7 +75,11 @@
 
 \newcommand{\lhs}{\ensuremath{\mathrm{lhs}}\xspace}
 \newcommand{\rhs}{\ensuremath{\mathrm{rhs}}\xspace}
-\def\phantx{\phantom{x}}
+
+\newcommand{\linkStore}{\ensuremath{\mathbb{L}}\xspace}
+\newcommand{\mapStore}{\ensuremath{\mathbb{M}}\xspace}
+\newcommand{\foUnifPb}{\ensuremath{\mathbb{P}}\xspace}
+\newcommand{\hoUnifPb}{\ensuremath{\mathbb{T}}\xspace}
 
 \include{pb_printer}
 
@@ -434,8 +439,8 @@ compiled term. These links are checked for or progress XXX improve....
 
 We represent a logic program \emph{run} in \Fo{} as
 a list \emph{steps} $p$ of length $\mathcal{N}$. Each step is a
-unification problem between terms $\mathbb{S}_{p_l}$ and
-$\mathbb{S}_{p_r}$ taken from the set of all terms $\mathbb{S}$.
+unification problem between terms $\foUnifPb_{p_l}$ and
+$\foUnifPb_{p_r}$ taken from the set of all terms \foUnifPb.
 The composition of these steps starting from the
 empty substitution $\rho_0$ produces the final
 substitution $\rho_\mathcal{N}$.
@@ -462,17 +467,15 @@ The initial here $\rho_0$ is the empty substitution
 \newcommand{\runHD}[3]{\ensuremath{%
 \bigwedge_{p = 1}^{#2} \stepH{#1}{p}{\sigma_{p-1}}{#3_{p-1}}{\sigma_{p}}{#3_p}}}
 \newcommand{\deff}{\ensuremath{\stackrel{{\scriptscriptstyle def}}{=\!=\!\!\!=}}}
-\newcommand{\linkStore}{\ensuremath{\mathbb{L}}\xspace}
-\newcommand{\mapStore}{\ensuremath{\mathbb{M}}\xspace}
 %
 $$
 \begin{array}{l}
-\stepF{\mathbb{S}}{p}{\rho}{\rho''}
+\stepF{\foUnifPb}{p}{\rho}{\rho''}
 \deff
-\stepFD{\mathbb{S}}{p}{\rho}{\rho'}{\rho''}\vspace{2pt}\\
-\runF{\mathbb{S}}{\mathcal{N}}{\rho}
+\stepFD{\foUnifPb}{p}{\rho}{\rho'}{\rho''}\vspace{2pt}\\
+\runF{\foUnifPb}{\mathcal{N}}{\rho}
 \deff
-\runFD{\mathbb{S}}{\mathcal{N}}
+\runFD{\foUnifPb}{\mathcal{N}}
 \end{array}
 $$
 
@@ -480,11 +483,11 @@ We simulate each run in \Fo{} with a run in \Ho as follows.
 Note that $\sigma_0$ is the empty substitution.
 $$
 \begin{array}{l}
-\stepH{\mathbb{T}}{p}{\sigma}{\linkStore}{\sigma''}{\linkStore'} \deff\vspace{2pt}\\
-  \qquad\stepHD{\mathbb{T}}{p}{\sigma}{\sigma'}{\sigma''}{\linkStore}\vspace{2pt}\\
-\runH{\mathbb{S}}{\mathcal{N}}{\rho} \deff \vspace{2pt}\\
-  \qquad \mathbb{T} \times \mapStore \times \linkStore_0 = \{ (t_j,m_j,l_j) | s_j \in \mathbb{S}, \C{s_j}{t_j}{m_j}{l_j} \}\vspace{2pt}\\
-  \qquad \runHD{\mathbb{T}}{\mathcal{N}}{\linkStore}\vspace{2pt}\\
+\stepH{\hoUnifPb}{p}{\sigma}{\linkStore}{\sigma''}{\linkStore'} \deff\vspace{2pt}\\
+  \qquad\stepHD{\hoUnifPb}{p}{\sigma}{\sigma'}{\sigma''}{\linkStore}\vspace{2pt}\\
+\runH{\foUnifPb}{\mathcal{N}}{\rho} \deff \vspace{2pt}\\
+  \qquad \hoUnifPb \times \mapStore \times \linkStore_0 = \{ (t_j,m_j,l_j) | s_j \in \foUnifPb, \C{s_j}{t_j}{m_j}{l_j} \}\vspace{2pt}\\
+  \qquad \runHD{\hoUnifPb}{\mathcal{N}}{\linkStore}\vspace{2pt}\\
   \qquad \D{\sigma_{\mathcal{N}}}{\mapStore}{\linkStore_{\mathcal{N}}}{\rho_{\mathcal{N}}}
 \end{array}
 $$
@@ -494,11 +497,11 @@ Here \hstep{} is made of two sub-steps: a call to \Ue (on the compiled
 terms) and a call to \progress{} on the set of links. We claim the following:
 
 \begin{proposition}[Simulation]\label{prop:simulation}
-$\forall \mathbb{S}, \forall \mathcal{N},$
+$\forall \foUnifPb, \forall \mathcal{N},$
 $$
-  \runF{\mathbb{S}}{\mathcal{N}}{\rho}
+  \runF{\foUnifPb}{\mathcal{N}}{\rho}
   \Leftrightarrow
-  \runH{\mathbb{S}}{\mathcal{N}}{\rho}
+  \runH{\foUnifPb}{\mathcal{N}}{\rho}
 $$
 \end{proposition}
 
@@ -506,12 +509,12 @@ $$
 That is, the two executions give the same result. Moreover:
 
 \begin{proposition}[Simulation fidelity]\label{prop:fidelity}
-In the context of~ \hrun, if $~\mathbb{T} \subseteq \llambda$ we have that
+In the context of~ \hrun, if $~\hoUnifPb \subseteq \llambda$ we have that
 $\forall p \in 1 \ldots \mathcal{N},$
 $$
-\stepF{\mathbb{S}}{p}{\rho_{p-1}}{\rho_p}
+\stepF{\foUnifPb}{p}{\rho_{p-1}}{\rho_p}
 \Leftrightarrow
-\stepH{\mathbb{T}}{p}{\sigma_{p-1}}{\linkStore}{\sigma_p}{\_}
+\stepH{\hoUnifPb}{p}{\sigma_{p-1}}{\linkStore}{\sigma_p}{\_}
 $$
 \end{proposition}
 \noindent
@@ -529,7 +532,7 @@ a non MGU too early
 
 
 We can define $s_1 \Uo{} s_2$ by specializing the code of \hrun{} to
-$\mathbb{S} = \{ s_1, s_2 \}$ as follows:
+$\foUnifPb = \{ s_1, s_2 \}$ as follows:
 %
 $$
 \begin{array}{l}
@@ -636,15 +639,15 @@ $$
 \noindent
 
 \begin{proposition}[\wellb{}-preservation]\label{prop:nf}
-$\forall \mathbb{T}, \forall \linkStore, \forall p, \forall \sigma, \forall \sigma'$
+$\forall \hoUnifPb, \forall \linkStore, \forall p, \forall \sigma, \forall \sigma'$
 $$
 \begin{array}{l}
-\wellb(\sigma\mathbb{T}) \land
-  \sigma\mathbb{T}_{p_l} \Ue \sigma\mathbb{T}_{p_r} \mapsto {\sigma'}
-  \Rightarrow \wellb(\sigma' \mathbb{T})\\
-\wellb(\sigma\mathbb{T}) \land
+\wellb(\sigma\hoUnifPb) \land
+  \sigma\hoUnifPb_{p_l} \Ue \sigma\hoUnifPb_{p_r} \mapsto {\sigma'}
+  \Rightarrow \wellb(\sigma' \hoUnifPb)\\
+\wellb(\sigma\hoUnifPb) \land
   \progress(\linkStore,\sigma) \mapsto (\_,\sigma')
-  \Rightarrow \wellb(\sigma' \mathbb{T})
+  \Rightarrow \wellb(\sigma' \hoUnifPb)
 \end{array}
 $$
 \end{proposition}
@@ -1187,18 +1190,17 @@ context where input terms are $\beta\eta$-normal and we disregard $\eta$-equival
 The basic compilation scheme is not about to
 deal wit the following problem:
 \printAlll
-  {{{\lambda x y.X \appsep y \appsep x, \lambda x y.x},{\lambda x. f \appsep (X \appsep x) \appsep x,G}}}
+  {{{\lambda x y.X \appsep y \appsep x, \lambda x y.x},{\lambda x. f \appsep (X \appsep x) \appsep x,Y}}}
   {{}}
   {{}}
   {{}}
-\marginpar{TODO: remove empty T}
 % \begin{gather}
 % \lambda x y.F \appsep y \appsep x = \lambda x y.x \label{eq:unif-eta1}\\
 % \lambda x. f \appsep (F \appsep x) \appsep x = G \label{eq:unif-eta2}
 % % \lambda x. f \appsep (F \appsep x) \appsep x = f \appsep (\lambda y.y) \label{eq:unif-eta2}
 % \end{gather}
 
-noindent Note that here $X$ is used with different arities, moreover
+\noindent Note that here $X$ is used with different arities, moreover
 in the second problem the left hand side happens to be an
 eta expansion (of $f (\lambda y.y)$) only after we discover (at run time)
 that $X = \lambda x\lambda y.y$ (i.e. that $X$ discards the $x$ argument).
@@ -1328,7 +1330,7 @@ free variable in $t$. We call $t$ the $\eta$-contraction of
 $\lambda x. t \appsep x$.
 
 Following the compilation scheme of \cref{sec:compilation} the
-unification problem $\mathbb{P}$ is compiled as follows:
+unification problem \foUnifPb is compiled as follows:
 %
 \printAlll
   {{{\lambda x. X \appsep x, f}}}
@@ -1339,17 +1341,17 @@ unification problem $\mathbb{P}$ is compiled as follows:
 \noindent
 While $\lambda x.X \appsep x \Uo{} f$ does admit the solution
 $\rho = \{~ X \mapsto f ~\}$, the corresponding problem in
-$\mathbb{T}$ does not:
+\hoUnifPb does not:
 \elpiIn{lam x\ uva A [x]} and
 \elpiIn{con"f"} start with different, rigid, term constructors hence
 \Ue{} fails.
 
 In order to guarantee \cref{prop:simulation} we detect
 lambdas that can disappear by eta contraction (\cref{sec:etadetection}) and
-we modify the term compiler put fresh unification variables
+we modify the term compiler by putting fresh unification variables
 in their place: the problematic term is moved from 
-from  $\mathbb{T}$ to \linkStore (\cref{sec:etacomp}). The compilation
-of the problem $\mathbb{P}$ above is refined to: 
+from  \hoUnifPb to \linkStore (\cref{sec:etacomp}). The compilation
+of the problem \foUnifPb above is refined to: 
 %
 \printAlll
   {{{\lambda x.X \appsep x,f}}}
@@ -1467,7 +1469,7 @@ variables being erased by $\eta$-contraction are locally bound inside $t$.
 
 We can now derive the implementation for \maybeeta detection:
 
-\newcommand{\testmaybeeta}{\emph{maybe-eta}}
+\newcommand{\testmaybeeta}{\emph{maybe-eta}\xspace}
 \begin{definition}[\testmaybeeta]\label{def:testmaybeeta}
   Given a $\beta$-normal term
   $s = \lambda x_1 \ldots x_n.t$, \testmaybeeta{} $s$ holds if any
@@ -1586,7 +1588,7 @@ $X$ becomes rigid. There are two cases:
 \newcommand{\progressetaright}{\emph{progress-$\eta$-right}}
 \begin{definition}[\progressetaright]\label{def:progressetaright}
 A link \linketaM{\Gamma}{X}{T} is removed from \linkStore when
-$\testmaybeeta{} T$ does not hold (anymore) and by $\eta$-contracting
+$\testmaybeeta~T$ does not hold (anymore) and by $\eta$-contracting
 $T$ to $T'$ (if possible, else $T' = T$) and executing $X \Ue{} T'$ (under
 the context $\Gamma$).
 \marginpar{there was a note about T' having a rigid head, TO BE FIXED}
@@ -1682,8 +1684,8 @@ not reduce to $T x$ where x is not free in $T$.
 
 We report here the problem given in \cref{sec:basic-comp-limitations} where
 $X$ is used with two different arities and the output of the compilation does
-not respect\cref{inv:map-bijective} (merging the two mappings
-for $s$ would break \ref{inv:uvaarity}).
+not respect \cref{inv:map-bijective} (merging the two mappings
+for $s$ would break \cref{inv:uvaarity}).
 In this section we explain how to replace the duplicate mapping with some
 \linketa{} in order to restore the invariants.
 % make test ONLY=7001 TEX=tex
