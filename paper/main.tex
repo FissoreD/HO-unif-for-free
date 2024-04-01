@@ -1672,7 +1672,7 @@ A very basic example of \linketa deduplication, is given below:
 The result of $A \Ue{} C$ is that the two \linketa share the same \lhs.
 By unifying the two \rhs we get
 $\sigma = \{ A~ \mapsto C, B \mapsto D ~\}$.
-In turn, given the map $\mathbb{M}$, this second assignment is decompiled to
+In turn, given the map \mapStore, this second assignment is decompiled to
 $\rho = \{~ X \mapsto Y ~\}$ as expected.
 
 \marginpar{I don't get this TODO}
@@ -1778,58 +1778,86 @@ TODO: dire che preserviamo l'invariante che tutte le variable sono fully-applied
   
 \section{Handling of \maybebeta}\label{sec:beta}
 
-TODO: say that maybe-eta also work in not(llambda)
-
 % On
 % the other hand, we also point out that the \maybeeta detection spot out
 % potential $\eta$-expansion for terms that are not in \llambda. For example,
 % $\lambda x.F \appsep G_x$ is considered as \maybeeta, since we have the
 % application of term whose argument can reduce to $x$.
 
-All the previous sections we have dealt with terms in \llambda, however, it is
-often possible to work with terms in \maybebeta and wish to unify them. There
-are situtation, for example, where the oracle has given  which $\beta$-reduction problems (\maybebeta) appears any
-time we deal with a subterm $t = X t_1 \dots t_n$, where $X$ is flexible and the
-list $[t_1 \dots t_n]$ in not in \llambda. This unification problem is not
-solvable without loss of generality, since there is not a most general unifier.
-If we take back the example given in \cref{sec:nutshell}, the unification $F a =
-a$ admits two solutions for $F$: $\rho_1 = \{F \mapsto \lambda x.x\}$ and
-$\rho_2 = \{F \mapsto \lambda \_.a\}$. Despite this, it is possible to work with
-$\maybebeta$ if an oracle provides a substitution $\rho$ such that $\rho t$
-falls again in the \llambda.
+Until now, we have only dealt we unification of terms in \llambda. However, we
+want the unification relation to be more robust so that it can work with terms
+in \maybebeta. Unification in \maybebeta is in general a non-decidable
+procedure, e.g. $X \appsep a \Uo a$ is a unification problem in \maybebeta,
+since we have $X a$ has the shape $X t_1\dots t_n$ where $X$ is a unification
+variable and $t_1\dots t_n$ is not a list of distinct names (in our example, $a$
+is a constant, hence not a name). We also point out that this unification
+problem admits two different substitutions: $\rho_1 = \{X \mapsto \lambda x.x\}$
+and $\rho_2 = \{X \mapsto \lambda \_.a\}$.
 
-On the other hand, the \Ue is not designed to understand how the $\beta$-redexes
-work in the object language. Therefore, even if we know that $F$ is assigned
-to $\lambda x.x$, \Ue is not able to unify $F a$ with $a$. On the other hand,
-the problem $F a = G$ is solvable by \Ue, but the final result is that $G$ is
-assigned to $(\lambda x.x) a$ which breaks the invariant saying that the
-substitution of the meta language does not generate terms outide \wellb{} (Property \ref{prop:nf}).
+It is the case, however, given a list of unification $n$ problems \foUnifPb, if
+$\foUnifPb_i$ is in \maybebeta, it is possible that the resolution of the
+problems $\bigwedge_{j=0}^{i-1}\foUnifPb_j$ gives a partial substitution
+$\rho$, such that $\rho\foUnifPb_i$ falls again in \llambda.
+%
+\printAlll
+  {{{X,\lambda x.Y},
+    {(X\appsep a),a}}}
+  {{{A,\lambda x.B},
+    {(A\appsep a),a}}}
+  {{{Y,B,0},
+    {X,A,0}}}
+  {{}}
 
-The solution to this problem is to modify the compiler such that any sub-term $t$
-considered as a potential $\beta$-redex is replaced with a hole $h$ and a new dedicated
-link, called \linkbeta.
+In the example above, we see that $\foUnifPb_1$ instantiates $X$ so that
+$\foUnifPb_2$, can be solved in \llambda. On the other hand, even though \Uo is
+able to solve \foUnifPb, \Ue can't solve the compiled problems \hoUnifPb. In
+fact, the resolution of $\hoUnifPb_1$ gives the substitution $\sigma = \{ A
+\mapsto \lambda x. B\}$, but the dereferencing of $\hoUnifPb_2$ gives the 
+not unifable problem $(\lambda x. B) \appsep a \Ue a$.
 
-\begin{elpicode}
-  type link-beta tm -> tm -> link.
-\end{elpicode}
+In order to encompass this unification, we capture terms $t$ in \maybebeta and
+replace them with fresh varaibles $v$. As per \maybebeta, the variables $v$ and
+the terms $t$ are linked through a \linkbeta.
 
-\def\rhs{\ensuremath{rhs}\xspace}
-\def\lhs{\ensuremath{lhs}\xspace}
+\linkbeta guarantee \cref{inv:linklhs} and the term on the \rhs has the
+following property:
 
-This link carries two terms, the former representing the variable $h$ for the
-new created hole and the latter containing the subterm $t$. As for the \linketa,
-we will call $h$ and $t$ respectively the left hand side (\lhs)
-and the right hand side (\rhs) of the \linkbeta.
+\begin{invariant}[\linkbeta \rhs]
+  The \rhs of any \linkbeta has the shape $X t_1\dots t_n$ such that $X$ is a
+  flexible variable and $t_1\dots t_n$ is not in \llambda.
+\end{invariant}
+
+\linkbeta are put in \linkStore and activated when \rhs falls in \llambda. 
+
+% This property can be relaxed, to accept approximations: a dedicated
+% section is given in a future section
+\begin{corollary}
+  If the \lhs of a \linkbeta is instantiated to a rigid term and its \rhs
+  counterpart is still in \maybebeta, the current unification problem is not in
+  \llambda and the unification fails.
+\end{corollary}
+
+\begin{proof}[Proof sketch]
+  Given $X \appsep t_1\dots t_n \Ue t$ where $t$ is a rigid term and
+  $t_1\dots t_n$ is not in \llambda. By construction, $X \appsep t_1\dots t_n$
+  is replaced with a variable $V$, and the \linkbeta \linkbetaM{}{V}{X
+  \appsep t_1\dots t_n} is created. The unification instantiates $V$ to $t$,
+  making the \lhs of the link a rigid term, while \rhs is still in \maybebeta.
+  The original problem is in fact outside \llambda and unification fails.
+\end{proof}
 
 \subsection{Compilation}
 
-\paragraph{Detection of \maybebeta} TODO: \dots
+Detection of \maybebeta is quite simple to implement in the compiler, it is 
+sufficient to 
 
-\paragraph{Compilation with \linkbeta}
+Dire che maybebeta is simple to detect e che maybe eta funziona bene and su 
+termini che non sono il llambda
 
-In order to build a \linkbeta, we need to adapt the compiler so that it can
-recognize these ``problematic'' subterms. The following code snippet illustrate
-such behavior, we suppose the rule to be added just after \cref{rule:comp-pf}.
+\begin{corollary}
+  Right hand side is $X_{scope} t_1 \dots t_n$ and $t_1$ is in $scope$ or
+  $t_1$ is not a name
+\end{corollary}
 
 \input{code/comp_beta}
 
