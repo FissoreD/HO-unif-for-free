@@ -1076,7 +1076,8 @@ substitution and in turn enable another link to progress.
 In the base compilation scheme \elpiIn{progress1} is the identity
 on both the links and the substitution, so the fixpoint trivially terminates.
 Sections \ref{sec:eta} and \ref{sec:beta} add rules to \elpiIn{progress1}
-and justify why the don't hinder termination.
+and justify why the don't hinder termination. For brevity we omit the code
+that applies the substitution \elpiIn{S1} to all terms in \linkStore.
 
 Since compilation moves problematic terms out of the sigh of \Ue{},
 that procedure can only perform a partial occur check. For example the
@@ -1603,48 +1604,49 @@ terms are no more \maybeeta, and when \lhs is no more a variable or \rhs is
 no more a \maybeeta, the link is removed from \linkStore.
 
 \begin{lemma}
-  Forall list of links \elpiIn{L} and \elpiIn{S}, \elpiIn{progress L _ S _}
-  terminates
+  \elpiIn{progress} terminates.
 \end{lemma}
 
 \begin{proof}[Proof sketch]
-  The addition of rules for \elpiIn{progres1} complicates the function
-  \elpiIn{progress}. We can note, however, that they do not prevent the
-  termination of \elpiIn{progress}. 1) If a link is activated it is removed from
-  \linkStore and the recursive call to \elpiIn{progress} will have a smaller
-  list of links to recurse on. Moreover, link activation only runs terminating
-  instructions (such as unification). 2) If a link is deduplicated, the
-  termination of \elpiIn{progress} is still guaranteed since again we reduce
-  \linkStore and the instructions run by link deduplications are all
-  terminating. 3) If a link is neither activated nor deduplicated, i.e. it
-  remains suspended, then \linkStore remains unchanged like the substitution;
-  therefore, \elpiIn{if (L = L1, S1 = S2)} succeeds and \elpiIn{progress}
-  terminates.
+  Rules \cref{def:progressetaleft,def:progressetaright} and
+  \cref{def:progressetadedup} remove one link from \linkStore, hence they
+  cannot be applied indefinitely.
+  Moreover each rule only relies on terminating operations such as \Ue,
+  $\eta$-contraction, $\eta$-expansion, relocation (a recursive copy of a
+  finite term).
+  % The addition of rules for \elpiIn{progres1} complicates the function
+  % \elpiIn{progress}. We can note, however, that they do not prevent the
+  % termination of \elpiIn{progress}. 1) If a link is activated it is removed from
+  % \linkStore and the recursive call to \elpiIn{progress} will have a smaller
+  % list of links to recurse on. Moreover, link activation only runs terminating
+  % instructions (such as unification). 2) If a link is deduplicated, the
+  % termination of \elpiIn{progress} is still guaranteed since again we reduce
+  % \linkStore and the instructions run by link deduplications are all
+  % terminating. 3) If a link is neither activated nor deduplicated, i.e. it
+  % remains suspended, then \linkStore remains unchanged like the substitution;
+  % therefore, \elpiIn{if (L = L1, S1 = S2)} succeeds and \elpiIn{progress}
+  % terminates.
 \end{proof}
 
-\paragraph{example 1}
+\paragraph{Example of \progressetaleft}
 
-The example above shows the new compilation of the unification problem given at
-the beginning of \cref{sec:eta}. This time, we see that the the left hand side
-$t$ of $\mathbb{P}_1$ has been detected as a \maybeeta and replaced with the
-fresh variable $A$. Moreover, \linkStore contains the link $l_1$ connecting $A$
-with $\lambda x.X'_{x}$, the compiled version of $t$. After the resolution of
-$\mathbb{T}_1$, $A$ is assigned to $f$. Therefore \lhs of $l_1$ is a term with
-\elpiIn{con} as constructor. This means that \rhs of $l_1$ is a $\eta$-expansion
-and therefore we can unify $\lambda x.f x$ with \rhs, which instantiate $X'_x$
-to $f \appsep x$. $l_1$ is removed from \linkStore which is now empty,
-\elpiIn{progress} terminate, and the decompilation, will instantiate the $X$
-variable to $f$ (which is the $\eta$-contracted version of $\lambda x.f \appsep
-x$). 
+The example at the beginning of \cref{sec:eta}, once
+$\sigma = \{~ A \mapsto f ~\}$, triggers this rule since the link
+becomes \linketaM{}{f}{\lambda x.B_{x}} and the \lhs is a constant.
+In turn the rule runs $\lambda x.f \appsep x \Ue{} \lambda x.B_{x}$,
+resulting in $\sigma = \{~ A \mapsto f ~;~ B_{x} \mapsto f ~\}$.
+Decompilation the generates $\rho = \{~ X \mapsto f ~\}$, since
+$X$ is mapped to $B$ and
+$f$ is the $\eta$-contracted version of $\lambda x.f \appsep x$.
 
-\paragraph{example 2}
+\paragraph{Example of \progressetaright}\marginpar{TODO}
 
 A second example, showing the activation of a link when the \rhs is no more a
 \maybeeta, is given in \cref{sec:invariant1}, since we need to work with
 variables used with different arities. This example represent the run of the
 unification problems proposed at \cref{sec:basic-comp-limitations}
 
-\paragraph{example 3}
+\paragraph{Example of \progressetadedup}
 
 A very basic example of \linketa deduplication, is given below:
 % make test ONLY=7002 TEX=tex
@@ -1663,6 +1665,7 @@ $\sigma = \{ A~ \mapsto C, B \mapsto D ~\}$.
 In turn, given the map $\mathbb{M}$, this second assignment is decompiled to
 $\rho = \{~ X \mapsto Y ~\}$ as expected.
 
+\marginpar{I don't get this TODO}
 TODO: we can have $\lambda x. F_x$ in the substitution if we know that $F$ does
 not reduce to $T x$ where x is not free in $T$.
 
