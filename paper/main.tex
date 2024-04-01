@@ -1184,17 +1184,25 @@ context where input terms are $\beta\eta$-normal and we disregard $\eta$-equival
 
 \subsection{Limitations of by this basic scheme}
 \label{sec:basic-comp-limitations}
+The basic compilation scheme is not about to
+deal wit the following problem:
+\printAlll
+  {{{\lambda x y.X \appsep y \appsep x, \lambda x y.x},{\lambda x. f \appsep (X \appsep x) \appsep x,G}}}
+  {{}}
+  {{}}
+  {{}}
+\marginpar{TODO: remove empty T}
+% \begin{gather}
+% \lambda x y.F \appsep y \appsep x = \lambda x y.x \label{eq:unif-eta1}\\
+% \lambda x. f \appsep (F \appsep x) \appsep x = G \label{eq:unif-eta2}
+% % \lambda x. f \appsep (F \appsep x) \appsep x = f \appsep (\lambda y.y) \label{eq:unif-eta2}
+% \end{gather}
 
-\begin{gather}
-\lambda x y.F \appsep y \appsep x = \lambda x y.x \label{eq:unif-eta1}\\
-\lambda x. f \appsep (F \appsep x) \appsep x = G \label{eq:unif-eta2}
-% \lambda x. f \appsep (F \appsep x) \appsep x = f \appsep (\lambda y.y) \label{eq:unif-eta2}
-\end{gather}
-Note that here $F$ is used with different arities, moreover
+noindent Note that here $X$ is used with different arities, moreover
 in the second problem the left hand side happens to be an
 eta expansion (of $f (\lambda y.y)$) only after we discover (at run time)
-that $F = \lambda x\lambda y.y$ (i.e. that $F$ discards the $x$ argument).
-Both problems are addressed in the next section.
+that $X = \lambda x\lambda y.y$ (i.e. that $X$ discards the $x$ argument).
+Both problems are addressed in the next two sections.
   
 % \subsection{Example}
 
@@ -1672,9 +1680,12 @@ not reduce to $T x$ where x is not free in $T$.
 \section{Enforcing Invariant~\ref{inv:uvaarity}}
 \label{sec:invariant1}
 
-In \cref{sec:basic-comp-limitations}, we have given two unification problems to
-be run one after the other. In the following table we present the entry problem,
-its compiled version, with the corresponding list of mapping and links.
+We report here the problem given in \cref{sec:basic-comp-limitations} where
+$X$ is used with two different arities and the output of the compilation does
+not respect\cref{inv:map-bijective} (merging the two mappings
+for $s$ would break \ref{inv:uvaarity}).
+In this section we explain how to replace the duplicate mapping with some
+\linketa{} in order to restore the invariants.
 % make test ONLY=7001 TEX=tex
 \printAlll
   {{{\lambda x.\lambda y.(X\appsep y\appsep x),\lambda x.\lambda y.x},
@@ -1688,60 +1699,49 @@ its compiled version, with the corresponding list of mapping and links.
     {,A,\lambda x.B_{x}},
     {x,B_{x},\lambda y.C_{y x}}}}
 
-\marginpar{aggiustare i nomi delle variabili nel testo}
-We see that the \elpiIn{maybe-eta} as detected $\lambda xy.F \appsep y \appsep
-x$ and $\lambda x.f\appsep (F \appsep x) \appsep x$ and replaced them with
-respectively the \Ho vars $X$ and $Z$. $X$ is linked with $\lambda x.Y_x$, $Y$
-has arity $1$ and is $\eta$-linked with $\lambda y.H\appsep y \appsep x$ and $Z$
-is linked to the term $\lambda x.f \appsep G_{x}~x$. However, the mapping
-returned by the compilation, does not breaks \cref{inv:map-bijective}: the \Fo{}
-variable $F$ is mapped to two different \Ho variables. To address this problem
-and enforce \cref{inv:map-bijective}, we clean the mapping with a second phase
-after the compilation. This phase is called \elpiIn{map-deduplication}.
+We see that the \elpiIn{maybe-eta} as identified $\lambda xy.X \appsep y \appsep
+x$ and $\lambda x.f\appsep (X \appsep x) \appsep x$ and the compiler has
+replaced them with $A$ and $D$ respectively.
+% $A$ is linked with $\lambda x.B_x$, $B$
+% has arity $1$ and is $\eta$-linked with $\lambda y.C\appsep y \appsep x$ and $D$
+% is linked to the term $\lambda x.f \appsep E_{x}~x$. 
+However, the mapping \mapStore breaks \cref{inv:map-bijective}: the \Fo{}
+variable $X$ is mapped to two different \Ho variables. To address this problem
+we adjust the compiler's output with a \elpiIn{map-deduplication} procedure.
 
-Before formally defining this procedure, we need to define some auxiliary
-relations. Let \mapStore be the list of mapping and $\langle m_1, m_2 \rangle
-\in \mapStore$ such that the arity of the \Ho variable in $m_1$ is smaller than
-the one in $m_2$. Let $X$ (resp. $Y$) the \Ho variable of $m_1$ (resp. $m_2$)
-and $n = ar(m_1) - ar(m_2)$. We also let $A^i$ be a fresh \Ho variable. We
-define the \elpiIn{make-eta-link} relation taking two mappings $\langle m_1, m_2
-\rangle$ and returning the following list of link \linketa: $\forall i \in [1..n]$,
-{
-\def\scopeA{\ensuremath{x_1\dots x_{i-1}}}
-\def\scopeB{\ensuremath{x_1\dots x_{i}}}
-%
-$$ 
-  \left\{ 
-    \begin{array}{ll}
-      \linketaM{\phantom{\scopeA}}{X}      {\lambda x.  A^1_x}         & if~ i = 1 \\
-      \linketaM{\scopeA}{A^{i-1}_{\scopeA}}{\lambda x_i.A^i_{\scopeB}} & if~ 1 < i < n\\
-      \linketaM{\scopeA}{A^{i-1}_{\scopeA}}{\lambda x_i.Y  _{\scopeB}} & if~ i = n
-    \end{array} 
-  \right. 
-$$
-}
-\noindent
-More concretely, we are saying that for any two mappings, we build as many
-\linketa as the difference of the arities between the two mappings. This links
-are constructed in such a way that the \Ho variable $v$ with lowest arity is
-linked to a fresh variable eta-expended variable $A^1$ having the scope of $v$.
-This variable $A^1$ is then linked to a an $\eta$-expanded fresh variable $A^2$
-with same scope of $A^1$ and so on. The last link is built between the $A^{n-1}$
-(where $n$ is the difference of arities between the two mappings) and the \Ho
-variable $u$ with higher arity in the two mappings being considered.
-
-\begin{definition}[map-deduplication]
-  Forall mappings $\langle m_1, m_2 \rangle \in \mapStore$, sharing the same
-  \Fo{} variable, the list of \linketa $L$ is created thanks to
-  \elpiIn{make-eta-link}$m_1~m_2~L$ and is added to \linkStore. Then $m_1$ is
-  removed from \mapStore.
+\newcommand{\alignarity}{\emph{align-arity}}
+\begin{definition}[\alignarity] Given two mappings
+  $m_1 : X \mapsto A^m$ and
+  $m_2 : X \mapsto C^n$ where $m < n$ and $d = n - m$,
+  $\alignarity{}~ m_1 ~ m_2$ generates the following $d$ links, one
+  for each $i$ such that $0 \leq i < d$,
+\[%
+  \linketaM{x_0 \ldots x_{m+i}}
+           {B^i_{x_0 \ldots x_{m+i}}}
+           {\lambda x_{m+i+1}.B^{i+1}_{x_0 \ldots x_{m+i+1}}}
+\]%
+where $B^i$ is a fresh variable of arity $m+i$, and $B^0 = A$ as well as $B^d = C$.
 \end{definition}
 
-If we take back the example give at the beginning of this section, we can
-deduplicate $\mapping{F}{G}{1}, \mapping{F}{H}{2}$ by removing the first mapping
-and adding the auxiliary \linketa: \linketaM{x}{G_{x}}{\lambda y.H_{x y}}.
+The intuition is that we $\eta$-expand the occurrence of the variable
+with lower arity to match the higher arity. Since each \linketa can
+add exactly one lambda, we need as many links as the difference between the
+two arities.
 
-The complete problem to run for resolution is now:
+\newcommand{\mapdeduplication}{\emph{map-deduplication}}
+
+\begin{definition}[\mapdeduplication]
+  Forall mappings $m_1, m_2\in \mapStore$ such that 
+  $m_1 : X \mapsto A^m$ and
+  $m_2 : X \mapsto C^n$ and $m < n$
+  we remove $m_1$ from \mapStore and
+  add to \linkStore the result of $\alignarity{}~m_1~m_2$.
+\end{definition}
+
+If we look back the example give at the beginning of this section, we can
+deduplicate $\mapping{X}{E}{1}, \mapping{X}{C}{2}$ by removing the first mapping
+and adding the auxiliary \linketa: \linketaM{x}{E_{x}}{\lambda y.C_{x y}}.
+After deduplication the compiler output is as follows:
 % make test ONLY=7001 TEX=tex
 \printAlll
   {{{\lambda x.\lambda y.(X\appsep y\appsep x),\lambda x.\lambda y.x},
@@ -1754,24 +1754,23 @@ The complete problem to run for resolution is now:
     {,D,\lambda x.(f\appsep E_{x}\appsep x)},
     {,A,\lambda x.B_{x}},
     {x,B_{x},\lambda y.C_{y x}}}}
-
-After unification of the two terms, $X$ is assigned to $\lambda x.\lambda y.x$.
-This assignment makes $l_2$ to progress since the \lhs is materialized and by
-unification, between $X$ and $\lambda x.Y_{x}$, $Y_x$ is instantiate to $\lambda
-y.x$. Once $Y_x$ is instantiated, $l_1$ can progress, and set $H_{xy}$ to $x$.
-After all these progresses, $l_1$ and $l_2$ are remove from \linkStore and the
-\elpiIn{progress} fixpoint terminates. Next, the second unification problem is
-run, and $Z$ is set to $f\appsep(\lambda x.x)$. This unification wakes up $l_3$
-and since $Z$ starts with the \elpiIn{app} node, the $\eta$-expanded version of
-$Z$ is unified with $\lambda x.f \appsep G_{x}~x$ and $G_x$ is set to $x$.
-As last step, the last link is progressed and the final \Ho substitution is
-$\{X _{} \mapsto \lambda x.\lambda y.x, Y _{x} \mapsto \lambda y.x, 
-G _{yx} \mapsto y, Z _{} \mapsto f~\lambda x.x, 
-H _{x} \mapsto \lambda y.y\}$.
-
-The decompilation phase is only charged, in this example to solve the mappings,
-since no suspended links remain. The only mapping in the list is
-\mapping{F}{H}{2}, which will assign the $F$ variable in \Fo{} to $\lambda xy.y$
+\marginpar{TODO: non so se serva spiegare l'esecuzione (in commento)}
+% After unification of the two terms, $X$ is assigned to $\lambda x.\lambda y.x$.
+% This assignment makes $l_2$ to progress since the \lhs is materialized and by
+% unification, between $X$ and $\lambda x.Y_{x}$, $Y_x$ is instantiate to $\lambda
+% y.x$. Once $Y_x$ is instantiated, $l_1$ can progress, and set $H_{xy}$ to $x$.
+% After all these progresses, $l_1$ and $l_2$ are remove from \linkStore and the
+% \elpiIn{progress} fixpoint terminates. Next, the second unification problem is
+% run, and $Z$ is set to $f\appsep(\lambda x.x)$. This unification wakes up $l_3$
+% and since $Z$ starts with the \elpiIn{app} node, the $\eta$-expanded version of
+% $Z$ is unified with $\lambda x.f \appsep G_{x}~x$ and $G_x$ is set to $x$.
+% As last step, the last link is progressed and the final \Ho substitution is
+% $\{X _{} \mapsto \lambda x.\lambda y.x, Y _{x} \mapsto \lambda y.x, 
+% G _{yx} \mapsto y, Z _{} \mapsto f~\lambda x.x, 
+% H _{x} \mapsto \lambda y.y\}$.
+% The decompilation phase is only charged, in this example to solve the mappings,
+% since no suspended links remain. The only mapping in the list is
+% \mapping{F}{H}{2}, which will assign the $F$ variable in \Fo{} to $\lambda xy.y$
 
 TODO: dire che preserviamo l'invariante che tutte le variable sono fully-applied
   
