@@ -1357,7 +1357,7 @@ of the problem \foUnifPb above is refined to:
   {{{\lambda x.X \appsep x,f}}}
   {{{A,f}}}
   {{{X,B,1}}}
-  {{{,A,\lambda x.B_x}}}
+  {{{\eta,,A,\lambda x.B_x}}}
 
 \noindent
 As per \cref{inv:linklhs} the term on the left is a variable, and its
@@ -1665,8 +1665,8 @@ A very basic example of \linketa deduplication, is given below:
   {{{A,C}}}
   {{{X,B,1},
     {Y,D,1}}}
-  {{{,A,\lambda x.B_{x}},
-    {,C,\lambda x.D_{x}}}}
+  {{{\eta,,A,\lambda x.B_{x}},
+    {\eta,,C,\lambda x.D_{x}}}}
 
 \noindent
 The result of $A \Ue{} C$ is that the two \linketa share the same \lhs.
@@ -1697,9 +1697,9 @@ In this section we explain how to replace the duplicate mapping with some
   {{{X,E,1},
     {Y,F,0},
     {X,C,2}}}
-  {{{,D,\lambda x.(f\appsep E_{x}\appsep x)},
-    {,A,\lambda x.B_{x}},
-    {x,B_{x},\lambda y.C_{y x}}}}
+  {{{\eta,,D,\lambda x.(f\appsep E_{x}\appsep x)},
+    {\eta,,A,\lambda x.B_{x}},
+    {\eta,x,B_{x},\lambda y.C_{y x}}}}
 
 We see that the \elpiIn{maybe-eta} as identified $\lambda xy.X \appsep y \appsep
 x$ and $\lambda x.f\appsep (X \appsep x) \appsep x$ and the compiler has
@@ -1753,9 +1753,9 @@ After deduplication the compiler output is as follows:
   {{{Y,F,0},
     {X,C,2}}}
   {{{x,E_{x},\lambda y.C_{x y}},
-    {,D,\lambda x.(f\appsep E_{x}\appsep x)},
-    {,A,\lambda x.B_{x}},
-    {x,B_{x},\lambda y.C_{y x}}}}
+    {\eta,,D,\lambda x.(f\appsep E_{x}\appsep x)},
+    {\eta,,A,\lambda x.B_{x}},
+    {\eta,x,B_{x},\lambda y.C_{y x}}}}
 \marginpar{TODO: non so se serva spiegare l'esecuzione (in commento)}
 % After unification of the two terms, $X$ is assigned to $\lambda x.\lambda y.x$.
 % This assignment makes $l_2$ to progress since the \lhs is materialized and by

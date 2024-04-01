@@ -192,7 +192,6 @@ namespace comp {
     fold6 compile-terms-diagnostic T H [] M_ [] L_ [] S_,
     print-compil-result T H L_ M_, 
     print "Deduplicate mappings on" {ppmappings M_} {pplinks L_}, % HIDE
-    % print-compil-result T H L_ M_, 
     deduplicate-map M_ M S_ S L_ L.
 
   % Ad1 is the variable with smaller arity, Ad2 is eta expanded N times
@@ -671,8 +670,8 @@ namespace comp {
     pi x\ (ho.pp1 _ x N :- !) => pplink-latex-aux NS (F x) AS OP B C.
   pplink-latex-aux [] (ho.abs F) [A|AS] OP B C :- 
     pi x\ std.any->string x A, pplink-latex-aux [] (F x) AS OP B C.
-  pplink-latex-aux BN (@val-link-eta X Y) [] "eta" B C :- ho.pp1 BN X B, ho.pp1 BN Y C.
-  pplink-latex-aux BN (@val-link-beta X Y) [] "beta" B C :- ho.pp1 BN X B, ho.pp1 BN Y C.
+  pplink-latex-aux BN (@val-link-eta X Y) [] "\\eta" B C :- ho.pp1 BN X B, ho.pp1 BN Y C.
+  pplink-latex-aux BN (@val-link-beta X Y) [] "\\beta" B C :- ho.pp1 BN X B, ho.pp1 BN Y C.
 
   type ppctx list string -> string -> o.
   ppctx [] "".
@@ -681,8 +680,8 @@ namespace comp {
 
   type pplink-latex link -> string -> o.
   pplink-latex L S :-
-    pplink-latex-aux @binder-names L Ctx Eta-beta_ Left Right,
-    S is "{" ^ {std.string.concat "~" Ctx} ^ "," ^ Left ^ "," ^ Right ^ "}".
+    pplink-latex-aux @binder-names L Ctx Eta-beta Left Right,
+    S is "{" ^ Eta-beta ^ "," ^ {std.string.concat "~" Ctx} ^ "," ^ Left ^ "," ^ Right ^ "}".
 
   type pplink link -> string -> o.
   pplink uvar _ :- halt "passed var to pplink".

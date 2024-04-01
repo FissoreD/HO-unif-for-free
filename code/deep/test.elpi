@@ -142,7 +142,7 @@ print-compil-result C P L M :- tex, !,
   std.string.concat Sep1 {std.map P (pppbsc ho.pp)} Ppp, 
   std.string.concat Sep1 {comp.pplinks L} Lpp, 
   std.string.concat Sep1 {comp.ppmappings M} Mpp,
-  R is "\\printAll" ^ Sep ^ "{{" ^ Cpp ^ "}}" ^ Sep ^ "{{" ^ Ppp ^ "}}" ^ Sep ^ "{{" ^ Mpp ^ "}}" ^ Sep ^ "{{" ^ Lpp ^ "}}",
+  R is "\\printAlll" ^ Sep ^ "{{" ^ Cpp ^ "}}" ^ Sep ^ "{{" ^ Ppp ^ "}}" ^ Sep ^ "{{" ^ Mpp ^ "}}" ^ Sep ^ "{{" ^ Lpp ^ "}}",
   print "The result of the compilation is",
   print R.
 
@@ -642,6 +642,11 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- std
 @sokl 7002 [
   pr ok "λx.(X x) = λx.(Y x)"
 ] ["Y"].
+
+@sokl 7003 [
+  pr ok "X = λx.Y",
+  pr ok "X a = a"
+] ["λx.a", "a"].
 
 % @sokl 71 [
 %   pr ok "λz.λx.λy.(X y x z) = Z",
