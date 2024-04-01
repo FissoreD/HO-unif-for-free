@@ -1753,7 +1753,7 @@ After deduplication the compiler output is as follows:
     {D,F}}}
   {{{Y,F,0},
     {X,C,2}}}
-  {{{x,E_{x},\lambda y.C_{x y}},
+  {{{\eta,x,E_{x},\lambda y.C_{x y}},
     {\eta,,D,\lambda x.(f\appsep E_{x}\appsep x)},
     {\eta,,A,\lambda x.B_{x}},
     {\eta,x,B_{x},\lambda y.C_{y x}}}}
@@ -1899,6 +1899,18 @@ termini che non sono il llambda, oppure dirlo in section of maybeeta + dare un
 esempio?
 
 \subsection{Progress}
+
+The activation of a \linkbeta is performed when its \rhs falls under \llambda
+under a given substitution. There are two main situation causing this
+progression.
+
+\begin{definition}[progress-beta-llambda]
+  
+\end{definition}
+
+\begin{definition}[progress-beta-rigid-head]
+  
+\end{definition}
 
 Once created, there exist two main situations waking up a suspended \linkbeta.
 The former is strictly connected to the definition of $\beta$-redex and occurs
