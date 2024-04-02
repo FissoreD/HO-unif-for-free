@@ -340,16 +340,11 @@ namespace comp {
   is-in-pf N :- name N.
   is-in-pf (uva _ L) :- pattern-fragment L.
 
-  type arity tm -> nat -> o.
-  arity (con _) z.
-  arity (app L) A :- len L A.
-
   type progress-beta-llambda list tm -> tm -> tm -> subst -> subst -> links -> o.
   progress-beta-llambda [] T1 T2 S1 S2 [] :- !,
     (T1 ==l T2) S1 S2.
   progress-beta-llambda Ag T1 T2 S S [L] :-
     L = val (link-beta T1 (app [T2|Ag])).
-
 
   % a sx non c'è mai un app[uva _ _ | _] per costruzione
   % a dx abbiamo sempre app[uva _ N | L] dove N è nel PF e L no
@@ -430,16 +425,8 @@ namespace comp {
   type progress1 links -> links -> subst -> subst -> o.
 %ENDSNIP
 
-  % Note: a progress of a link, may instantiate a variable and therefore a 
-  %       link deref is needed
-  progress1 L0 L1 S S1 :- % unessential, could be inlined
-    deref-links S L0 L,
-    not (L0 = L),
-    !,
-    progress1 L L1 S S1.
-
 %SNIP: progress1
-  progress1 [] [] X X :- print "end solve links".
+  progress1 [] [] X X.
   progress1 [A|L1] [A|L3] S S2 :- take-link A L1 B L2, !,
     print "deduplicating links:" {pplink A} "===" {pplink B}, % HIDE
     same-link-eta A B S S1, 
@@ -454,15 +441,6 @@ namespace comp {
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% OCC CHECK %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-  :index(_ 1)
-  type deref-links subst -> links -> links -> o.
-  deref-links H L1 L2 :- forall2 (x\r\ std.assert! (deref-link H x r) "bug deref links") L1 L2.
-
-  type deref-link subst -> link -> link -> o.
-  deref-link H (ho.abs F) (ho.abs G) :- pi x\ deref-link H (F x) (G x).
-  deref-link H (@val-link-eta A B) (@val-link-eta A1 B1) :- ho.deref H A A1, ho.deref H B B1.
-  deref-link H (@val-link-beta A B) (@val-link-beta A1 B1) :- ho.deref H A A1, ho.deref H B B1.
 
   type get-head-link link -> addr -> tm -> o.
   get-head-link (@val-link-eta (uva Ad _) T) Ad T :- !.
@@ -514,6 +492,16 @@ namespace comp {
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% CHECK %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+  :index(_ 1)
+  type deref-links subst -> links -> links -> o.
+  deref-links H L1 L2 :- forall2 (deref-link H) L1 L2, !.
+  deref-links _ _ _ :- halt "Bug in deref links". % HIDE
+
+  type deref-link subst -> link -> link -> o.
+  deref-link H (ho.abs F) (ho.abs G) :- pi x\ deref-link H (F x) (G x).
+  deref-link H (@val-link-eta A B) (@val-link-eta A1 B1) :- ho.deref H A A1, ho.deref H B B1.
+  deref-link H (@val-link-beta A B) (@val-link-beta A1 B1) :- ho.deref H A A1, ho.deref H B B1.
+
 %SNIP: progress
   type progress links -> links -> subst -> subst -> o.
 %ENDSNIP
@@ -533,15 +521,11 @@ namespace comp {
     if (L = L1, S1 = S2)
        (L2 = L1, S3 = S1)
        (progress L1 L2 S2 S3).
-    %  (print "end fixpoint", deref-links S1 L L2 , S3 = S1)
-    %  (print "## Subst is" {ho.ppsubst S2}, print "## Links are" {pplinks {deref-links S2 L1}}, 
-    %    progress L1 L2 S2 S3).
 %ENDSNIP
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% DECOMPL %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 
   type abs->lam ho.assignment -> tm -> o.
   abs->lam (ho.abs T) (lam R)  :- !, pi x\ abs->lam (T x) (R x).
