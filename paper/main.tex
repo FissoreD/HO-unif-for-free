@@ -560,7 +560,7 @@ Properties \ref{prop:correct} and \ref{prop:complete} state, respectively, that
 in \llambda the implementation of \Uo is correct, complete and returns the most
 general unifier.
 
-\marginpar{fix}Property \ref{prop:simulation} states that \Uo, hence our compilation scheme,
+\todo[inline]{fix}Property \ref{prop:simulation} states that \Uo, hence our compilation scheme,
 is resilient to unification problems outside \llambda solved by
 a third party. We believe this property is of practical interest since we
 want the user to be able to add heuristics via hand written rules
@@ -762,7 +762,7 @@ The memory and its associated operations are described below:
 \noindent
 If a memory cell is \elpiIn{none}, then the corresponding unification variable
 is not set. \elpiIn{assign} sets an unset cell to the given value, while
-\elpiIn{new} finds the first unused address and sets it to \elpiIn{none}.\marginpar{is new used?}
+\elpiIn{new} finds the first unused address and sets it to \elpiIn{none}.\todo[inline]{is new used?}
 
 Since in \Ho unification variables have a scope, their solution needs to be
 abstracted over it to enable the instantiation of a single
@@ -965,7 +965,7 @@ any other implementation of $\lambda$Prolog.
 The only detail worth discussing is the fact that the procedure updates a
 substitution, rather than just crafting one as presented in
 section~\ref{sec:problem-statement}. The reason is that the algorithm folds
-over a term, updating a substitution while it traverses it.\marginpar{explain better}
+over a term, updating a substitution while it traverses it.\todo[inline]{explain better}
 
 % The first three rules unify terms with same rigid heads, and
 % call the unification relation on the sub-terms. If $t_1$ (resp. $t_2$) is an
@@ -996,7 +996,7 @@ over a term, updating a substitution while it traverses it.\marginpar{explain be
 % the variables of the OL with the decompiled version of their corresponding meta
 % variables. We claim that $t$ and $u$ unify if and only if $t'$ and $u'$ unify
 % and that the substitution in the object language is the same as the one returned
-% by the ML. \todo{same or $\supseteq$ or $\subseteq$}
+% by the ML. \todo[inline]{same or $\supseteq$ or $\subseteq$}
 
 % In the following section we explain how we deal with term (de)compilation and
 % links between unification variables.
@@ -1012,7 +1012,7 @@ for terms outside \llambda in Section \ref{sec:beta}.
 
 \subsection{Compilation}
 \label{sec:compilation}
-\marginpar{manca beta normal in entrata}
+\todo[inline]{manca beta normal in entrata}
 
 The main task of the compiler is to recognize \Fo{} variables standing
 for functions and map them to higher order variables in \Ho.
@@ -1274,7 +1274,7 @@ Both problems are addressed in the next two sections.
 % \noindent
 % defines a link, which is a relation between to variables indexes, the first
 % being the index of a OL variable and the second being the index of a ML
-% variable. The third integer\todo{integer or nat?} is the number of term in the
+% variable. The third integer\todo[inline]{integer or nat?} is the number of term in the
 % scope of the two variables, or equivalently, in a typed language, their arity.
 
 % As an example, let's study the following unification problem (a slightly
@@ -1417,7 +1417,7 @@ $\eta$-expansion.\\
 We can now define more formally how \maybeeta terms are detected together with
 its auxiliary functions:
 
-\marginpar{the compiler must do beta normal!!!!}
+\todo[inline]{the compiler must do beta normal!!!!}
 \newcommand{\reduceto}{\emph{may-contract-to}}
 \begin{definition}[\reduceto]
   A term $s$ \reduceto{} a name $x$ if there exists a
@@ -1454,7 +1454,7 @@ that can be assigned to that application (case 3).
 
 \noindent
 Note that this condition does not require the term to be in \llambda.
-\marginpar{Is this relevant}
+\todo[inline]{Is this relevant}
 
 \newcommand{\occursrigid}{\emph{occurs-rigidly}}
 \newcommand{\occurrigid}{\emph{occur-rigidly}}
@@ -1582,7 +1582,7 @@ $X$ becomes rigid. There are two cases:
     $\lambda x.X \appsep x\Ue{} T$  (under
     the context $\Gamma$)
   \item if $X = \lambda x.t$ we run $X \Ue{} T$.
-  \marginpar{do we have the name case in the code?}
+  \todo[inline]{do we have the name case in the code?}
 \end{enumerate}
 \end{definition}
 
@@ -1592,7 +1592,7 @@ A link \linketaM{\Gamma}{X}{T} is removed from \linkStore when
 $\testmaybeeta~T$ does not hold (anymore) and by $\eta$-contracting
 $T$ to $T'$ (if possible, else $T' = T$) and executing $X \Ue{} T'$ (under
 the context $\Gamma$).
-\marginpar{there was a note about T' having a rigid head, TO BE FIXED}
+\todo[inline]{there was a note about T' having a rigid head, TO BE FIXED}
 \end{definition}
 
 There is a third case in which a link is removed from \linkStore, namely
@@ -1650,7 +1650,7 @@ Decompilation the generates $\rho = \{~ X \mapsto f ~\}$, since
 $X$ is mapped to $B$ and
 $f$ is the $\eta$-contracted version of $\lambda x.f \appsep x$.
 
-\paragraph{Example of \progressetaright}\marginpar{TODO}
+\paragraph{Example of \progressetaright}\todo[inline]{TODO}
 
 A second example, showing the activation of a link when the \rhs is no more a
 \maybeeta, is given in \cref{sec:invariant1}, since we need to work with
@@ -1676,7 +1676,7 @@ $\sigma = \{ A~ \mapsto C, B \mapsto D ~\}$.
 In turn, given the map \mapStore, this second assignment is decompiled to
 $\rho = \{~ X \mapsto Y ~\}$ as expected.
 
-\marginpar{I don't get this TODO}
+\todo[inline]{I don't get this TODO}
 TODO: we can have $\lambda x. F_x$ in the substitution if we know that $F$ does
 not reduce to $T x$ where x is not free in $T$.
 
@@ -1757,7 +1757,7 @@ After deduplication the compiler output is as follows:
     {\eta,,D,\lambda x.(f\appsep E_{x}\appsep x)},
     {\eta,,A,\lambda x.B_{x}},
     {\eta,x,B_{x},\lambda y.C_{y x}}}}
-\marginpar{TODO: non so se serva spiegare l'esecuzione (in commento)}
+\todo[inline]{TODO: non so se serva spiegare l'esecuzione (in commento)}
 % After unification of the two terms, $X$ is assigned to $\lambda x.\lambda y.x$.
 % This assignment makes $l_2$ to progress since the \lhs is materialized and by
 % unification, between $X$ and $\lambda x.Y_{x}$, $Y_x$ is instantiate to $\lambda
@@ -1785,6 +1785,7 @@ TODO: dire che preserviamo l'invariante che tutte le variable sono fully-applied
 % $\lambda x.F \appsep G_x$ is considered as \maybeeta, since we have the
 % application of term whose argument can reduce to $x$.
 
+\todo[inline]{IIRC, second order unification, where variables can stand for functions, is semi-decidable, indeed Huet's algorith enumerates all solutions. Third order, functions that take functions, is undecidable, proved by Dowek. IMO here the problem is that there is no unique solution, (semi)decidability is a secondary point. This paragraph needs fixing.}
 Until now, we have only dealt we unification of terms in \llambda. However, we
 want the unification relation to be more robust so that it can work with terms
 in \maybebeta. Unification in \maybebeta is in general a non-decidable
@@ -1811,14 +1812,20 @@ $\rho$, such that $\rho\foUnifPb_i$ falls again in \llambda.
   {{}}
 
 In the example above, we see that $\foUnifPb_1$ instantiates $X$ so that
-$\foUnifPb_2$, can be solved in \llambda. On the other hand, we see that, 
+$\foUnifPb_2$, can be solved in \llambda.
+\todo[inline]{it is even a ground term, there is no unification left to perform actually}
+On the other hand, we see that, 
 \Ue can't solve the compiled problems \hoUnifPb. In
 fact, the resolution of $\hoUnifPb_1$ gives the substitution $\sigma = \{ A
 \mapsto \lambda x. B\}$, but the dereferencing of $\hoUnifPb_2$ gives the 
 non-unifable problem $(\lambda x. B) \appsep a \Ue a$.
 
-In order to encompass this unification, term compilation should capture the
-terms $t$ in \maybebeta and replace them with fresh varaibles $v$. As per
+In order to
+encompass\todo[inline]{not sure has the right meaning}
+this unification, term compilation should capture the
+terms $t$ in \maybebeta and replace them with fresh varaibles $v$.
+\todo[inline]{we use capitals for unif variables}
+As per
 \maybebeta, the variables $v$ and the terms $t$ are linked through a \linkbeta.
 
 \linkbeta guarantees \cref{inv:linklhs} and the term on the \rhs has the
