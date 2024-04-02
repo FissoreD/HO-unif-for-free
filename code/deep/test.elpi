@@ -442,10 +442,6 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- std
   pr (error "unif") "Y = (λx.(Y x)) a"
 ] [].
 
-@sokl 410 [
-  pr (error "decompl") "λx.(X b x) = λx.(X a x)"
-] [].
-
 @sokl 42 [
   pr ok "λy.(X y) = λx. λy.(X y x)"
 ] ["λx.λy.Y"].
@@ -499,21 +495,6 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- std
   pr (error "unif") "X = Y X",
 ] [].
 
-% NOTE: here we fail by occur check between eta and beta
-@sokl 49 [
-  pr (error "decompl") "λx.(X x) = Y X",
-] [].
-
-% NOTE: here the beta is forced in the decompl
-@sokl 53 [
-  pr ok "X = Y Z"
-] ["(Y Z)"].
-
-% NOTE: here we have eta = beta
-@sokl 530 [
-  pr (error "decompl") "λx.(X x) = Y Z"
-] ["(Y Z)"].
-
 % NOTE: here X is deduced by beta reducing Y and Z set in the next unif pb
 @sokl 54 [
   pr ok "X = Y Z",
@@ -532,11 +513,6 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- std
   pr ok "W = λx.λy.(X x y)",
   pr ok "W = λx.λy.λz.(Y y x z)",
 ] ["λx.λy.(C1 y x)", "_", "C1", "λx.λy.(C1 y x)"].
-
-@sokl 57 [
-  pr ok "λx.(X x) = Y Z",
-  pr (error "decompl") "λx.(X x) = λx.λy.(Y y x)",
-] [].
 
 @sokl 58 [
   pr ok "λx.λy.(X y x) = λx.(f (W x))",
@@ -584,17 +560,6 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- std
   pr ok "λf.(X f) = λf.f",
   pr ok "λf.(X f a) = λf.(f a)",
 ] ["λf.f"].
-
-@sokl 68 [
-  pr ok "f = λx.λy.(X (Y x) (Z y))",
-  pr ok "Y = λx.x",
-  pr ok "Z = λx.x",
-] ["f","λx.x", "λx.x"].
-
-@sokl 69 [
-  pr ok "f = λx.(X (Y x))",
-  pr ok "Y = λx.x",
-] ["f","λx.x"].
 
 @sokl 70 [
   pr ok "λx.λy.(X y x) = λx.λy.x",
@@ -677,19 +642,37 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- std
   pr ok "λx.(Y (X x)) = a"
 ] ["λx.x", "a"].
 
-% @sokl 71 [
-%   pr ok "λz.λx.λy.(X y x z) = Z",
-%   pr ok "λz.λx.λy.(Y x y z) = W",
-%   pr ok "W = Z"
-% ] [].
 
-% Fatal error: Invalid solution: 
-% [C0 := λc0.λc1.(@ C4 c1 c0), C1 := C4, 
-%  C2 := λc0.λc1.λc2.(@ C4 c1 c2 c0), C3 := λc0.λc1.λc2.(@ C4 c1 c2 c0), 
-%  C4 := _]
+% TEST NON IN PF
+@sokl 9001 [
+  pr (error "decompl") "λx.(X b x) = λx.(X a x)"
+] [].
 
-% @sokl 72 [
-%   pr ok "λx.λy.(X y x) = Z",
-%   pr ok "λz.λx.λy.(Y x z y) = W",
-%   pr ok "W = Z"
-% ] [].
+@sokl 9002 [
+  pr (error "decompl") "λx.(X x) = Y X",
+] [].
+
+@sokl 9003 [
+  pr ok "X = Y Z"
+] ["(Y Z)"].
+
+@sokl 9004 [
+  pr (error "decompl") "λx.(X x) = Y Z"
+] ["(Y Z)"].
+
+@sokl 9005 [
+  pr ok "λx.(X x) = Y Z",
+  pr (error "decompl") "λx.(X x) = λx.λy.(Y y x)",
+] [].
+
+% TEST DELAYED PF
+@sokl 5001 [
+  pr ok "f = λx.λy.(X (Y x) (Z y))",
+  pr ok "Y = λx.x",
+  pr ok "Z = λx.x",
+] ["f","λx.x", "λx.x"].
+
+@sokl 5002 [
+  pr ok "f = λx.(X (Y x))",
+  pr ok "Y = λx.x",
+] ["f","λx.x"].
