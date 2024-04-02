@@ -1349,8 +1349,8 @@ $\rho = \{~ X \mapsto f ~\}$, the corresponding problem in
 
 In order to guarantee \cref{prop:simulation} we detect
 lambdas that can disappear by eta contraction (\cref{sec:etadetection}) and
-we modify the term compiler by putting fresh unification variables
-in their place: the problematic term is moved from 
+we modify the compiled terms by putting fresh unification variables
+in their place: the problematic term is moved 
 from  \hoUnifPb to \linkStore (\cref{sec:etacomp}). The compilation
 of the problem \foUnifPb above is refined to: 
 %
@@ -1443,8 +1443,8 @@ A $\beta$-normal term $s = \lambda x_1 \ldots x_n.t$
 Since our terms are in $\beta$-normal form there is only
 one rule that can play a role (namely \ref{clause:eta1}),
 hence if the term $s$ is not exactly $x$ (case 1)
-it can only be an $\eta$-expansion of it, or a unification
-variable that can be assigned to it, or a combination of both.
+it can only be an $\eta$-expansion of $x$, or a unification
+variable that can be assigned to $x$, or a combination of both.
 If $s$ begins with a lambda, then the lambda can only disappear by $\eta$
 contraction. In that case the term $t$ under the spine of binders for
 $x_1\ldots x_n$ can either be $x$ itself applied to terms that can
@@ -1476,7 +1476,7 @@ We can now derive the implementation for \maybeeta detection:
   $s = \lambda x_1 \ldots x_n.t$, \testmaybeeta{} $s$ holds if any
   of the following holds:
   \begin{enumerate}
-    \item $t$ is a constant or variable applied to arguments
+    \item $t$ is a constant or a variable applied to the arguments
       $l_1 \ldots l_m$ such that 
       $m \geq n$ and for every $i$ such that $1 \leq i \leq m-n$
       the term  $l_i$
@@ -1800,6 +1800,7 @@ $\foUnifPb_i$ is in \maybebeta, it is possible that the resolution of the
 problems $\bigwedge_{j=0}^{i-1}\foUnifPb_j$ gives a partial substitution
 $\rho$, such that $\rho\foUnifPb_i$ falls again in \llambda.
 %
+% make test ONLY=7003 TEX=TEX + deactivate beta tex
 \printAlll
   {{{X,\lambda x.Y},
     {(X\appsep a),a}}}
@@ -1810,21 +1811,21 @@ $\rho$, such that $\rho\foUnifPb_i$ falls again in \llambda.
   {{}}
 
 In the example above, we see that $\foUnifPb_1$ instantiates $X$ so that
-$\foUnifPb_2$, can be solved in \llambda. On the other hand, even though \Uo is
-able to solve \foUnifPb, \Ue can't solve the compiled problems \hoUnifPb. In
+$\foUnifPb_2$, can be solved in \llambda. On the other hand, we see that, 
+\Ue can't solve the compiled problems \hoUnifPb. In
 fact, the resolution of $\hoUnifPb_1$ gives the substitution $\sigma = \{ A
 \mapsto \lambda x. B\}$, but the dereferencing of $\hoUnifPb_2$ gives the 
-not unifable problem $(\lambda x. B) \appsep a \Ue a$.
+non-unifable problem $(\lambda x. B) \appsep a \Ue a$.
 
-In order to encompass this unification, we capture terms $t$ in \maybebeta and
-replace them with fresh varaibles $v$. As per \maybebeta, the variables $v$ and
-the terms $t$ are linked through a \linkbeta.
+In order to encompass this unification, term compilation should capture the
+terms $t$ in \maybebeta and replace them with fresh varaibles $v$. As per
+\maybebeta, the variables $v$ and the terms $t$ are linked through a \linkbeta.
 
-\linkbeta guarantee \cref{inv:linklhs} and the term on the \rhs has the
+\linkbeta guarantees \cref{inv:linklhs} and the term on the \rhs has the
 following property:
 
 \begin{invariant}[\linkbeta \rhs]
-  The \rhs of any \linkbeta has the shape $X t_1\dots t_n$ such that $X$ is a
+  The \rhs of any \linkbeta has the shape $X~t_1\dots t_n$ such that $X$ is a
   flexible variable and $t_1\dots t_n$ is not in \llambda.
 \end{invariant}
 
@@ -1841,7 +1842,7 @@ following property:
 \begin{proof}[Proof sketch]
   Given $X \appsep t_1\dots t_n \Ue t$ where $t$ is a rigid term and
   $t_1\dots t_n$ is not in \llambda. By construction, $X \appsep t_1\dots t_n$
-  is replaced with a variable $V$, and the \linkbeta \linkbetaM{}{V}{X
+  is replaced with a variable $V$, and the \linkbeta \linkbetaM{\Gamma}{V}{X
   \appsep t_1\dots t_n} is created. The unification instantiates $V$ to $t$,
   making the \lhs of the link a rigid term, while \rhs is still in \maybebeta.
   The original problem is in fact outside \llambda and unification fails.
@@ -1858,13 +1859,16 @@ are not in \llambda.
 The list \elpiIn{Ag} is split into the list \elpiIn{Pf} and \elpiIn{Extra} such
 that \elpiIn{append Pf Extra Ag} and \elpiIn{Pf} is the largest prefix of
 \elpiIn{Ag} such that \elpiIn{Pf} is in \llambda. The \rhs of the \linkbeta is
-the application of a fresh variable \elpiIn{C} having in scope all the compiled
-list of terms obtained from \elpiIn{Pf} and \elpiIn{Extra1} as arguments. The
-variable \elpiIn{B} returned has compiled terms is a fresh variable having in
-scope all the free variables used in \rhs.
+the application of a fresh variable \elpiIn{C} having in scope all the free
+variables appearing in the compiled version of \elpiIn{Pf} and \elpiIn{Extra}. The
+variable \elpiIn{B}, returned has the compiled term, is a fresh variable having in
+scope all the free variables occurring in \elpiIn{Pf1}.
+
+\newcommand{\rhsBeta}{\ensuremath{N_S\appsep L}\xspace}
 
 \begin{invariant}
-  The \rhs of a \linkbeta has the shape \elpiIn{app[uva N S|L]}.
+  The \rhs of a \linkbeta has the shape \rhsBeta (equivalent to
+  \elpiIn{app[uva N S|L]}).
 \end{invariant}
 
 \begin{corollary}
@@ -1873,14 +1877,15 @@ scope all the free variables used in \rhs.
 \end{corollary}
 
 \begin{proof}[Proof sketch]
-  By contradiction, if \elpiIn{L} is a empty list, then the original \Fo{}
-  term has the shape \elpiIn{fapp[fuva M | Ag]} where \elpiIn{Ag} is a list of 
-  disting names. This case is however captured by rule~\ref{rule:complam} (from
-  \cref{sec:compilation}) and no \linkbeta is produced: a contradiction.
+  By contradiction, if \elpiIn{L} is a empty list, then the original \Fo{} term
+  has the shape \elpiIn{fapp[fuva M | Ag]} where \elpiIn{Ag} is a list of
+  distinct names (i.e. there list \elpiIn{Extra} is empty). This case is however
+  captured by rule~\ref{rule:complam} (from \cref{sec:compilation}) and no
+  \linkbeta is produced: a contradiction.
 \end{proof}
 
 \begin{corollary}
-  Let \elpiIn{app[uva N S|L]} be the \rhs of a \linkbeta, then the 
+  Let \rhsBeta be the \rhs of a \linkbeta, then the 
   first argument $t$ in \elpiIn{L} either appears in \elpiIn{S} or it is 
   not a name.
 \end{corollary}
@@ -1900,87 +1905,88 @@ esempio?
 
 \subsection{Progress}
 
+\newcommand{\progBetaLL}{progress-beta-llambda}
+\newcommand{\progBetaRH}{progress-beta-rigid-head}
+
 The activation of a \linkbeta is performed when its \rhs falls under \llambda
-under a given substitution. There are two main situation causing this
-progression.
+under a given substitution.
 
-\begin{definition}[progress-beta-llambda]
-  
+\begin{definition}[\progBetaLL]
+  A link \linkbetaM{\Gamma}{X}{N_S\appsep [t|L]} is removed from \linkStore, if
+  it exists a substitution $\gamma$, such that the first term $t$ is a name no
+  occurring in $S$. In this case, let $M$ a fresh variable, then the new links
+  \linkbetaM{\Gamma,x}{X}{M_{S,n}\appsep L} and \linketaM{\Gamma}{N}{\lambda
+  x.M_x} are added to \linkStore.
 \end{definition}
 
-\begin{definition}[progress-beta-rigid-head]
-  
+\begin{definition}[\progBetaRH]
+  A link \linkbetaM{\Gamma}{X}{\rhsBeta} is removed from
+  \linkStore if $N_S$ is instantiated to a term $t$ and the
+  $\beta$-reduced term $t'$ obtained from the application of $t$ to
+  $L$ is in \llambda. Moreover, $X$ is unified to $t$.
 \end{definition}
 
-Once created, there exist two main situations waking up a suspended \linkbeta.
-The former is strictly connected to the definition of $\beta$-redex and occurs
-when the head of \rhs is materialized by the oracle (see
-\cref{prop:simulation}). In this case \rhs is safely\marginpar{explain why}
-$\beta$-reduced to a new term $t'$ and the result can be unified with \lhs. In
-this scenario the \linkbeta has accomplished its goal and can be removed from
-\linkStore.
+\begin{lemma}
+  \elpiIn{progress} terminates
+\end{lemma}
 
-The second circumstance making the \linkbeta to progress is the instantiation of
-the variables in the \elpiIn{Extra1} making the corresponding arguments to
-reduce to names. In this case, we want to take the list \elpiIn{Scope1} and
-append to it the largest prefix of \elpiIn{Extra1} in a new variable
-\elpiIn{Scope2} such that \elpiIn{Scope2} remains in \llambda; we call
-\elpiIn{Extra2} the suffix of \elpiIn{Extra1} such that the concatenation of
-\elpiIn{Scope1} and \elpiIn{Extra1} is the same as the concatenation of
-\elpiIn{Scope2} and \elpiIn{Extra2}. Finally, two cases should be considered: 1)
-\elpiIn{Extra2} is the empty list, \lhs and rhs can be unified: we have two
-terms in \llambda; otherwise 2) the \linkbeta in question is replaced with a
-refined version where the \rhs is  \elpiIn{app[uva C Scope2 | Extra2]} and a new
-\linketa is added between the \lhs and the new-added variable \elpiIn{C}.
-\marginpar{dire che si adatta bene nelle approximation}
+\begin{proof}[Proof sketch]
+  TODO: bla
+\end{proof}
 
-An example justifying this second  link manipulation is given by the following
-unification problem:
+\begin{corollary}
+  Given \linkbetaM{\Gamma}{X}{\rhsBeta}, then \elpiIn{distinct-name} $S$ holds.  
+\end{corollary}
 
-\def\varF{\ensuremath{\textbf{F}}\xspace}
-\def\varA{\ensuremath{\textbf{A}}\xspace}
-\def\varB{\ensuremath{\textbf{B}}\xspace}
 
-\begin{elpicode}
-  f = flam x\ fapp[F, fapp[A, x]].
-\end{elpicode}
+\paragraph{Example of \progBetaLL} 
+A simple example of \linkbeta progression due to \progBetaLL is given below:
 
-% \begin{elpicode};
-%   f = flam x\ flam y\ fapp[F, fapp[A, x], fapp[B, y]].
-% \end{elpicode}
+% make test ONLY=7004 TEX=tex
+\printAlll
+  {{{X,\lambda x.x},
+    {\lambda x.(Y\appsep (X\appsep x)),a}}}
+  {{{A,\lambda x.x},
+    {B,a}}}
+  {{{Y,D,0},
+    {X,A,0}}}
+  {{{\eta,,A,\lambda x.E_{x}},
+    {\eta,,B,\lambda x.C_{x}},
+    {\beta,x,C_{x},(D\appsep E_{x})}}}
 
-The compilation of these terms produces the new unification problem: $f = X0$
+The \linkbeta in \linkStore has a variable $D$ applied to the variable $E_x$.
+The first unification problem, $\hoUnifPb_1$ produces the substitution $\sigma =
+\{A \mapsto \lambda x.x\}$. This instantiation triggers $\linkStore_1$ which
+before its removal, assignes $E$ to $\lambda x.x$. Now, the \linkbeta is
+\linkbetaM{x}{C_x}{(D \appsep x)}. This link is replaced with the couple of
+links: \linkbetaM{x}{C_x}{F_x}, \linketaM{}{E}{\lambda x.D_x}. $\hoUnifPb_2$
+assignes $B$ which activates $\linkStore_2$, and then all the remaining links
+are solved. The final \Ho substitution is $\sigma = \{A = \lambda x.x, B = a,
+C_x = a, D = \lambda \}$ and is decompiled into $\rho = \{X \mapsto \lambda x.x,
+Y \mapsto a\}$.
 
-We obtain the mappings $\mapping{F}{\varF}{0}, \mapping{A}{\varA}{1}$ and the links:
+\paragraph{Example of \progBetaRH}
+We can take the example provided in \cref{sec:beta}. The problem is compiled
+into:
 %
-\begin{gather}
-  \linkbetaM{c0}{X3_{c0}}{X2~X1_{c0}}\\
-  \linketaM{}{X0}{\lambda c0.X3_{c0}}
-\end{gather}
+% make test ONLY=7003 TEX=tex
+\printAlll
+  {{{X,\lambda x.Y},
+    {(X\appsep a),a}}}
+  {{{A,\lambda x.B},
+    {C,a}}}
+  {{{Y,B,0},
+    {X,A,0}}}
+  {{{\beta,,C,(A\appsep a)}}}
 
-\noindent
-where the first link is a \linketa between the variable \texttt{X0}, representing
-the right side of the unification problem (it is a \maybeeta) and
-\texttt{X3}; and a \linkbeta between the variable \texttt{X3} and the subterm
-$\lambda x.X1_x ~ a$ (it is a \maybebeta).
-The substitution tells that \substCell{x}{X1_x}{x}.
-
-We can now represent the \hrun execution from this configuration which will, at
-first, dereference all the links, and then try to solve them. The only link
-being modified is the second one, which is set to \linkbetaM{x}{X3}{X2 x a}. The
-\rhs of the link has now a variable which is partially in the PF, we can
-therefore remove the original \linkbeta and replace it with the following couple
-on links:
-
-\begin{textcode}
-  ~$\vdash$~ X1   =~$\eta$~= x\ `X4 x'
-x ~$\vdash$~ X3 x =~$\beta$~= x\ `X4 x' a
-\end{textcode}
-
-By these links we say that \texttt{X1} is now $\eta$-linked to a fresh variable
-\texttt{X4} with arity one. This new variable is used in the new \linkbeta where
-the name \texttt{x} is in its scope. This allows
-
+The first unification, $\hoUnifPb_1$, gives the substitution $\sigma = \{A
+\mapsto \lambda x.B\}$. The \linkbeta, $\linkStore_1$, becomes
+\linkbetaM{}{C}{((\lambda x.B) \appsep a)} whose \rhs can be $\beta$-reduced to
+$B$. $B$ is in \llambda and is unified with $C$. The resolution of $\hoUnifPb_2$
+gives the final substitution $\sigma = \{A \mapsto \lambda x.B, B \mapsto C, C
+\mapsto a\}$ which is decompiled into $\rho = \{X \mapsto \lambda x.a, Y \mapsto
+a\}$.
+ 
 \subsection{Tricky examples}
 
 \begin{elpicode}
