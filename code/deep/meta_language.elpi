@@ -112,12 +112,16 @@ namespace ho {
     build-perm-assign N [] Bits2 Perm21 Ass2.
 
   type beta tm -> list tm -> tm -> o.
-  beta A [] A.
-  beta (lam Bo) [H | L] R :- beta (Bo H) L R.
+  beta A [] A :- !.
+  beta (lam Bo) [H | L] R :- beta (Bo H) L R1, beta-aux R1 R.
   beta (app A) L (app X) :- append A L X.
-  beta (uva N A) L (uva N A') :- halt "XXX", append A L A'. % HIDE
+  % beta (uva N A) L (uva N A') :- !, halt "XXX", append A L A'. % HIDE
   beta (con H) L (app [con H | L]).
   beta X L (app[X|L]) :- name X.
+
+  type beta-aux tm -> tm -> o.
+  beta-aux (app [HD|TL]) R :- !, beta HD TL R.
+  beta-aux A A. 
 
   /* occur check for N before crossing a functor */
   type not_occ  addr -> subst -> tm -> o.
