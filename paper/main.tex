@@ -1914,9 +1914,11 @@ under a given substitution.
 \begin{definition}[\progBetaLL]
   A link \linkbetaM{\Gamma}{X}{N_S\appsep [t|L]} is removed from \linkStore, if
   it exists a substitution $\gamma$, such that the first term $t$ is a name no
-  occurring in $S$. In this case, let $M$ a fresh variable, then the new links
-  \linkbetaM{\Gamma,x}{X}{M_{S,n}\appsep L} and \linketaM{\Gamma}{N}{\lambda
-  x.M_x} are added to \linkStore.
+  occurring in $S$. In this case, let $M$ a fresh variable, then the new link
+  \linkbetaM{\Gamma,x}{X}{M_{S,n}\appsep L} is added to \linkStore and if $L =
+  []$, then $X$ is unified with $M_{S,n}$, otherwise, the
+  \linketaM{\Gamma}{N}{\lambda x.M_x} is added to \linkStore.
+  \label{def:progBetaLL}
 \end{definition}
 
 \begin{definition}[\progBetaRH]
@@ -1924,6 +1926,7 @@ under a given substitution.
   \linkStore if $N_S$ is instantiated to a term $t$ and the
   $\beta$-reduced term $t'$ obtained from the application of $t$ to
   $L$ is in \llambda. Moreover, $X$ is unified to $t$.
+  \label{def:progBetaRH}
 \end{definition}
 
 \begin{lemma}
@@ -1931,13 +1934,22 @@ under a given substitution.
 \end{lemma}
 
 \begin{proof}[Proof sketch]
-  TODO: bla
+  By \cref{def:progBetaRH}, the \linkbeta is removed from \linkStore, hence 
+  they cannot be applied indefinitely. If the \linkbeta is progressed due to
+  \progBetaLL, then two links are added, the first 
 \end{proof}
 
 \begin{corollary}
-  Given \linkbetaM{\Gamma}{X}{\rhsBeta}, then \elpiIn{distinct-name} $S$ holds.  
+  Given a \linkbeta, the scope of its \rhs variables in \llambda.
 \end{corollary}
 
+\begin{proof}[Proof sketch]
+  By construction, the \rhs of \linkbeta is of the form \rhsBeta and $S$ is in
+  \llambda. If a \linkbeta is triggered by \progBetaRH, then, by
+  \cref{def:progBetaRH} that link is removed by \linkStore, and the property is
+  satisfied. If the \linketa is activated by \progBetaLL, then, by
+  \cref{def:progBetaLL}, $L = [n|L']$ and the scope `$S,x$', is in \llambda. 
+\end{proof}
 
 \paragraph{Example of \progBetaLL} 
 A simple example of \linkbeta progression due to \progBetaLL is given below:

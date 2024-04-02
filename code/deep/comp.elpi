@@ -344,6 +344,13 @@ namespace comp {
   arity (con _) z.
   arity (app L) A :- len L A.
 
+  type progress-beta-llambda list tm -> tm -> tm -> subst -> subst -> links -> o.
+  progress-beta-llambda [] T1 T2 S1 S2 [] :- !,
+    (T1 ==l T2) S1 S2.
+  progress-beta-llambda Ag T1 T2 S S [L] :-
+    L = val (link-beta T1 (app [T2|Ag])).
+
+
   % a sx non c'è mai un app[uva _ _ | _] per costruzione
   % a dx abbiamo sempre app[uva _ N | L] dove N è nel PF e L no
   type progress-beta-link tm -> tm -> subst -> subst -> links -> o.
@@ -360,15 +367,14 @@ namespace comp {
   % We want to put the name x in the scope of N to make HO unif, therefore, we
   % build a new var N' of arity 1, eta-linked to N and the beta links is updated
   % New links will be: [link-beta T (app[uva N' [x] | L]), link-eta N (λx.uva N' [x])]
-  progress-beta-link (uva _ _ as T) (app[uva Ad1 Scope1 | L1]) S1 S3 NewLinks :-
-    append Scope1 L1 Scope1L,
-    pattern-fragment-prefix Scope1L Scope2 L2,
-    not (Scope1 = Scope2), !,
+
+  progress-beta-link T (app[uva Ad1 Scope1 | [HD|TL]]) S1 S4 NewLinks :-
+    append Scope1 [HD] Scope2,
+    pattern-fragment Scope2, !,
     alloc S1 Ad2 S2,
-    make-eta-link {len Scope1} {len Scope2} Ad1 Ad2 [] LinkEta S2 S3,
-    if (L2 = []) (T2 = uva Ad2 Scope2) (T2 = app [uva Ad2 Scope2 | L2]), 
-    NewLinks = [val (link-beta T T2) | LinkEta],
-    print "progress β: refine to" {pplinks NewLinks}.
+    LinkEta = val (link-eta (uva Ad1 Scope1) {eta-expand (uva Ad2 Scope1)}),
+    progress-beta-llambda TL T (uva Ad2 Scope2) S2 S4 L,
+    NewLinks = [LinkEta | L].
 
   progress-beta-link T1 (app[uva _ _ | _] as T2) S S [@val-link-beta T1 T2] :- not (T1 = uva _ _), !,
     print "unification outside PF for β:" {pplink (@val-link-beta T1 T2)} /*, fail */.
@@ -379,6 +385,8 @@ namespace comp {
     ho.beta Hd MS T3, is-in-pf T3, !, 
     print "Progress β deep with" {ho.pp T3}, % HIDE
     (T1 ==l T3) S1 S2.
+
+  progress-beta-link T1 (uva A S) S1 S2 [] :- !, halt "progress beta-link: invariant broken". 
 
   progress-beta-link T1 T2 S S [val (link-beta T1 T2)] :- !, print "no progress β".
 
