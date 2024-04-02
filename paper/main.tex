@@ -1775,8 +1775,8 @@ After deduplication the compiler output is as follows:
 % since no suspended links remain. The only mapping in the list is
 % \mapping{F}{H}{2}, which will assign the $F$ variable in \Fo{} to $\lambda xy.y$
 
-TODO: dire che preserviamo l'invariante che tutte le variable sono fully-applied
-  
+\todo[inline]{dire che preserviamo l'invariante che tutte le variable sono fully-applied
+}
 \section{Handling of \maybebeta}\label{sec:beta}
 
 % On
@@ -1834,16 +1834,20 @@ following property:
 \begin{invariant}[\linkbeta \rhs]
   The \rhs of any \linkbeta has the shape $X~t_1\dots t_n$ such that $X$ is a
   flexible variable and $t_1\dots t_n$ is not in \llambda.
+  \todo[inline]{si dice: flexible term; oppure unification variable}
 \end{invariant}
 
 \linkbeta are put in \linkStore and activated when \rhs falls in \llambda. 
+\todo[inline]{un po' ridondante con 8.2, non so se serva}
 
 % This property can be relaxed, to accept approximations: a dedicated
 % section is given in a future section
 \begin{corollary}
   If the \lhs of a \linkbeta is instantiated to a rigid term and its \rhs
-  counterpart is still in \maybebeta, the current unification problem is not in
-  \llambda and the unification fails.
+  counterpart is still in \maybebeta,
+  the current unification problem is not in \llambda
+  \todo[inline]{non capisco cosa vuoi dire con "the current...". Data la prova sotto vuoi dire che il problem originale sarebbe stato fuori... e quindi falliamo}
+  and the unification fails.
 \end{corollary}
 
 \begin{proof}[Proof sketch]
@@ -1869,9 +1873,12 @@ that \elpiIn{append Pf Extra Ag} and \elpiIn{Pf} is the largest prefix of
 the application of a fresh variable \elpiIn{C} having in scope all the free
 variables appearing in the compiled version of \elpiIn{Pf} and \elpiIn{Extra}. The
 variable \elpiIn{B}, returned has the compiled term, is a fresh variable having in
-scope all the free variables occurring in \elpiIn{Pf1}.
+scope all the free variables occurring in \elpiIn{Pf1}
+\todo[inline]{anche in Extra1 no?}.
 
 \newcommand{\rhsBeta}{\ensuremath{N_S\appsep L}\xspace}
+\todo[inline]{Io direi $X_{s_1\ldots s_n}\appsep l_1\ldots l_m$
+... where S = [s1 .. sn] e L = [l1 .. lm]}
 
 \begin{invariant}
   The \rhs of a \linkbeta has the shape \rhsBeta (equivalent to
@@ -1906,26 +1913,27 @@ scope all the free variables occurring in \elpiIn{Pf1}.
   of \elpiIn{tm} as functor.  
 \end{proof}
 
-TODO: Dire che maybe eta fa il detect anche su 
+\todo[inline]{Dire che maybe eta fa il detect anche su 
 termini che non sono il llambda, oppure dirlo in section of maybeeta + dare un
-esempio?
+esempio?}
 
 \subsection{Progress}
 
-\newcommand{\progBetaLL}{progress-beta-llambda}
-\newcommand{\progBetaRH}{progress-beta-rigid-head}
+\newcommand{\progBetaLL}{\emph{progress-beta-\llambda}}
+\newcommand{\progBetaRH}{\emph{progress-beta-rigid-head}}
 
 The activation of a \linkbeta is performed when its \rhs falls under \llambda
 under a given substitution.
 
 \begin{definition}[\progBetaLL]
   A link \linkbetaM{\Gamma}{X}{N_S\appsep [t|L]} is removed from \linkStore, if
-  it exists a substitution $\gamma$, such that the first term $t$ is a name no
+  it exists a substitution $\gamma$, such that the first term $t$ is a name not
   occurring in $S$. In this case, let $M$ a fresh variable, then the new link
   \linkbetaM{\Gamma,x}{X}{M_{S,n}\appsep L} is added to \linkStore and if $L =
   []$, then $X$ is unified with $M_{S,n}$, otherwise, the
   \linketaM{\Gamma}{N}{\lambda x.M_x} is added to \linkStore.
   \label{def:progBetaLL}
+  \todo[inline]{non è chiaro. la sostituzione immagino sia la corrente, non se ne esiste una. Poi non è chiaro se otherwise si riferische a in this case. Usa un enumerate}
 \end{definition}
 
 \begin{definition}[\progBetaRH]
@@ -1943,11 +1951,13 @@ under a given substitution.
 \begin{proof}[Proof sketch]
   By \cref{def:progBetaRH}, the \linkbeta is removed from \linkStore, hence 
   they cannot be applied indefinitely. If the \linkbeta is progressed due to
-  \progBetaLL, then two links are added, the first 
+  \progBetaLL, then two links are added, the first
+  \todo[inline]{finire}
 \end{proof}
 
 \begin{corollary}
   Given a \linkbeta, the scope of its \rhs variables in \llambda.
+  \todo[inline]{vuoi dire: le variabili che occorrono nel rhs sono in...?}
 \end{corollary}
 
 \begin{proof}[Proof sketch]
