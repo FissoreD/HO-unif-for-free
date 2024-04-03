@@ -1608,6 +1608,8 @@ when the \lhs is assigned to a variable that is the \lhs of another
   We then run $T \Ue{} T''$ (under the context $\Gamma$).
 \end{definition}
 
+\noteD[inline]{Below the proof of \cref{prop:nf}, ho usato 3 lemmi ausiliari,
+forse si può compattare in una prova più piccola?}
 \begin{lemma}
   Given a \linketa $l$, the unification done by \progressetaleft is between
   terms in $\wellb$  
@@ -1685,6 +1687,8 @@ when the \lhs is assigned to a variable that is the \lhs of another
   % therefore, \elpiIn{if (L = L1, S1 = S2)} succeeds and \elpiIn{progress}
   % terminates.
 \end{proof}
+
+\noteD[inline]{Should we proove simulation fidelity for \linketa insertion?}
 
 \paragraph{Example of \progressetaleft}
 
@@ -1834,7 +1838,8 @@ the \elpiIn{lam} constructor.
 % $\lambda x.F \appsep G_x$ is considered as \maybeeta, since we have the
 % application of term whose argument can reduce to $x$.
 
-\noteE[inline]{IIRC, second order unification, where variables can stand for functions, is semi-decidable, indeed Huet's algorith enumerates all solutions. Third order, functions that take functions, is undecidable, proved by Dowek. IMO here the problem is that there is no unique solution, (semi)decidability is a secondary point. This paragraph needs fixing.}
+% \noteE[inline]{IIRC, second order unification, where variables can stand for functions, is semi-decidable, indeed Huet's algorith enumerates all solutions. Third order, functions that take functions, is undecidable, proved by Dowek. IMO here the problem is that there is no unique solution, (semi)decidability is a secondary point. This paragraph needs fixing.}
+\noteD[inline]{I've rewritten it, it is clearer?}
 Until now, we have only dealt we unification of terms in \llambda. However, we
 want the unification relation to be more robust so that it can work with terms
 in \maybebeta. In general, unification in \maybebeta admits more then one
@@ -1862,6 +1867,7 @@ that $\rho\foUnifPb_n$ falls again in \llambda.
 In the example above, we see that $\foUnifPb_1$ instantiates $X$ so that
 $\foUnifPb_2$, can be solved in \llambda.
 \noteE[inline]{it is even a ground term, there is no unification left to perform actually}
+\noteD[inline]{i don't understand the note}
 On the other hand, we see that, 
 \Ue can't solve the compiled problems \hoUnifPb. In
 fact, the resolution of $\hoUnifPb_1$ gives the substitution $\sigma = \{ A
@@ -1880,7 +1886,7 @@ following property:
 \newcommand{\rhsBeta}{\ensuremath{\rhsBetaHead\appsep t_1\dots t_m}\xspace}
 % \noteE[inline]{Io direi $X_{s_1\ldots s_n}\appsep l_1\ldots l_m$
 % ... where S = [s1 .. sn] e L = [l1 .. lm]}
-\noteE[inline]{Is it clearer?}
+\noteD[inline]{Is it clearer?}
 
 \begin{invariant}[\linkbeta \rhs]
   The \rhs of any \linkbeta has the shape \rhsBeta such that $X$ is a
