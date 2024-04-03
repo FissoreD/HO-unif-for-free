@@ -1822,24 +1822,29 @@ fact, the resolution of $\hoUnifPb_1$ gives the substitution $\sigma = \{ A
 \mapsto \lambda x. B\}$, but the dereferencing of $\hoUnifPb_2$ gives the 
 non-unifable problem $(\lambda x. B) \appsep a \Ue a$.
 
-In order to
-encompass\todo[inline]{not sure has the right meaning}
-this unification, term compilation should capture the
-terms $t$ in \maybebeta and replace them with fresh varaibles $v$.
-\todo[inline]{we use capitals for unif variables}
-As per
-\maybebeta, the variables $v$ and the terms $t$ are linked through a \linkbeta.
+To address
+this unification problem, term compilation should capture the
+terms $t$ in \maybebeta and replace them with fresh varaibles $X$.
+The variables $X$ and the terms $t$ are linked through a \linkbeta.
 
 \linkbeta guarantees \cref{inv:linklhs} and the term on the \rhs has the
 following property:
 
+\newcommand{\rhsBetaHead}{\ensuremath{X_{s_1\dots s_n}}}
+\newcommand{\rhsBeta}{\ensuremath{\rhsBetaHead\appsep t_1\dots t_m}\xspace}
+% \todo[inline]{Io direi $X_{s_1\ldots s_n}\appsep l_1\ldots l_m$
+% ... where S = [s1 .. sn] e L = [l1 .. lm]}
+\todo[inline]{Is it clearer?}
+
 \begin{invariant}[\linkbeta \rhs]
-  The \rhs of any \linkbeta has the shape $X~t_1\dots t_n$ such that $X$ is a
-  flexible term and $t_1\dots t_n$ is not in \llambda.
+  The \rhs of any \linkbeta has the shape \rhsBeta such that $X$ is a
+  unification variable with scope $s_1\dots s_n$ and $t_1\dots t_m$ is a list of
+  terms. This is equivalent to \elpiIn{app[uva X S | L]}, where \elpiIn{S}~$=
+  s_1\dots s_n$ and \elpiIn{L}~$=t_1\dots t_m$.
 \end{invariant}
 
-\linkbeta are put in \linkStore and activated when \rhs falls in \llambda. 
-\todo[inline]{un po' ridondante con 8.2, non so se serva}
+% \linkbeta are put in \linkStore and activated when \rhs falls in \llambda. 
+% \todo[inline]{un po' ridondante con 8.2, non so se serva}
 
 % This property can be relaxed, to accept approximations: a dedicated
 % section is given in a future section
@@ -1855,16 +1860,16 @@ following property:
 \begin{proof}[Proof sketch]
   Given $X \appsep t_1\dots t_n \Ue t$ where $t$ is a rigid term and
   $t_1\dots t_n$ is not in \llambda. By construction, $X \appsep t_1\dots t_n$
-  is replaced with a variable $V$, and the \linkbeta \linkbetaM{\Gamma}{V}{X
-  \appsep t_1\dots t_n} is created. The unification instantiates $V$ to $t$,
+  is replaced with a variable $Y$, and the \linkbeta \linkbetaM{\Gamma}{Y}{X
+  \appsep t_1\dots t_n} is created. The unification instantiates $Y$ to $t$,
   making the \lhs of the link a rigid term, while \rhs is still in \maybebeta.
-  The original problem is in fact outside \llambda and unification fails.
+  The original problem is in fact outside \llambda.
 \end{proof}
 
 \subsection{Compilation}
 
 Detection of \maybebeta is quite simple to implement in the compiler, since it
-is sufficient to capture applications with flexible head and argument that
+is sufficient to detect applications with flexible head and argument that
 are not in \llambda.
 
 \input{code/comp_beta}
@@ -1877,17 +1882,11 @@ variables appearing in the compiled version of \elpiIn{Pf} and \elpiIn{Extra}. T
 variable \elpiIn{B}, returned has the compiled term, is a fresh variable having in
 scope all the free variables occurring in \elpiIn{Pf1} and \elpiIn{Extra1}
 
-\newcommand{\rhsBetaHead}{\ensuremath{X_{s_1\dots s_n}}}
-\newcommand{\rhsBeta}{\ensuremath{\rhsBetaHead\appsep t_1\dots t_m}\xspace}
-% \todo[inline]{Io direi $X_{s_1\ldots s_n}\appsep l_1\ldots l_m$
-% ... where S = [s1 .. sn] e L = [l1 .. lm]}
-\todo[inline]{Is it clearer?}
-
-In the following, we pose $X_{s_1\dots s_n}$ to represent a variable $X$ with
-the list of distinct names $s_1\dots s_n$ as scope. Moreover, $X_{s_1\dots
-s_n}\appsep t_1\dots t_m$ is the application of that variable to the list of
-terms $t_1\dots t_m$. Note that \rhsBeta is equivalent to \elpiIn{app[uva N S |
-T]}.
+% In the following, we pose $X_{s_1\dots s_n}$ to represent a variable $X$ with
+% the list of distinct names $s_1\dots s_n$ as scope. Moreover, $X_{s_1\dots
+% s_n}\appsep t_1\dots t_m$ is the application of that variable to the list of
+% terms $t_1\dots t_m$. Note that \rhsBeta is equivalent to \elpiIn{app[uva N S |
+% T]}.
 
 \begin{invariant}
   The \rhs of a \linkbeta has the shape \rhsBeta.
