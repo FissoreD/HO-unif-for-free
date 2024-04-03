@@ -1853,8 +1853,9 @@ following property:
   counterpart is still in \maybebeta,
   the original unification problem is not in \llambda
   % \todo[inline]{non capisco cosa vuoi dire con "the current...". Data la prova sotto vuoi dire che il problem originale sarebbe stato fuori... e quindi falliamo}
-  \todo[inline]{Is it clearer?}
+  %\todo[inline]{Is it clearer?}
   and the unification fails.
+  \todo[inline]{it is clear. Quello che manca è percè serve farlo, e che cosa si guadagna. Qui dimostri che fallire "ha senso" se siamo solo interessati a llambda, ma allo stesso tempo sti beta link sono lì per gestire roba fuori.}
 \end{corollary}
 
 \begin{proof}[Proof sketch]
@@ -1897,11 +1898,11 @@ scope all the free variables occurring in \elpiIn{Pf1} and \elpiIn{Extra1}
 \end{corollary}
 
 \begin{proof}[Proof sketch]
-  By contradiction, if $m = 0$, then the original \Fo{} term
+  By contradiction,\todo{we assume to have a link} if $m = 0$, then the original \Fo{} term
   has the shape \elpiIn{fapp[fuva M | Ag]} where \elpiIn{Ag} is a list of
   distinct names (i.e. the list \elpiIn{Extra} is empty). This case is however
   captured by rule~\ref{rule:complam} (from \cref{sec:compilation}) and no
-  \linkbeta is produced: a contradiction.
+  \linkbeta is produced: a contradiction.\todo{since we started by assuming we had a link}
 \end{proof}
 
 \begin{corollary}
@@ -1940,7 +1941,8 @@ under a given substitution.
   s_n,t}\appsep t_2\dots t_m}, is added to \linkStore.
   \label{def:progBetaLL}
   % \todo[inline]{non è chiaro. la sostituzione immagino sia la corrente, non se ne esiste una. Poi non è chiaro se otherwise si riferische a in this case. Usa un enumerate}
-  \todo[inline]{Is it clearer?}
+  %\todo[inline]{Is it clearer?}
+  \todo[inline]{l1 or t1? Forse è più chiaro dire che il ilnk beta viene raffinato con link beta cone meno argomenti, Se poi il numero di argomenti extra è 0 il tutto è in llambda e quindi viene buttato via. In questo modo la terminazione è ancora più chiara perchè si vede già che prima decresce la lista di argomenti e poi il numero di beta}
 \end{definition}
 
 \begin{definition}[\progBetaRH]
@@ -1965,11 +1967,12 @@ under a given substitution.
   \linketa. By \cref{lemma:prog-eta-terminates}, we know that \elpiIn{progress}
   terminates if \linkStore is made by only \linketa and therefore
   \elpiIn{progress} still terminates.
-  \todo[inline]{is it ok?}
+  %\todo[inline]{is it ok?}
+  \todo[inline]{funziona. per essere più precisi io parlerei di ordine lessicografico (tipico ordine ben fondato usato per dimostrare terminazione). Nl nostro caso è la tripla (argomenti extra dei beta, numero di beta, numero di eta).}
 \end{proof}
 
 \begin{corollary}
-  Given a \linkbeta, the variables occurring in its \rhs is in \llambda.
+  Given a \linkbeta, the variables occurring in its \rhs are in \llambda.
   % \todo[inline]{vuoi dire: le variabili che occorrono nel rhs sono in...?}
   \todo[inline]{is it clearer?}
 \end{corollary}
@@ -1983,8 +1986,8 @@ under a given substitution.
   as a variable as a scope which is still in \llambda. 
 \end{proof}
 
-\paragraph{Example of \progBetaLL} 
-A simple example of \linkbeta progression due to \progBetaLL is given below:
+\paragraph{Example of \progBetaLL}
+Consider the \linkbeta below:
 
 % make test ONLY=7004 TEX=tex
 \printAlll
@@ -1998,16 +2001,24 @@ A simple example of \linkbeta progression due to \progBetaLL is given below:
     {\eta,,B,\lambda x.C_{x}},
     {\beta,x,C_{x},(D\appsep E_{x})}}}
 
-The \linkbeta in \linkStore has a variable $D$ applied to the variable $E_x$.
-The first unification problem, $\hoUnifPb_1$ produces the substitution $\sigma =
-\{A \mapsto \lambda x.x\}$. This instantiation triggers $\linkStore_1$ which
-before its removal, assignes $E$ to $\lambda x.x$. Now, the \linkbeta is
-\linkbetaM{x}{C_x}{(D \appsep x)}. This link is replaced with the couple of
-links: \linkbetaM{x}{C_x}{F_x}, \linketaM{}{E}{\lambda x.D_x}. $\hoUnifPb_2$
-assignes $B$ which activates $\linkStore_2$, and then all the remaining links
+\noindent
+Initially the \linkbeta \rhs is a variable $D$ applied to the $E_x$.
+The first unification problem results in $\sigma =
+\{A \mapsto \lambda x.x\}$. In turn this instantiation
+triggers progress \todo{which rule?} in first \linketa that is 
+removed and $E$ is assigned to $\lambda x.x$.
+Under this substitution the \linkbeta becomes
+\linkbetaM{x}{C_x}{(D \appsep x)}, and by \progBetaLL
+it is replaced with the following two links:
+\linkbetaM{x}{C_x}{F_x} and
+\todo{ma allora il link ora sparisce perhè è in llambda?}
+\linketaM{}{E}{\lambda x.D_x}. The second unification
+problem assignes $a$ to $B$, that in turn activates
+the second \linketa ($a$ is assigned to $C$), and then all the remaining links
 are solved. The final \Ho substitution is $\sigma = \{A = \lambda x.x, B = a,
 C_x = a, D = \lambda \}$ and is decompiled into $\rho = \{X \mapsto \lambda x.x,
-Y \mapsto a\}$.
+Y \mapsto a\}$.\todo{assegnament per D incompleto}
+\todo{alla fine non si usa anche la regola beta-rigid-head?}
 
 \paragraph{Example of \progBetaRH}
 We can take the example provided in \cref{sec:beta}. The problem is compiled
@@ -2023,10 +2034,11 @@ into:
     {X,A,0}}}
   {{{\beta,,C,(A\appsep a)}}}
 
-The first unification, $\hoUnifPb_1$, gives the substitution $\sigma = \{A
-\mapsto \lambda x.B\}$. The \linkbeta, $\linkStore_1$, becomes
+The first unification problems is solved by the substitution $\sigma = \{A
+\mapsto \lambda x.B\}$. The \linkbeta becomes
 \linkbetaM{}{C}{((\lambda x.B) \appsep a)} whose \rhs can be $\beta$-reduced to
-$B$. $B$ is in \llambda and is unified with $C$. The resolution of $\hoUnifPb_2$
+$B$. $B$ is in \llambda and is unified with $C$. The resolution of the second
+unification problem
 gives the final substitution $\sigma = \{A \mapsto \lambda x.B, B \mapsto C, C
 \mapsto a\}$ which is decompiled into $\rho = \{X \mapsto \lambda x.a, Y \mapsto
 a\}$.
