@@ -1912,11 +1912,11 @@ scope all the free variables occurring in \elpiIn{Pf1} and \elpiIn{Extra1}
 \end{corollary}
 
 \begin{proof}[Proof sketch]
-  By contradiction,\noteE{we assume to have a link} if $m = 0$, then the original \Fo{} term
-  has the shape \elpiIn{fapp[fuva M | Ag]} where \elpiIn{Ag} is a list of
-  distinct names (i.e. the list \elpiIn{Extra} is empty). This case is however
-  captured by rule~\ref{rule:complam} (from \cref{sec:compilation}) and no
-  \linkbeta is produced: a contradiction.\noteE{since we started by assuming we had a link}
+  Assume we have a \linkbeta, by contradiction, if $m = 0$, then the original
+  \Fo{} term has the shape \elpiIn{fapp[fuva M | Ag]} where \elpiIn{Ag} is a
+  list of distinct names (i.e. the list \elpiIn{Extra} is empty). This case is
+  however captured by rule~\ref{rule:complam} (from \cref{sec:compilation}) and
+  no \linkbeta is produced which contradicts our initial assumption.
 \end{proof}
 
 \begin{corollary}
