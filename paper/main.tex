@@ -1853,7 +1853,7 @@ following property:
   % \noteE[inline]{non capisco cosa vuoi dire con "the current...". Data la prova sotto vuoi dire che il problem originale sarebbe stato fuori... e quindi falliamo}
   %\noteE[inline]{Is it clearer?}
   and the unification fails.
-  \noteE[inline]{it is clear. Quello che manca è percè serve farlo, e che cosa si guadagna. Qui dimostri che fallire "ha senso" se siamo solo interessati a llambda, ma allo stesso tempo sti beta link sono lì per gestire roba fuori.}
+  \label{cor:keep-fidelity}
 \end{corollary}
 
 \begin{proof}[Proof sketch]
@@ -1864,6 +1864,22 @@ following property:
   making the \lhs of the link a rigid term, while \rhs is still in \maybebeta.
   The original problem is in fact outside \llambda.
 \end{proof}
+
+\begin{lemma}
+  Given a \hoUnifPb and a substitution $\sigma$ then the resolution of
+  $\sigma\hoUnifPb$ guarantees \cref{prop:fidelity} 
+\end{lemma}
+
+\begin{proof}[Proof sketch]
+  If $\sigma\hoUnifPb$ is in \llambda, then by \cref{DA FARE}, the problem 
+  unifies iff its corresponding \Fo{} unifies too. If $\sigma\hoUnifPb$ is in 
+  \maybebeta, then, by \cref{cor:keep-fidelity}, the unification fails, as per
+  the corresponding unification in \Fo{}.
+\end{proof}
+
+\noteD[inline]{manca una ref che dice che se \hoUnifPb is not in $\llambda$ but
+$\sigma\hoUnifPb$ is in \llambda, then \hoUnifPb succeeds iff its corresponding
+\Fo{} pb succeeds}.
 
 \subsection{Compilation}
 
