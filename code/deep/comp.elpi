@@ -381,7 +381,7 @@ namespace comp {
     print "Progress β deep with" {ho.pp T3}, % HIDE
     (T1 ==l T3) S1 S2.
 
-  progress-beta-link T1 (uva A S) S1 S2 [] :- !, halt "progress beta-link: invariant broken". 
+  progress-beta-link _ (uva _ _) _ _ _ :- !, halt "progress beta-link: invariant broken". 
 
   progress-beta-link T1 T2 S S [val (link-beta T1 T2)] :- !, print "no progress β".
 

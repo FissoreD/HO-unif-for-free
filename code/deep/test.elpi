@@ -613,10 +613,13 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- std
   pr ok "X a b = a",
 ] ["λx.λy.x", "λx.x"].
 
-@sokl 82 [
-  pr ok "X = λx.x",
-  pr ok "f = (λx.(Y (X x)))"
-] ["λx.x", "f"].
+@sokl 83 [
+  pr ok "λx.λy.((X y) x) = λx.λy.(y x)" 
+] ["λx.x"].
+
+@sokl 84 [
+  pr (error "unif") "λx.λy.(X x) = λx.λy.(y x)" 
+] ["λx.x"].
 
 % From the paper
 @sokl 7000 [
@@ -639,9 +642,8 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- std
 
 @sokl 7004 [
   pr ok "X = λx.x",
-  pr ok "λx.(Y (X x)) = a"
-] ["λx.x", "a"].
-
+  pr ok "λx.(Y (X x)) = f"
+] ["λx.x", "f"].
 
 % TEST NON IN PF
 @sokl 9001 [
