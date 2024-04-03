@@ -1755,8 +1755,8 @@ assigned to $x$ (the second variable of its scope). We can finally see the
 \progressetaright of $\linkStore_1$: its \rhs is now $\lambda y.y$ ($C_{xy}$
 gives $y$). Since it is no more in \maybeeta, $\lambda y.y$ is unified with
 $E_x$. Moreover, $\linkStore_2$ is also triggered due to
-\cref{def:progressetaright}: $\lambda x.(f \appsep (lambda y.y) \appsep x)$ is
-$\eta$-reducible to $f \appsep (lambda y.y)$ which is a term not starting with
+\cref{def:progressetaright}: $\lambda x.(f \appsep (\lambda y.y) \appsep x)$ is
+$\eta$-reducible to $f \appsep (\lambda y.y)$ which is a term not starting with
 the \elpiIn{lam} constructor.
 
 % After unification of the two terms, $X$ is assigned to $\lambda x.\lambda y.x$.
