@@ -1570,7 +1570,7 @@ This link clearly validates \cref{inv:linklhs}.
 \linketa are meant to delay the unification of ``problematic'' terms until
 we know for sure if the head lambda has to be $\eta$-contracted or not.
 
-\newcommand{\progressetaleft}{\emph{progress-$\eta$-left}}
+\newcommand{\progressetaleft}{\emph{progress-$\eta$-left}\xspace}
 \begin{definition}[\progressetaleft]\label{def:progressetaleft}
 A link \linketaM{\Gamma}{X}{T} is removed from \linkStore when
 $X$ becomes rigid. There are two cases:
@@ -1584,7 +1584,7 @@ $X$ becomes rigid. There are two cases:
 \end{enumerate}
 \end{definition}
 
-\newcommand{\progressetaright}{\emph{progress-$\eta$-right}}
+\newcommand{\progressetaright}{\emph{progress-$\eta$-right}\xspace}
 \begin{definition}[\progressetaright]\label{def:progressetaright} A link
 \linketaM{\Gamma}{X}{T} is removed from \linkStore when either 1)
 $\testmaybeeta~T$ does not hold (anymore) or 2) by $\eta$-contracting $T$ to
@@ -1668,7 +1668,8 @@ $\sigma = \{ A~ \mapsto C, B \mapsto D ~\}$.
 In turn, given the map \mapStore, this second assignment is decompiled to
 $\rho = \{~ X \mapsto Y ~\}$ as expected.
 
-We delay in next section a \linketa progression due to \progressetaright
+We delay at the end of  next section an example of \linketa progression due to
+\progressetaright
 
 \section{Enforcing Invariant~\ref{inv:uvaarity}}
 \label{sec:invariant1}
@@ -1748,7 +1749,16 @@ After deduplication the compiler output is as follows:
     {\eta,,A,\lambda x.B_{x}},
     {\eta,x,B_{x},\lambda y.C_{y x}}}}
 
-\noteD[inline]{ci vuole l'esempio per il \progressetaright}
+In this example, $\hoUnifPb_1$ assigns $A$ which triggers $\linkStore_3$ and
+then $\linkStore_4$ by \cref{def:progressetaleft}. $C_{yx}$ is therefore
+assigned to $x$ (the second variable of its scope). We can finally see the
+\progressetaright of $\linkStore_1$: its \rhs is now $\lambda y.y$ ($C_{xy}$
+gives $y$). Since it is no more in \maybeeta, $\lambda y.y$ is unified with
+$E_x$. Moreover, $\linkStore_2$ is also triggered due to
+\cref{def:progressetaright}: $\lambda x.(f \appsep (lambda y.y) \appsep x)$ is
+$\eta$-reducible to $f \appsep (lambda y.y)$ which is a term not starting with
+the \elpiIn{lam} constructor.
+
 % After unification of the two terms, $X$ is assigned to $\lambda x.\lambda y.x$.
 % This assignment makes $l_2$ to progress since the \lhs is materialized and by
 % unification, between $X$ and $\lambda x.Y_{x}$, $Y_x$ is instantiate to $\lambda
