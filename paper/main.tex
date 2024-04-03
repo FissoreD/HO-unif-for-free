@@ -1791,18 +1791,17 @@ After deduplication the compiler output is as follows:
 \todo[inline]{IIRC, second order unification, where variables can stand for functions, is semi-decidable, indeed Huet's algorith enumerates all solutions. Third order, functions that take functions, is undecidable, proved by Dowek. IMO here the problem is that there is no unique solution, (semi)decidability is a secondary point. This paragraph needs fixing.}
 Until now, we have only dealt we unification of terms in \llambda. However, we
 want the unification relation to be more robust so that it can work with terms
-in \maybebeta. Unification in \maybebeta is in general a non-decidable
-procedure, e.g. $X \appsep a \Uo a$ is a unification problem in \maybebeta,
-since we have $X a$ has the shape $X t_1\dots t_n$ where $X$ is a unification
-variable and $t_1\dots t_n$ is not a list of distinct names (in our example, $a$
-is a constant, hence not a name). We also point out that this unification
+in \maybebeta. In general, unification in \maybebeta admits more then one
+solution and commiting one of them in the substitution does not guarantee
+prop.~\ref{prop:complete}. For instance, $X \appsep a \Uo a$ is a unification
 problem admits two different substitutions: $\rho_1 = \{X \mapsto \lambda x.x\}$
-and $\rho_2 = \{X \mapsto \lambda \_.a\}$.
+and $\rho_2 = \{X \mapsto \lambda \_.a\}$. Prefer one over the other may break
+future unifications.
 
-It is the case, however, given a list of unification $n$ problems \foUnifPb, if
-$\foUnifPb_i$ is in \maybebeta, it is possible that the resolution of the
-problems $\bigwedge_{j=0}^{i-1}\foUnifPb_j$ gives a partial substitution
-$\rho$, such that $\rho\foUnifPb_i$ falls again in \llambda.
+It is the case that, given a list of unification problems, $\foUnifPb_1\dots
+\foUnifPb_n$ with $\foUnifPb_n$ in \maybebeta, the resolution of
+$\bigwedge_{i=0}^{n-1}\foUnifPb_i$ gives a partial substitution $\rho$, such
+that $\rho\foUnifPb_n$ falls again in \llambda.
 %
 % make test ONLY=7003 TEX=TEX + deactivate beta tex
 \printAlll
