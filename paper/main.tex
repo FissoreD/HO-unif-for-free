@@ -328,7 +328,7 @@ Elpi (Section~\ref{sec:encodings}), then we identify a minimal language \Fo{}
 in which the problems sketched here can be fully described.
 We then detail an encoding \elpiIn{comp} from \Fo{} to \Ho (the language of
 the meta language) and a decoding \elpiIn{decomp} to relate the unifiers
-bla bla.. TODO citare Teyjus.
+bla bla.. \noteE[inline]{citare Teyjus}.
 The code discussed in the paper can be accessed at the URL:
 \url{https://github.com/FissoreD/paper-ho}.
 
@@ -385,7 +385,7 @@ We call \Eo the equality over ground terms in \Fo,
 \Ee the equality over ground terms in \Ho,
 \Uo the unification procedure we want to implement and
 \Ue the one provided by the meta language.
-TODO extend \Eo and \Ee with reflexivity on uvars.
+\noteE[inline]{extend \Eo and \Ee with reflexivity on uvars.}
 
 \newcommand{\specunif}[3]{
   #3_i \in \llambda \Rightarrow %
@@ -435,7 +435,7 @@ The variable map connects unification variables in \Ho with variables
 in \Fo{} and is used to ``decompile'' the assignment,
 $\D{\sigma}{m}{l}{\rho}$. Links represent problematic sub-terms which
 are linked to the unification variable that stands in their place in the
-compiled term. These links are checked for or progress XXX improve....
+compiled term. These links are checked for or progress \noteE[inline]{XXX improve....}
 
 We represent a logic program \emph{run} in \Fo{} as
 a list \emph{steps} $p$ of length $\mathcal{N}$. Each step is a
@@ -560,7 +560,7 @@ Properties \ref{prop:correct} and \ref{prop:complete} state, respectively, that
 in \llambda the implementation of \Uo is correct, complete and returns the most
 general unifier.
 
-\todo[inline]{fix}Property \ref{prop:simulation} states that \Uo, hence our compilation scheme,
+\noteE[inline]{fix}Property \ref{prop:simulation} states that \Uo, hence our compilation scheme,
 is resilient to unification problems outside \llambda solved by
 a third party. We believe this property is of practical interest since we
 want the user to be able to add heuristics via hand written rules
@@ -762,7 +762,7 @@ The memory and its associated operations are described below:
 \noindent
 If a memory cell is \elpiIn{none}, then the corresponding unification variable
 is not set. \elpiIn{assign} sets an unset cell to the given value, while
-\elpiIn{new} finds the first unused address and sets it to \elpiIn{none}.\todo[inline]{is new used?}
+\elpiIn{new} finds the first unused address and sets it to \elpiIn{none}.\noteE[inline]{is new used?}
 
 Since in \Ho unification variables have a scope, their solution needs to be
 abstracted over it to enable the instantiation of a single
@@ -793,7 +793,7 @@ In order to preserve invariant \ref{inv:uvaarity} we store the
 arity of each \elpiIn{hvariable} in the mapping and we reuse an existing
 mapping only if the arity matches.
 
-TODO: add ref to \cref{sec:invariant1}
+\noteD{add ref to \cref{sec:invariant1}}
 
 \input{code/alloc_mapping}
 
@@ -965,7 +965,7 @@ any other implementation of $\lambda$Prolog.
 The only detail worth discussing is the fact that the procedure updates a
 substitution, rather than just crafting one as presented in
 section~\ref{sec:problem-statement}. The reason is that the algorithm folds
-over a term, updating a substitution while it traverses it.\todo[inline]{explain better}
+over a term, updating a substitution while it traverses it.\noteE[inline]{explain better}
 
 % The first three rules unify terms with same rigid heads, and
 % call the unification relation on the sub-terms. If $t_1$ (resp. $t_2$) is an
@@ -996,7 +996,7 @@ over a term, updating a substitution while it traverses it.\todo[inline]{explain
 % the variables of the OL with the decompiled version of their corresponding meta
 % variables. We claim that $t$ and $u$ unify if and only if $t'$ and $u'$ unify
 % and that the substitution in the object language is the same as the one returned
-% by the ML. \todo[inline]{same or $\supseteq$ or $\subseteq$}
+% by the ML. \noteE[inline]{same or $\supseteq$ or $\subseteq$}
 
 % In the following section we explain how we deal with term (de)compilation and
 % links between unification variables.
@@ -1012,7 +1012,7 @@ for terms outside \llambda in Section \ref{sec:beta}.
 
 \subsection{Compilation}
 \label{sec:compilation}
-\todo[inline]{manca beta normal in entrata}
+\noteE[inline]{manca beta normal in entrata}
 
 The main task of the compiler is to recognize \Fo{} variables standing
 for functions and map them to higher order variables in \Ho.
@@ -1274,7 +1274,7 @@ Both problems are addressed in the next two sections.
 % \noindent
 % defines a link, which is a relation between to variables indexes, the first
 % being the index of a OL variable and the second being the index of a ML
-% variable. The third integer\todo[inline]{integer or nat?} is the number of term in the
+% variable. The third integer\noteE[inline]{integer or nat?} is the number of term in the
 % scope of the two variables, or equivalently, in a typed language, their arity.
 
 % As an example, let's study the following unification problem (a slightly
@@ -1417,7 +1417,7 @@ $\eta$-expansion.\\
 We can now define more formally how \maybeeta terms are detected together with
 its auxiliary functions:
 
-\todo[inline]{the compiler must do beta normal!!!!}
+\noteE[inline]{the compiler must do beta normal!!!!}
 \newcommand{\reduceto}{\emph{may-contract-to}}
 \begin{definition}[\reduceto]
   A term $s$ \reduceto{} a name $x$ if there exists a
@@ -1454,7 +1454,7 @@ that can be assigned to that application (case 3).
 
 \noindent
 Note that this condition does not require the term to be in \llambda.
-\todo[inline]{Is this relevant}
+\noteE[inline]{Is this relevant}
 
 \newcommand{\occursrigid}{\emph{occurs-rigidly}}
 \newcommand{\occurrigid}{\emph{occur-rigidly}}
@@ -1581,8 +1581,8 @@ $X$ becomes rigid. There are two cases:
     we unify the $\eta$-expansion of the $X$ with $T$, that is we run
     $\lambda x.X \appsep x\Ue{} T$  (under
     the context $\Gamma$)
-  \item if $X = \lambda x.t$ we run $X \Ue{} T$.
-  \todo[inline]{do we have the name case in the code?}
+    \noteE[inline]{where y comes from? $X = y$: $y$ is in the ctx of X}
+    \item if $X = \lambda x.t$ we run $X \Ue{} T$.
 \end{enumerate}
 \end{definition}
 
@@ -1592,7 +1592,7 @@ A link \linketaM{\Gamma}{X}{T} is removed from \linkStore when
 $\testmaybeeta~T$ does not hold (anymore) and by $\eta$-contracting
 $T$ to $T'$ (if possible, else $T' = T$) and executing $X \Ue{} T'$ (under
 the context $\Gamma$).
-\todo[inline]{there was a note about T' having a rigid head, TO BE FIXED}
+\noteE[inline]{there was a note about T' having a rigid head, TO BE FIXED}
 \end{definition}
 
 There is a third case in which a link is removed from \linkStore, namely
@@ -1651,15 +1651,6 @@ Decompilation the generates $\rho = \{~ X \mapsto f ~\}$, since
 $X$ is mapped to $B$ and
 $f$ is the $\eta$-contracted version of $\lambda x.f \appsep x$.
 
-\paragraph{Example of \progressetaright}\todo[inline]{TODO}
-
-
-
-A second example, showing the activation of a link when the \rhs is no more a
-\maybeeta, is given in \cref{sec:invariant1}, since we need to work with
-variables used with different arities. This example represent the run of the
-unification problems proposed at \cref{sec:basic-comp-limitations}
-
 \paragraph{Example of \progressetadedup}
 
 A very basic example of \linketa deduplication, is given below:
@@ -1679,9 +1670,7 @@ $\sigma = \{ A~ \mapsto C, B \mapsto D ~\}$.
 In turn, given the map \mapStore, this second assignment is decompiled to
 $\rho = \{~ X \mapsto Y ~\}$ as expected.
 
-\todo[inline]{I don't get this TODO}
-TODO: we can have $\lambda x. F_x$ in the substitution if we know that $F$ does
-not reduce to $T x$ where x is not free in $T$.
+We delay in next section a \linketa progression due to \progressetaright
 
 \section{Enforcing Invariant~\ref{inv:uvaarity}}
 \label{sec:invariant1}
@@ -1760,7 +1749,8 @@ After deduplication the compiler output is as follows:
     {\eta,,D,\lambda x.(f\appsep E_{x}\appsep x)},
     {\eta,,A,\lambda x.B_{x}},
     {\eta,x,B_{x},\lambda y.C_{y x}}}}
-\todo[inline]{TODO: non so se serva spiegare l'esecuzione (in commento)}
+
+\noteD[inline]{ci vuole l'esempio per il \progressetaright}
 % After unification of the two terms, $X$ is assigned to $\lambda x.\lambda y.x$.
 % This assignment makes $l_2$ to progress since the \lhs is materialized and by
 % unification, between $X$ and $\lambda x.Y_{x}$, $Y_x$ is instantiate to $\lambda
@@ -1778,7 +1768,7 @@ After deduplication the compiler output is as follows:
 % since no suspended links remain. The only mapping in the list is
 % \mapping{F}{H}{2}, which will assign the $F$ variable in \Fo{} to $\lambda xy.y$
 
-\todo[inline]{dire che preserviamo l'invariante che tutte le variable sono fully-applied
+\noteE[inline]{dire che preserviamo l'invariante che tutte le variable sono fully-applied
 }
 \section{Handling of \maybebeta}\label{sec:beta}
 
@@ -1788,7 +1778,7 @@ After deduplication the compiler output is as follows:
 % $\lambda x.F \appsep G_x$ is considered as \maybeeta, since we have the
 % application of term whose argument can reduce to $x$.
 
-\todo[inline]{IIRC, second order unification, where variables can stand for functions, is semi-decidable, indeed Huet's algorith enumerates all solutions. Third order, functions that take functions, is undecidable, proved by Dowek. IMO here the problem is that there is no unique solution, (semi)decidability is a secondary point. This paragraph needs fixing.}
+\noteE[inline]{IIRC, second order unification, where variables can stand for functions, is semi-decidable, indeed Huet's algorith enumerates all solutions. Third order, functions that take functions, is undecidable, proved by Dowek. IMO here the problem is that there is no unique solution, (semi)decidability is a secondary point. This paragraph needs fixing.}
 Until now, we have only dealt we unification of terms in \llambda. However, we
 want the unification relation to be more robust so that it can work with terms
 in \maybebeta. In general, unification in \maybebeta admits more then one
@@ -1815,7 +1805,7 @@ that $\rho\foUnifPb_n$ falls again in \llambda.
 
 In the example above, we see that $\foUnifPb_1$ instantiates $X$ so that
 $\foUnifPb_2$, can be solved in \llambda.
-\todo[inline]{it is even a ground term, there is no unification left to perform actually}
+\noteE[inline]{it is even a ground term, there is no unification left to perform actually}
 On the other hand, we see that, 
 \Ue can't solve the compiled problems \hoUnifPb. In
 fact, the resolution of $\hoUnifPb_1$ gives the substitution $\sigma = \{ A
@@ -1832,9 +1822,9 @@ following property:
 
 \newcommand{\rhsBetaHead}{\ensuremath{X_{s_1\dots s_n}}}
 \newcommand{\rhsBeta}{\ensuremath{\rhsBetaHead\appsep t_1\dots t_m}\xspace}
-% \todo[inline]{Io direi $X_{s_1\ldots s_n}\appsep l_1\ldots l_m$
+% \noteE[inline]{Io direi $X_{s_1\ldots s_n}\appsep l_1\ldots l_m$
 % ... where S = [s1 .. sn] e L = [l1 .. lm]}
-\todo[inline]{Is it clearer?}
+\noteE[inline]{Is it clearer?}
 
 \begin{invariant}[\linkbeta \rhs]
   The \rhs of any \linkbeta has the shape \rhsBeta such that $X$ is a
@@ -1844,7 +1834,7 @@ following property:
 \end{invariant}
 
 % \linkbeta are put in \linkStore and activated when \rhs falls in \llambda. 
-% \todo[inline]{un po' ridondante con 8.2, non so se serva}
+% \noteE[inline]{un po' ridondante con 8.2, non so se serva}
 
 % This property can be relaxed, to accept approximations: a dedicated
 % section is given in a future section
@@ -1852,10 +1842,10 @@ following property:
   If the \lhs of a \linkbeta is instantiated to a rigid term and its \rhs
   counterpart is still in \maybebeta,
   the original unification problem is not in \llambda
-  % \todo[inline]{non capisco cosa vuoi dire con "the current...". Data la prova sotto vuoi dire che il problem originale sarebbe stato fuori... e quindi falliamo}
-  %\todo[inline]{Is it clearer?}
+  % \noteE[inline]{non capisco cosa vuoi dire con "the current...". Data la prova sotto vuoi dire che il problem originale sarebbe stato fuori... e quindi falliamo}
+  %\noteE[inline]{Is it clearer?}
   and the unification fails.
-  \todo[inline]{it is clear. Quello che manca è percè serve farlo, e che cosa si guadagna. Qui dimostri che fallire "ha senso" se siamo solo interessati a llambda, ma allo stesso tempo sti beta link sono lì per gestire roba fuori.}
+  \noteE[inline]{it is clear. Quello che manca è percè serve farlo, e che cosa si guadagna. Qui dimostri che fallire "ha senso" se siamo solo interessati a llambda, ma allo stesso tempo sti beta link sono lì per gestire roba fuori.}
 \end{corollary}
 
 \begin{proof}[Proof sketch]
@@ -1898,11 +1888,11 @@ scope all the free variables occurring in \elpiIn{Pf1} and \elpiIn{Extra1}
 \end{corollary}
 
 \begin{proof}[Proof sketch]
-  By contradiction,\todo{we assume to have a link} if $m = 0$, then the original \Fo{} term
+  By contradiction,\noteE{we assume to have a link} if $m = 0$, then the original \Fo{} term
   has the shape \elpiIn{fapp[fuva M | Ag]} where \elpiIn{Ag} is a list of
   distinct names (i.e. the list \elpiIn{Extra} is empty). This case is however
   captured by rule~\ref{rule:complam} (from \cref{sec:compilation}) and no
-  \linkbeta is produced: a contradiction.\todo{since we started by assuming we had a link}
+  \linkbeta is produced: a contradiction.\noteE{since we started by assuming we had a link}
 \end{proof}
 
 \begin{corollary}
@@ -1919,7 +1909,7 @@ scope all the free variables occurring in \elpiIn{Pf1} and \elpiIn{Extra1}
   \llambda, or it is a term with a constructor of \elpiIn{tm} as functor.  
 \end{proof}
 
-\todo[inline]{Dire che maybe eta fa il detect anche su 
+\noteE[inline]{Dire che maybe eta fa il detect anche su 
 termini che non sono il llambda, oppure dirlo in section of maybeeta + dare un
 esempio?}
 
@@ -1940,9 +1930,9 @@ under a given substitution.
   2) otherwise, the refined \linkbeta, \linkbetaM{\Gamma}{T}{M_{s_1\dots
   s_n,t}\appsep t_2\dots t_m}, is added to \linkStore.
   \label{def:progBetaLL}
-  % \todo[inline]{non è chiaro. la sostituzione immagino sia la corrente, non se ne esiste una. Poi non è chiaro se otherwise si riferische a in this case. Usa un enumerate}
-  %\todo[inline]{Is it clearer?}
-  \todo[inline]{l1 or t1? Forse è più chiaro dire che il ilnk beta viene raffinato con link beta cone meno argomenti, Se poi il numero di argomenti extra è 0 il tutto è in llambda e quindi viene buttato via. In questo modo la terminazione è ancora più chiara perchè si vede già che prima decresce la lista di argomenti e poi il numero di beta}
+  % \noteE[inline]{non è chiaro. la sostituzione immagino sia la corrente, non se ne esiste una. Poi non è chiaro se otherwise si riferische a in this case. Usa un enumerate}
+  %\noteE[inline]{Is it clearer?}
+  \noteE[inline]{l1 or t1? Forse è più chiaro dire che il ilnk beta viene raffinato con link beta cone meno argomenti, Se poi il numero di argomenti extra è 0 il tutto è in llambda e quindi viene buttato via. In questo modo la terminazione è ancora più chiara perchè si vede già che prima decresce la lista di argomenti e poi il numero di beta}
 \end{definition}
 
 \begin{definition}[\progBetaRH]
@@ -1967,14 +1957,14 @@ under a given substitution.
   \linketa. By \cref{lemma:prog-eta-terminates}, we know that \elpiIn{progress}
   terminates if \linkStore is made by only \linketa and therefore
   \elpiIn{progress} still terminates.
-  %\todo[inline]{is it ok?}
-  \todo[inline]{funziona. per essere più precisi io parlerei di ordine lessicografico (tipico ordine ben fondato usato per dimostrare terminazione). Nl nostro caso è la tripla (argomenti extra dei beta, numero di beta, numero di eta).}
+  %\noteE[inline]{is it ok?}
+  \noteE[inline]{funziona. per essere più precisi io parlerei di ordine lessicografico (tipico ordine ben fondato usato per dimostrare terminazione). Nl nostro caso è la tripla (argomenti extra dei beta, numero di beta, numero di eta).}
 \end{proof}
 
 \begin{corollary}
   Given a \linkbeta, the variables occurring in its \rhs are in \llambda.
-  % \todo[inline]{vuoi dire: le variabili che occorrono nel rhs sono in...?}
-  \todo[inline]{is it clearer?}
+  % \noteE[inline]{vuoi dire: le variabili che occorrono nel rhs sono in...?}
+  \noteE[inline]{is it clearer?}
 \end{corollary}
 
 \begin{proof}[Proof sketch]
@@ -2005,20 +1995,20 @@ Consider the \linkbeta below:
 Initially the \linkbeta \rhs is a variable $D$ applied to the $E_x$.
 The first unification problem results in $\sigma =
 \{A \mapsto \lambda x.x\}$. In turn this instantiation
-triggers progress \todo{which rule?} in first \linketa that is 
+triggers progress \noteE{which rule?} in first \linketa that is 
 removed and $E$ is assigned to $\lambda x.x$.
 Under this substitution the \linkbeta becomes
 \linkbetaM{x}{C_x}{(D \appsep x)}, and by \progBetaLL
 it is replaced with the following two links:
 \linkbetaM{x}{C_x}{F_x} and
-\todo{ma allora il link ora sparisce perhè è in llambda?}
+\noteE{ma allora il link ora sparisce perhè è in llambda?}
 \linketaM{}{E}{\lambda x.D_x}. The second unification
 problem assignes $a$ to $B$, that in turn activates
 the second \linketa ($a$ is assigned to $C$), and then all the remaining links
 are solved. The final \Ho substitution is $\sigma = \{A = \lambda x.x, B = a,
 C_x = a, D = \lambda \}$ and is decompiled into $\rho = \{X \mapsto \lambda x.x,
-Y \mapsto a\}$.\todo{assegnament per D incompleto}
-\todo{alla fine non si usa anche la regola beta-rigid-head?}
+Y \mapsto a\}$.\noteE{assegnament per D incompleto}
+\noteE{alla fine non si usa anche la regola beta-rigid-head?}
 
 \paragraph{Example of \progBetaRH}
 We can take the example provided in \cref{sec:beta}. The problem is compiled
@@ -2043,8 +2033,9 @@ gives the final substitution $\sigma = \{A \mapsto \lambda x.B, B \mapsto C, C
 \mapsto a\}$ which is decompiled into $\rho = \{X \mapsto \lambda x.a, Y \mapsto
 a\}$.
  
-\subsection{Tricky examples}
+\subsection{Heuristics}
 
+Possiamo perdere OC e rimanere sospesi o commit di soluzione approx
 \begin{elpicode}
   triple ok (@lam x\ @app[@f, @app[@X, x]]) @Y,
   triple ok @X (@lam x\ x),
@@ -2058,22 +2049,25 @@ a\}$.
 % ].
 \end{elpicode}
 
-\section{First order approximation}
+% \section{First order approximation}
 
-\otext{Coq can solve this: \coqIn{f 1 2 = X 2}, by setting X to f 1}
-\otext{We can re-use part of the algo for $\beta$ given before}
+% \otext{Coq can solve this: \coqIn{f 1 2 = X 2}, by setting X to f 1}
+% \otext{We can re-use part of the algo for $\beta$ given before}
 
 
-\section{Unif encoding in real life}
-\otext{Il ML presentato qui è esattamente elpi}
-\otext{Il OL presentato qui è esattamente coq}
-\otext{Come implementatiamo tutto ciò nel solver}
+% \section{Unif encoding in real life}
+% \otext{Il ML presentato qui è esattamente elpi}
+% \otext{Il OL presentato qui è esattamente coq}
+% \otext{Come implementatiamo tutto ciò nel solver}
 
-\section{Results: stdpp and tlc}
-\otext{How may rule are we solving?}
-\otext{Can we do some perf test}
+% \section{Results: stdpp and tlc}
+% \otext{How may rule are we solving?}
+% \otext{Can we do some perf test}
+
+\section{Practical example}
 
 \section{Conclusion}
+
 
 \printbibliography
 
