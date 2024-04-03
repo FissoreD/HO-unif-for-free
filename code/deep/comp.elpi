@@ -79,7 +79,7 @@ namespace comp {
     % Head is flex -> if N is in Args, we can have eta 
     forall1 (x\ exists (reducible-to [] x) Args) L, !. 
   maybe-eta (flam B) L :- !, pi x\ maybe-eta (B x) [x | L].
-  maybe-eta (fapp [fcon _|Args]) L :-
+  maybe-eta (fapp [T|Args]) L :- (name T; T = fcon _),
     % Head is rigid -> to be an eta we consider also L
     split-last-n {len L} Args First Last,
     % forall1 (x\ forall1 (y\ not (occurs-rigidly x y)) First) L,
@@ -254,6 +254,7 @@ namespace comp {
   mk-app (uva N L) T (uva N R) :- append L [T] R.
   mk-app (con C) T (app [con C, T]).
   mk-app (app L) T (app R) :- append L [T] R.
+  mk-app T L (app [T, L]) :- name T.
 
   type eta-expand-n tm -> nat -> tm -> o.
   eta-expand-n T z T.
@@ -294,7 +295,7 @@ namespace comp {
   type maybe-eta-ho tm -> list tm -> o.
   maybe-eta-ho (uva _ Args) L :- !, forall1 (mem Args) L, !. 
   maybe-eta-ho (lam B) L :- !, pi x\ maybe-eta-ho (B x) [x | L].
-  maybe-eta-ho (app [_|Args]) L :-
+  maybe-eta-ho (app [T|Args]) L :- (T = con _; name T),
     split-last-n {len L} Args First Last,
     none (x\ exists (occurs-rigidly-ho x) First) L,
     forall2 (reducible-to-ho []) {rev L} Last.
@@ -321,6 +322,9 @@ namespace comp {
     ({eta-expand T} ==l T1) H H1.
   progress-eta-link (con _ as T) (lam x\ _ as T1) H H1 [] :- !, 
     print "progress η con left", % HIDE
+    ({eta-expand T} ==l T1) H H1.
+  progress-eta-link T (lam x\ _ as T1) H H1 [] :- name T, !, 
+    print "progress η name left", % HIDE
     ({eta-expand T} ==l T1) H H1.
   progress-eta-link (lam _ as T) T1 H H1 [] :- !, 
     print "progress η lam left", % HIDE 
