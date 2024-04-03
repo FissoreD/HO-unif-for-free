@@ -1565,8 +1565,6 @@ This link clearly validates \cref{inv:linklhs}.
   the assumption that the rule triggered.
 \end{proof}
 
-TODO: W preservation \cref{prop:nf}
-
 \subsection{Progress}\label{sec:etaprogress}
 
 \linketa are meant to delay the unification of ``problematic'' terms until
@@ -1587,16 +1585,16 @@ $X$ becomes rigid. There are two cases:
 \end{definition}
 
 \newcommand{\progressetaright}{\emph{progress-$\eta$-right}}
-\begin{definition}[\progressetaright]\label{def:progressetaright}
-A link \linketaM{\Gamma}{X}{T} is removed from \linkStore when
-$\testmaybeeta~T$ does not hold (anymore) and by $\eta$-contracting
-$T$ to $T'$ (if possible, else $T' = T$) and executing $X \Ue{} T'$ (under
-the context $\Gamma$).
-\noteE[inline]{there was a note about T' having a rigid head, TO BE FIXED}
+\begin{definition}[\progressetaright]\label{def:progressetaright} A link
+\linketaM{\Gamma}{X}{T} is removed from \linkStore when either 1)
+$\testmaybeeta~T$ does not hold (anymore) or 2) by $\eta$-contracting $T$ to
+$T'$, $T'$ is a term not starting with the \elpiIn{lam} constructor. In the
+first case, $X$ is unified with $T$ and in the second one, $X$ is unified with
+$T'$ (under the context $\Gamma$).
 \end{definition}
 
 There is a third case in which a link is removed from \linkStore, namely
-when the \lhs is assigned to another variable that is the \lhs of another
+when the \lhs is assigned to a variable that is the \lhs of another
 \linketa.
 
 \newcommand{\progressetadedup}{\emph{progress-$\eta$-deduplicate}}
