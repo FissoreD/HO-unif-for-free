@@ -1919,22 +1919,6 @@ following property:
   The original problem is in fact outside \llambda.
 \end{proof}
 
-\begin{lemma}
-  Given a \hoUnifPb and a substitution $\sigma$ then the resolution of
-  $\sigma\hoUnifPb$ guarantees \cref{prop:fidelity} 
-\end{lemma}
-
-\begin{proof}[Proof sketch]
-  If $\sigma\hoUnifPb$ is in \llambda, then by \cref{DA FARE}, the problem 
-  unifies iff its corresponding \Fo{} unifies too. If $\sigma\hoUnifPb$ is in 
-  \maybebeta, then, by \cref{lemma:keep-fidelity}, the unification fails, as per
-  the corresponding unification in \Fo{}.
-\end{proof}
-
-\noteD[inline]{manca una ref che dice che se \hoUnifPb is not in $\llambda$ but
-$\sigma\hoUnifPb$ is in \llambda, then \hoUnifPb succeeds iff its corresponding
-\Fo{} pb succeeds}.
-
 \subsection{Compilation}
 
 Detection of \maybebeta is quite simple to implement in the compiler, since it
@@ -2046,12 +2030,26 @@ under a given substitution.
 \end{corollary}
 
 \begin{proof}[Proof sketch]
-  By construction, the \rhs of \linkbeta is of the form \rhsBeta, $s_1\dots s_n$
+  By construction, the \rhs of \linkbeta has the shape \rhsBeta, $s_1\dots s_n$
   is in \llambda and all the terms $t_1\dots t_n$ are in \llambda, too. If a
   \linkbeta is triggered by \progBetaRH, then, by \cref{def:progBetaRH}, that
   link is removed by \linkStore, and the property is satisfied. If the \linketa
   is activated by \progBetaLL, then, by \cref{def:progBetaLL}, the new \linkbeta
   as a variable as a scope which is still in \llambda. 
+\end{proof}
+
+\begin{lemma}
+  Given a \hoUnifPb and a substitution $\sigma$ then the resolution of
+  $\sigma\hoUnifPb$ guarantees \cref{prop:fidelity} 
+\end{lemma}
+
+\begin{proof}[Proof sketch]
+  If $\sigma\hoUnifPb$ is in \llambda, then by
+  \cref{def:progBetaLL,def:progBetaRH}, then \linkbeta desappear and the
+  unification done between terms in \llambda. This problem unifies iff
+  its corresponding \Fo{} problem unifies too. If $\sigma\hoUnifPb$ is in \maybebeta,
+  then, by \cref{lemma:keep-fidelity}, the unification fails, as per the
+  corresponding unification in \Fo{}.
 \end{proof}
 
 \paragraph{Example of \progBetaLL}
