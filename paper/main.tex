@@ -1552,6 +1552,7 @@ This link clearly validates \cref{inv:linklhs}.
 \begin{corollary}
   The \rhs of any \linketa has exactly one lambda abstraction, hence
   the rule above respects \cref{inv:link-eta-right}.
+  \label{cor:rhs-eta-onelamb}
 \end{corollary}
 
 \begin{proof}[Proof sketch]
@@ -1606,11 +1607,58 @@ when the \lhs is assigned to a variable that is the \lhs of another
   bound variables, i.e. $T'' = T'[\vec{r}/\vec{s}]$.
   We then run $T \Ue{} T''$ (under the context $\Gamma$).
 \end{definition}
-  
-TODO: prove \cref{prop:nf}: we never commit a \maybeeta{} term in
-$\sigma$ since we run \Ue{} only when we know that the 
-terms are no more \maybeeta, and when \lhs is no more a variable or \rhs is 
-no more a \maybeeta, the link is removed from \linkStore.
+
+\begin{lemma}
+  Given a \linketa $l$, the unification done by \progressetaleft is between
+  terms in $\wellb$  
+  \label{lemma:unif-eta-1}
+\end{lemma}
+
+\begin{proof}[Proof sketch]
+  Let $\sigma$ be the substitution, such that $\wellb(\sigma)$. $\lhs \in
+  \sigma$, therefore $\wellb(\lhs)$. By \cref{def:progressetaleft}, if 1) \lhs is
+  a name, a constant of an application, then, \lhs is unified with the
+  $\eta$-reduced term $t$ obtain from \rhs. By \cref{cor:rhs-eta-onelamb}, \rhs
+  has one lambda, therefore $\wellb(t)$. Otherwise, 2) \lhs has \elpiIn{lam} as
+  functor, \rhs should not be an $\eta$-expansion ans, so, $\wellb(\rhs)$. In
+  both cases, unification is performed between terms in \wellb.
+\end{proof}
+
+\begin{lemma}
+  Given a \linketa $l$, the unification done by \progressetaright is between
+  terms in \wellb.
+  \label{lemma:unif-eta-2}
+\end{lemma}
+
+\begin{proof}[Proof sketch]
+  \lhs is variable, and, by \cref{def:progressetaright}, \rhs is either no more
+  a \maybeeta, i.e. \rhs is not a $\eta$-expansion and, so, $\wellb(\rhs)$.
+  Otherwise, \rhs can reduce to a term which cannot be a $\eta$-expansion, and,
+  so, $\wellb(\rhs)$. In both cases, unification is done between terms in
+  \wellb.
+\end{proof}
+
+\begin{lemma}
+  Given a \linketa $l$, the unification done by \progressetadedup is between
+  terms in \wellb.
+  \label{lemma:unif-eta-3}
+\end{lemma}
+
+\begin{proof}
+  Trivial, since the unification is done between unification variables, which
+  are by definition in \wellb.
+\end{proof}
+
+\begin{lemma}
+  \Cref{prop:nf} holds, i.e., given a substitution $\sigma$ and a \linketa $l$,
+  after the activation of $l$, $\wellb(\sigma)$ holds.
+\end{lemma}
+
+\begin{proof}[Proof sketch]
+  By \cref{lemma:unif-eta-1,lemma:unif-eta-2,lemma:unif-eta-3}, every
+  unification performed by the activation of a \linketa is performed between
+  terms in \wellb, therefore, the substitution remains \wellb.
+\end{proof}
 
 \begin{lemma}
   \elpiIn{progress} terminates.
