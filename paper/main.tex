@@ -2075,10 +2075,8 @@ triggers $\linkStore_1$ by \progressetaleft
 and $E$ is assigned to $\lambda x.x$.
 Under this substitution the \linkbeta becomes
 \linkbetaM{x}{C_x}{(D \appsep x)}, and by \progBetaLL
-it is replaced with the following two links:
-\linkbetaM{x}{C_x}{F_x} and
-\noteE{ma allora il link ora sparisce perhè è in llambda?}
-\linketaM{}{E}{\lambda x.D_x}. The second unification
+it is replaced with the link:
+\linketaM{}{E}{\lambda x.D_x}, while $C_x$ is unified with $D_x$. The second unification
 problem assignes $f$ to $B$, that in turn activates
 the second \linketa ($f$ is assigned to $C$), and then all the remaining links
 are solved. The final \Ho substitution is $\sigma = \{A _{} \mapsto \lambda x.x, 
@@ -2086,6 +2084,7 @@ B _{} \mapsto f, C _{x} \mapsto (f\appsep x),
 D _{} \mapsto f, E _{x} \mapsto x, F _{x} \mapsto C_{x} \}$ and is decompiled into $\rho = \{X \mapsto \lambda x.x,
 Y \mapsto f\}$.
 \noteE{alla fine non si usa anche la regola beta-rigid-head?}
+\noteD{nope. Si risolve tutto by \progBetaLL}
 
 \paragraph{Example of \progBetaRH}
 We can take the example provided in \cref{sec:beta}. The problem is compiled
