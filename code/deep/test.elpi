@@ -634,6 +634,12 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- std
   pr ok "λx.λy.(x y) = λx.λy.(X y x)"
 ] ["λx.λy.(y x)"].
 
+% OC error not detected when not in llambda
+@sokl 97 [
+  pr ok "X a = f (Z a)",
+  pr (error "decompl") "Z = X"
+] [].
+
 % From the paper
 @sokl 7000 [
   pr ok "λx.(X x) = f"
@@ -657,6 +663,11 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- std
   pr ok "X = λx.x",
   pr ok "λx.(Y (X x)) = f"
 ] ["λx.x", "f"].
+
+@sokl 7005 [
+  pr ok "X a = a",
+  pr ok "X = λx.Y",
+] ["λx.a", "a"].
 
 % TEST NON IN PF
 @sokl 9001 [

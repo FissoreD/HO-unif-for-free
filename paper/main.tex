@@ -2109,36 +2109,49 @@ gives the final substitution $\sigma = \{A \mapsto \lambda x.B, B \mapsto C, C
 \mapsto a\}$ which is decompiled into $\rho = \{X \mapsto \lambda x.a, Y \mapsto
 a\}$.
  
-\subsection{Heuristics}
+\subsection{Relaxing \cref{lemma:keep-fidelity}}
 
-Possiamo perdere OC e rimanere sospesi o commit di soluzione approx
-\begin{elpicode}
-  triple ok (@lam x\ @app[@f, @app[@X, x]]) @Y,
-  triple ok @X (@lam x\ x),
-  triple ok @Y @f
-\end{elpicode}
+\newcommand{\progBetaNoLLWait}{\emph{progress-beta-\maybebeta}}
 
-\begin{elpicode}
-% @okl 22 [
-%   triple ok (@lam x\ @lam y\ @app[@Y, y, x]) @X,
-%   triple ok (@lam x\ @f) @X,
-% ].
-\end{elpicode}
+% from https://www.cs.mcgill.ca/~bpientka/papers/unif_miller60.pdf
+Working with terms in \llambda is sometime too restrictive. There exists systems
+such as $\lambda$Prolog~\cite{lamProlog}, Abella~\cite{gacek2008abella}, which 
+delay the resolution of \maybebeta unification problems if the substitution
+is not able to put them in \llambda.
 
-% \section{First order approximation}
+\printAlll
+  {{{(X\appsep a),a},
+    {X,\lambda x.Y}}}
+  {{}}
+  {{}}
+  {{}}
 
-% \otext{Coq can solve this: \coqIn{f 1 2 = X 2}, by setting X to f 1}
-% \otext{We can re-use part of the algo for $\beta$ given before}
+In the example above, $\foUnifPb_1$ is in \maybebeta and the object language
+cannot solve it, and, by \cref{prop:fidelity}, the meta language neither.
+However, we can be more permissive, and relax \cref{lemma:keep-fidelity}. This
+modification is quite simple to manage: we are introducing a new \maybebeta
+progress rule, say \progBetaNoLLWait, by which, if \lhs is rigid and \rhs is
+flexible, the considered \linkbeta is kept in the store and no progression is
+done\footnote{This new rule trivially guarantees the termination of progress}.
+\progBetaNoLLWait makes \elpiIn{occur-check-links} partial, since the check is
+possible only on links with a variable on the \lhs. This means that we can have
+two links \linkbetaM{}{X}{Y\appsep a} and \linkbetaM{}{f\appsep X}{Y\appsep a}
+where the occur check does not thow an error. Note however, that the
+decompilation of the two links will force the unification of $X$ to $Y\appsep a$
+and then the unification of $f\appsep (Y \appsep a)$ to $Y\appsep a$, which
+fails by the occur check of \Ue.
 
+A second strategy to deal with problem that are in \maybebeta is to make some
+approximation. This is the case for example of the unification algorithm of Coq
+used in its type class solver~\cite{sozeau08}. The approximation consists in
+forcing a choice (among the others) when the unification problem is in
+\maybebeta. For instance, in $X \appsep a \appsep b = Y \appsep b$, the last
+argument of the two terms is the same, therefore $Y$ is assigned to $X a$. Note
+that this is of course an approximation, since $\sigma = \{X = \lambda x.Y, Y =
+\_\}$ is another valid substitution for the original problem. This approximation
+can be easily introduced in our unification procedure, by adding new custom 
+\linkbeta progress rules.
 
-% \section{Unif encoding in real life}
-% \otext{Il ML presentato qui è esattamente elpi}
-% \otext{Il OL presentato qui è esattamente coq}
-% \otext{Come implementatiamo tutto ciò nel solver}
-
-% \section{Results: stdpp and tlc}
-% \otext{How may rule are we solving?}
-% \otext{Can we do some perf test}
 
 \section{Practical example}
 
