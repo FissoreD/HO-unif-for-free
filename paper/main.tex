@@ -2000,7 +2000,7 @@ under a given substitution.
   % \linkStore, and 1) if $m = 1$ then $Y_{s_1\dots s_n, t}$ is unified with $T$,
   % 2) otherwise, the refined \linkbeta, \linkbetaM{\Gamma}{T}{M_{s_1\dots
   % s_n,t}\appsep t_2\dots t_m}, is added to \linkStore.
-  % \label{def:progBetaLL}
+  \label{def:progBetaLL}
   % % \noteE[inline]{non è chiaro. la sostituzione immagino sia la corrente, non se ne esiste una. Poi non è chiaro se otherwise si riferische a in this case. Usa un enumerate}
   % %\noteE[inline]{Is it clearer?}
   % \noteE[inline]{l1 or t1? Forse è più chiaro dire che il ilnk beta viene raffinato con link beta cone meno argomenti, Se poi il numero di argomenti extra è 0 il tutto è in llambda e quindi viene buttato via. In questo modo la terminazione è ancora più chiara perchè si vede già che prima decresce la lista di argomenti e poi il numero di beta}
@@ -2020,15 +2020,26 @@ under a given substitution.
 \end{lemma}
 
 \begin{proof}[Proof sketch]
-  \Cref{def:progBetaRH} makes \elpiIn{progress} terminates, since it makes a
-  \linkbeta desappear from \linkStore. On the other hand, \cref{def:progBetaLL},
-  creates each time a new \linketa and replace the old \linkbeta with a new one.
-  This progression can however triggered at most $m$ times, since each new
-  \linkbeta as a smaller list of applied variables. At the $m^{th}$ progression,
-  the \linkbeta is removed from \linkStore which is now filled by $m$ new
-  \linketa. By \cref{lemma:prog-eta-terminates}, we know that \elpiIn{progress}
-  terminates if \linkStore is made by only \linketa and therefore
-  \elpiIn{progress} still terminates.
+  Let $l$ a \linkbeta in the store \linkStore. If $l$ is activated by
+  \progBetaRH, then it desappears from \linkStore and \elpiIn{progress}
+  terminates. Otherwise, the \rhs of $l$ is made by a variable applied to $m$
+  arguments. At each activation of \progBetaLL, $l$ is replaced by a new
+  \linkbeta $l^1$ having $m-1$ arguments. At the $m^{th}$ iteration, the
+  \linkbeta $l^m$ has no more arguments and is removed from \linkStore.
+  Note that at the $m^{th}$ iteration, $m$ new \linketa have been added to
+  \linkStore, however, by \cref{lemma:prog-eta-terminates}, the algorithm
+  terminates.
+  \noteD{L'ho riscritto}
+
+  % \Cref{def:progBetaRH} makes \elpiIn{progress} terminates, since it makes a
+  % \linkbeta desappear from \linkStore. On the other hand, \cref{def:progBetaLL},
+  % creates each time a new \linketa and replace the old \linkbeta with a new one.
+  % This progression can however triggered at most $m$ times, since each new
+  % \linkbeta as a smaller list of applied variables. At the $m^{th}$ progression,
+  % the \linkbeta is removed from \linkStore which is now filled by $m$ new
+  % \linketa. By \cref{lemma:prog-eta-terminates}, we know that \elpiIn{progress}
+  % terminates if \linkStore is made by only \linketa and therefore
+  % \elpiIn{progress} still terminates.
   %\noteE[inline]{is it ok?}
   \noteE[inline]{funziona. per essere più precisi io parlerei di ordine lessicografico (tipico ordine ben fondato usato per dimostrare terminazione). Nl nostro caso è la tripla (argomenti extra dei beta, numero di beta, numero di eta).}
 \end{proof}
@@ -2036,7 +2047,7 @@ under a given substitution.
 \begin{corollary}
   Given a \linkbeta, the variables occurring in its \rhs are in \llambda.
   % \noteE[inline]{vuoi dire: le variabili che occorrono nel rhs sono in...?}
-  \noteE[inline]{is it clearer?}
+  \noteD[inline]{is it clearer?}
 \end{corollary}
 
 \begin{proof}[Proof sketch]
@@ -2128,7 +2139,8 @@ Working with terms in \llambda is sometime too restrictive. There exists systems
 such as $\lambda$Prolog~\cite{lamProlog}, Abella~\cite{gacek2008abella}, which 
 delay the resolution of \maybebeta unification problems if the substitution
 is not able to put them in \llambda.
-
+%
+% make test ONLY=7005 TEX=tex
 \printAlll
   {{{(X\appsep a),a},
     {X,\lambda x.Y}}}
