@@ -252,7 +252,7 @@ namespace ho {
 
   type ppass1 list string -> assignment -> string -> o.
   ppass1 [] (abs F) S :- pi x\ std.any->string x N, ppass1 [] (F x) S1, S is N ^ " " ^ S1.
-  ppass1 [X|XS] (abs F) S :- pi x\ pp1 _ x X => ppass1 XS (F x) S1, S is X ^ " " ^ S1.
+  ppass1 [X|XS] (abs F) S :- pi x\ (pp1 _ x X :- !) => ppass1 XS (F x) S1, S is X ^ " " ^ S1.
   ppass1 XS (val T) S :- S is ":= " ^ {pp1 XS T}.
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
