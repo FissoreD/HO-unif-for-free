@@ -151,8 +151,8 @@ print-compil-result _ P L M :-
   print "## After compilation the links are" {comp.pplinks L},
   print "## After compilation the mappings are" {comp.ppmappings M}.
 
-type xtest test fo.fm -> o.
-xtest (test N (pr LR Sol) as Test) :- std.do![
+type xtest o -> test fo.fm -> o.
+xtest Mode (test N (pr LR Sol) as Test) :- Mode => std.do![
   print "## Test" N ":" {ptest Test},
   printC "run test?",
   comp.compile-terms LR Uproblems Map2 Links2 HO_Subst1,
@@ -181,9 +181,13 @@ xtest (test N (pr LR Sol) as Test) :- std.do![
 type parse-triple pair diagnostic string -> triple diagnostic fo.fm fo.fm -> o.
 parse-triple (pr D S) (triple D A B) :- parse-eq S A B.
 
-macro @sok N SE SS :- (declare-test xtest ptest (test N (pr [triple ok X Y] (some S))) :- parse-eq SE X Y, std.map SS parse S).
-macro @sko N SE :- (declare-test xtest ptest (test N (pr [triple (error "unif") X Y] none)) :- parse-eq SE X Y).
-macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- std.map SX parse-triple X, std.map SS parse S).
+macro @sok N SE SS :- (declare-test (xtest true) ptest (test N (pr [triple ok X Y] (some S))) :- parse-eq SE X Y, std.map SS parse S).
+macro @sko N SE :- (declare-test (xtest true) ptest (test N (pr [triple (error "unif") X Y] none)) :- parse-eq SE X Y).
+macro @sokl-call Mode N SX SS :- (declare-test (xtest Mode) ptest (test N (pr X (some S))) :- std.map SX parse-triple X, std.map SS parse S).
+macro @sokl N SX SS :- @sokl-call true N SX SS.
+macro @sokl-force-progress N SX SS :- @sokl-call comp.progress-beta-force N SX SS.
+macro @sokl-delay N SX SS :- @sokl-call comp.suspend-out-of-lam N SX SS.
+
 % macro @okl N E S :- (declare-test xtest ptest (test N (pr E (some S)))).
 
 @sok 1 "f X = f a" ["a"].
@@ -594,12 +598,6 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- std
   pr (error "unif") "λx.λy.(f (X x) x) = f (λx.x)",
 ] [].
 
-@sokl 79 [
-  pr ok "X = λx.λy.(Y y x)",
-  pr ok "X a b c d = d",
-  pr ok "Y = λx.λy.λz.λw.w",
-] ["λx.λy.λz.λw.w", "λx.λy.λz.λw.w"].
-
 @sokl 80 [
   pr ok "X = λx.λy.λz.λw.(Y x y z)",
   pr ok "Y = λx.λy.λz.x",
@@ -634,12 +632,6 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- std
   pr ok "λx.λy.(x y) = λx.λy.(X y x)"
 ] ["λx.λy.(y x)"].
 
-% OC error not detected when not in llambda
-@sokl 97 [
-  pr ok "X a = f (Z a)",
-  pr (error "decompl") "Z = X"
-] [].
-
 % From the paper
 @sokl 7000 [
   pr ok "λx.(X x) = f"
@@ -664,7 +656,7 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- std
   pr ok "λx.(Y (X x)) = f"
 ] ["λx.x", "f"].
 
-@sokl 7005 [
+@sokl-delay 7005 [
   pr ok "X a = a",
   pr ok "X = λx.Y",
 ] ["λx.a", "a"].
@@ -692,13 +684,37 @@ macro @sokl N SX SS :- (declare-test xtest ptest (test N (pr X (some S))) :- std
 ] [].
 
 % TEST DELAYED PF
-@sokl 5001 [
+@sokl-delay 5001 [
   pr ok "f = λx.λy.(X (Y x) (Z y))",
   pr ok "Y = λx.x",
   pr ok "Z = λx.x",
 ] ["f","λx.x", "λx.x"].
 
-@sokl 5002 [
+@sokl-delay 5002 [
   pr ok "f = λx.(X (Y x))",
   pr ok "Y = λx.x",
 ] ["f","λx.x"].
+
+@sokl-delay 5003 [
+  pr ok "X = λx.λy.(Y y x)",
+  pr ok "X a b c d = d",
+  pr ok "Y = λx.λy.λz.λw.w",
+] ["λx.λy.λz.λw.w", "λx.λy.λz.λw.w"].
+
+@sokl-delay 5004 [
+  pr ok "X a = f (Z a)",
+  pr (error "decompl") "Z = X" % Note: OC error not detected
+] [].
+
+% TEST FORCE UNIF OUT-LLAMBDA
+@sokl-force-progress 4001 [
+  pr ok "X a = f a"
+] ["f"].
+
+@sokl-force-progress 4002 [
+  pr ok "λx.(X x a) = λx.(f x x b a)"
+] ["λx.(f x x b)"].
+
+@sokl-force-progress 4003 [
+  pr (error "unif") "λx.(X x a) = λx.(f x x b)"
+] [].

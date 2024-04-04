@@ -350,6 +350,21 @@ namespace comp {
   progress-beta-llambda Ag T1 T2 S S [L] :-
     L = val (link-beta T1 (app [T2|Ag])).
 
+  type suspend-out-of-lam o.
+  type progress-beta-force o.
+
+  % progress-out-llambda LHS V_RHS AG_RHS S1 S2 L % Note AG_RHS is non-empty, otherwise we are in llambda
+  type progress-out-llambda tm -> tm -> list tm -> subst -> subst -> links -> o.
+  % Approx1 : last of 
+  progress-out-llambda T1 Uv Ag S1 S2 [] :- progress-beta-force, !,
+    print "Unification align heuristics",
+    T1 = app L, split {minus {len L} {len Ag}} L [HD|TL] Ag, !,
+    ho.beta HD TL T,
+    (Uv ==l T) S1 S2, print "End unif heuristic".
+  progress-out-llambda T1 Uv Ag S S [val(link-beta T1 (app [Uv | Ag]))] :- suspend-out-of-lam, !,
+    print "Unification out of Lλ delayed".
+  progress-out-llambda _ _ _ _ _ _ :- print "Unif out llambda: fail", fail.
+
   % a sx non c'è mai un app[uva _ _ | _] per costruzione
   % a dx abbiamo sempre app[uva _ N | L] dove N è nel PF e L no
   type progress-beta-link tm -> tm -> subst -> subst -> links -> o.
@@ -375,8 +390,8 @@ namespace comp {
     progress-beta-llambda TL T (uva Ad2 Scope2) S2 S4 L,
     NewLinks = [LinkEta | L].
 
-  progress-beta-link T1 (app[uva _ _ | _] as T2) S S [@val-link-beta T1 T2] :- not (T1 = uva _ _), !,
-    print "unification outside PF for β:" {pplink (@val-link-beta T1 T2)} /*, fail */.
+  progress-beta-link T1 (app[T2 | Ag]) S1 S2 L :- T2 = uva _ _, not (T1 = uva _ _), !,
+    progress-out-llambda T1 T2 Ag S1 S2 L.
 
   progress-beta-link T1 (app[uva _ _ | _] as T2) H H [@val-link-beta T1 T2] :- !, print "No β progress1".
 
