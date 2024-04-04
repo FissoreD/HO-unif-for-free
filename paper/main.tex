@@ -2058,9 +2058,9 @@ Consider the \linkbeta below:
 % make test ONLY=7004 TEX=tex
 \printAlll
   {{{X,\lambda x.x},
-    {\lambda x.(Y\appsep (X\appsep x)),a}}}
+    {\lambda x.(Y\appsep (X\appsep x)),f}}}
   {{{A,\lambda x.x},
-    {B,a}}}
+    {B,f}}}
   {{{Y,D,0},
     {X,A,0}}}
   {{{\eta,,A,\lambda x.E_{x}},
@@ -2071,19 +2071,20 @@ Consider the \linkbeta below:
 Initially the \linkbeta \rhs is a variable $D$ applied to the $E_x$.
 The first unification problem results in $\sigma =
 \{A \mapsto \lambda x.x\}$. In turn this instantiation
-triggers progress \noteE{which rule?} in first \linketa that is 
-removed and $E$ is assigned to $\lambda x.x$.
+triggers $\linkStore_1$ by \progressetaleft 
+and $E$ is assigned to $\lambda x.x$.
 Under this substitution the \linkbeta becomes
 \linkbetaM{x}{C_x}{(D \appsep x)}, and by \progBetaLL
 it is replaced with the following two links:
 \linkbetaM{x}{C_x}{F_x} and
 \noteE{ma allora il link ora sparisce perhè è in llambda?}
 \linketaM{}{E}{\lambda x.D_x}. The second unification
-problem assignes $a$ to $B$, that in turn activates
-the second \linketa ($a$ is assigned to $C$), and then all the remaining links
-are solved. The final \Ho substitution is $\sigma = \{A = \lambda x.x, B = a,
-C_x = a, D = \lambda \}$ and is decompiled into $\rho = \{X \mapsto \lambda x.x,
-Y \mapsto a\}$.\noteE{assegnament per D incompleto}
+problem assignes $f$ to $B$, that in turn activates
+the second \linketa ($f$ is assigned to $C$), and then all the remaining links
+are solved. The final \Ho substitution is $\sigma = \{A _{} \mapsto \lambda x.x, 
+B _{} \mapsto f, C _{x} \mapsto (f\appsep x), 
+D _{} \mapsto f, E _{x} \mapsto x, F _{x} \mapsto C_{x} \}$ and is decompiled into $\rho = \{X \mapsto \lambda x.x,
+Y \mapsto f\}$.
 \noteE{alla fine non si usa anche la regola beta-rigid-head?}
 
 \paragraph{Example of \progBetaRH}
