@@ -1984,17 +1984,27 @@ The activation of a \linkbeta is performed when its \rhs falls under \llambda
 under a given substitution.
 
 \begin{definition}[\progBetaLL]
-  A link \linkbetaM{\Gamma}{T}{\rhsBeta} is removed from \linkStore, if given
-  the substitution $\sigma$, $\sigma l_1$ is a name, say $t$, such that, $t
-  \notin s_1\dots s_n$. In this case, let $Y$ a fresh variable, then
-  \linketaM{\Gamma}{X_{s_1\dots s_n}}{\lambda x.Y_{s_1\dots s_n,x}} is added to
-  \linkStore, and 1) if $m = 1$ then $Y_{s_1\dots s_n, t}$ is unified with $T$,
-  2) otherwise, the refined \linkbeta, \linkbetaM{\Gamma}{T}{M_{s_1\dots
-  s_n,t}\appsep t_2\dots t_m}, is added to \linkStore.
-  \label{def:progBetaLL}
-  % \noteE[inline]{non è chiaro. la sostituzione immagino sia la corrente, non se ne esiste una. Poi non è chiaro se otherwise si riferische a in this case. Usa un enumerate}
-  %\noteE[inline]{Is it clearer?}
-  \noteE[inline]{l1 or t1? Forse è più chiaro dire che il ilnk beta viene raffinato con link beta cone meno argomenti, Se poi il numero di argomenti extra è 0 il tutto è in llambda e quindi viene buttato via. In questo modo la terminazione è ancora più chiara perchè si vede già che prima decresce la lista di argomenti e poi il numero di beta}
+  Given a substitution $\sigma$ and a \linkbeta \linkbetaM{\Gamma}{T}{\rhsBeta}
+  such that $\sigma t_1$ is a name, say $t$, and $t\notin s_1\dots s_n$. If $m =
+  0$, then the \linkbeta is removed and \lhs is unified with \rhsBetaHead.
+  If $m > 0$, then the \linkbeta is replaced by a refined version
+  $\linkbetaM{\Gamma}{T}{Y_{s_1\dots s_n,t}\appsep t_2\dots t_m}$ with reduced
+  list of arguments and $Y$ being a fresh variable. Moreover, the new \linkbeta,
+  \linketaM{\Gamma}{X_{s_1\dots s_n}}{\lambda x.Y_{s_1\dots s_n,x}} is added to 
+  \linkStore.
+
+  % A link \linkbetaM{\Gamma}{T}{\rhsBeta} is removed from \linkStore, if given
+  % the substitution $\sigma$, $\sigma t_1$ is a name, say $t$, such that, $t
+  % \notin s_1\dots s_n$. In this case, let $Y$ a fresh variable, then
+  % \linketaM{\Gamma}{X_{s_1\dots s_n}}{\lambda x.Y_{s_1\dots s_n,x}} is added to
+  % \linkStore, and 1) if $m = 1$ then $Y_{s_1\dots s_n, t}$ is unified with $T$,
+  % 2) otherwise, the refined \linkbeta, \linkbetaM{\Gamma}{T}{M_{s_1\dots
+  % s_n,t}\appsep t_2\dots t_m}, is added to \linkStore.
+  % \label{def:progBetaLL}
+  % % \noteE[inline]{non è chiaro. la sostituzione immagino sia la corrente, non se ne esiste una. Poi non è chiaro se otherwise si riferische a in this case. Usa un enumerate}
+  % %\noteE[inline]{Is it clearer?}
+  % \noteE[inline]{l1 or t1? Forse è più chiaro dire che il ilnk beta viene raffinato con link beta cone meno argomenti, Se poi il numero di argomenti extra è 0 il tutto è in llambda e quindi viene buttato via. In questo modo la terminazione è ancora più chiara perchè si vede già che prima decresce la lista di argomenti e poi il numero di beta}
+  \noteD{L'ho riformulato}
 \end{definition}
 
 \begin{definition}[\progBetaRH]
