@@ -1363,7 +1363,7 @@ of the problem \foUnifPb above is refined to:
 \noindent
 As per \cref{inv:linklhs} the term on the left is a variable, and its
 right counterpart is the
-term in \maybeeta, and that term has the following property:
+term in \maybeeta. That term has the following property:
 
 \begin{invariant}[\linketa \rhs]
   The \rhs of any \linketa %in \linkStore 
@@ -1404,7 +1404,7 @@ is not as trivial as it may seems, here a few examples:
 % for $A_x$ such that $A_x$ reduces to $x$ and $x$ is not free in the subterm $f \appsep x$.
 \noindent
 The first two examples are easy, and show how a unification variable can expose
-or erase a variable and turn the resulting term in an $\eta$-expansion or not.\\
+or erase a variable in their scope and turn the resulting term in an $\eta$-expansion or not.\\
 The third example shows that when a variable occurs outside the scope of a unification
 variable it cannot be erased and can hence prevent a term from being an $\eta$-expansion.\\
 The last example shows the recursive nature of the check we need to implement.
@@ -1413,14 +1413,12 @@ is in \maybeeta iff the inner term $\lambda y.f\appsep (A \appsep x) \appsep (B 
 is in \maybeeta itself. If it is, it could $\eta$-contract to
 $f \appsep (A \appsep x)$ making $\lambda x.f \appsep (A \appsep x)$ a potential
 $\eta$-expansion.\\
-
 We can now define more formally how \maybeeta terms are detected together with
 its auxiliary functions:
 
-\noteE[inline]{the compiler must do beta normal!!!!}
 \newcommand{\reduceto}{\emph{may-contract-to}}
 \begin{definition}[\reduceto]
-  A term $s$ \reduceto{} a name $x$ if there exists a
+  A $\beta$-normal term $s$ \reduceto{} a name $x$ if there exists a
   substitution $\rho$ such that $\rho s \Eo{} x$.
 \end{definition}
 
@@ -1446,15 +1444,15 @@ hence if the term $s$ is not exactly $x$ (case 1)
 it can only be an $\eta$-expansion of $x$, or a unification
 variable that can be assigned to $x$, or a combination of both.
 If $s$ begins with a lambda, then the lambda can only disappear by $\eta$
-contraction. In that case the term $t$ under the spine of binders for
-$x_1\ldots x_n$ can either be $x$ itself applied to terms that can
+contraction. In that case the term $t$ is under the spine of binders
+$x_1\ldots x_n$, $t$ can either be $x$ applied to terms that can
 \reduceto{} these variables (case 2), or a unification variable
 that can be assigned to that application (case 3).
 \end{proof}
 
-\noindent
-Note that this condition does not require the term to be in \llambda.
-\noteE[inline]{Is this relevant}
+% \noindent
+% Note that this condition does not require the term to be in \llambda.
+% \noteE[inline]{Is this relevant}
 
 \newcommand{\occursrigid}{\emph{occurs-rigidly}}
 \newcommand{\occurrigid}{\emph{occur-rigidly}}
@@ -1462,6 +1460,8 @@ Note that this condition does not require the term to be in \llambda.
   A name $x$ \occursrigid{} in a $\beta$-normal term $t$, if $\forall \rho, x \in
   \subterm{\rho t}$
 \end{definition}
+
+\noteD{Not too clear?}
 In other words $x$ \emph{\occursrigid} in $t$ if it occurs in $t$
 outside of the scope of unification variables since an instantiation
 is allowed to discard $x$ from the scope of the unification variable.
@@ -1476,12 +1476,12 @@ We can now derive the implementation for \maybeeta detection:
   $s = \lambda x_1 \ldots x_n.t$, \testmaybeeta{} $s$ holds if any
   of the following holds:
   \begin{enumerate}
-    \item $t$ is a constant or a variable applied to the arguments
+    \item $t$ is a constant or a name applied to the arguments
       $l_1 \ldots l_m$ such that 
-      $m \geq n$ and for every $i$ such that $1 \leq i \leq m-n$
+      $m \geq n$ and for every $i$ such that $m - n < i \leq m$
       the term  $l_i$
       \reduceto{} $x_i$, and
-      no $x_i$ \occursrigid{} in $l_1 \ldots l_{m-n-1}$;
+      no $x_i$ \occursrigid{} in $l_1 \ldots l_{m-n}$;
     \item $t$ is a
       unification variable with scope $W$ and
       for each $x_i$ there exists a $w_j \in W$ such that $w_j$
@@ -1543,8 +1543,8 @@ The following rule is inserted just before rule~\ref{rule:complam} from the code
 
 \noindent
 The rule triggers when the input term \elpiIn{flam F} is in
-\maybeeta. It compiles it to \elpiIn{lam F1} but puts the fresh
-variable \elpiIn{A} in its place. The variable sees all the names free in
+\maybeeta. It compiles \elpiIn{flam F} to \elpiIn{lam F1} but puts the fresh
+variable \elpiIn{A} in its place. This variable sees all the names free in
 \elpiIn{lam F1}. The critical part of this rule is the creation of the \linketa,
 which relates the variable \elpiIn{A} with \elpiIn{lam F1}.
 This link clearly validates \cref{inv:linklhs}.
@@ -1556,7 +1556,7 @@ This link clearly validates \cref{inv:linklhs}.
 \end{corollary}
 
 \begin{proof}[Proof sketch]
-  By contradiction, suppose that the rule above triggered and that
+  By contradiction, suppose that the rule above is triggered and that
   the \rhs of the link is $\lambda x.\lambda y.t_{xy}$.
   If $\testmaybeeta{}~\lambda y.t_{xy}$ holds the recursive call to
   \elpiIn{comp} (made by \elpiIn{comp-lam}) must have put a fresh variable
@@ -1569,7 +1569,7 @@ This link clearly validates \cref{inv:linklhs}.
 \subsection{Progress}\label{sec:etaprogress}
 
 \linketa are meant to delay the unification of ``problematic'' terms until
-we know for sure if the head lambda has to be $\eta$-contracted or not.
+we know for sure if the term has to be $\eta$-contracted or not.
 
 \newcommand{\progressetaleft}{\emph{progress-$\eta$-left}\xspace}
 \begin{definition}[\progressetaleft]\label{def:progressetaleft}
