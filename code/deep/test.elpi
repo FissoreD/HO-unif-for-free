@@ -34,9 +34,11 @@ hstep T1 T2 L1 L2 S1 S3 :-
 %SNIP: unif_fo
 type (===o) fm -> fm -> fsubst -> o.
 (A ===o B) F :-
-  comp A A' [] M1 [] [] [] S1,
-  comp B B' M1 M2 [] [] S1 S2,
-  hstep A' B' [] [] S2 S3,
+  fo.beta-reduce A A',
+  fo.beta-reduce B B',
+  comp A' A'' [] M1 [] [] [] S1,
+  comp B' B'' M1 M2 [] [] S1 S2,
+  hstep A'' B'' [] [] S2 S3,
   decompm M2 M2 S3 [] F.
 %ENDSNIP
 
@@ -631,6 +633,14 @@ macro @sokl-delay N SX SS :- @sokl-call comp.suspend-out-of-lam N SX SS.
 @sokl 96 [
   pr ok "λx.λy.(x y) = λx.λy.(X y x)"
 ] ["λx.λy.(y x)"].
+
+@sokl 97 [
+  pr ok "(λx.x) a = a"
+] [].
+
+@sokl 98 [
+  pr ok "λx.(f ((λy.y) x)) = f"
+] [].
 
 % From the paper
 @sokl 7000 [

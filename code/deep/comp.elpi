@@ -181,8 +181,10 @@ namespace comp {
     links -> links -> 
     subst -> subst -> o.
   compile-terms-diagnostic (triple D FO1 FO2) (triple D HO1 HO2) M1 M3 L1 L3 S1 S3 :-
-    comp FO1 HO1 M1 M2 L1 L2 S1 S2,
-    comp FO2 HO2 M2 M3 L2 L3 S2 S3.
+    fo.beta-reduce FO1 FO1',
+    fo.beta-reduce FO2 FO2',
+    comp FO1' HO1 M1 M2 L1 L2 S1 S2,
+    comp FO2' HO2 M2 M3 L2 L3 S2 S3.
 
   type compile-terms 
     list (triple diagnostic fm fm) -> 

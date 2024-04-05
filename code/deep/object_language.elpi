@@ -76,6 +76,18 @@ namespace fo {
   napp N N :- name N.
 %ENDSNIP
 
+  type beta-reduce fm -> fm -> o.
+  beta-reduce (uvar _ _) _ :- halt "Passed uvar to beta-reduce".
+  beta-reduce A A :- name A.
+  beta-reduce (fcon A) (fcon A).
+  beta-reduce (fuva A) (fuva A).
+  beta-reduce (flam A) (flam B) :-
+    pi x\ beta-reduce (A x) (B x).
+  beta-reduce (fapp [flam B | L]) T2 :- !,
+    beta (flam B) L T1, beta-reduce T1 T2.
+  beta-reduce (fapp L) (fapp L1) :-
+    map beta-reduce L L1.
+
   type mk-app fm -> list fm -> fm -> o.
   mk-app T L S :- beta T L S.
 
