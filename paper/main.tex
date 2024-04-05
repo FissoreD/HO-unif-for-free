@@ -343,7 +343,7 @@ bla bla.. \noteE[inline]{citare Teyjus}.
 The code discussed in the paper can be accessed at the URL:
 \url{https://github.com/FissoreD/paper-ho}.
 
-\section{Problem statement} %%%%%%%%%%%%%%%%%%%%%%
+\section{Problem statement and solution} %%%%%%%%%%%%%%%%%%%%%%
 \label{sec:problem-statement}
 
 The equational theory of Coq's Dependent Type Theory is very rich. In
@@ -385,10 +385,10 @@ decision X :- unif X (all A x\ app[P, x]), finite A,
 
 \noindent
 This choice would underuse the logic programming engine provided by
-the metalanguage since by removing any datum from the head of rules
-indexing degenerates. Moreover the unification procedure built in the
-meta language is likely to be faster than one implemented in it,
-especially if the meta language is interpreted as Elpi is.
+the meta-language since, by removing any datum from the head of rules,
+indexing degenerates. Moreover the unification procedure \elpiIn{unif}
+programmed in the meta-language is likely to be n order of magnitude
+slower than one that is built-in.
 
 To state precisely the problem we solve we need a \Fo{} representation
 of CiC terms and a \Ho one.
@@ -675,7 +675,7 @@ since decompilation can introduce (actually restore) terms in
 \maybeeta or \maybebeta that were move out of the way
 (put in $\linkStore$) during compilation.
 
-\section{Alternative encodings and related work}\label{sec:encodings}
+\section{Other encodings and related work}\label{sec:encodings}
 
 Paper \cite{10.1145/2966268.2966272} introduces semi-shallow.
 
@@ -2188,10 +2188,33 @@ can be easily introduced in our unification procedure, by adding new custom
 \noteD[inline]{Dire qualcosa sulla commit-links}
 
 
-\section{Practical example}
+\section{Actual implementation}
+
+In this paper we show a minimized example. The full code is there.
+But we also have to code things in Coq.
+In Elpi we don't have a main loop, we rely on the interpreter one.
+So links are constraints and progress are CHR rules.
+
+\begin{elpicode}
+link-eta bla :- suspend-condition, !, declare_constraint (link-eta bla) Vars.
+link-eta bla :- progress. % solves the goal, hence the constraint is not more in L.
+constraints link-beta {
+  % undup
+  rule (G1 ?- link-eta (uvar X LX1) T1) /
+       (G2 ?- link-eta (uvar X LX2) T2) |
+       relocate LX1 LX2 T2 T2' <=>
+       (G1 ?- T1 = T2').
+}
+\end{elpicode}
 
 \section{Conclusion}
 
+Benefits: less work, reuse efficient ho unif (3x faster), indexing,
+
+Future: tabling and static analysis (reuse for ML again).
+
+Very little is Coq specific. Applies to all OL that are not a subsystem of 
+HOL, or for ML that are used for meta programming.
 
 \printbibliography
 
