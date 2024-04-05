@@ -115,7 +115,7 @@
   First Order Logic~\cite{felty88cade},
   Set Theory~\cite{10.1007/BF00881873},
   Higher Order Logic~\cite{books/sp/NipkowPW02}, and even the Calculus of
-  Constuctions~\cite{felty93lics}.
+  Constructions~\cite{felty93lics}.
 
   The object logic we are interested in is Coq's~\cite{Coq-refman}
   Dependent Type Theory (DTT),
@@ -166,7 +166,7 @@ which have been utilized to implement various formal systems such as
 First Order Logic~\cite{felty88cade},
 Set Theory~\cite{10.1007/BF00881873},
 Higher Order Logic~\cite{books/sp/NipkowPW02}, and even the Calculus of
-Constuctions~\cite{felty93lics}.
+Constructions~\cite{felty93lics}.
 
 The object logic we are interested in is Coq's~\cite{Coq-refman}
 Dependent Type Theory (DTT), and we want to code a type-class~\cite{wadler89}
@@ -525,7 +525,7 @@ that the execution traces are strongly related and in turn this enables a user
 to debug a logic program in \Fo{} by looking at its execution trace in
 \Ho{}.
 
-XXX permuting hrun does not change the final result if check dooes not fail eagerly
+XXX permuting hrun does not change the final result if check does not fail eagerly
 
 XXX if we want to apply heuristics, we can apply them in decomp to avoid committing to
 a non MGU too early
@@ -824,7 +824,7 @@ the \elpiIn{inctx} container (see, \ref{data:inctx}).
 New links are suspended by construction.
 If the left hand side variable is assigned during a step, then 
 the link is considered for progress and possibly eliminated.
-This is discussed in \cref{sec:eta} and \cref{sc:beta}.
+This is discussed in \cref{sec:eta} and \cref{sec:beta}.
 
 \subsection{Notational conventions}
 
@@ -1002,7 +1002,7 @@ over a term, updating a substitution while it traverses it.\noteE[inline]{explai
 % links between unification variables.
 
 \section[Compilation: fo\_tm to tm]{Basic simulation of \Fo{} in \Ho{}}
-\label{sec:compilation}
+% \label{sec:compilation}
 
 In this section we describe a basic compilation scheme that we refine
 later, in the following sections. This scheme is sufficient to implement
@@ -1111,7 +1111,7 @@ hidden in the code rendering?
 
 \noindent
 Decompiling an assignment requires to turn abstractions into
-lambdas. For aestetic purposes we also eta-contract the result
+lambdas. For aesthetic purposes we also eta-contract the result
 (not needed since \Fo{} equality can do that)
 
 \input{code/decompm}
@@ -1843,7 +1843,7 @@ the \elpiIn{lam} constructor.
 Until now, we have only dealt we unification of terms in \llambda. However, we
 want the unification relation to be more robust so that it can work with terms
 in \maybebeta. In general, unification in \maybebeta admits more then one
-solution and commiting one of them in the substitution does not guarantee
+solution and committing one of them in the substitution does not guarantee
 prop.~\ref{prop:complete}. For instance, $X \appsep a \Uo a$ is a unification
 problem admits two different substitutions: $\rho_1 = \{X \mapsto \lambda x.x\}$
 and $\rho_2 = \{X \mapsto \lambda \_.a\}$. Prefer one over the other may break
@@ -1872,11 +1872,11 @@ On the other hand, we see that,
 \Ue can't solve the compiled problems \hoUnifPb. In
 fact, the resolution of $\hoUnifPb_1$ gives the substitution $\sigma = \{ A
 \mapsto \lambda x. B\}$, but the dereferencing of $\hoUnifPb_2$ gives the 
-non-unifable problem $(\lambda x. B) \appsep a \Ue a$.
+non-unifiable problem $(\lambda x. B) \appsep a \Ue a$.
 
 To address
 this unification problem, term compilation should capture the
-terms $t$ in \maybebeta and replace them with fresh varaibles $X$.
+terms $t$ in \maybebeta and replace them with fresh variables $X$.
 The variables $X$ and the terms $t$ are linked through a \linkbeta.
 
 \linkbeta guarantees \cref{inv:linklhs} and the term on the \rhs has the
@@ -2021,7 +2021,7 @@ under a given substitution.
 
 \begin{proof}[Proof sketch]
   Let $l$ a \linkbeta in the store \linkStore. If $l$ is activated by
-  \progBetaRH, then it desappears from \linkStore and \elpiIn{progress}
+  \progBetaRH, then it disappears from \linkStore and \elpiIn{progress}
   terminates. Otherwise, the \rhs of $l$ is made by a variable applied to $m$
   arguments. At each activation of \progBetaLL, $l$ is replaced by a new
   \linkbeta $l^1$ having $m-1$ arguments. At the $m^{th}$ iteration, the
@@ -2032,7 +2032,7 @@ under a given substitution.
   \noteD{L'ho riscritto}
 
   % \Cref{def:progBetaRH} makes \elpiIn{progress} terminates, since it makes a
-  % \linkbeta desappear from \linkStore. On the other hand, \cref{def:progBetaLL},
+  % \linkbeta disappear from \linkStore. On the other hand, \cref{def:progBetaLL},
   % creates each time a new \linketa and replace the old \linkbeta with a new one.
   % This progression can however triggered at most $m$ times, since each new
   % \linkbeta as a smaller list of applied variables. At the $m^{th}$ progression,
@@ -2066,7 +2066,7 @@ under a given substitution.
 
 \begin{proof}[Proof sketch]
   If $\sigma\hoUnifPb$ is in \llambda, then by
-  \cref{def:progBetaLL,def:progBetaRH}, then \linkbeta desappear and the
+  \cref{def:progBetaLL,def:progBetaRH}, then \linkbeta disappear and the
   unification done between terms in \llambda. This problem unifies iff
   its corresponding \Fo{} problem unifies too. If $\sigma\hoUnifPb$ is in \maybebeta,
   then, by \cref{lemma:keep-fidelity}, the unification fails, as per the
@@ -2098,7 +2098,7 @@ Under this substitution the \linkbeta becomes
 \linkbetaM{x}{C_x}{(D \appsep x)}, and by \progBetaLL
 it is replaced with the link:
 \linketaM{}{E}{\lambda x.D_x}, while $C_x$ is unified with $D_x$. The second unification
-problem assignes $f$ to $B$, that in turn activates
+problem assigns $f$ to $B$, that in turn activates
 the second \linketa ($f$ is assigned to $C$), and then all the remaining links
 are solved. The final \Ho substitution is $\sigma = \{A _{} \mapsto \lambda x.x, 
 B _{} \mapsto f, C _{x} \mapsto (f\appsep x), 
@@ -2158,7 +2158,7 @@ done\footnote{This new rule trivially guarantees the termination of progress}.
 \progBetaNoLLWait makes \elpiIn{occur-check-links} partial, since the check is
 possible only on links with a variable on the \lhs. This means that we can have
 two links \linkbetaM{}{X}{Y\appsep a} and \linkbetaM{}{f\appsep X}{Y\appsep a}
-where the occur check does not thow an error. Note however, that the
+where the occur check does not throw an error. Note however, that the
 decompilation of the two links will force the unification of $X$ to $Y\appsep a$
 and then the unification of $f\appsep (Y \appsep a)$ to $Y\appsep a$, which
 fails by the occur check of \Ue.
