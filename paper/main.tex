@@ -1106,8 +1106,7 @@ occur check allows us to update the subst.
 
 \input{code/decompile}
 
-TODO: What is commit-links and complete-mapping?, maybe complete-mapping can be
-hidden in the code rendering?
+\noteE{What is commit-links and complete-mapping?}
 
 \noindent
 Decompiling an assignment requires to turn abstractions into
@@ -1530,7 +1529,7 @@ since it does not break
 %   T = \lambda y. f \appsep A_{xy} \appsep (B \appsep a \appsep (\lambda z.y\appsep C_z)) \appsep D_x
 % \end{gather}
 
-\subsection{Compilation}\label{sec:etacomp}
+\subsection{Compilation and decompilation}\label{sec:etacomp}
 
 % Thanks to the \elpiIn{maybe-eta} predicate, we can detect ``$\eta$-problematic''
 % terms and, consequently replace them with fresh \Ho unification variables at
@@ -1566,6 +1565,8 @@ This link clearly validates \cref{inv:linklhs}.
   the assumption that the rule triggered.
 \end{proof}
 
+\noteD[inline]{Dire della commit-links: intuizione fa round trip}
+
 \subsection{Progress}\label{sec:etaprogress}
 
 \linketa are meant to delay the unification of ``problematic'' terms until
@@ -1574,13 +1575,11 @@ we know for sure if the term has to be $\eta$-contracted or not.
 \newcommand{\progressetaleft}{\emph{progress-$\eta$-left}\xspace}
 \begin{definition}[\progressetaleft]\label{def:progressetaleft}
 A link \linketaM{\Gamma}{X}{T} is removed from \linkStore when
-$X$ becomes rigid. There are two cases:
+$X$ becomes rigid. Let $y\in\Gamma$, there are two cases:
 \begin{enumerate}
   \item if $X = a$ or $X = y$ or $X = f \appsep a_1\ldots a_n$
-    we unify the $\eta$-expansion of the $X$ with $T$, that is we run
-    $\lambda x.X \appsep x\Ue{} T$  (under
-    the context $\Gamma$)
-    \noteE[inline]{where y comes from? $X = y$: $y$ is in the ctx of X}
+    we unify the $\eta$-expansion of $X$ with $T$, that is we run
+    $\lambda x.X \appsep x\Ue{} T$
     \item if $X = \lambda x.t$ we run $X \Ue{} T$.
 \end{enumerate}
 \end{definition}
@@ -1688,7 +1687,7 @@ forse si può compattare in una prova più piccola?}
   % terminates.
 \end{proof}
 
-\noteD[inline]{Should we proove simulation fidelity for \linketa insertion?}
+\noteD[inline]{Proove simulation fidelity, dicendo che \progressetaright è inutile}
 
 \paragraph{Example of \progressetaleft}
 
@@ -1722,6 +1721,7 @@ $\rho = \{~ X \mapsto Y ~\}$ as expected.
 
 We delay at the end of  next section an example of \linketa progression due to
 \progressetaright
+
 
 \section{Enforcing Invariant~\ref{inv:uvaarity}}
 \label{sec:invariant1}
@@ -1828,8 +1828,8 @@ the \elpiIn{lam} constructor.
 % since no suspended links remain. The only mapping in the list is
 % \mapping{F}{H}{2}, which will assign the $F$ variable in \Fo{} to $\lambda xy.y$
 
-\noteE[inline]{dire che preserviamo l'invariante che tutte le variable sono fully-applied
-}
+% \noteE[inline]{dire che preserviamo l'invariante che tutte le variable sono fully-applied
+% }
 \section{Handling of \maybebeta}\label{sec:beta}
 
 % On
@@ -1919,7 +1919,7 @@ following property:
   The original problem is in fact outside \llambda.
 \end{proof}
 
-\subsection{Compilation}
+\subsection{Compilation and decompilation}
 
 Detection of \maybebeta is quite simple to implement in the compiler, since it
 is sufficient to detect applications with flexible head and argument that
@@ -1974,6 +1974,8 @@ scope all the free variables occurring in \elpiIn{Pf1} and \elpiIn{Extra1}
 \noteE[inline]{Dire che maybe eta fa il detect anche su 
 termini che non sono il llambda, oppure dirlo in section of maybeeta + dare un
 esempio?}
+
+\noteD[inline]{Dire della commit-links: intuizione non devono esserci beta per corollary}
 
 \subsection{Progress}
 
@@ -2093,7 +2095,7 @@ Initially the \linkbeta \rhs is a variable $D$ applied to the $E_x$.
 The first unification problem results in $\sigma =
 \{A \mapsto \lambda x.x\}$. In turn this instantiation
 triggers $\linkStore_1$ by \progressetaleft 
-and $E$ is assigned to $\lambda x.x$.
+and $E_x$ is assigned to $x$.
 Under this substitution the \linkbeta becomes
 \linkbetaM{x}{C_x}{(D \appsep x)}, and by \progBetaLL
 it is replaced with the link:
@@ -2104,8 +2106,6 @@ are solved. The final \Ho substitution is $\sigma = \{A _{} \mapsto \lambda x.x,
 B _{} \mapsto f, C _{x} \mapsto (f\appsep x), 
 D _{} \mapsto f, E _{x} \mapsto x, F _{x} \mapsto C_{x} \}$ and is decompiled into $\rho = \{X \mapsto \lambda x.x,
 Y \mapsto f\}$.
-\noteE{alla fine non si usa anche la regola beta-rigid-head?}
-\noteD{nope. Si risolve tutto by \progBetaLL}
 
 \paragraph{Example of \progBetaRH}
 We can take the example provided in \cref{sec:beta}. The problem is compiled
@@ -2130,7 +2130,7 @@ gives the final substitution $\sigma = \{A \mapsto \lambda x.B, B \mapsto C, C
 \mapsto a\}$ which is decompiled into $\rho = \{X \mapsto \lambda x.a, Y \mapsto
 a\}$.
  
-\subsection{Relaxing \cref{lemma:keep-fidelity}}
+\subsection{Relaxing \cref{lemma:keep-fidelity} : tobe renamed}
 
 \newcommand{\progBetaNoLLWait}{\emph{progress-beta-\maybebeta}}
 
@@ -2173,6 +2173,8 @@ that this is of course an approximation, since $\sigma = \{X = \lambda x.Y, Y =
 \_\}$ is another valid substitution for the original problem. This approximation
 can be easily introduced in our unification procedure, by adding new custom 
 \linkbeta progress rules.
+
+\noteD[inline]{Dire qualcosa sulla commit-links}
 
 
 \section{Practical example}
