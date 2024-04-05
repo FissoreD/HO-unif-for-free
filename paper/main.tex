@@ -87,7 +87,9 @@
 
 \begin{document}
 
-\title{HO unification from object language to meta language}
+% \title{HO unification from object language to meta language}
+\title{Higher order unification for free!}
+\subtitle{Reusing the meta-language unification for the object language}
 
 \author{Davide Fissore}
 \email{davide.fissore@inria.fr}
@@ -104,7 +106,7 @@
   \country{France}}
 
 \begin{abstract}
-  Specifying and implementing a logic from scratch requires significant effort.
+  Specifying and implementing a proof system from scratch requires significant effort.
   Logical Frameworks and Higher Order Logic Programming Languages provide
   dedicated, high-level Meta Languages (ML) to facilitate this task in two
   key ways: 1) variable binding and substitution are simplified when ML binders
@@ -120,15 +122,15 @@
   Constructions~\cite{felty93lics}.
 
   The object logic we are interested in is Coq's~\cite{Coq-refman}
-  Dependent Type Theory (DTT),
+  Calculus of Inductive Constructions (CIC),
   for which we aim to implement a unification procedure \Uo using the ML
   Elpi~\cite{dunchev15lpar}, a dialect of $\lambda$Prolog.
   Elpi's equational theory comprises
   $\eta\beta$ equivalence and comes equipped with a
   higher order unification procedure \Ue restricted to the pattern
   fragment~\cite{miller92jsc}.
-  We want \Uo to be as powerful as \Ue but on the object logic DTT.
-  Elpi also comes with an encoding for DTT that works well
+  We want \Uo to be as powerful as \Ue but on the object logic CiC.
+  Elpi also comes with an encoding for CiC that works well
   for meta-programming~\cite{tassi:hal-01637063,tassi:hal-01897468,gregoire:hal-03800154,newtc}.
   Unfortunately this encoding, which we refer to as \Fo,
   ``underuses'' \Ue by restricting it to first-order unification problems only.
@@ -138,14 +140,14 @@
   how to map back the unifiers found by \Ue, effectively implementing
    \Uo on top of \Ue for the encoding \Fo.
 
-  We apply this technique to the implementation of a type-class~\cite{wadler89}
-  solver for Coq~\cite{Coq-refman}.
-  Type-class solvers are proof search procedures based on
-  unification that back-chain designated lemmas, providing essential
-  automation to widely used
-  Coq libraries such as Stdpp/Iris~\cite{JUNG_KREBBERS_JOURDAN_BIZJAK_BIRKEDAL_DREYER_2018}
-  and TLC~\cite{10.1007/978-3-642-14052-5_15}. These two libraries
-  constitute our test bed.
+  % We apply this technique to the implementation of a type-class~\cite{wadler89}
+  % solver for Coq~\cite{Coq-refman}.
+  % Type-class solvers are proof search procedures based on
+  % unification that back-chain designated lemmas, providing essential
+  % automation to widely used
+  % Coq libraries such as Stdpp/Iris~\cite{JUNG_KREBBERS_JOURDAN_BIZJAK_BIRKEDAL_DREYER_2018}
+  % and TLC~\cite{10.1007/978-3-642-14052-5_15}. These two libraries
+  % constitute our test bed.
 \end{abstract}
 
 \keywords{Logic Programming, Meta-Programming, Higher-Order Unification, Proof Automation}
@@ -155,12 +157,16 @@
 \section{Introduction}
 \label{sec:intro}
 
-Specifying and implementing a logic from scratch requires significant effort.
+Specifying and implementing a logic or a proof system from scratch requires
+significant effort.
 Logical Frameworks and Higher Order Logic Programming Languages provide
 dedicated, high-level Meta Languages (ML) to facilitate this task in two
-key ways: 1) variable binding and substitution are simplified when ML binders
-represent object logic ones; 2) proof construction, and even proof search, is
-greatly simplified by leveraging the unification procedure provided by the ML.
+key ways. The first and most well know one is that variable binding and
+substitution can be taken for granted when ML binders represent object
+logic ones. The second one that comes to mind is unification, the cornerstone
+for proof construction and proof search, however in this paper we describe how
+reusing that brick may not be as easy at is seems.
+
 Notable examples of ML are Elf~\cite{elf}, Twelf~\cite{twelf},
 $\lambda$Prolog~\cite{miller_nadathur_2012} and
 Isabelle~\cite{10.1007/978-3-540-71067-7_7}
@@ -169,24 +175,24 @@ First Order Logic~\cite{felty88cade},
 Set Theory~\cite{10.1007/BF00881873},
 Higher Order Logic~\cite{books/sp/NipkowPW02}, and even the Calculus of
 Constructions~\cite{felty93lics}.
-
 The object logic we are interested in is Coq's~\cite{Coq-refman}
-Dependent Type Theory (DTT), and we want to code a type-class~\cite{wadler89}
-solver for Coq~\cite{Coq-refman} using the Coq-Elpi~\cite{tassi:hal-01637063}
+Calculus of inductive Constructions (Cic), and we want to code a
+type-class~\cite{wadler89} solver for Coq~\cite{Coq-refman} using
+the Coq-Elpi~\cite{tassi:hal-01637063}
 meta programming framework.
 Type-class solvers are unification based proof search procedures
 that combine a set of designated lemmas in order to providing essential
 automation to widely used Coq libraries.
 
-As the running example we take the \coqIn{Decide} type class,
+As an example we take the \coqIn{Decide} type class
 from the Stdpp~\cite{JUNG_KREBBERS_JOURDAN_BIZJAK_BIRKEDAL_DREYER_2018}
 library. The class identifies predicates equipped with a decision procedure.
 The following three designated lemmas (called \coqIn{Instances} in the
 type-class jargon) state that: 1) the type \coqIn{fin n}, of natural numbers
-smaller than \coqIn{n} is finite; 2) the predicate \coqIn{nfact n nf},
+smaller than \coqIn{n}, is finite; 2) the predicate \coqIn{nfact n nf},
 linking a natural number \coqIn{n} to its prime factors \coqIn{nf}, is decidable;
-3) the universal closure of a predicate has a decision procedure if the
-predicate has and if its domain is finite.
+3) the universal closure of a predicate has a decision procedure if
+its domain is finite and if the predicate is decidable.
 
 \begin{coqcode}
 Instance fin_fin n : Finite (fin n).              (* r1 *)
@@ -196,15 +202,15 @@ Instance forall_dec A P : Finite A ~$\to$~             (* r3 *)
 \end{coqcode}
 
 \noindent Under this context of instances a type-class solver is able to prove
-the following statement automatically by back-chaining.
+the following statement automatically by back-chaining the lemmas above:
 
 \begin{coqcode}
   Check _ : Decision (forall y: fin 7, nfact y 3).       ~\customlabel{goal:g}{(g)}~
 \end{coqcode}
 
 \noindent
-The encoding of DTT provided by Elpi, that we will discuss at length later in
-section~\ref{sec:encodings,sec:lang-spec} and ~\ref{}, is an Higher Order Abstract
+The encoding of CiC provided by Elpi, that we will discuss at length later in
+\cref{sec:encodings,sec:lang-spec}, is an Higher Order Abstract
 Syntax (HOAS) datatype \elpiIn{tm} featuring (among others) the following
 constructors:
 
@@ -257,7 +263,7 @@ decision (all (app[con"fin", con"7"]) y\
 we obtain an unsolvable unification problem \ref{problem:p}:
 the two lists of terms have different lengths!
 %The root cause is that
-%\ref{problem:p} is an higher order in DTT, but becomes
+%\ref{problem:p} is an higher order in CiC, but becomes
 %first order in the meta language due to the ``naive'' encoding.
 
 \begin{elpicode}
@@ -267,6 +273,7 @@ app[con"nfact", y, con"3"] = app[P, y]                 ~\customlabel{problem:p}{
 \noindent
 In this paper we study a more sophisticated encoding of Coq terms allowing
 us to rephrase the problematic rule \ref{clause:r3} as follows:
+\todo{why not link?}
 
 \begin{elpicode}
 decision (all A x\ Pm x) :- decomp Pm P A, finite A,   ~\customlabel{clause:r3a}{(r3a)}~
@@ -287,8 +294,8 @@ A = app[con"fin", con"7"]              % assignment for A
 \end{elpicode}
 
 \noindent
-After unifying the head of rule \ref{clause:r3a} with the goal, Elpi runs
-the premise <<\elpiIn{decomp Pm A P}>> that is in charge of bringing the
+After unifying the head of rule \ref{clause:r3a} with the goal, Elpi would run
+the premise <<\elpiIn{decomp Pm A P}>> in charge of bringing the
 assignment for \elpiIn{Pm} back to the domain \elpiIn{tm} of Coq terms:
 
 \begin{elpicode}
@@ -302,10 +309,12 @@ of unification problems that constitute the execution of a logic program.
 In fact
 the solution for \elpiIn{P} above generates a
 (Coq) $\beta$-redex in the second premise (the predicate
-under the \elpiIn{pi w\ }\hspace{-0.4em}):
+under the \elpiIn{pi w\ }\hspace{-0.4em}). We show below the premise before and
+after the instantiation of \elpiIn{P}:
 
 \begin{elpicode}
-decision (app[lam A (a\ app[con"nfact", a, con"3"]), w])
+decision (app[                    P                  , w])
+decision (app[ lam A (a\ app[con"nfact", a, con"3"]) , w])
 \end{elpicode}
 
 \noindent
@@ -313,12 +322,12 @@ In turn this redex prevents the rule \ref{clause:r2} to backchain properly since
 the following unification problem has no solution:
 
 \begin{elpicode}
-app[lam A (a\ app[con"nfact", a, con"3"]), x] =
-app[con"nfact", N, NF]
+app[ lam A (a\ app[con"nfact", a, con"3"]) , x] =
+app[ con"nfact"                            , N, NF]
 \end{elpicode}
 \noindent
 ~\\
-The root cause of the problems we sketched in the running example
+The root cause of the problems we sketched in this example
 is that the unification procedure \Ue of the meta language is not aware
 of the equational theory of the object logic, even if both theories
 include $\eta\beta$-conversion and admit most general
@@ -382,7 +391,7 @@ meta language is likely to be faster than one implemented in it,
 especially if the meta language is interpreted as Elpi is.
 
 To state precisely the problem we solve we need a \Fo{} representation
-of DTT terms and a \Ho one.
+of CiC terms and a \Ho one.
 We call \Eo the equality over ground terms in \Fo,
 \Ee the equality over ground terms in \Ho,
 \Uo the unification procedure we want to implement and
@@ -666,11 +675,11 @@ since decompilation can introduce (actually restore) terms in
 \maybeeta or \maybebeta that were move out of the way
 (put in $\linkStore$) during compilation.
 
-\section{Alternative encodings and related work}
+\section{Alternative encodings and related work}\label{sec:encodings}
 
 Paper \cite{10.1145/2966268.2966272} introduces semi-shallow.
 
-Our encoding of DTT may look ``semi shallow'' since we use the meta-language
+Our encoding of CiC may look ``semi shallow'' since we use the meta-language
 lambda abstraction but not its application (for the terms of type \elpiIn{tm}).
 A fully shallow encoding unfortunately does not fit our use case, although
 it would make the running example work:
@@ -683,7 +692,7 @@ decision (all A x\ P x) :- finite A, pi x\ decision (P x).
 
 \noindent
 There are two reasons for dismissing this encoding. The first one is that
-in DTT it is not always possible to adopt it since the type system
+in CiC it is not always possible to adopt it since the type system
 of the meta language is too weak to accommodate terms with a variable arity,
 like the following example:
 
@@ -700,9 +709,9 @@ system, hence it must accommodate the manipulation of terms that are now
 know in advance (not even defined in Coq) without using introspection
 primitives such as Prologs's \texttt{functor} and \texttt{arg}.
 
-In the literature we could find a few related encoding of DTT.
+In the literature we could find a few related encoding of CiC.
 TODO In~\cite{felty93lics} is related and make the
-discrepancy between the types of ML and DTT visible. In this case
+discrepancy between the types of ML and CiC visible. In this case
 one needs 4 application nodes. Moreover the objective is an encoding
 of terms, proofs, not proof search. Also note the conv predicate,
 akin to the unif we rule out.
@@ -717,7 +726,7 @@ None of the encodings above provide a solution to our problem.
 In order to reason about unification we provide a description of the
 \Fo{} and \Ho languages where unification variables
 are first class terms, i.e. they have a concrete syntax. We keep these languages
-minimal, for example, we omit the \elpiIn{all} quantifier of DTT we used
+minimal, for example, we omit the \elpiIn{all} quantifier of CiC we used
 in the example in Section~\ref{sec:intro} together with the type notation of
 terms carried by the \elpiIn{lam} constructor.
 %
