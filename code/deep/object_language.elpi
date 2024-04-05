@@ -155,8 +155,9 @@ namespace fo {
 
   type ppuva addr -> string -> o.
   ppuva (mem.addr N) S :- 
-    if (nth N ["X", "Y", "Z", "W"] S) true 
-      (ppnat N X, S is "C" ^ X).
+    nth N ["X", "Y", "Z", "W"] S, !.
+  ppuva (mem.addr N) S :- 
+    ppnat N X, S is "C" ^ X.
 
   type ppsubst fsubst -> list string -> o.
   ppsubst L S :- mem.pp L ppuva (x\s\sigma y\pp x y, s is ":= " ^ y)  S.
