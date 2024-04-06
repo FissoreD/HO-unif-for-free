@@ -129,8 +129,8 @@
   $\eta\beta$ equivalence and comes equipped with a
   higher order unification procedure \Ue restricted to the pattern
   fragment~\cite{miller92jsc}.
-  We want \Uo to be as powerful as \Ue but on the object logic CiC.
-  Elpi also comes with an encoding for CiC that works well
+  We want \Uo to be as powerful as \Ue but on the object logic CIC.
+  Elpi also comes with an encoding for CIC that works well
   for meta-programming~\cite{tassi:hal-01637063,tassi:hal-01897468,gregoire:hal-03800154,newtc}.
   Unfortunately this encoding, which we refer to as \Fo,
   ``underuses'' \Ue by restricting it to first-order unification problems only.
@@ -167,30 +167,35 @@ logic ones. The second one that comes to mind is unification, the cornerstone
 for proof construction and proof search, however in this paper we describe how
 reusing that brick may not be as easy at is seems.
 
-Notable examples of ML are Elf~\cite{elf}, Twelf~\cite{twelf},
+Meta languages such as Elf~\cite{elf}, Twelf~\cite{twelf},
 $\lambda$Prolog~\cite{miller_nadathur_2012} and
 Isabelle~\cite{10.1007/978-3-540-71067-7_7}
-which have been utilized to implement various formal systems such as
-First Order Logic~\cite{felty88cade},
-Set Theory~\cite{10.1007/BF00881873},
-Higher Order Logic~\cite{books/sp/NipkowPW02}, and even the Calculus of
-Constructions~\cite{felty93lics}.
-The object logic we are interested in is Coq's~\cite{Coq-refman}
-Calculus of inductive Constructions (Cic), and we want to code a
-type-class~\cite{wadler89} solver for Coq~\cite{Coq-refman} using
-the Coq-Elpi~\cite{tassi:hal-01637063}
-meta programming framework.
-Type-class solvers are unification based proof search procedures
-that combine a set of designated lemmas in order to providing essential
-automation to widely used Coq libraries.
+have been utilized to specify various
+logics~\cite{felty88cade,books/sp/NipkowPW02,10.1007/BF00881873,felty93lics}.
+In some cases, the most notable one being Higher Order Logic~\cite{books/sp/NipkowPW02},
+the ML Isabelle is such a good fit that it implements an interactive proof
+system for HOL, and not just a specification.
 
-As an example we take the \coqIn{Decide} type class
+The object logic we are interested in is Coq's~\cite{Coq-refman}
+Calculus of Inductive Constructions (CIC), and we want to implement a
+type-class~\cite{wadler89} solver for Coq~\cite{Coq-refman} using
+the Coq-Elpi~\cite{tassi:hal-01637063} meta programming language,
+a dialect of $\lambda$Prolog already used to extend
+Coq~\cite{tassi:hal-01637063,tassi:hal-01897468,gregoire:hal-03800154,newtc}.
+Type-class solvers are unification based proof search procedures
+that  provide essential automation to widely used Coq libraries.
+These solvers are reminiscent of Prolog: they back-chain lemmas taken
+from a designated database of type class instances.
+
+As an example we take the \coqIn{Decision} type class
 from the Stdpp~\cite{JUNG_KREBBERS_JOURDAN_BIZJAK_BIRKEDAL_DREYER_2018}
-library. The class identifies predicates equipped with a decision procedure.
-The following three designated lemmas (called \coqIn{Instances} in the
-type-class jargon) state that: 1) the type \coqIn{fin n}, of natural numbers
-smaller than \coqIn{n}, is finite; 2) the predicate \coqIn{nfact n nf},
-linking a natural number \coqIn{n} to its prime factors \coqIn{nf}, is decidable;
+library. The class
+identifies predicates equipped with a decision procedure.
+The following three designated \coqIn{Instances} state that:
+1) the type \coqIn{fin n}, of natural numbers
+smaller than \coqIn{n}, is \coqIn{Finite} (another type class);
+2) the predicate \coqIn{nfact n nf}, linking a natural number
+\coqIn{n} to its prime factors \coqIn{nf}, is decidable;
 3) the universal closure of a predicate has a decision procedure if
 its domain is finite and if the predicate is decidable.
 
@@ -201,15 +206,16 @@ Instance forall_dec A P : Finite A ~$\to$~             (* r3 *)
   ~$\forall$~x:A, Decision (P x) ~$\to$~ Decision (~$\forall$~x:A, P x).
 \end{coqcode}
 
-\noindent Under this context of instances a type-class solver is able to prove
-the following statement automatically by back-chaining the lemmas above:
+\noindent Given this database of instances a type-class solver is
+able to prove the following statement automatically,
+by back-chaining the lemmas above:
 
 \begin{coqcode}
-  Check _ : Decision (forall y: fin 7, nfact y 3).       ~\customlabel{goal:g}{(g)}~
+  Check _ : Decision (forall n: fin 7, nfact n 3).       ~\customlabel{goal:g}{(g)}~
 \end{coqcode}
 
 \noindent
-The encoding of CiC provided by Elpi, that we will discuss at length later in
+The encoding of CIC provided by Elpi, that we will discuss at length later in
 \cref{sec:encodings,sec:lang-spec}, is an Higher Order Abstract
 Syntax (HOAS) datatype \elpiIn{tm} featuring (among others) the following
 constructors:
@@ -263,7 +269,7 @@ decision (all (app[con"fin", con"7"]) y\
 we obtain an unsolvable unification problem \ref{problem:p}:
 the two lists of terms have different lengths!
 %The root cause is that
-%\ref{problem:p} is an higher order in CiC, but becomes
+%\ref{problem:p} is an higher order in CIC, but becomes
 %first order in the meta language due to the ``naive'' encoding.
 
 \begin{elpicode}
@@ -391,7 +397,7 @@ programmed in the meta-language is likely to be n order of magnitude
 slower than one that is built-in.
 
 To state precisely the problem we solve we need a \Fo{} representation
-of CiC terms and a \Ho one.
+of CIC terms and a \Ho one.
 We call \Eo the equality over ground terms in \Fo,
 \Ee the equality over ground terms in \Ho,
 \Uo the unification procedure we want to implement and
@@ -679,7 +685,7 @@ since decompilation can introduce (actually restore) terms in
 
 Paper \cite{10.1145/2966268.2966272} introduces semi-shallow.
 
-Our encoding of CiC may look ``semi shallow'' since we use the meta-language
+Our encoding of CIC may look ``semi shallow'' since we use the meta-language
 lambda abstraction but not its application (for the terms of type \elpiIn{tm}).
 A fully shallow encoding unfortunately does not fit our use case, although
 it would make the running example work:
@@ -692,7 +698,7 @@ decision (all A x\ P x) :- finite A, pi x\ decision (P x).
 
 \noindent
 There are two reasons for dismissing this encoding. The first one is that
-in CiC it is not always possible to adopt it since the type system
+in CIC it is not always possible to adopt it since the type system
 of the meta language is too weak to accommodate terms with a variable arity,
 like the following example:
 
@@ -709,9 +715,9 @@ system, hence it must accommodate the manipulation of terms that are now
 know in advance (not even defined in Coq) without using introspection
 primitives such as Prologs's \texttt{functor} and \texttt{arg}.
 
-In the literature we could find a few related encoding of CiC.
+In the literature we could find a few related encoding of CIC.
 TODO In~\cite{felty93lics} is related and make the
-discrepancy between the types of ML and CiC visible. In this case
+discrepancy between the types of ML and CIC visible. In this case
 one needs 4 application nodes. Moreover the objective is an encoding
 of terms, proofs, not proof search. Also note the conv predicate,
 akin to the unif we rule out.
@@ -726,7 +732,7 @@ None of the encodings above provide a solution to our problem.
 In order to reason about unification we provide a description of the
 \Fo{} and \Ho languages where unification variables
 are first class terms, i.e. they have a concrete syntax. We keep these languages
-minimal, for example, we omit the \elpiIn{all} quantifier of CiC we used
+minimal, for example, we omit the \elpiIn{all} quantifier of CIC we used
 in the example in Section~\ref{sec:intro} together with the type notation of
 terms carried by the \elpiIn{lam} constructor.
 %
@@ -2188,24 +2194,38 @@ can be easily introduced in our unification procedure, by adding new custom
 \noteD[inline]{Dire qualcosa sulla commit-links}
 
 
-\section{Actual implementation}
+\section{Actual implementation in Elpi}
 
 In this paper we show a minimized example. The full code is there.
-But we also have to code things in Coq.
+But we also have to code things in Coq-Elpi.
+
 In Elpi we don't have a main loop, we rely on the interpreter one.
 So links are constraints and progress are CHR rules.
+Constraints are suspended goals that are resumend when some unif variable
+is assigned.
 
 \begin{elpicode}
-link-eta bla :- suspend-condition, !, declare_constraint (link-eta bla) Vars.
+link-eta bla :- suspend-condition Holes, !, declare_constraint (link-eta bla) Holes.
 link-eta bla :- progress. % solves the goal, hence the constraint is not more in L.
-constraints link-beta {
-  % undup
-  rule (G1 ?- link-eta (uvar X LX1) T1) /
-       (G2 ?- link-eta (uvar X LX2) T2) |
-       relocate LX1 LX2 T2 T2' <=>
-       (G1 ?- T1 = T2').
+\end{elpicode}
+
+This matches with all progress rules but for the ones considering
+two links. For these we need to resort to CHR to manipulate L. For example
+deduplicate eta 
+
+\begin{elpicode}
+constraints link-eta {
+  rule (N1 : G1 ?- link-eta (uvar X LX1) T1) % match
+    /  (N2 : G2 ?- link-eta (uvar X LX2) T2) % remove
+    |  (relocate LX1 LX2 T2 T2')             % condition
+   <=> (N1 : G1 ?- T1 = T2').                % new goal
 }
 \end{elpicode}
+
+Remark how the invariant about uvar arity makes this easy, since LX1 and LX2
+have the same length. Also note that N1 only contains the names of the first
+link (while relocate runs in the disjoint union) and Elpi ensures that
+T2' can live in N1.
 
 \section{Conclusion}
 
