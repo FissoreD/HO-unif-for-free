@@ -443,6 +443,8 @@ is one where a \Fo{} language (for first order) with a rich(er) equational
 theory is phrased in a \Ho{} meta language with a simpler one, and one
 needs to build the unification of \Fo{} on top of the one of \Ho{}.
 
+\subsection{Preliminaries: \Fo{} and \Ho{}}
+
 In order to reason about unification we provide a description of the
 \Fo{} and \Ho languages where unification variables
 are first class terms, i.e. they have a concrete syntax. We keep these languages
@@ -484,6 +486,7 @@ here they are just unique identifiers for unif variables and their types
 do now allow to mistake one for the other.
 \todo{cleanup}
 
+\paragraph{Notational conventions}
 
 When we write \Ho terms outside code blocks we follow the
 usual $\lambda$-calculus notation, reserving $f, g, a, b$ for constants,
@@ -508,7 +511,7 @@ Here a few examples:
 When it is clear from the context we shall use the same syntax for \Fo{} terms
 (although we never subscripts unification variables).
 
-\subsection{eq and unif}
+\subsection{Equational theories an unification}
 
 In order to specify the two unification procedures we need to
 define the equational theories of \Fo{} and \Ho{} and define
@@ -539,6 +542,7 @@ The main point in showing these equality tests is to remark how weaker \Ee is,
 and to identify the four rules that need special treatment in
 the implementation of \Uo.
 
+\todo{move to next section}
 For reference, \elpiIn{(beta T A R)} reduces away \elpiIn{lam} nodes in head
 position in \elpiIn{T} whenever the list \elpiIn{A} provides a corresponding
 argument.
@@ -623,7 +627,7 @@ language is correct and complete in \llambda.
   \unifcomplete{\Ee}{\Ue}{t}\label{prop:complete-ml}
 \end{gather}
 
-\subsection{Logic program simulation}
+\subsection{The problem: Logic Program Simulation}
 
 \newcommand{\C}[4]{\ensuremath{\langle #1 \rangle}\mapsto(#2,#3,#4)}
 \newcommand{\D}[4]{\ensuremath{\langle #1,#2,#3 \rangle^{-1}\mapsto #4}}
@@ -784,7 +788,7 @@ $F \appsep a = a$: the second problem is not in \llambda and has two unifiers,
 namely $F = \lambda x.x$ and $F = \lambda x.a$. The first problem picks one
 of the two, making the second problem re-enter \llambda.
 
-\subsection{The solution in a nutshell}
+\subsection{The solution (in a nutshell)}
 \label{sec:nutshell}
 A term $s$ is compiled in a term $t$ where every
 ``problematic'' sub term $p$ is replaced by a fresh unification variable $h$
@@ -885,7 +889,7 @@ nor put in $\sigma$ an application whose head is flexible
 % during compilation.
 
 
-\section{Preliminaries for \Fo{} and \Ho}
+\section{Ground work for \Fo{}, \Ho and the compiler}
 \label{sec:lang-spec}
 \todo{maybe move here napp beta deref fderef move}
 
