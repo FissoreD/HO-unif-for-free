@@ -1781,6 +1781,25 @@ forse si può compattare in una prova più piccola?}
 
 \noteD[inline]{Proove simulation fidelity, dicendo che \progressetaright è inutile}
 
+\begin{lemma}[Fidelity with \linketa]
+  Let \hoUnifPb a unification problem and $\sigma$ a substitution. The introduction 
+  of \linketa guarantees \cref{prop:fidelity} 
+  \label{lemma:fidelity-maybeeta}
+\end{lemma}
+
+\begin{proof}[Proof sketch]
+  If 1) a \linketa is activated by \progressetaleft, then unification is done
+  between a \maybeeta term $t_1$ and a term $t_2$ (with $\wellb(t_2)$). This
+  activation performs a unification which succeeds iff the original problem in
+  \Fo{} succeeds. If 2) a \linketa is activated by \progressetadedup, then the
+  unification is done between two \maybeeta terms, and again this unification
+  succeeds iff it succeeds in \Fo{}. Finally, if 3) a \linketa is activated by
+  \progressetaright, the unification, done between a variable and a term,
+  always succeeds, this is what we expect to guarantee fidelity, since we
+  are essentially removing a hole added by the compilation in the place of a
+  \maybeeta subterm. In all the cases fidelity is respected.
+\end{proof}
+
 \paragraph{Example of \progressetaleft}
 
 The example at the beginning of \cref{sec:eta}, once
@@ -2180,16 +2199,18 @@ under a given substitution.
   as a variable as a scope which is still in \llambda. 
 \end{proof}
 
-\begin{lemma}
-  Given a \hoUnifPb and a substitution $\sigma$ then the resolution of
-  $\sigma\hoUnifPb$ guarantees \cref{prop:fidelity} 
+\begin{lemma}[Fidelity with \linkbeta]
+  The introduction of \linkbeta guarantees \cref{prop:fidelity} 
 \end{lemma}
 
 \begin{proof}[Proof sketch]
+  Let \hoUnifPb a unification problem and $\sigma$ a substitution
+  such that $\hoUnifPb \in \notllambda$. 
   If $\sigma\hoUnifPb$ is in \llambda, then by
-  \cref{def:progBetaLL,def:progBetaRH}, then \linkbeta disappear and the
-  unification done between terms in \llambda. This problem unifies iff
-  its corresponding \Fo{} problem unifies too. If $\sigma\hoUnifPb$ is in \notllambda,
+  \cref{def:progBetaLL,def:progBetaRH}, the \linkbeta associated to the subterm of
+  \hoUnifPb have been solved and removed. The
+  unification is done between terms in \llambda and by \cref{lemma:fidelity-maybeeta}
+  fidelity is guaranteed. If $\sigma\hoUnifPb$ is in \notllambda,
   then, by \cref{lemma:keep-fidelity}, the unification fails, as per the
   corresponding unification in \Fo{}.
 \end{proof}
