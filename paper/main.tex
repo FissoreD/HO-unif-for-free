@@ -158,37 +158,37 @@
 \section{Introduction}
 \label{sec:intro}
 
-Specifying and implementing a logic or a proof system from scratch requires
-significant effort.
-Logical Frameworks and Higher Order Logic Programming Languages provide
-dedicated, high-level Meta Languages (ML) to facilitate this task in two
-key ways. The first and most well know one is that variable binding and
-substitution come for free is one uses the ML binders to represent the object
-language ones. The second one that comes to mind is unification, a cornerstone
-for proof construction and proof search. However reusing that brick may require
-some additional work that we carry out in this paper.
-
 Meta languages such as Elf~\cite{elf}, Twelf~\cite{twelf},
 $\lambda$Prolog~\cite{miller_nadathur_2012} and
 Isabelle~\cite{10.1007/978-3-540-71067-7_7}
 have been utilized to specify various
 logics~\cite{felty88cade,books/sp/NipkowPW02,10.1007/BF00881873,felty93lics}.
-In the notable of Higher Order Logic~\cite{books/sp/NipkowPW02},
-the ML Isabelle is such a good fit that it implements an interactive proof
-system for the object logic, and not just a specification.
+The use of these meta languages facilitated this task in two
+key ways. The first and most well know one is that variable binding and
+substitution come for free. %, exploited in all works mentioned above.
+The second one is that these meta languages come equipped with some form
+of unification, a cornerstone in proof construction and proof search.
+
+% exploited only
+%in the notable case of of Higher Order Logic~\cite{books/sp/NipkowPW02}:
+%the meta language Isabelle is such a good match for HOL that it could used to
+%implement an interactive proof system for the object logic, in addition to
+%it specification.\\
 The object logic we are interested in is Coq's~\cite{Coq-refman}
 Calculus of Inductive Constructions (CIC) and we want to implement a
 form of proof search known as type-class~\cite{wadler89,sozeau08} resolution.
-We want to use the Elpi~\cite{tassi:hal-01637063} meta programming language,
+In particular we want to leverage the Elpi~\cite{tassi:hal-01637063} meta programming language,
 a dialect of $\lambda$Prolog already used to extend
 Coq in various ways~\cite{tassi:hal-01637063,tassi:hal-01897468,gregoire:hal-03800154,newtc}.
 Type-class solvers are unification based proof search procedures
-reminiscent of Prolog: they back-chain lemmas taken
-from a designated database of ``type class instances''.
-For this reason we believe that $\lambda$Prolog, hence Elpi, is a good fit for
+reminiscent of Prolog that back-chain lemmas taken
+from a designated database of ``type class instances'', hence
+we can expect that Elpi is a good fit for
 implementing such as form of automation. In this paper we focus on one aspect of
-this work, namely \emph{how to reuse the unification of the ML Elpi in order to
-implement the one used by the type-class solver}.
+this work, namely \emph{how to reuse the higher order unification procedure
+of the meta language in order to implement a type-class solver for the object
+language}. As it turns out, re-using the unification of the meta language is
+not a trivial task.
 
 We take as an example the \coqIn{Decision} and \coqIn{Finite} type classes
 from the Stdpp~\cite{JUNG_KREBBERS_JOURDAN_BIZJAK_BIRKEDAL_DREYER_2018}
@@ -782,6 +782,8 @@ toward a different goal, and utilizes three relations to represent the
 equational theory of CC. Section 6 contains a discussion about the use of the
 unification procedure of the meta language in presence of non ground goals, but
 the authors do not aim at exploiting it to the degree we want.\todo{sucks}
+
+\todo{cite isabelle's TC, that are baked in}
 
 \section{Preliminaries: \Fo{} and \Ho}
 \label{sec:lang-spec}
