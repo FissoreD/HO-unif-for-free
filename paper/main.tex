@@ -1162,7 +1162,7 @@ the same number of arguments, and where their arguments are distinct names
   \elpiIn{comp S T [] M [] _ [] _} then \elpiIn{decomp M T S}
 \end{lemma}
 \begin{proof}[Proof sketch]
-trivial, since the terms are beta normal beta just builds an app.
+trivial, since the terms are beta normal beta just builds an app. \noteD{Reformulate?}
 \end{proof}
 
 
@@ -1552,6 +1552,8 @@ since it does not break
 % terms and, consequently replace them with fresh \Ho unification variables at
 % compilation time. The code below illustrate how this relation is used to for
 % term compilation.
+
+\paragraph{Compilation}
 The following rule is inserted just before rule~\ref{rule:complam} from the code in
 \cref{sec:compilation}.
 
@@ -1582,7 +1584,12 @@ This link clearly validates \cref{inv:linklhs}.
   the assumption that the rule triggered.
 \end{proof}
 
-\noteD[inline]{Dire della commit-links: intuizione fa round trip}
+\paragraph{Decompilation}
+Decompilation of \linketa is performed by adding new rules to the
+\elpiIn{commit-link} predicate. In particular, given \linketaM{\Gamma}{X}{t}, we
+can note that this unification never fails, since $X$ is a flexible term and no
+other \linketa has $X$ has \lhs (by \cref{def:progressetadedup}). The link is
+remove from \linkStore and \elpiIn{commit-links} terminates.
 
 \subsection{Progress}\label{sec:etaprogress}
 
@@ -1676,6 +1683,9 @@ forse si può compattare in una prova più piccola?}
   By \cref{lemma:unif-eta-1,lemma:unif-eta-2,lemma:unif-eta-3}, every
   unification performed by the activation of a \linketa is performed between
   terms in \wellb, therefore, the substitution remains \wellb.
+  \noteD[inline]{Bisogna aggiungere un lemma nella \cref{sec:nutshell} che dice che
+  unificare due termini in \wellb, in una $\sigma$, tale che $\wellb(\sigma)$, 
+  non invalida \wellb}
 \end{proof}
 
 \begin{lemma}
@@ -1910,6 +1920,7 @@ following property:
   unification variable with scope $s_1\dots s_n$ and $t_1\dots t_m$ is a list of
   terms. This is equivalent to \elpiIn{app[uva X S | L]}, where \elpiIn{S}~$=
   s_1\dots s_n$ and \elpiIn{L}~$=t_1\dots t_m$.
+  \label{inv:beta-rhs}
 \end{invariant}
 
 % \linkbeta are put in \linkStore and activated when \rhs falls in \llambda. 
@@ -1938,6 +1949,7 @@ following property:
 
 \subsection{Compilation and decompilation}
 
+\paragraph{Compilation}
 Detection of \maybebeta is quite simple to implement in the compiler, since it
 is sufficient to detect applications with flexible head and argument that
 are not in \llambda.
@@ -1992,12 +2004,19 @@ scope all the free variables occurring in \elpiIn{Pf1} and \elpiIn{Extra1}
 termini che non sono il llambda, oppure dirlo in section of maybeeta + dare un
 esempio?}
 
-\noteD[inline]{Dire della commit-links: intuizione non devono esserci beta per corollary}
+\paragraph{Decompilation}
+During \elpiIn{progress}, as claimed in \cref{inv:beta-rhs}, the decompilation
+can only have \linkbeta with not instantiated \lhs. In this case, \lhs is
+unified with \rhs.
+\noteD[inline]{not really sure of this, we can have $F\appsep a = \lambda x.G x$.
+In this case when do we fail: for sure in decompile. But to respect fidelity,
+we should fail immediately: we have a \linkbeta and a \linketa with same \lhs}
 
 \subsection{Progress}
 
 \newcommand{\progBetaLL}{\emph{progress-beta-\llambda}}
 \newcommand{\progBetaRH}{\emph{progress-beta-rigid-head}}
+\newcommand{\progBetaDedup}{\emph{progress-beta-dedup}}
 
 The activation of a \linkbeta is performed when its \rhs falls under \llambda
 under a given substitution.
@@ -2032,6 +2051,14 @@ under a given substitution.
   $\beta$-reduced term $t'$ obtained from the application of $t$ to
   $l_1\dots l_m$ is in \llambda. Moreover, $X$ is unified to $t$.
   \label{def:progBetaRH}
+\end{definition}
+
+\noteD{added the def below to respect fidelity}
+% Example of this `X a = Y a'
+\begin{definition}[\progBetaDedup]
+  Given two \linkbeta $l1$ and $l2$, if they share the same \lhs, unification
+  fails.
+  \label{def:progBetaDedup}
 \end{definition}
 
 \begin{lemma}
@@ -2191,7 +2218,14 @@ that this is of course an approximation, since $\sigma = \{X = \lambda x.Y, Y =
 can be easily introduced in our unification procedure, by adding new custom 
 \linkbeta progress rules.
 
-\noteD[inline]{Dire qualcosa sulla commit-links}
+\noteD{Paragraph for decompile in case of \maybebeta}
+The \elpiIn{commit-link} predicate can be extended to add heuristics if during
+the decompilation phase \linkbeta remain. For example, the same approximation
+explained above can be delayed and applied only if the terms in \maybebeta never
+falls in \llambda after the execution of all the unification problems. We want
+to point out, that we call this \emph{approximation}, since we are
+making a choice among all the possible unifiers and therefore, we can pick
+the wrong one.
 
 
 \section{Actual implementation in Elpi}
