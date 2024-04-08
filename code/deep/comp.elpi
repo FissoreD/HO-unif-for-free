@@ -148,6 +148,8 @@ namespace comp {
     comp-lam F F1 M1 M2 L1 L2 S1 S2.
   comp (fuva A) (uva B []) M1 M2 L L S1 S2 :- 
     m-alloc (fv A) (hv B (arity z)) M1 M2 S1 S2.
+%ENDSNIP
+%SNIP: comp_base_beta
   comp (fapp [fuva A|Ag]) (uva B Ag1) M1 M2 L L S1 S2 :-
     pattern-fragment Ag, !,
       fold6 comp Ag Ag1 M1 M1 L L S1 S1,
@@ -167,7 +169,7 @@ namespace comp {
     L3 = [val (link-beta (uva B Scope) Beta) | L2].
 %ENDSNIP
 %SNIP: comp_base
-  comp (fapp A) (app A1) M1 M2 L1 L2 S1 S2 :- 
+  comp (fapp A) (app A1) M1 M2 L1 L2 S1 S2 :-            % label: rule:compapp cnt: \ensuremath{c_@}
     fold6 comp A A1 M1 M2 L1 L2 S1 S2.
 %ENDSNIP
 

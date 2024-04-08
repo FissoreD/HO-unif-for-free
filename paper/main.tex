@@ -14,10 +14,10 @@
 % TODO: set this fields
 %\setcopyright{cc}
 %\setcctype{by}
-\copyrightyear{2024}
-\acmYear{XXXX 2024}
-\acmBooktitle{YYY}
-\acmDOI{ZZZZZZZZZZZZ}
+%\copyrightyear{2024}
+%\acmYear{XXXX 2024}
+%\acmBooktitle{YYY}
+%\acmDOI{ZZZZZZZZZZZZ}
 
 
 % \xspaceaddexceptions{]\}}
@@ -162,62 +162,76 @@ significant effort.
 Logical Frameworks and Higher Order Logic Programming Languages provide
 dedicated, high-level Meta Languages (ML) to facilitate this task in two
 key ways. The first and most well know one is that variable binding and
-substitution can be taken for granted when ML binders represent object
-logic ones. The second one that comes to mind is unification, the cornerstone
-for proof construction and proof search, however in this paper we describe how
-reusing that brick may not be as easy at is seems.
+substitution come for free is one uses the ML binders to represent the object
+language ones. The second one that comes to mind is unification, a cornerstone
+for proof construction and proof search. However reusing that brick may require
+some additional work that we carry out in this paper.
 
 Meta languages such as Elf~\cite{elf}, Twelf~\cite{twelf},
 $\lambda$Prolog~\cite{miller_nadathur_2012} and
 Isabelle~\cite{10.1007/978-3-540-71067-7_7}
 have been utilized to specify various
 logics~\cite{felty88cade,books/sp/NipkowPW02,10.1007/BF00881873,felty93lics}.
-In some cases, the most notable one being Higher Order Logic~\cite{books/sp/NipkowPW02},
+In the notable of Higher Order Logic~\cite{books/sp/NipkowPW02},
 the ML Isabelle is such a good fit that it implements an interactive proof
-system for HOL, and not just a specification.
-
+system for the object logic, and not just a specification.
 The object logic we are interested in is Coq's~\cite{Coq-refman}
-Calculus of Inductive Constructions (CIC), and we want to implement a
-type-class~\cite{wadler89} solver for Coq~\cite{Coq-refman} using
-the Coq-Elpi~\cite{tassi:hal-01637063} meta programming language,
+Calculus of Inductive Constructions (CIC) and we want to implement a
+form of proof search known as type-class~\cite{wadler89,sozeau08} resolution.
+We want to use the Elpi~\cite{tassi:hal-01637063} meta programming language,
 a dialect of $\lambda$Prolog already used to extend
-Coq~\cite{tassi:hal-01637063,tassi:hal-01897468,gregoire:hal-03800154,newtc}.
+Coq in various ways~\cite{tassi:hal-01637063,tassi:hal-01897468,gregoire:hal-03800154,newtc}.
 Type-class solvers are unification based proof search procedures
-that  provide essential automation to widely used Coq libraries.
-These solvers are reminiscent of Prolog: they back-chain lemmas taken
-from a designated database of type class instances.
+reminiscent of Prolog: they back-chain lemmas taken
+from a designated database of ``type class instances''.
+For this reason we believe that $\lambda$Prolog, hence Elpi, is a good fit for
+implementing such as form of automation. In this paper we focus on one aspect of
+this work, namely \emph{how to reuse the unification of the ML Elpi in order to
+implement the one used by the type-class solver}.
 
-As an example we take the \coqIn{Decision} type class
+We take as an example the \coqIn{Decision} and \coqIn{Finite} type classes
 from the Stdpp~\cite{JUNG_KREBBERS_JOURDAN_BIZJAK_BIRKEDAL_DREYER_2018}
-library. The class
-identifies predicates equipped with a decision procedure.
+library. The class  \coqIn{Decision}
+identifies predicates equipped with a decision procedure, while
+\coqIn{Finite} the types whose inhabitants can be enumerated in a (finite) list.
 The following three designated \coqIn{Instances} state that:
 1) the type \coqIn{fin n}, of natural numbers
-smaller than \coqIn{n}, is \coqIn{Finite} (another type class);
+smaller than \coqIn{n}, is finite;
 2) the predicate \coqIn{nfact n nf}, linking a natural number
-\coqIn{n} to its prime factors \coqIn{nf}, is decidable;
+\coqIn{n} to the number of its prime factors \coqIn{nf}, is decidable;
 3) the universal closure of a predicate has a decision procedure if
 its domain is finite and if the predicate is decidable.
 
 \begin{coqcode}
-Instance fin_fin n : Finite (fin n).              (* r1 *)
-Instance nfact_dec n nf : Decision (nfact n nf).  (* r2 *)
-Instance forall_dec A P : Finite A ~$\to$~             (* r3 *)
+Instance fin_fin: ~$\forall$~n, Finite (fin n).             (* r1 *)
+Instance nfact_dec: ~$\forall$~n nf, Decision (nfact n nf). (* r2 *)
+Instance forall_dec: ~$\forall$~A P, Finite A ~$\to$~            (* r3 *)
   ~$\forall$~x:A, Decision (P x) ~$\to$~ Decision (~$\forall$~x:A, P x).
 \end{coqcode}
 
-\noindent Given this database of instances a type-class solver is
-able to prove the following statement automatically,
-by back-chaining the lemmas above:
+\noindent Given this database a type-class solver is expected to
+prove the following statement automatically:
 
 \begin{coqcode}
-  Check _ : Decision (forall n: fin 7, nfact n 3).       ~\customlabel{goal:g}{(g)}~
+  Decision (~$\forall$~x: fin 7, nfact x 3)                   (* g *)
 \end{coqcode}
 
 \noindent
-The encoding of CIC provided by Elpi, that we will discuss at length later in
-\cref{sec:encodings,sec:lang-spec}, is an Higher Order Abstract
-Syntax (HOAS) datatype \elpiIn{tm} featuring (among others) the following
+The proof found by the solver back-chains on rule 3 (the only rule
+about the $\forall$ quantifier), and then solves the premises with rules
+rules 1 and 2 respectively.
+Note that rule 3 features a second order parameter \coqIn{P} that stands for
+a function of type \coqIn{A ~$\to$~ Prop} (a predicate over \coqIn{A}).
+The solver has to infer a value for \coqIn{P} by unifying the conclusion
+of rule 3 with the goal, and in particular by solving the unification
+problem \coqIn{P x = nfact x 3}. This higher order problem falls in the so
+called pattern-fragment \llambda~\cite{miller92jsc} and hence admits a unique
+solution \coqIn{P = ~$\lambda$~x.nfact x 3}.
+
+In order to implement such a search in Elpi we shall describe the encoding
+of CIC terms and then the encoding of rules. Elpi comes with
+an Higher Order Abstract Syntax~\cite{10.1145/53990.54010} datatype of CIC
+terms, called \elpiIn{tm}, that features (among others) the following
 constructors:
 
 \begin{elpicode}
@@ -228,12 +242,11 @@ type con  string -> tm.               % constants
 \end{elpicode}
 
 \noindent
-Following standard $\lambda$Prolog~\cite{miller_nadathur_2012}
-the concrete syntax to abstract, at the meta level, an expression
-\elpiIn{e} over a variable \elpiIn{x}
-is <<\elpiIn{x\ e}>>, and square brackets denote a list of
-terms separated by comma. As an example we show the encoding of the Coq term
-<<\coqIn{~$\forall$~y:t, nfact y 3}>>:
+Following $\lambda$Prolog~\cite{miller_nadathur_2012}'s standard syntax,
+the meta level binding of a variable \elpiIn{x} in an expression
+\elpiIn{e} is written <<\elpiIn{x\ e}>>, and square brackets denote a
+list of terms separated by comma. For example the term
+<<\coqIn{~$\forall$~y:t, nfact y 3}>> is encoded as follows:
 
 \begin{elpicode}
 all (con"t") y\ app[con"nfact", y, con"3"]
@@ -242,27 +255,26 @@ all (con"t") y\ app[con"nfact", y, con"3"]
 \noindent
 We now illustrate the encoding of the three instances above as higher-order
 logic-programming rules: capital letters denote rule
-parameters; \elpiIn{:-} separates the rule's head from the premises;
+parameters; \elpiIn{:-} separates the rule's head from the premises and
 \elpiIn{pi w\ p} introduces a fresh nominal constant \elpiIn{w}
 for the premise \elpiIn{p}.
 
 \begin{elpicode}
-finite (app[con"fin", N]).                            ~\customlabel{clause:r1}{(r1)}~
+finite   (app [con"fin", N]).                         ~\customlabel{clause:r1}{(r1)}~
 decision (app [con"nfact", N, NF]).                   ~\customlabel{clause:r2}{(r2)}~
-decision (all A x\ app[P, x]) :- finite A,            ~\customlabel{clause:r3}{(r3)}~
-  pi w\ decision (app[P, w]).
+decision (all A x\ app [P, x]) :- finite A,           ~\customlabel{clause:r3}{(r3)}~
+  pi w\ decision (app [P, w]).
 \end{elpicode}
 
 \noindent
-Unfortunately this translation of rule \ref{clause:r3} uses the
-predicate \coqIn{P} as a first order term: for the meta
-language its type is \elpiIn{tm}.
-If we try to backchain the rule \ref{clause:r3} on the encoding of the goal
-\ref{goal:g} given below
+Unfortunately this intuitive encoding of rule \ref{clause:r3} does not work,
+since it uses the predicate \coqIn{P} as a first order term: for the meta
+language its type is \elpiIn{tm}. If we try to back-chain the rule
+\ref{clause:r3} on the encoding of the goal g given below
 
 \begin{elpicode}
-decision (all (app[con"fin", con"7"]) y\
-  app[con"nfact", y, con"3"]).
+decision (all (app [con"fin", con"7"]) y\              ~\customlabel{goal:g}{(g)}~
+  app [con"nfact", y, con"3"]).
 \end{elpicode}
 
 \noindent
@@ -273,17 +285,16 @@ the two lists of terms have different lengths!
 %first order in the meta language due to the ``naive'' encoding.
 
 \begin{elpicode}
-app[con"nfact", y, con"3"] = app[P, y]                 ~\customlabel{problem:p}{(p)}~
+app [con"nfact", y, con"3"] = app [P, y]               ~\customlabel{problem:p}{(p)}~
 \end{elpicode}
 
 \noindent
-In this paper we study a more sophisticated encoding of Coq terms allowing
-us to rephrase the problematic rule \ref{clause:r3} as follows:
-\todo{why not link?}
+In this paper we study a more sophisticated encoding of rules that, on a first
+approximation, would shape \ref{clause:r3} as follows:
 
 \begin{elpicode}
-decision (all A x\ Pm x) :- decomp Pm P A, finite A,   ~\customlabel{clause:r3a}{(r3a)}~
-  pi x\ decision (app[P, x]).
+decision (all A x\ Pm x) :- link Pm P A, finite A,    ~\customlabel{clause:r3a}{(r3')}~
+  pi x\ decision (app [P, x]).
 \end{elpicode}
 
 \noindent
@@ -294,18 +305,17 @@ in its scope, the unification problem \ref{problem:pa}
 admits one solution:
 
 \begin{elpicode}
-app[con"nfact", y, con"3"] = Pm y                     ~\customlabel{problem:pa}{(p')}~
-Pm = x\ app[con"nfact", x, con"3"]     % assignment for Pm
-A = app[con"fin", con"7"]              % assignment for A
+app [con"nfact", y, con"3"] = Pm y                    ~\customlabel{problem:pa}{(p')}~
+Pm = x\ app [con"nfact", x, con"3"]                   ~\customlabel{solution:pm}{(\rho)}~
 \end{elpicode}
 
 \noindent
-After unifying the head of rule \ref{clause:r3a} with the goal, Elpi would run
-the premise <<\elpiIn{decomp Pm A P}>> in charge of bringing the
-assignment for \elpiIn{Pm} back to the domain \elpiIn{tm} of Coq terms:
+Once the head of rule \ref{clause:r3a} unifies with the goal \ref{goal:g}
+the premise <<\elpiIn{link Pm A P}>> brings the assignment \ref{solution:pm}
+back to the domain \elpiIn{tm} of Coq terms:
 
 \begin{elpicode}
-P = lam A a\ app[con"nfact", a, con"3"]
+P = lam A a\ app [con"nfact", a, con"3"]
 \end{elpicode}
 
 \noindent
@@ -319,8 +329,8 @@ under the \elpiIn{pi w\ }\hspace{-0.4em}). We show below the premise before and
 after the instantiation of \elpiIn{P}:
 
 \begin{elpicode}
-decision (app[                    P                  , w])
-decision (app[ lam A (a\ app[con"nfact", a, con"3"]) , w])
+decision (app[                    P                   , w])
+decision (app[ lam A (a\ app [con"nfact", a, con"3"]) , w])
 \end{elpicode}
 
 \noindent
@@ -328,8 +338,8 @@ In turn this redex prevents the rule \ref{clause:r2} to backchain properly since
 the following unification problem has no solution:
 
 \begin{elpicode}
-app[ lam A (a\ app[con"nfact", a, con"3"]) , x] =
-app[ con"nfact"                            , N, NF]
+app[ lam A (a\ app [con"nfact", a, con"3"]) , x] =
+app[ con"nfact"                             , N, NF]
 \end{elpicode}
 \noindent
 ~\\
@@ -337,72 +347,33 @@ The root cause of the problems we sketched in this example
 is that the unification procedure \Ue of the meta language is not aware
 of the equational theory of the object logic, even if both theories
 include $\eta\beta$-conversion and admit most general
-unifiers for unification problems in the pattern fragment \llambda~\cite{miller92jsc}.
+unifiers for unification problems in the pattern-fragment.
 
 \paragraph{Contributions}
-In this paper we discuss alternative encodings of Coq in
-Elpi (Section~\ref{sec:encodings}), then we identify a minimal language \Fo{}
-in which the problems sketched here can be fully described.
-We then detail an encoding \elpiIn{comp} from \Fo{} to \Ho (the language of
-the meta language) and a decoding \elpiIn{decomp} to relate the unifiers
-bla bla.. \noteE[inline]{citare Teyjus}.
-The code discussed in the paper can be accessed at the URL:
-\url{https://github.com/FissoreD/paper-ho}.
+In this paper we identify a minimal language \Fo{} in which the problems
+sketched in the introduction can be formally described.
+We detail an encoding of a logic program on \Fo{} to a strongly related
+logic program in \Ho (the language of the meta language) and we show that
+the unification procedure of the meta language \Ue{} can be effectively
+used to simulate a unification procedure \Uo for the object language that
+features $\eta\beta$-conversion in the pattern-fragment.
+
+\cref{sec:problem-statement} formally states the problem and gives the
+intuition behind our solution. \cref{sec:encodings} discusses alternative
+term encodings and related works. \cref{sec:lang-spec} introduces
+the languages \Fo{} and \Ho{}, \cref{sec:simulation} describes a
+basic simulation of higher order logic programs.
+\cref{sec:eta,sec:invariant1} completes its equational theory
+with support for $\eta$-conversion. \cref{sec:beta} deals with the
+practical necessity of ``tolerating'' terms outside of the
+pattern-fragment and discusses how heuristic can be applied.
+Finally \cref{sec:implementation} discusses the implementation in Elpi.
+
+The $\lambda$Prolog code discussed in the paper can be accessed at the
+URL: \url{https://github.com/FissoreD/paper-ho}.
 
 \section{Problem statement and solution} %%%%%%%%%%%%%%%%%%%%%%
 \label{sec:problem-statement}
-
-The equational theory of Coq's Dependent Type Theory is very rich. In
-addition to the usual $\eta\beta$-equivalence for functions, terms (hence types)
-are compared up to proposition unfolding and fixpoint unrolling. Still,
-for efficiency and predictability reasons, most form of automatic proof search
-employ a unification procedure that captures a simpler one,
-just $\eta\beta$, and that solves higher-order problems
-restricted to the pattern fragment $\llambda$~\cite{miller92jsc}.
-We call this unification procedure \Uo{}.
-
-The equational theory of the meta language Elpi is strikingly similar,
-since it it comprises $\eta\beta$ (for the meta language functions), and the
-unification procedure \Ue{} solves higher-order problems in
-$\llambda$.
-
-In spite of the similarity the link between \Ue{} and \Uo{} is not trivial,
-since the abstraction and application term constructors
-the two unification procedures deal with are different. For example
-
-\begin{tabular}{lcl}
-\elpiIn{x\ f x} & \Ue{} & \elpiIn{f}\\
-\elpiIn{lam A x\ app[con"f", x]} & \Uo{} & \elpiIn{con"f"}\\
-\elpiIn{lam A x\ app[con"f", x]} & \nUe{} & \elpiIn{con"f"} \\
-\elpiIn{P x} & \Ue{} & \elpiIn{x}\\
-\elpiIn{app[P, x]} & \Uo{} & \elpiIn{x}\\
-\elpiIn{app[P, x]} & \nUe{} & \elpiIn{x}\\
-\end{tabular}
-
-\noindent
-One could ignore this similarity, and ``just'' describe the object language
-unification procedure in the meta language, that is crafting a \elpiIn{unif}
-predicate to be used as follows in rule \ref{clause:r3}:
-
-\begin{elpicode}
-decision X :- unif X (all A x\ app[P, x]), finite A,
-  pi x\ decision (app[P, x]).
-\end{elpicode}
-
-\noindent
-This choice would underuse the logic programming engine provided by
-the meta-language since, by removing any datum from the head of rules,
-indexing degenerates. Moreover the unification procedure \elpiIn{unif}
-programmed in the meta-language is likely to be n order of magnitude
-slower than one that is built-in.
-
-To state precisely the problem we solve we need a \Fo{} representation
-of CIC terms and a \Ho one.
-We call \Eo the equality over ground terms in \Fo,
-\Ee the equality over ground terms in \Ho,
-\Uo the unification procedure we want to implement and
-\Ue the one provided by the meta language.
-\noteE[inline]{extend \Eo and \Ee with reflexivity on uvars.}
 
 \newcommand{\specunif}[3]{
   #3_i \in \llambda \Rightarrow %
@@ -429,34 +400,85 @@ We call \Eo the equality over ground terms in \Fo,
         \rho #3_1 #1 \rho #3_2  %
           \Rightarrow \exists \rho', #3_1 #2 #3_2 \mapsto \rho' \land \rho' \subseteq \rho
 }
+\newcommand{\maybeeta}{\ensuremath{\Diamond\eta}\xspace}
+\newcommand{\maybebeta}{\ensuremath{\Diamond\beta_0}\xspace}
+\newcommand{\notllambda}{\ensuremath{\overline{\llambda}}\xspace}
+%\newcommand{\notllambda}{\ensuremath{\Diamond\beta}\xspace}
+
+
+The equational theory of Coq's Dependent Type Theory is very rich. In
+addition to the usual $\eta\beta$-equivalence for functions, terms (hence types)
+are compared up to proposition unfolding and fixpoint unrolling. Still,
+for efficiency and predictability reasons, most form of automatic proof search
+employ a unification procedure that captures a simpler one,
+just $\eta\beta$, and that solves higher-order problems
+restricted to the pattern fragment \llambda.
+We call this unification procedure \Uo{}.
+
+The equational theory of the meta language Elpi is strikingly similar,
+since it it comprises $\eta\beta$ (for the meta language functions), and the
+unification procedure \Ue{} solves problems in
+\llambda as well.
+
+In spite of the similarity the link between \Ue{} and \Uo{} is not trivial,
+since the abstraction and application term constructors
+the two unification procedures deal with are different. For example:
+%
+\setlength{\tabcolsep}{2pt}
+\vspace{4pt}
+\begin{tabular}{lcl|}
+\elpiIn{x\ f x} & \Ue{} & \elpiIn{f}\\
+\elpiIn{lam A x\ app[con"f", x]} & \Uo{} & \elpiIn{con"f"} \phantom{mn} \\
+\elpiIn{lam A x\ app[con"f", x]} & \nUe{} & \elpiIn{con"f"}
+\end{tabular}
+\phantom{mn}
+\begin{tabular}{lcl}
+\elpiIn{P x} & \Ue{} & \elpiIn{x}\\
+\elpiIn{app[P, x]} & \Uo{} & \elpiIn{x}\\
+\elpiIn{app[P, x]} & \nUe{} & \elpiIn{x}\\
+\end{tabular}
+\vspace{4pt}
+
+
+To state precisely the problem we solve we need a \Fo{} representation
+of CIC terms and a \Ho one. We extend the equality over ground
+terms to open ones with the reflexivity of unification variables (that is
+unification variable X is equal to itself, not to another one such a Y).
+We call \Eo that equality in \Fo{} and \Ee its counterpart in \Ho.
+We call \Uo the unification procedure we want to implement and
+\Ue the one provided by the meta language.
+We assume that the unification of our meta
+language is correct and complete in \llambda.
+%
+%\begin{gather}
+%  \unifcorrect{\Ee}{\Ue}{t} \label{prop:correct-ml}\\
+%  \unifcomplete{\Ee}{\Ue}{t}\label{prop:complete-ml}
+%\end{gather}
 
 We write $t_1 \Ue t_2 \mapsto \sigma$ when $t_1$ and $t_2$ unify
 with substitution $\sigma$; we write $\sigma t$ for the application of
-the substitution to $t$, and $\sigma X = \{ \sigma t | t \in X\}$ when
+the substitution to $t$, and $\sigma X = \{ \sigma t ~|~ t \in X\}$ when
 $X$ is a set; we write $\sigma \subseteq \sigma'$ when $\sigma$ is more
-general than $\sigma'$. We assume that the unification of our meta
-language is correct:
-%
-\begin{gather}
-  \unifcorrect{\Ee}{\Ue}{t} \label{prop:correct-ml}\\
-  \unifcomplete{\Ee}{\Ue}{t}\label{prop:complete-ml}
-\end{gather}
+general than $\sigma'$ and we use set union to denote the concatenation of
+two substitutions. We shall use $\rho$ for \Fo{} substitutions, and
+$\sigma$ for the \Ho ones.
 
 \newcommand{\C}[4]{\ensuremath{\langle #1 \rangle}\mapsto(#2,#3,#4)}
 \newcommand{\D}[4]{\ensuremath{\langle #1,#2,#3 \rangle^{-1}\mapsto #4}}
 
 We illustrate a compilation $\C{s}{t}{m}{l}$ that
-maps a term $s$ in \Fo{} to a term $t$ in \Ho, a variable mapping $m$ and
-list of links $l$.
+maps a term $s$ in \Fo{} to a term $t$ in \Ho{} and produces
+a variable mapping $m$ and list of links $l$.
 The variable map connects unification variables in \Ho with variables
 in \Fo{} and is used to ``decompile'' the assignment,
-$\D{\sigma}{m}{l}{\rho}$. Links represent problematic sub-terms which
-are linked to the unification variable that stands in their place in the
-compiled term. These links are checked for or progress \noteE[inline]{XXX improve....}
+$\D{\sigma}{m}{l}{\rho}$.
+Links are an accessory piece of information whose
+description is deferred to \cref{sec:nutshell}.
 
 We represent a logic program \emph{run} in \Fo{} as
-a list \emph{steps} $p$ of length $\mathcal{N}$. Each step is a
-unification problem between terms $\foUnifPb_{p_l}$ and
+a list \emph{steps} $p$ of length $\mathcal{N}$.
+Each step $p$ represents 
+a unification problem between two terms $\foUnifPb_{p_l}$ and
 $\foUnifPb_{p_r}$ taken from the set of all terms \foUnifPb.
 The composition of these steps starting from the
 empty substitution $\rho_0$ produces the final
@@ -464,7 +486,6 @@ substitution $\rho_\mathcal{N}$.
 \footnote{If the same rule is used multiple time in a run we
 just consider as many copies as needed of the terms composing the
 rules, with fresh unification variables each time}
-The initial here $\rho_0$ is the empty substitution
 %
 \newcommand{\progress}{\ensuremath{\mathrm{progress}}\xspace}
 \newcommand{\fstep}{\ensuremath{\mathrm{fstep}}\xspace}
@@ -496,8 +517,8 @@ $$
 \end{array}
 $$
 
-We simulate each run in \Fo{} with a run in \Ho as follows.
-Note that $\sigma_0$ is the empty substitution.
+\noindent We simulate each run in \Fo{} with a run in \Ho as follows.
+%Note that $\sigma_0$ is the empty substitution.
 $$
 \begin{array}{l}
 \stepH{\hoUnifPb}{p}{\sigma}{\linkStore}{\sigma''}{\linkStore'} \deff\vspace{2pt}\\
@@ -510,11 +531,12 @@ $$
 $$
 
 \noindent
-Here \hstep{} is made of two sub-steps: a call to \Ue (on the compiled
-terms) and a call to \progress{} on the set of links. We claim the following:
+Here \hstep{} is made of two sub-steps: a call to the meta language
+unification and a check for \progress{} on the set of links.
+We claim:
 
 \begin{proposition}[Simulation]\label{prop:simulation}
-$\forall \foUnifPb, \forall \mathcal{N},$
+$\forall \foUnifPb, \forall \mathcal{N},$ if $~\foUnifPb \subseteq \llambda$
 $$
   \runF{\foUnifPb}{\mathcal{N}}{\rho}
   \Leftrightarrow
@@ -526,12 +548,12 @@ $$
 That is, the two executions give the same result. Moreover:
 
 \begin{proposition}[Simulation fidelity]\label{prop:fidelity}
-In the context of~ \hrun, if $~\hoUnifPb \subseteq \llambda$ we have that
+In the context of$\;$ \hrun, if $~\foUnifPb \subseteq \llambda$ we have that
 $\forall p \in 1 \ldots \mathcal{N},$
 $$
 \stepF{\foUnifPb}{p}{\rho_{p-1}}{\rho_p}
 \Leftrightarrow
-\stepH{\hoUnifPb}{p}{\sigma_{p-1}}{\linkStore}{\sigma_p}{\_}
+\stepH{\hoUnifPb}{p}{\sigma_{p-1}}{\linkStore_{p-1}}{\sigma_p}{\linkStore_p}
 $$
 \end{proposition}
 \noindent
@@ -542,14 +564,14 @@ that the execution traces are strongly related and in turn this enables a user
 to debug a logic program in \Fo{} by looking at its execution trace in
 \Ho{}.
 
-XXX permuting hrun does not change the final result if check does not fail eagerly
+%\cref{sec:beta}
+%XXX permuting hrun does not change the final result if check does not fail eagerly
+% XXX if we want to apply heuristics, we can apply them in decomp to avoid committing to a non MGU too early
 
-XXX if we want to apply heuristics, we can apply them in decomp to avoid committing to
-a non MGU too early
 
-
-We can define $s_1 \Uo{} s_2$ by specializing the code of \hrun{} to
-$\foUnifPb = \{ s_1, s_2 \}$ as follows:
+We can define $s_1 \Uo{} s_2$% by specializing the code of \hrun{} to
+%$\foUnifPb = \{ s_1, s_2 \}$ 
+as follows:
 %
 $$
 \begin{array}{l}
@@ -561,101 +583,116 @@ s_1 \Uo s_2 \mapsto \rho \deff \vspace{2pt}\\
 \end{array}
 $$
 
-\begin{proposition}[Properties of \Uo{}]
+\begin{proposition}[Properties of \Uo{} in \llambda]
 \begin{gather}
-  \unifcorrect{\Eo}{\Uo}{s}\customlabel{prop:correct}{(correct)}\\
-\unifcomplete{\Eo}{\Uo}{s}\customlabel{prop:complete}{(complete)}\\
-% \forall \rho'\rho,
-  \rho s_1 \Eo \rho s_2 \Rightarrow
-  \rho' \subseteq \rho \Rightarrow
-  \rho's_i \in \llambda \Rightarrow
-  \rho' s_1 \Uo \rho' s_2 %\label{prop:simulation}
+  \unifcorrect{\Eo}{\Uo}{s}\label{prop:correct}\\
+  \unifcomplete{\Eo}{\Uo}{s}\label{prop:complete}
 \end{gather}
 \end{proposition}
 
-Properties \ref{prop:correct} and \ref{prop:complete} state, respectively, that
-in \llambda the implementation of \Uo is correct, complete and returns the most
-general unifier.
+\noindent
+In addition to correctness and completeness in \llambda, we claim that \hrun
+handles terms outside \llambda in the following sense:
 
-\noteE[inline]{fix}Property \ref{prop:simulation} states that \Uo, hence our compilation scheme,
-is resilient to unification problems outside \llambda solved by
-a third party. We believe this property is of practical interest since we
-want the user to be able to add heuristics via hand written rules
-to the ones obtained by our compilation scheme. A Typical example
-is the following problem \ref{problem:q} that is outside \llambda:
-
-\begin{elpicode}
-app [F, con"a"] = app[con"f", con"a", con"a"]          ~\customlabel{problem:q}{(q)}~
-F = lam x\ app[con"f",x,x]                             ~\customlabel{heuristic:h}{(h)}~
-\end{elpicode}
+\begin{proposition}[Properties of \hrun outside \llambda]
+\begin{gather}
+  \exists \rho, \rho s_1 \Eo \rho s_2 \Rightarrow
+  \C{s_i}{t_i}{m_i}{l_i} \Rightarrow
+  t_1 \Ue t_2 \mapsto \sigma \label{prop:compilation-nllam}\\
+  \sigma_{p-1} \hoUnifPb_{p} \in \llambda \Rightarrow
+  \stepH{\hoUnifPb}{p}{\sigma_{p-1}}{\linkStore_{p-1}}{\sigma_{p}}{\linkStore_p} \mapsto \sigma \label{prop:step-nllam}
+\end{gather}
+\end{proposition}
 
 \noindent
-Instead of rejecting it our scheme accepts it and guarantees that if
-\ref{heuristic:h} is given (after the compilation part of the scheme, as
-a run time hint) then ...
+Property \ref{prop:compilation-nllam} states that two terms for which
+there is a unifier (given by an oracle, not necessarily a most general one),
+then the compiler generates two terms that unify in \Ho. In other words
+the compiler moves out of the way all problematic terms.
 
+Property \ref{prop:step-nllam} says that if the two terms involved in a step
+re-enter \llambda, then \hstep succeeds. This is a typical example
+in which the order of the unification problems in a logic program run
+do matter. The simplest example is the sequence $F = \lambda x.a$ and
+$F \appsep a = a$: the second problem is not in \llambda and has two unifiers,
+namely $F = \lambda x.x$ and $F = \lambda x.a$. The first problem picks one
+of the two, making the second problem re-enter \llambda.
 
 \subsection{The intuition in a nutshell}
 \label{sec:nutshell}
 A term $s$ is compiled in a term $t$ where every
 ``problematic'' sub term $p$ is replaced by a fresh unification variable $h$
-and an accessory link that represent a suspended unification problem
+and an accessory \emph{link} that represent a suspended unification problem
 $h \Ue p$. As a result \Ue is ``well behaved'' on $t$, that is it does not
 contradict \Eo as it would otherwise do on ``problematic'' terms.
 We now define ``problematic'' and ``well behaved'' more formally.
 
-\newcommand{\maybeeta}{\ensuremath{\Diamond\eta}\xspace}
-\newcommand{\maybebeta}{\ensuremath{\overline{\llambda}}\xspace}
-%\newcommand{\maybebeta}{\ensuremath{\Diamond\beta}\xspace}
 \begin{definition}[\maybeeta]\label{def:maybeeta}
   $\maybeeta = \{ t ~|~ \exists \rho, \rho t ~\mathrm{is~an~eta~expansion} \}$
 \end{definition}
 
 \noindent
 An example of term $t$ in \maybeeta{} is
-$\lambda x.\lambda y.F~y~x$
+$\lambda x.\lambda y.F \appsep y \appsep x$
 since the substitution
 $\rho = \{ F \mapsto \lambda a.\lambda b.fba\}$
 makes $\rho t = \lambda x.\lambda y.f x y$
 that is the eta long form of $f$. This term is problematic since
 its rigid part, the $\lambda$-abstractions, cannot justify a
-unification failure against, say, a constant.
+unification failure against a constant or an application.
 
 \begin{definition}[\maybebeta]\label{def:maybebeta}
-  $\maybebeta = \{ X t_1 \ldots t_n ~|~ X t_1 \ldots t_n \not\in \llambda \}$.
+  $\maybebeta = \{ X \appsep x_1 \ldots x_n ~|~ x_1 \ldots x_n ~\mathrm{are~distinct~names} \}$
 \end{definition}
 
 \noindent
-An example of $t$ in \maybebeta{} is $F a$ for a constant $a$. Note however tha
-an oracle could provide an assignment $\rho = \{ F \mapsto \lambda x.x\}$
-that makes the resulting term fall back in \llambda.
+An example of term $t$ in \maybebeta{} is the application $F \appsep x$.
+This term is problematic since the application node of
+its syntax tree cannot be used to justify a
+unification failure, i.e. by properly instantiating $F$ the term
+head constructor may become a $\lambda$, or a constant or stay an application.
+
+\begin{definition}[\notllambda]\label{def:notllambda}
+  $\notllambda = \{ X \appsep t_1 \ldots t_n ~|~ X \appsep t_1 \ldots t_n \not\in \llambda \}$.
+\end{definition}
+
+\noindent
+These terms are problematic for the very same reason terms in \maybebeta are,
+but cannot be handled directly by the unification of the meta language, that
+is only required to handle terms in \llambda.
+
+% An example of $t$ in \notllambda{} is $F \appsep a$ for a constant $a$.
+% Note however tha
+% an oracle could provide an assignment $\rho = \{ F \mapsto \lambda x.x\}$
+% that makes the resulting term fall back in \llambda.
+% \todo{said before}
 
 \newcommand{\subterm}[1]{\ensuremath{\mathcal{P}(#1)}}
-\begin{definition}[Subterms \subterm{t}] The set of sub terms of $t$ is the
-  largest set $\\subterm{t}$ that can be obtained by the following rules.
-$$
-\begin{array}{l}
-t \in \subterm{t}\\
-t = f t_1\ldots t_n \Rightarrow \subterm{t_i} \subseteq \subterm{t} \land f \in \subterm{t}\\
-t = \lambda x.t' \Rightarrow \subterm{t'} \subseteq \subterm{t}\\
-\end{array}
-$$
-\end{definition}
-
-\noindent
-We write $\subterm{X} = \bigcup_{t\in X} \subterm{t}$ when $X$ is a set of terms.
+We write $\subterm{t}$ the set of sub-terms of $t$, and
+%\begin{definition}[Subterms \subterm{t}] The set of sub terms of $t$ is the
+%  largest set $\subterm{t}$ that can be obtained by the following rules.
+%$$
+%\begin{array}{l}
+%t \in \subterm{t}\\
+%t = f t_1\ldots t_n \Rightarrow \subterm{t_i} \subseteq \subterm{t} \land f \in \subterm{t}\\
+%t = \lambda x.t' \Rightarrow \subterm{t'} \subseteq \subterm{t}\\
+%\end{array}
+%$$
+%\end{definition}
+%\noindent
+we write $\subterm{X} = \bigcup_{t\in X} \subterm{t}$ when $X$ is a set of terms.
 
 \newcommand{\wellb}{\ensuremath{\mathcal{W}}\xspace}
 \begin{definition}[Well behaved set]
 Given a set of terms $X \subseteq \Ho{}$,
 $$
-\wellb(X) \Leftrightarrow \forall t \in \subterm{X}, t \not\in (\maybebeta{} ~\cup~ \maybeeta{})
+\wellb(X) \Leftrightarrow \forall t \in \subterm{X}, t \not\in (\notllambda{} ~\cup~ \maybeeta{} ~\cup~ \maybebeta{})
 $$
 \end{definition}
 
 \noindent
 
-\begin{proposition}[\wellb{}-preservation]\label{prop:nf}
+\begin{proposition}[\wellb{}-preservation of \hstep]\label{prop:nf}
 $\forall \hoUnifPb, \forall \linkStore, \forall p, \forall \sigma, \forall \sigma'$
 $$
 \begin{array}{l}
@@ -673,22 +710,37 @@ $$
 A less formal way to state \ref{prop:nf} is that \hstep{} and \progress never
 ``commit'' an unneeded $\lambda$-abstraction in $\sigma$ (a $\lambda$
 that could be erased by an $\eta$-contraction),
-nor put in $\sigma$ a flexible application outside \llambda{}
+nor put in $\sigma$ an application whose head is flexible
 (an application node that could be erased by a $\beta$-reduction).
 
 Note that proposition \ref{prop:nf} does not hold for \Uo{} as a whole
 since decompilation can introduce (actually restore) terms in
-\maybeeta or \maybebeta that were move out of the way
-(put in $\linkStore$) during compilation.
+\maybeeta, \maybebeta or \notllambda that were moved out of the way
+during compilation.
 
 \section{Other encodings and related work}\label{sec:encodings}
 
-Paper \cite{10.1145/2966268.2966272} introduces semi-shallow.
+\noindent
+One could ignore the similarity between \Uo{} and \Ue{} and ``just''
+describe the object language unification procedure in the meta language by
+crafting a \elpiIn{unif} routine and using it as follows in
+rule \ref{clause:r3}:
 
-Our encoding of CIC may look ``semi shallow'' since we use the meta-language
-lambda abstraction but not its application (for the terms of type \elpiIn{tm}).
-A fully shallow encoding unfortunately does not fit our use case, although
-it would make the running example work:
+\begin{elpicode}
+decision X :- unif X (all A x\ app [P, x]), finite A,
+  pi x\ decision (app [P, x]).
+\end{elpicode}
+
+\noindent
+This choice would underuse the logic programming engine provided by
+the meta language since, by removing any datum from the head of rules,
+indexing degenerates. Moreover the unification procedure \elpiIn{unif}
+programmed in the meta language is likely to be an order of magnitude
+slower than one that is built-in.
+
+% Paper \cite{10.1145/2966268.2966272} introduces semi-shallow.
+Another possibility is to avoid having the application and abstraction nodes
+in the syntax tree, and use the ones of meta language, as in the following:
 
 \begin{elpicode}
 finite (fin N).
@@ -699,8 +751,10 @@ decision (all A x\ P x) :- finite A, pi x\ decision (P x).
 \noindent
 There are two reasons for dismissing this encoding. The first one is that
 in CIC it is not always possible to adopt it since the type system
-of the meta language is too weak to accommodate terms with a variable arity,
-like the following example:
+of the meta language is too weak to accommodate for the one of the 
+object language. In CIC the lambda abstraction has to carry a type in order to
+make type checking decidable. Moreover CIC allows for functions with a
+variable arity, like the following example:
 
 \begin{coqcode}
 Fixpoint arr T n := if n is S m then T -> arr T m else T.
@@ -710,21 +764,23 @@ Check sum 3   7 8 9 : nat.
 \end{coqcode}
 
 \noindent
-The second reason is the encoding for Coq is used for meta programming the
-system, hence it must accommodate the manipulation of terms that are now
-know in advance (not even defined in Coq) without using introspection
-primitives such as Prologs's \texttt{functor} and \texttt{arg}.
+The type system of the $\lambda$Prolog is too stringent to accept this terms.\\
+The second reason is that the CIC encoding provided by Elpi is used for meta
+programming (extending) the Coq system, hence it must accommodate the
+manipulation of terms that are now know in advance (not even defined in Coq)
+without using introspection primitives such as Prologs's \texttt{functor}
+and \texttt{arg}. In this sense constants have to live in an open world, like
+the \elpiIn{string} data type used in the examples so far.
 
-In the literature we could find a few related encoding of CIC.
-TODO In~\cite{felty93lics} is related and make the
-discrepancy between the types of ML and CIC visible. In this case
-one needs 4 application nodes. Moreover the objective is an encoding
-of terms, proofs, not proof search. Also note the conv predicate,
-akin to the unif we rule out.
-
-TODO This other paper~\cite{10.1007/978-3-031-38499-8_25} should also be cited.
-
-None of the encodings above provide a solution to our problem.
+In the literature we could find related encoding of the Calculus of
+Constructions~\cite{felty93lics}. The goal of that work was to exhibit
+a logic program performing proof checking in CC and hence relate the
+proof system of intuitionistic higher-order logic (that animates $\lambda$Prolog
+programs) with the Calculus of Constructions. The encoding is hence tailored
+toward a different goal, and utilizes three relations to represent the
+equational theory of CC. Section 6 contains a discussion about the use of the
+unification procedure of the meta language in presence of non ground goals, but
+the authors do not aim at exploiting it to the degree we want.\todo{sucks}
 
 \section{Preliminaries: \Fo{} and \Ho}
 \label{sec:lang-spec}
@@ -821,7 +877,7 @@ approximation, and then makes the mapping bijective by introducing
 \linketa; this detail is discussed in section \ref{sec:eta}.
 
 As we mentioned in section~\ref{sec:nutshell} the compiler
-replaces terms in \maybeeta and \maybebeta with fresh variables
+replaces terms in \maybeeta and \notllambda with fresh variables
 linked to the problematic terms. Each class of problematic terms
 has a dedicated link.
 
@@ -1019,7 +1075,7 @@ over a term, updating a substitution while it traverses it.\noteE[inline]{explai
 % links between unification variables.
 
 \section[Compilation: fo\_tm to tm]{Basic simulation of \Fo{} in \Ho{}}
-% \label{sec:compilation}
+\label{sec:simulation}
 
 In this section we describe a basic compilation scheme that we refine
 later, in the following sections. This scheme is sufficient to implement
@@ -1041,19 +1097,15 @@ The signature of the \elpiIn{comp} predicate below allows for the generation of
 links (suspended unification problems) that play no role in this section
 but play a major role in \cref{sec:eta} and \cref{sec:beta}.
 With respect to \cref{sec:problem-statement} the signature also allows
-for updates to the substitution.  The code below uses that possibility
-in order to allocate space for the variables, i.e. sets their memory
-address to \elpiIn{none} (a details not worth mentioning in the
-previous discussion).
+for updates to the substitution.
 
 \input{code/comp_base}
 
 \noindent
-This preliminary version of \elpiIn{comp} recognizes \Fo{} variables
-applied to a (possibly empty) duplicate free list of names.
-Note that compiling \elpiIn{Ag} cannot create new mappings nor links, since \elpiIn{Ag}
-is made of bound variables and the hypothetical rule loaded by \elpiIn{comp-lam}
-(see below) grants this property.
+The code above uses that possibility
+in order to allocate space for the variables, i.e. sets their memory
+address to \elpiIn{none} (a details not worth mentioning in the
+previous sections).
 
 \input{code/comp_lam}
 
@@ -1072,6 +1124,18 @@ of binders.
 \noindent
 Note that we could remove the first rule, whose solve purpose is to make
 links more readable by pruning unused context entries.
+
+\subsubsection{Detection of \maybebeta}
+
+The following rule is inserted just before rule~\ref{rule:compapp}.
+
+\input{code/comp_base_beta}
+
+\noindent
+Note that compiling \elpiIn{Ag} cannot create new mappings nor links, since \elpiIn{Ag}
+is made of bound variables and the hypothetical rule loaded by \elpiIn{comp-lam}
+(see below) grants this property. Also note that this rule generates no links.
+
 
 \subsection{Execution}
 \label{sec:execution}
@@ -1857,7 +1921,7 @@ the \elpiIn{lam} constructor.
 
 % \noteE[inline]{dire che preserviamo l'invariante che tutte le variable sono fully-applied
 % }
-\section{Handling of \maybebeta}\label{sec:beta}
+\section{Handling of \notllambda}\label{sec:beta}
 
 % On
 % the other hand, we also point out that the \maybeeta detection spot out
@@ -1869,7 +1933,7 @@ the \elpiIn{lam} constructor.
 \noteD[inline]{I've rewritten it, it is clearer?}
 Until now, we have only dealt we unification of terms in \llambda. However, we
 want the unification relation to be more robust so that it can work with terms
-in \maybebeta. In general, unification in \maybebeta admits more then one
+in \notllambda. In general, unification in \notllambda admits more then one
 solution and committing one of them in the substitution does not guarantee
 prop.~\ref{prop:complete}. For instance, $X \appsep a \Uo a$ is a unification
 problem admits two different substitutions: $\rho_1 = \{X \mapsto \lambda x.x\}$
@@ -1877,7 +1941,7 @@ and $\rho_2 = \{X \mapsto \lambda \_.a\}$. Prefer one over the other may break
 future unifications.
 
 It is the case that, given a list of unification problems, $\foUnifPb_1\dots
-\foUnifPb_n$ with $\foUnifPb_n$ in \maybebeta, the resolution of
+\foUnifPb_n$ with $\foUnifPb_n$ in \notllambda, the resolution of
 $\bigwedge_{i=0}^{n-1}\foUnifPb_i$ gives a partial substitution $\rho$, such
 that $\rho\foUnifPb_n$ falls again in \llambda.
 %
@@ -1903,7 +1967,7 @@ non-unifiable problem $(\lambda x. B) \appsep a \Ue a$.
 
 To address
 this unification problem, term compilation should capture the
-terms $t$ in \maybebeta and replace them with fresh variables $X$.
+terms $t$ in \notllambda and replace them with fresh variables $X$.
 The variables $X$ and the terms $t$ are linked through a \linkbeta.
 
 \linkbeta guarantees \cref{inv:linklhs} and the term on the \rhs has the
@@ -1930,7 +1994,7 @@ following property:
 % section is given in a future section
 \begin{lemma}
   If the \lhs of a \linkbeta is instantiated to a rigid term and its \rhs
-  counterpart is still in \maybebeta,
+  counterpart is still in \notllambda,
   the original unification problem is not in \llambda
   % \noteE[inline]{non capisco cosa vuoi dire con "the current...". Data la prova sotto vuoi dire che il problem originale sarebbe stato fuori... e quindi falliamo}
   %\noteE[inline]{Is it clearer?}
@@ -1943,14 +2007,13 @@ following property:
   $t_1\dots t_n$ is not in \llambda. By construction, $X \appsep t_1\dots t_n$
   is replaced with a variable $Y$, and the \linkbeta \linkbetaM{\Gamma}{Y}{X
   \appsep t_1\dots t_n} is created. The unification instantiates $Y$ to $t$,
-  making the \lhs of the link a rigid term, while \rhs is still in \maybebeta.
+  making the \lhs of the link a rigid term, while \rhs is still in \notllambda.
   The original problem is in fact outside \llambda.
 \end{proof}
 
 \subsection{Compilation and decompilation}
 
-\paragraph{Compilation}
-Detection of \maybebeta is quite simple to implement in the compiler, since it
+Detection of \notllambda is quite simple to implement in the compiler, since it
 is sufficient to detect applications with flexible head and argument that
 are not in \llambda.
 
@@ -2114,7 +2177,7 @@ under a given substitution.
   If $\sigma\hoUnifPb$ is in \llambda, then by
   \cref{def:progBetaLL,def:progBetaRH}, then \linkbeta disappear and the
   unification done between terms in \llambda. This problem unifies iff
-  its corresponding \Fo{} problem unifies too. If $\sigma\hoUnifPb$ is in \maybebeta,
+  its corresponding \Fo{} problem unifies too. If $\sigma\hoUnifPb$ is in \notllambda,
   then, by \cref{lemma:keep-fidelity}, the unification fails, as per the
   corresponding unification in \Fo{}.
 \end{proof}
@@ -2176,12 +2239,12 @@ a\}$.
  
 \subsection{Relaxing \cref{lemma:keep-fidelity} : tobe renamed}
 
-\newcommand{\progBetaNoLLWait}{\emph{progress-beta-\maybebeta}}
+\newcommand{\progBetaNoLLWait}{\emph{progress-beta-\notllambda}}
 
 % from https://www.cs.mcgill.ca/~bpientka/papers/unif_miller60.pdf
 Working with terms in \llambda is sometime too restrictive. There exists systems
 such as $\lambda$Prolog~\cite{lamProlog}, Abella~\cite{gacek2008abella}, which 
-delay the resolution of \maybebeta unification problems if the substitution
+delay the resolution of \notllambda unification problems if the substitution
 is not able to put them in \llambda.
 %
 % make test ONLY=7005 TEX=tex
@@ -2192,10 +2255,10 @@ is not able to put them in \llambda.
   {{}}
   {{}}
 
-In the example above, $\foUnifPb_1$ is in \maybebeta and the object language
+In the example above, $\foUnifPb_1$ is in \notllambda and the object language
 cannot solve it, and, by \cref{prop:fidelity}, the meta language neither.
 However, we can be more permissive, and relax \cref{lemma:keep-fidelity}. This
-modification is quite simple to manage: we are introducing a new \maybebeta
+modification is quite simple to manage: we are introducing a new \notllambda
 progress rule, say \progBetaNoLLWait, by which, if \lhs is rigid and \rhs is
 flexible, the considered \linkbeta is kept in the store and no progression is
 done\footnote{This new rule trivially guarantees the termination of progress}.
@@ -2207,11 +2270,11 @@ decompilation of the two links will force the unification of $X$ to $Y\appsep a$
 and then the unification of $f\appsep (Y \appsep a)$ to $Y\appsep a$, which
 fails by the occur check of \Ue.
 
-A second strategy to deal with problem that are in \maybebeta is to make some
+A second strategy to deal with problem that are in \notllambda is to make some
 approximation. This is the case for example of the unification algorithm of Coq
 used in its type class solver~\cite{sozeau08}. The approximation consists in
 forcing a choice (among the others) when the unification problem is in
-\maybebeta. For instance, in $X \appsep a \appsep b = Y \appsep b$, the last
+\notllambda. For instance, in $X \appsep a \appsep b = Y \appsep b$, the last
 argument of the two terms is the same, therefore $Y$ is assigned to $X a$. Note
 that this is of course an approximation, since $\sigma = \{X = \lambda x.Y, Y =
 \_\}$ is another valid substitution for the original problem. This approximation
@@ -2228,31 +2291,36 @@ making a choice among all the possible unifiers and therefore, we can pick
 the wrong one.
 
 
-\section{Actual implementation in Elpi}
+\section{Actual implementation in Elpi}\label{sec:implementation}
 
 In this paper we show a minimized example. The full code is there.
 But we also have to code things in Coq-Elpi.
 
-In Elpi we don't have a main loop, we rely on the interpreter one.
-So links are constraints and progress are CHR rules.
-Constraints are suspended goals that are resumend when some unif variable
-is assigned.
+The main difference between the presentation in the previous sections and
+the actual implementation for Coq is that the main loop \hrun is replaced by
+the one of Prolog that chains calls to the unification procedure. In order
+implement the store of links we resort to Elpi's CLP engine and
+use constraints (suspended goals) to represent links, and constraint
+handling rules to implement progress operations involving more than one link.
+
+\todo{finish}
+about the progress of 1 link:
 
 \begin{elpicode}
-link-eta bla :- suspend-condition Holes, !, declare_constraint (link-eta bla) Holes.
-link-eta bla :- progress. % solves the goal, hence the constraint is not more in L.
+link-eta L R :- suspend-condition L R Holes, !,
+  declare_constraint (link-eta L R) Holes.
+link-eta L R :-
+  progress. % e.g. L = R.
 \end{elpicode}
 
-This matches with all progress rules but for the ones considering
-two links. For these we need to resort to CHR to manipulate L. For example
-deduplicate eta 
+about the progress of 2 links:
 
 \begin{elpicode}
-constraints link-eta {
-  rule (N1 : G1 ?- link-eta (uvar X LX1) T1) % match
-    /  (N2 : G2 ?- link-eta (uvar X LX2) T2) % remove
+constraint link-eta {
+  rule (N1 ~$\triangleright$~ G1 ?- link-eta (uvar X LX1) T1) % match
+    /  (N2 ~$\triangleright$~ G2 ?- link-eta (uvar X LX2) T2) % remove
     |  (relocate LX1 LX2 T2 T2')             % condition
-   <=> (N1 : G1 ?- T1 = T2').                % new goal
+   <=> (N1 ~$\triangleright$~ G1 ?- T1 = T2').                % new goal
 }
 \end{elpicode}
 
