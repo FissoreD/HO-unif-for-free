@@ -10,6 +10,7 @@
 \usepackage{macros}
 \usepackage{enumitem}
 \usepackage{intcalc}
+\usepackage{nameref}
 
 % TODO: set this fields
 %\setcopyright{cc}
@@ -1992,7 +1993,7 @@ following property:
 
 % This property can be relaxed, to accept approximations: a dedicated
 % section is given in a future section
-\begin{lemma}
+\begin{lemma}[\linkbeta with rigid \lhs]
   If the \lhs of a \linkbeta is instantiated to a rigid term and its \rhs
   counterpart is still in \notllambda,
   the original unification problem is not in \llambda
@@ -2010,6 +2011,13 @@ following property:
   making the \lhs of the link a rigid term, while \rhs is still in \notllambda.
   The original problem is in fact outside \llambda.
 \end{proof}
+
+% From \cref{lemma:keep-fidelity}, we can deduce the following corollary
+
+% \begin{corollary}
+%   Given a \linkbeta \linkbetaM{\Gamma}{X}{T}, if it exists a second link
+%   $l\in\linkStore$, then unification fails.   
+% \end{corollary}
 
 \subsection{Compilation and decompilation}
 
@@ -2077,9 +2085,9 @@ we should fail immediately: we have a \linkbeta and a \linketa with same \lhs}
 
 \subsection{Progress}
 
-\newcommand{\progBetaLL}{\emph{progress-beta-\llambda}}
-\newcommand{\progBetaRH}{\emph{progress-beta-rigid-head}}
-\newcommand{\progBetaDedup}{\emph{progress-beta-dedup}}
+\newcommand{\progBetaLL}{\emph{progress-beta-\llambda}\xspace}
+\newcommand{\progBetaRH}{\emph{progress-beta-rigid-head}\xspace}
+\newcommand{\progBetaDedup}{\emph{progress-beta-dedup}\xspace}
 
 The activation of a \linkbeta is performed when its \rhs falls under \llambda
 under a given substitution.
@@ -2119,8 +2127,9 @@ under a given substitution.
 \noteD{added the def below to respect fidelity}
 % Example of this `X a = Y a'
 \begin{definition}[\progBetaDedup]
-  Given two \linkbeta $l1$ and $l2$, if they share the same \lhs, unification
-  fails.
+  Given a \linkbeta $l_1$ and second link $l_2 \in\linkStore$, such that they
+  share the same \lhs. In this case, the two \rhs are unified and a $l_2$ is
+  removed from \linkStore.
   \label{def:progBetaDedup}
 \end{definition}
 
@@ -2137,8 +2146,10 @@ under a given substitution.
   \linkbeta $l^m$ has no more arguments and is removed from \linkStore.
   Note that at the $m^{th}$ iteration, $m$ new \linketa have been added to
   \linkStore, however, by \cref{lemma:prog-eta-terminates}, the algorithm
-  terminates.
-  \noteD{L'ho riscritto}
+  terminates. Finally \progBetaDedup also guarantees termination since it 
+  makes a unification $\mathbb{U}$ and if $\mathbb{U}$ fails, then 
+  \elpiIn{progress} terminates and if $\mathbb{U}$ succeeds, 
+  the recursive calls to \elpiIn{progress} have a specialized \linkbeta\dots  
 
   % \Cref{def:progBetaRH} makes \elpiIn{progress} terminates, since it makes a
   % \linkbeta disappear from \linkStore. On the other hand, \cref{def:progBetaLL},
@@ -2151,6 +2162,7 @@ under a given substitution.
   % \elpiIn{progress} still terminates.
   %\noteE[inline]{is it ok?}
   \noteE[inline]{funziona. per essere più precisi io parlerei di ordine lessicografico (tipico ordine ben fondato usato per dimostrare terminazione). Nl nostro caso è la tripla (argomenti extra dei beta, numero di beta, numero di eta).}
+  \noteD{da finire}
 \end{proof}
 
 \begin{corollary}
@@ -2237,7 +2249,7 @@ gives the final substitution $\sigma = \{A \mapsto \lambda x.B, B \mapsto C, C
 \mapsto a\}$ which is decompiled into $\rho = \{X \mapsto \lambda x.a, Y \mapsto
 a\}$.
  
-\subsection{Relaxing \cref{lemma:keep-fidelity} : tobe renamed}
+\subsection{Relaxing lemma \nameref{lemma:keep-fidelity}}
 
 \newcommand{\progBetaNoLLWait}{\emph{progress-beta-\notllambda}}
 
