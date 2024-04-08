@@ -43,6 +43,14 @@ namespace comp {
   macro @val-link-beta T1 T2 :- ho.val (link-beta T1 T2).
 
 
+  type get-lhs link -> tm -> o.
+  get-lhs (val (link-beta A _)) A.
+  get-lhs (val (link-eta A _)) A.
+
+  type get-rhs link -> tm -> o.
+  get-rhs (val (link-beta _ A)) A.
+  get-rhs (val (link-eta _ A)) A.
+
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% COMPILER %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -431,18 +439,29 @@ namespace comp {
     pi x\ link-abs-same-lhs (F x) B.
   link-abs-same-lhs A (ho.abs G) :- 
     pi x\ link-abs-same-lhs A (G x).
-  link-abs-same-lhs (val (link-eta (uva N _) _)) (val (link-eta (uva N _) _)).
+  link-abs-same-lhs (val (link-eta (uva N _) _)) (val (link-eta (uva N _) _)) :- !.
+  link-abs-same-lhs _ _ :- suspend-out-of-lam, !, fail.
+  link-abs-same-lhs A B :-
+    get-lhs A (uva N _),
+    get-lhs B (uva N _), !.
 
-  type same-link-eta link -> link -> subst -> subst -> o.
-  % same-link-eta (ho.abs F) (ho.abs G) H H1 :- !, pi x\ same-link-eta (F x) (G x) H H1.
-  same-link-eta (ho.abs F) G H H1 :- !, pi x\ same-link-eta (F x) G H H1.
-  same-link-eta A (ho.abs G) H H1 :- !, pi x\ same-link-eta A (G x) H H1.
-  same-link-eta (val (link-eta (uva N S1) A))
-                (val (link-eta (uva N S2) B)) H H1 :-
+  type same-link link -> link -> subst -> subst -> o.
+  % same-link (ho.abs F) (ho.abs G) H H1 :- !, pi x\ same-link (F x) (G x) H H1.
+  same-link (ho.abs F) G H H1 :- !, pi x\ same-link (F x) G H H1.
+  same-link A (ho.abs G) H H1 :- !, pi x\ same-link A (G x) H H1.
+  same-link (val (link-eta (uva N S1) A))
+                (val (link-eta (uva N S2) B)) H H1 :- !,
     std.assert! (std.length S1 {std.length S2}) "no same scope", % HIDE
     forall3 (x\y\r\ r = ho.copy x y) S1 S2 Perm,
     Perm => ho.copy A A',
     (A' ==l B) H H1.
+  same-link L1 L2 H H1 :-
+    get-lhs L1 (uva N S1), get-rhs L1 A,
+    get-lhs L2 (uva N S2), get-rhs L2 B,
+    std.assert! (std.length S1 {std.length S2}) "no same scope", % HIDE
+    forall3 (x\y\r\ r = ho.copy x y) S1 S2 Perm,
+    Perm => ho.copy A A',
+    if (progress-beta-force) ((A' ==l B) H H1) (A' = B, H = H1).
 
 %SNIP: progress1
   type progress1 links -> links -> subst -> subst -> o.
@@ -452,7 +471,7 @@ namespace comp {
   progress1 [] [] X X.
   progress1 [A|L1] [A|L3] S S2 :- take-link A L1 B L2, !,
     print "deduplicating links:" {pplink A} "===" {pplink B}, % HIDE
-    same-link-eta A B S S1, 
+    same-link A B S S1, 
     progress1 L2 L3 S1 S2.
   progress1 [L0|L1] L3 S S2 :-
     print "considering link for progress:" {pplink L0}, % HIDE

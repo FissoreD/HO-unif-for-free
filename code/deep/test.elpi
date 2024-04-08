@@ -509,9 +509,9 @@ macro @sokl-delay N SX SS :- @sokl-call comp.suspend-out-of-lam N SX SS.
 ] ["a", "λx.x", "a"].
 
 @sokl 55 [
-  pr ok "λx.(X x) = Y Z",
   pr ok "Y = λx.x",
   pr ok "Z = a",
+  pr ok "λx.(X x) = Y Z",
 ] ["a", "λx.x", "a"].
 
 @sokl 56 [
@@ -642,6 +642,14 @@ macro @sokl-delay N SX SS :- @sokl-call comp.suspend-out-of-lam N SX SS.
   pr ok "λx.(f ((λy.y) x)) = f"
 ] [].
 
+@sokl 99 [
+  pr (error "unif") "X Y = X W"
+] [].
+
+@sokl 101 [
+  pr (error "unif") "X Y = λx.(Z x)"
+] [].
+
 % From the paper
 @sokl 7000 [
   pr ok "λx.(X x) = f"
@@ -673,25 +681,16 @@ macro @sokl-delay N SX SS :- @sokl-call comp.suspend-out-of-lam N SX SS.
 
 % TEST NON IN PF
 @sokl 9001 [
-  pr (error "decompl") "λx.(X b x) = λx.(X a x)"
+  pr (error "unif") "λx.(X b x) = λx.(X a x)"
 ] [].
 
 @sokl 9002 [
-  pr (error "decompl") "λx.(X x) = Y X",
+  pr (error "unif") "λx.(X x) = Y X",
 ] [].
 
 @sokl 9003 [
   pr ok "X = Y Z"
 ] ["(Y Z)"].
-
-@sokl 9004 [
-  pr (error "decompl") "λx.(X x) = Y Z"
-] ["(Y Z)"].
-
-@sokl 9005 [
-  pr ok "λx.(X x) = Y Z",
-  pr (error "decompl") "λx.(X x) = λx.λy.(Y y x)",
-] [].
 
 % TEST DELAYED PF
 @sokl-delay 5001 [
@@ -716,6 +715,12 @@ macro @sokl-delay N SX SS :- @sokl-call comp.suspend-out-of-lam N SX SS.
   pr (error "decompl") "Z = X" % Note: OC error not detected
 ] [].
 
+@sokl-delay 5005 [
+  pr ok "λx.(X x) = Y Z",
+  pr ok "Y = λx.x",
+  pr ok "Z = a",
+] ["a", "λx.x", "a"].
+
 % TEST FORCE UNIF OUT-LLAMBDA
 @sokl-force-progress 4001 [
   pr ok "X a = f a"
@@ -728,3 +733,7 @@ macro @sokl-delay N SX SS :- @sokl-call comp.suspend-out-of-lam N SX SS.
 @sokl-force-progress 4003 [
   pr (error "unif") "λx.(X x a) = λx.(f x x b)"
 ] [].
+
+@sokl-force-progress 4004 [
+  pr ok "X Y = X Z",
+] ["_", "Z", "_"].
