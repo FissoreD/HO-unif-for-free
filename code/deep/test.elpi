@@ -34,11 +34,9 @@ hstep T1 T2 L1 L2 S1 S3 :-
 %SNIP: unif_fo
 type (===o) fm -> fm -> fsubst -> o.
 (A ===o B) F :-
-  fo.beta-reduce A A',
-  fo.beta-reduce B B',
-  comp A' A'' [] M1 [] [] [] S1,
-  comp B' B'' M1 M2 [] [] S1 S2,
-  hstep A'' B'' [] [] S2 S3,
+  comp A A' [] M1 [] [] [] S1,
+  comp B B' M1 M2 [] [] S1 S2,
+  hstep A' B' [] [] S2 S3,
   decompm M2 M2 S3 [] F.
 %ENDSNIP
 
