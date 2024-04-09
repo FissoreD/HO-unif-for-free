@@ -364,24 +364,25 @@ unification procedure \Ue{} solves problems in
 
 In spite of the similarity the link between \Ue{} and \Uo{} is not trivial,
 since the abstraction and application term constructors
-the two unification procedures deal with are different. For example:\\
-%
-\vspace{4pt}
-{
-\setlength{\tabcolsep}{2pt}
-\begin{tabular}{lcl|}
-\elpiIn{x\ f x} & \Ue{} & \elpiIn{f}\\
-\elpiIn{lam A x\ app[con"f", x]} & \Uo{} & \elpiIn{con"f"} \phantom{mn} \\
-\elpiIn{lam A x\ app[con"f", x]} & \nUe{} & \elpiIn{con"f"}
-\end{tabular}
-\phantom{mn}
-\begin{tabular}{lcl}
-\elpiIn{P x} & \Ue{} & \elpiIn{x}\\
-\elpiIn{app[P, x]} & \Uo{} & \elpiIn{x}\\
-\elpiIn{app[P, x]} & \nUe{} & \elpiIn{x}\\
-\end{tabular}
-}
-\vspace{4pt}
+the two unification procedures deal with are different.
+% For example:\\
+% %
+% \vspace{4pt}
+% {
+% \setlength{\tabcolsep}{2pt}
+% \begin{tabular}{lcl|}
+% \elpiIn{x\ f x} & \Ue{} & \elpiIn{f}\\
+% \elpiIn{lam A x\ app[con"f", x]} & \Uo{} & \elpiIn{con"f"} \phantom{mn} \\
+% \elpiIn{lam A x\ app[con"f", x]} & \nUe{} & \elpiIn{con"f"}
+% \end{tabular}
+% \phantom{mn}
+% \begin{tabular}{lcl}
+% \elpiIn{P x} & \Ue{} & \elpiIn{x}\\
+% \elpiIn{app[P, x]} & \Uo{} & \elpiIn{x}\\
+% \elpiIn{app[P, x]} & \nUe{} & \elpiIn{x}\\
+% \end{tabular}
+% }
+% \vspace{4pt}
 %
 \paragraph{Contributions}
 In this paper we identify a minimal language \Fo{} in which the problems
@@ -392,7 +393,7 @@ the unification procedure of the meta language \Ue{} can be effectively
 used to simulate a unification procedure \Uo for the object language that
 features $\eta\beta$-conversion in the pattern-fragment.
 
-\cref{sec:problem-statement} formally states the problem and gives the
+\todo{fix}\cref{sec:problem-statement} formally states the problem and gives the
 intuition behind our solution. \cref{sec:encodings} discusses alternative
 term encodings and related works. \cref{sec:grounwork} introduces
 the languages \Fo{} and \Ho{}, \cref{sec:simulation} describes a
@@ -450,7 +451,8 @@ the unification procedure of \Ho{} in order to implement one for \Fo.
 
 In order to reason about unification we provide a description of the
 \Fo{} and \Ho languages where unification variables
-are first class terms, i.e. they have a concrete syntax.
+are first class terms, i.e. they have a concrete syntax as
+per \cref{code:common-terms}.
 % We keep these languages
 %minimal, for example, we omit the \elpiIn{all} quantifier of CIC we used
 %in the example in Section~\ref{sec:intro} together with the type notation of
@@ -459,8 +461,7 @@ are first class terms, i.e. they have a concrete syntax.
 {
 \setlength{\abovecaptionskip}{0pt}
 \setlength{\belowcaptionskip}{-13pt}
-
-\begin{figure}[H]
+\begin{figure} %[H]
   \begin{tabular}{ll}
   \begin{minipage}{0.21\textwidth}
    \inputrawelpicode{code/fo_tm}
@@ -475,7 +476,6 @@ are first class terms, i.e. they have a concrete syntax.
   \Description[code:common-terms]{code:common-terms}
 \end{figure}
 }
-\noindent
 Unification variables (\elpiIn{fuva} term constructor)
 in \Fo{} have no explicit scope:
 the arguments of an higher order variable are given via the \elpiIn{fapp}
@@ -676,7 +676,11 @@ $$
 \begin{array}{l}
 \stepH{\hoUnifPb}{p}{\sigma}{\linkStore}{\sigma''}{\linkStore'} \deff\vspace{2pt}\\
   \qquad\stepHD{\hoUnifPb}{p}{\sigma}{\sigma'}{\sigma''}{\linkStore}\vspace{2pt}\\
-\runH{\foUnifPb}{\mathcal{N}}{\rho} \deff \vspace{2pt}\\
+\end{array}
+$$
+$$
+\begin{array}{l}
+  \runH{\foUnifPb}{\mathcal{N}}{\rho} \deff \vspace{2pt}\\
   \qquad \hoUnifPb \times \mapStore \times \linkStore_0 = \{ (t_j,m_j,l_j) | s_j \in \foUnifPb, \C{s_j}{t_j}{m_j}{l_j} \}\vspace{2pt}\\
   \qquad \runHD{\hoUnifPb}{\mathcal{N}}{\linkStore}\vspace{2pt}\\
   \qquad \D{\sigma_{\mathcal{N}}}{\mapStore}{\linkStore_{\mathcal{N}}}{\rho_{\mathcal{N}}}
@@ -790,22 +794,9 @@ it does not contradict \Eo as it would otherwise do on the
 ``problematic'' sub-terms. We now define ``problematic'' and ``well behaved''
 more formally.
 
-\begin{definition}[\maybeeta]\label{def:maybeeta}
-  $\maybeeta = \{ t ~|~ \exists \rho, \rho t ~\mathrm{is~an~eta~expansion} \}$
-\end{definition}
-
-\noindent
-An example of term $t$ in \maybeeta{} is
-$\lambda x.\lambda y.F \appsep y \appsep x$
-since the substitution
-$\rho = \{ F \mapsto \lambda a.\lambda b.fba\}$
-makes $\rho t = \lambda x.\lambda y.f x y$
-that is the eta long form of $f$. This term is problematic since
-its rigid part, the $\lambda$-abstractions, cannot justify a
-unification failure against a constant or an application.
-
 \begin{definition}[\maybebeta]\label{def:maybebeta}
-  $\maybebeta = \{ X \appsep x_1 \ldots x_n ~|~ x_1 \ldots x_n ~\mathrm{are~distinct~names} \}$
+  \maybebeta is the set of terms of the form $X \appsep x_1 \ldots x_n$
+  such that $x_1 \ldots x_n$ are distinct names (of bound variables).
 \end{definition}
 
 \noindent
@@ -815,8 +806,24 @@ its syntax tree cannot be used to justify a
 unification failure, i.e. by properly instantiating $F$ the term
 head constructor may become a $\lambda$, or a constant or stay an application.
 
+\begin{definition}[\maybeeta]\label{def:maybeeta}
+  \maybeeta is the set of terms $t$ such that $\exists \rho, \rho t$
+  is an eta expansion.
+\end{definition}
+
+\noindent
+An example of term $t$ in \maybeeta{} is
+$\lambda x.\lambda y.F \appsep y \appsep x$
+since the substitution
+$\rho = \{ F \mapsto \lambda a.\lambda b.f \appsep b \appsep a\}$
+makes $\rho t = \lambda x.\lambda y.f \appsep x \appsep y$
+that is the eta long form of $f$. This term is problematic since
+its leading $\lambda$ abstraction cannot justify a
+unification failure against a constant or an application.
+
 \begin{definition}[\notllambda]\label{def:notllambda}
-  $\notllambda = \{ X \appsep t_1 \ldots t_n ~|~ t_1 \ldots t_n ~\mathrm{are~not~distinct~names} \}$.
+  \notllambda is the set of terms of the form $X \appsep t_1 \ldots t_n$
+  such that $t_1 \ldots t_n$ are not distinct names.
 \end{definition}
 
 \noindent
@@ -870,16 +877,16 @@ $$
 \end{proposition}
 
 \noindent
-\cref{prop:nf} is key to prove \cref{prop:simulation,prop:fidelity}:
-the problematic terms moved on the side by the compiler are not
-put back by \hstep, hence \Ue{} can operate properly.
+Proposition \ref{prop:nf} is key to prove \cref{prop:simulation,prop:fidelity}:
+informally it says that the problematic terms moved on the side by the compiler
+are not put back by \hstep, hence \Ue{} can operate properly.
 In \cref{sec:compilation,sec:eta,sec:beta}
-we describe how the compiler recognizes terms in \maybeeta, \maybebeta and
-\notllambda and how progress takes care of them preserving \wellb
+we describe how the compiler recognizes terms in \maybebeta, \maybeeta and
+\notllambda and how \progress takes care of them preserving \wellb
 and granting \cref{prop:simulation,prop:fidelity}.
 
-Note that proposition \ref{prop:nf} does not hold for \hrun as a whole
-since decompilation can introduce (actually restore) problematic terms.
+% Note that proposition \ref{prop:nf} does not hold for \hrun as a whole
+% since decompilation can introduce (actually restore) problematic terms.
 
 \section{Ground work for the compiler}
 \label{sec:grounwork}
@@ -1073,9 +1080,9 @@ abs x\ val (link-beta (uva A [x]) (app[uva F [x],con "a"]))
 
 In this section we describe a basic compilation scheme that we refine
 later, in the following sections. This scheme is sufficient to implement
-an \Uo{} that respects $\beta$-conversion for terms in \llambda. The extension to
-$\eta\beta$-conversion is described in Section \ref{sec:eta} and the support
-for terms outside \llambda in Section \ref{sec:beta}.
+a \hstep that respects $\beta$-conversion for terms in \llambda.
+The extension to $\eta\beta$-conversion is described in \cref{sec:eta} and
+the support for terms outside \llambda in \cref{sec:beta}.
 
 \subsection{Compilation}
 \label{sec:compilation}
