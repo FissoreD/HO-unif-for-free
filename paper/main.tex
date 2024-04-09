@@ -1736,13 +1736,14 @@ when the \lhs is assigned to a variable that is the \lhs of another
 \end{lemma}
 
 \begin{proof}
-  Trivial, since the unification is done between unification variables, which
-  are by definition in \wellb.
+  The unification is done between the \rhs of two
+  \linketa. Both \rhs has the shape $\lambda x.t$, with $\wellb(t)$, therefore,
+  the unification is done between well-behaved terms.
 \end{proof}
 
 \begin{lemma}
-  \Cref{prop:nf} holds, i.e., given a substitution $\sigma$ and a \linketa $l$,
-  after the activation of $l$, $\wellb(\sigma)$ holds.
+  The introduction of \linketa guarantees \fullref{prop:nf}
+  \label{lemma:unif-wellb}
 \end{lemma}
 
 \begin{proof}[Proof sketch]
