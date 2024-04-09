@@ -1,0 +1,182 @@
+internal-test fo.test-parse-1.
+
+namespace fo {
+  shorten mem.{ set? , unset? }.
+%BEGIN
+
+%SNIP: fo_tm
+  kind fm type.
+  type fapp list fm -> fm.
+  type flam (fm -> fm) -> fm.
+  type fcon string -> fm.
+%ENDSNIP
+
+%SNIP: feq
+  type (==o) fm -> fm -> o.                             %~($\customlabel{pred:fequal}{\Eo}$)~
+  X ==o Y :- (var X ; var Y), fatal "flex equal". % HIDE
+  fcon X ==o fcon X.
+  fapp A ==o fapp B :- forall2 (==o) A B.
+  flam F ==o flam G :- pi x\ x ==o x => F x ==o G x.
+  fuva N ==o fuva N.
+  flam F ==o T :-                                       %~($\customlabel{clause:eta1}{\eta_l}$)~
+    pi x\ beta T [x] (T' x), x ==o x => F x ==o T' x.
+  T ==o flam F :-                                       %~($\customlabel{clause:eta2}{\eta_r}$)~
+    pi x\ beta T [x] (T' x), x ==o x => T' x ==o F x.
+  fapp [flam X | L] ==o T :- beta (flam X) L R, R ==o T. %~($\customlabel{clause:beta1}{\beta_l}$)~
+  T ==o fapp [flam X | L] :- beta (flam X) L R, T ==o R. %~($\customlabel{clause:beta2}{\beta_r}$)~
+%ENDSNIP
+
+
+%SNIP: beta_fo
+  type beta fm -> list fm -> fm -> o.
+  beta A [] A.
+  beta (flam Bo) [H | L] R :- napp (Bo H) F, beta F L R.
+  beta (fapp A) L (fapp X) :- append A L X.
+  beta (fuva N) L (fapp [fuva N | L]).
+  beta (fcon H) L (fapp [fcon H | L]).
+  beta N L (fapp [N | L]) :- name N.
+
+  type napp fm -> fm -> o.
+  napp (fcon C) (fcon C).
+  napp (fuva A) (fuva A).
+  napp (flam F) (flam G) :- pi x\ napp (F x) (G x).
+  napp (fapp [fapp L1 |L2]) T :- !,
+    append L1 L2 L3, napp (fapp L3) T.
+  napp (fapp L) (fapp L1) :- map napp L L1.
+  napp N N :- name N.
+%ENDSNIP
+
+  type beta-reduce fm -> fm -> o.
+  beta-reduce (uvar _ _) _ :- halt "Passed uvar to beta-reduce".
+  beta-reduce A A :- name A.
+  beta-reduce (fcon A) (fcon A).
+  beta-reduce (fuva A) (fuva A).
+  beta-reduce (flam A) (flam B) :-
+    pi x\ beta-reduce (A x) (B x).
+  beta-reduce (fapp [flam B | L]) T2 :- !,
+    beta (flam B) L T1, beta-reduce T1 T2.
+  beta-reduce (fapp L) (fapp L1) :-
+    map beta-reduce L L1.
+
+  type mk-app fm -> list fm -> fm -> o.
+  mk-app T L S :- beta T L S.
+
+  type eta-contract fm -> fm -> o.
+  eta-contract X _ :- var X, halt "Eta-contract first args is flexible". % HIDE
+  eta-contract (fcon X) (fcon X).
+  eta-contract (fapp L) (fapp L1) :- map eta-contract L L1.
+  eta-contract (flam F) T :- eta-contract-aux [] (flam F) T.
+  eta-contract (flam F) (flam F1) :-
+    pi x\ eta-contract x x => eta-contract (F x) (F1 x).
+  eta-contract (fuva X) (fuva X).
+  eta-contract X X :- name X.
+
+  type eta-contract-aux list fm -> fm -> fm -> o.
+  eta-contract-aux L (flam F) T :- 
+    pi x\ eta-contract-aux [x|L] (F x) T. % also checks H Prefix does not see x
+  eta-contract-aux L (fapp [H|Args]) T :- 
+    rev L LRev, append Prefix LRev Args,
+    if (Prefix = []) (T = H) (T = fapp [H|Prefix]).
+%END
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PRINTER %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  macro @binder-names :- ["x", "y", "z", "w"].
+  macro @fuva N :- fuva (mem.addr {int->nat N}).
+
+  % type pp-var-clean string -> string -> o.
+  % pp-var-clean S1 S2 :-
+  %   std.any->string (@fuva 0) T1,
+  %   std.any->string (@fuva 1) T2,
+  %   std.any->string (@fuva 2) T3,
+  %   std.any->string (@fuva 3) T4,
+  %   L1 = [T1,T2,T3,T4, "c0", "c1", "c2", "c3"],
+  %   L2 = ["fuva X", "fuva Y", "fuva Z", "fuva W", "x", "y", "z", "w"],
+  %   std.map2 L1 L2 (x\y\z\z = pr x y) L3,
+  %   fold (x\a\r\ sigma A B\ x = pr A B, rex.replace A B a r) L3 S1 S2.
+
+  type lambda string -> o.
+  lambda "\\lambda " :- tex, !.
+  lambda "λ".
+
+  type appsep string -> o.
+  appsep "\\appsep " :- tex, !.
+  appsep " ".
+
+  type pp fm -> string -> o.
+  % pp T S :- tex, !, 
+  %   std.any->string T S1, 
+  %   pp-var-clean S1 S2,
+  %   rex.replace "fo." "" S2 S3,
+  %   rex.replace " \\\\" "\\\\" S3 S4,
+  %   rex.replace "fcon \(.\)" "fcon\"\1\"" S4 S.
+  pp T S :- pp1 @binder-names T S.
+
+  type pp1 list string -> fm -> string -> o.
+  pp1 _ X S :- std.any->string X S, !.
+  pp1 XS (fapp L) S :- !, std.string.concat {appsep} {std.map L (pp1 XS)} X, S is "(" ^ X ^ ")".
+  pp1 _ (fcon S) S :- !.
+  pp1 [] (flam F) S :- !, pi x\ std.any->string x N, pp1 [] (F x) S1, S is {lambda} ^ N ^ "." ^ S1.
+  pp1 [X|XS] (flam F) S :- !, pi x\ (pp1 _ x X :- !) => pp1 XS (F x) S1, S is {lambda} ^ X ^ "." ^ S1.
+  pp1 _ X S :- name X, !, std.any->string X S.
+  pp1 _ _ "fo.pp1 ERROR".
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PARSER %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  type parse string -> fm -> o.
+  parse S T :- rex.split "" S L, utf8-norm L L1, if (parse-aux L1 T) true (halt "Error parse" S).
+
+  type parse-aux list string -> fm -> o.
+  parse-aux L1 T :- ll L1 [] T, !.
+  parse-aux L1 T :- llapp L1 [] [] A, T = fapp A, !.
+  parse-aux L1 _ :- std.string.concat "" L1 S, halt "parse error:" S. 
+
+  type parse-eq string -> fm -> fm -> o.
+  parse-eq S A B  :- rex.split "" S L, utf8-norm L L1, if (parse-eq-aux L1 A B) true (halt "Error parse-eq" S).
+
+  type parse-eq-aux list string -> fm -> fm -> o.
+  parse-eq-aux L1 A B :-
+    llapp L1 L2 [] AA, if (AA = [A]) true (A = fapp AA), !,
+    ee L2 L3,
+    llapp L3 [] [] BB, if (BB = [B]) true (B = fapp BB).
+
+  type ee list string -> list string -> o.
+  ee ["="|L] L.
+  ee [" "|L] L1 :- ee L L1.
+
+  type ll list string -> list string -> fm -> o.
+  ll [C|L] L (fcon C) :- rex.match "[a-z]" C.
+  ll ["_"|L] L (fcon "_").
+  ll ["C",N|L] L (fuva (mem.addr R)) :- rex.match "[0-9]" N, N' is string_to_int N, int->nat N' R. 
+  ll ["X"|L] L (fuva (mem.addr z)).
+  ll ["Y"|L] L (fuva (mem.addr (s z))).
+  ll ["Z"|L] L (fuva (mem.addr (s (s z)))).
+  ll ["W"|L] L (fuva (mem.addr (s (s (s z))))).
+  ll [ C |_] _ _ :- rex.match "[A-Z]" C, halt "Parser:" C "is not parsed as a knwon variable".
+  ll ["(","@"|L] L1 T :- !, llapp L L1 [] A, if (A = [T]) true (T = fapp A).
+  ll ["("|L] L1 T :- llapp L L1 [] A, if (A = [T]) true (T = fapp A).
+  ll ["λ",V,"."|L] L1 (flam X) :- pi x\ (pi L\ ll [V|L] L x :- !) => ll L L1 (X x).
+  ll [" "|L] L1 X :- ll L L1 X.
+
+  type llapp list string -> list string -> list fm -> list fm -> o.
+  llapp [")"|L] L A RA :- !, rev A RA.
+  llapp L L2 A B :- ll L L1 X, !, llapp L1 L2 [X|A] B.
+  llapp L L A RA :- rev A RA.
+
+  type utf8-norm list string -> list string -> o.
+  utf8-norm [X,Y|L] ["λ"|L1] :- "λ" is X ^ Y, !, utf8-norm L L1.
+  utf8-norm [X|L] [X|L1] :- utf8-norm L L1.
+  utf8-norm [] [].
+
+  type test-parse-1 o.
+  test-parse-1 :-
+    parse "C0" (fuva (mem.addr z)),
+    parse "f" (fcon "f"),
+    parse "(f)" (fcon "f"),
+    parse "(f g)" (fapp [fcon "f", fcon "g"]),
+    parse "λx.x" (flam x\x).
+
+}

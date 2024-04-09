@@ -1,4 +1,5 @@
 DEEP_DIR="code/deep"
+SHAL_DIR="code/shallow"
 
 undefine TEX
 
@@ -7,6 +8,8 @@ paper:
 
 test-deep:
 	cd $(DEEP_DIR) && timeout 4 elpi main.elpi $(ENV) -exec "main" -- $(ONLY) $(TEX)
+test-shallow:
+	cd $(SHAL_DIR) && timeout 4 elpi main.elpi $(ENV) -exec "main" -- $(ONLY) $(TEX)
 test: test-deep
 test-all: test-deep 
 debug:
