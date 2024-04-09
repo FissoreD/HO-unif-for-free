@@ -1537,19 +1537,18 @@ that can be assigned to that application (case 3).
 % Note that this condition does not require the term to be in \llambda.
 % \noteE[inline]{Is this relevant}
 
-\newcommand{\occursrigid}{\emph{occurs-rigidly}}
-\newcommand{\occurrigid}{\emph{occur-rigidly}}
+\newcommand{\occursrigid}{\emph{occurs-rigidly}\xspace}
+\newcommand{\occurrigid}{\emph{occur-rigidly}\xspace}
 \begin{definition}[\occursrigid]\label{def:occrigid}
   A name $x$ \occursrigid{} in a $\beta$-normal term $t$, if $\forall \rho, x \in
   \subterm{\rho t}$
 \end{definition}
 
-\noteD{Not too clear?}
-In other words $x$ \emph{\occursrigid} in $t$ if it occurs in $t$
-outside of the scope of unification variables since an instantiation
-is allowed to discard $x$ from the scope of the unification variable.
-Note that $\eta$-contraction cannot make $x$ disappear, since the
-variables being erased by $\eta$-contraction are locally bound inside $t$.
+In other words $x$ \occursrigid in $t$ if it occurs in $t$
+outside of the scope of a unification variable $X$, otherwise an instantiation
+of $X$ can make $x$ disappears from $t$.
+Moreover, note that $\eta$-contracting $t$ cannot make $x$ disappear, since
+$x$ is not a locally bound variable inside $t$.
 
 We can now derive the implementation for \maybeeta detection:
 
