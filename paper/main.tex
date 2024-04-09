@@ -89,7 +89,7 @@
 \begin{document}
 
 % \title{HO unification from object language to meta language}
-\title{Higher order unification for free!}
+\title{Higher-Order unification for free!}
 \subtitle{Reusing the meta-language unification for the object language}
 
 \author{Davide Fissore}
@@ -366,8 +366,9 @@ In spite of the similarity the link between \Ue{} and \Uo{} is not trivial,
 since the abstraction and application term constructors
 the two unification procedures deal with are different. For example:\\
 %
-\setlength{\tabcolsep}{2pt}
 \vspace{4pt}
+{
+\setlength{\tabcolsep}{2pt}
 \begin{tabular}{lcl|}
 \elpiIn{x\ f x} & \Ue{} & \elpiIn{f}\\
 \elpiIn{lam A x\ app[con"f", x]} & \Uo{} & \elpiIn{con"f"} \phantom{mn} \\
@@ -379,6 +380,7 @@ the two unification procedures deal with are different. For example:\\
 \elpiIn{app[P, x]} & \Uo{} & \elpiIn{x}\\
 \elpiIn{app[P, x]} & \nUe{} & \elpiIn{x}\\
 \end{tabular}
+}
 \vspace{4pt}
 %
 \paragraph{Contributions}
@@ -550,7 +552,7 @@ In addition to that \Eo has rules for $\eta$ and $\beta$-equivalence.
 The main point in showing these equality tests is to remark how
 weaker \Ee is, and to identify the four rules that need special
 treatment in the implementation of \Uo.
-We defer the description of \elpiIn{beta} to \cref{sec:grounwork}, for now
+For brevity we omit the code of \elpiIn{beta}:
 it is sufficient to know that <<\elpiIn{beta F L R}>> computes in \elpiIn{R} the
 weak head normal form of <<\elpiIn{app[F|L]}>>.
 
@@ -814,7 +816,7 @@ unification failure, i.e. by properly instantiating $F$ the term
 head constructor may become a $\lambda$, or a constant or stay an application.
 
 \begin{definition}[\notllambda]\label{def:notllambda}
-  $\notllambda = \{ X \appsep t_1 \ldots t_n ~|~ X \appsep t_1 \ldots t_n ~\mathrm{are~not~distinct~names} \}$.
+  $\notllambda = \{ X \appsep t_1 \ldots t_n ~|~ t_1 \ldots t_n ~\mathrm{are~not~distinct~names} \}$.
 \end{definition}
 
 \noindent
@@ -868,32 +870,26 @@ $$
 \end{proposition}
 
 \noindent
-A less formal way to state \ref{prop:nf} is that \hstep{} and \progress never
-``commit'' an unneeded $\lambda$-abstraction in $\sigma$ (a $\lambda$
-that could be erased by an $\eta$-contraction),
-nor put in $\sigma$ an application whose head is flexible
-(an application node that could be erased by a $\beta$-reduction).
-\todo{dire che W preservation is key for our claims}
+\cref{prop:nf} is key to prove \cref{prop:simulation,prop:fidelity}:
+the problematic terms moved on the side by the compiler are not
+put back by \hstep, hence \Ue{} can operate properly.
+In \cref{sec:compilation,sec:eta,sec:beta}
+we describe how the compiler recognizes terms in \maybeeta, \maybebeta and
+\notllambda and how progress takes care of them preserving \wellb
+and granting \cref{prop:simulation,prop:fidelity}.
 
-% Note that proposition \ref{prop:nf} does not hold for \hrun as a whole
-% since decompilation can introduce (actually restore) terms in
-% \maybeeta, \maybebeta or \notllambda that were moved out of the way
-% during compilation.
+Note that proposition \ref{prop:nf} does not hold for \hrun as a whole
+since decompilation can introduce (actually restore) problematic terms.
 
-
-\section{Ground work for \Fo{}, \Ho and the compiler}
+\section{Ground work for the compiler}
 \label{sec:grounwork}
-\todo{maybe move here napp beta deref fderef move}
 
-We say that the unification variable occurrence \elpiIn{uva N L} is in
-\llambda if and only if \elpiIn{L} is made of distinct names. The
-predicate to test this condition is called \elpiIn{pattern-fragment}:
+% The predicate to test this condition is called \elpiIn{pattern-fragment}:
 
-\input{code/pattern_fragment}
+% \input{code/pattern_fragment}
 
-\noindent
-Natural numbers represent the memory addresses that
-identify unification variables in both languages.
+Unification variables are identified by a
+natural number, that represents a memory addresses
 The memory and its associated operations are described below:
 
 \input{code/mem_types}
@@ -901,12 +897,13 @@ The memory and its associated operations are described below:
 \noindent
 If a memory cell is \elpiIn{none}, then the corresponding unification variable
 is not set. \elpiIn{assign} sets an unset cell to the given value, while
-\elpiIn{new} finds the first unused address and sets it to \elpiIn{none}.\noteE[inline]{is new used?}
+\elpiIn{new} finds the first unused address and sets it to \elpiIn{none}.
 
-Since in \Ho unification variables have a scope, their solution needs to be
-abstracted over it to enable the instantiation of a single
-solution to different scopes. This is obtained via the \elpiIn{inctx}
-container, and in particular via its \elpiIn{abs} binding constructor.
+Since each occurrence of a \Ho unification variables has a scope,
+its solution needs to be abstracted over it to enable the
+instantiation of a single assignment to different scopes.
+This is expressed by the \elpiIn{inctx} container, and in particular
+its \elpiIn{abs} binding constructor.
 On the contrary a solution to a \Fo variable is a plain term.
 
 \input{code/fo_subst}
@@ -915,9 +912,12 @@ On the contrary a solution to a \Fo variable is a plain term.
 \noindent
 We call \elpiIn{fsubst} the memory of \Fo{}, while we call \elpiIn{subst}
 the one of \Ho.
-Both have the invariant that they are not cyclic, TODO: explain.
+The compiler establishes a mapping between variables of the two languages.
 
 \input{code/comp_base_types}
+
+Each \elpiIn{hvariable} is stored in the mapping together with
+its arity so that the code of \ref{clause:malloc} below can preserve:
 
 \begin{invariant}[Unification variable arity]
   Each variable \elpiIn{A}
@@ -926,26 +926,21 @@ Both have the invariant that they are not cyclic, TODO: explain.
   \label{inv:uvaarity}
 \end{invariant}
 
-\noindent
-The compiler establishes a mapping between variables of the two languages.
-In order to preserve invariant \ref{inv:uvaarity} we store the
-arity of each \elpiIn{hvariable} in the mapping and we reuse an existing
-mapping only if the arity matches.
-
-\noteD{add ref to \cref{sec:invariant1}}
-
 \input{code/alloc_mapping}
 
 \noindent
 When a single \elpiIn{fvariable} occurs multiple times with different numbers
 of arguments the compiler generates multiple mappings for it, on a first
 approximation, and then makes the mapping bijective by introducing
-\linketa; this detail is discussed in section \ref{sec:eta}.
+\linketa; this detail is discussed in section \ref{sec:invariant1}.
 
+
+\noindent
 As we mentioned in section~\ref{sec:nutshell} the compiler
-replaces terms in \maybeeta and \notllambda with fresh variables
-linked to the problematic terms. Each class of problematic terms
-has a dedicated link.
+replaces terms in \maybeeta, \maybebeta and \notllambda with fresh
+variables linked to the problematic terms. Terms in \maybebeta do not
+need a link since \Ho{} variables faithfully represent
+the problematic term thanks to their scope.
 
 \input{code/comp_links}
 
@@ -965,46 +960,38 @@ If the left hand side variable is assigned during a step, then
 the link is considered for progress and possibly eliminated.
 This is discussed in \cref{sec:eta} and \cref{sec:beta}.
 
-\noindent
-Note that move strongly relies on invariant \ref{inv:uvaarity}: the length
-of the arguments of all occurrences of a unification variable and the
-number of abstractions in its assignment have to match. In turn
-this grants that \elpiIn{move} never fails.
 
-%\input{code/move}
+% \input{code/beta_fo}
 
-\input{code/beta_fo}
-
-\noindent
-The \elpiIn{name} predicate holds only on nominal constants (i.e. bound
-variables).\footnote{Elpi provides it as a builtin, but one could implement it by
-systematically loading the hypothetical rule \elpiIn{name x} every time
-a nominal constant is postulated via \elpiInFN{pi x\ }}
-The choice of using n-ary application, rather than binary, is to make it
-easy to access the application's head. The price we pay is that substituting
-an application in the head of an application should be amended by
-``flattening'' \elpiIn{fapp} nodes, that is the job of \elpiIn{napp}.
-\footnote{Note that \elpiIn{napp} is an artefact of formalization of \Fo{}
-we do in this presentation and, as we explain later,
-no equivalent of \elpiIn{napp} is needed in \Ho.}
-Finally note that the cut operator is inessential, it could be
-removed at the cost of a verbose test on the head of \elpiIn{L}
-in the second rule about \elpiIn{fapp}: \elpiIn{L}'s head
-can be \elpiIn{fcon}, \elpiIn{flam} or a name.
+% \noindent
+% The \elpiIn{name} predicate holds only on nominal constants (i.e. bound
+% variables).\footnote{Elpi provides it as a builtin, but one could implement it by
+% systematically loading the hypothetical rule \elpiIn{name x} every time
+% a nominal constant is postulated via \elpiInFN{pi x\ }}
+% The choice of using n-ary application, rather than binary, is to make it
+% easy to access the application's head. The price we pay is that substituting
+% an application in the head of an application should be amended by
+% ``flattening'' \elpiIn{fapp} nodes, that is the job of \elpiIn{napp}.
+% \footnote{Note that \elpiIn{napp} is an artefact of formalization of \Fo{}
+% we do in this presentation and, as we explain later,
+% no equivalent of \elpiIn{napp} is needed in \Ho.}
+% Finally note that the cut operator is inessential, it could be
+% removed at the cost of a verbose test on the head of \elpiIn{L}
+% in the second rule about \elpiIn{fapp}: \elpiIn{L}'s head
+% can be \elpiIn{fcon}, \elpiIn{flam} or a name.
 
 
 Applying the substitution corresponds to dereferencing a term with respect to
-the memory. 
-
-
-
-To ease the comparison we split \Fo dereferencing into a
+the memory. To ease the comparison we split \Fo{} dereferencing into a
 \elpiIn{fder} step and a \elpiIn{napp} one. The former step replaces references
 to memory cells that are set with their values, and has a corresponding
 operation in \Ho, namely \elpiIn{deref}. On the contrary \elpiIn{napp}
-has no corresponding operation in \Ho. The reasons for this asymmetry is
+has no corresponding operation in \Ho, and only ensures that
+terms of the form <<\elpiIn{fapp[fapp L1|L2]}>> are replaced by
+<<\elpiIn{fapp L3}>> where \elpiIn{L3} is the concatenation of \elpiIn{L1}
+and \elpiIn{L2}. The reasons for this asymmetry is
 that an \elpiIn{fapp} node with a flexible head is always mapped
-to a \elpiIn{uva} (as per \cref{sec:compilation} and \cref{sec:beta}),
+to a \elpiIn{uva} (as per \cref{sec:simulation,sec:beta}),
 preventing nested applications to materialize.
 
 \input{code/fderef}
@@ -1018,11 +1005,12 @@ with the names in the scope of the unification variable occurrence.
 \input{code/deref}
 
 \noindent
-Note that move strongly relies on invariant \ref{inv:uvaarity}
-that we shall define later.\todo{fixup}
+Note that move strongly relies on invariant \ref{inv:uvaarity}: the length
+of the arguments of all occurrences of a unification variable and the
+number of abstractions in its assignment have to match. In turn
+this grants that \elpiIn{move} never fails.
 
 \input{code/move}
-
 
 \subsection{Notational conventions}
 

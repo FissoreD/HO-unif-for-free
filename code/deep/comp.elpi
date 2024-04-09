@@ -25,7 +25,7 @@ namespace comp {
   type hv addr -> arity -> hvariable.
 
   kind mapping type.
-  type mapping fvariable -> hvariable -> mapping.
+  type (<->) fvariable -> hvariable -> mapping.
   typeabbrev mmap (list mapping).
 %ENDSNIP
 
@@ -244,10 +244,10 @@ namespace comp {
   type deduplicate-map mmap -> mmap -> 
       subst -> subst -> links -> links -> o.
   deduplicate-map [] [] H H L L.
-  deduplicate-map [(mapping (fv O) (hv M (arity LenM)) as X1) | Map1] Map2 H1 H3 L1 L3 :-
-    take-list Map1 (mapping (fv O) (hv M' (arity LenM'))) _, !,
+  deduplicate-map [((fv O <-> hv M (arity LenM)) as X1) | Map1] Map2 H1 H3 L1 L3 :-
+    take-list Map1 ((fv O <-> hv M' (arity LenM'))) _, !,
     std.assert! (not (LenM = LenM')) "Deduplicate map, there is a bug",
-    print "arity-fix links:" {ppmapping X1} "~!~" {ppmapping (mapping (fv O) (hv M' (arity LenM')))}, 
+    print "arity-fix links:" {ppmapping X1} "~!~" {ppmapping ((fv O <-> hv M' (arity LenM')))}, 
     make-eta-link LenM LenM' M M' [] New H1 H2,
     print "new eta link" {pplinks New},
     append New L1 L2,
@@ -280,10 +280,12 @@ namespace comp {
 %SNIP: alloc_mapping
   type m-alloc fvariable -> hvariable -> mmap -> mmap -> 
     subst -> subst -> o.                            %~\customlabel{clause:malloc}{(malloc)}~
-  m-alloc Fv Hv M M S S :- mem M (mapping Fv Hv), !.
-  m-alloc Fv Hv M [mapping Fv Hv|M] S S1 :- Hv = hv N _,
-    alloc S N S1.
+  m-alloc Fv Hv M M S S :- mem M (Fv <-> Hv), !.
+  m-alloc Fv Hv M [Fv <-> Hv|M] S S1 :- Hv = hv N _, new S N S1.
 %ENDSNIP
+
+type new  mem A -> addr -> mem A -> o.
+new A B C :- mem.new A B C.
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PROGRESS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -596,7 +598,7 @@ namespace comp {
   type decompm mmap -> mmap -> subst -> fsubst -> fsubst -> o.
   decompm _ [A|_] _ _ _ :- print "Solving" {ppmapping A}, fail. % HIDE
   decompm _ [] _ F F.
-  decompm M [mapping (fv V) (hv H _)|MS] S F1 F3 :- set? H S A,
+  decompm M [fv V <-> hv H _|MS] S F1 F3 :- set? H S A,
     !, % HIDE
     print {ho.ppsubst S} {ho.ppass A}, % HIDE
     std.assert!( % HIDE
@@ -606,7 +608,7 @@ namespace comp {
     eta-contract T1 T2,
     assign V F1 T2 F2,
     decompm M MS S F2 F3. 
-  decompm M [mapping _ (hv H _)|MS] S F1 F2 :- unset? H S,
+  decompm M [_ <-> hv H _|MS] S F1 F2 :- unset? H S,
     decompm M MS S F1 F2.
   decompm _ [L|_] S _ _ :- halt "Decompl mapping: failed on" {ppmapping L} {ho.ppsubst S}. % HIDE
 %ENDSNIP
@@ -619,7 +621,7 @@ namespace comp {
   decomp M (lam F) (flam G) :- 
     pi x y\ (pi M\ decomp M x y) => decomp M (F x) (G y).
   decomp M (uva Hv Ag) R :-
-    mem M (mapping (fv Fv) (hv Hv _)), 
+    mem M (fv Fv <-> hv Hv _), 
     map (decomp M) Ag Bg,
     beta (fuva Fv) Bg R.
   decomp M H _ :- halt "Fail in decomp" {ppmappings M} {ho.pp H}. % HIDE
@@ -635,10 +637,10 @@ namespace comp {
   type add-new-map subst -> tm -> mmap -> 
       mmap ->  fo.fsubst -> fo.fsubst -> o.
   add-new-map _ (uva N _) Map [] F1 F1 :- 
-    mem Map (mapping _ (hv N _)), !.
+    mem Map (_ <-> hv N _), !.
   add-new-map H (uva N L) Map [Map1 | MapL] F1 F3 :-
     alloc F1 M F2,
-    len L Arity, Map1 = mapping (fv M) (hv N (arity Arity)),
+    len L Arity, Map1 = (fv M <-> hv N (arity Arity)),
     add-new-map H (app L) [Map1 | Map] MapL F2 F3.
   add-new-map H (lam B) Map NewMap F1 F2 :- 
     pi x\ add-new-map H (B x) Map NewMap F1 F2.
@@ -683,9 +685,9 @@ namespace comp {
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   type ppmapping mapping -> string -> o.
-  ppmapping (mapping (fv N) (hv M (arity Len))) S :- tex, !,
+  ppmapping ((fv N <-> hv M (arity Len))) S :- tex, !,
     S is "{" ^ {fo.ppuva N} ^ "," ^ {ho.ppuva M} ^ "," ^ {ppnat Len} ^ "}".
-  ppmapping (mapping (fv N) (hv M (arity Len))) S :-
+  ppmapping ((fv N <-> hv M (arity Len))) S :-
     S is {fo.ppuva N} ^ " -> " ^ {ho.ppuva M} ^ " (" ^ {ppnat Len} ^ ")".
 
   type ppmappings mmap -> list string -> o.
