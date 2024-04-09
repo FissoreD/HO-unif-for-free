@@ -1651,11 +1651,10 @@ This link clearly validates \cref{inv:linklhs}.
 \end{proof}
 
 \paragraph{Decompilation}
-Decompilation of \linketa is performed by adding new rules to the
-\elpiIn{commit-link} predicate. In particular, given \linketaM{\Gamma}{X}{t}, we
-can note that this unification never fails, since $X$ is a flexible term and no
-other \linketa has $X$ has \lhs (by \cref{def:progressetadedup}). The link is
-remove from \linkStore and \elpiIn{commit-links} terminates.
+Decompilation of the remaining \linketa (i.e. the \linketa that have been
+activated) is performed by iterating over them and unifying \lhs and \rhs. Note
+that this unification never fails, since \lhs is a flexible term not appearing
+in any other \linketa (by \cref{def:progressetadedup}).
 
 \subsection{Progress}\label{sec:etaprogress}
 
