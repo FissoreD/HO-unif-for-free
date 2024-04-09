@@ -752,7 +752,7 @@ to debug a logic program in \Fo{} by looking at its execution trace in
 We also claim that \hrun
 handles terms outside \llambda in the following sense:
 
-\begin{proposition}[Properties of \hrun outside \llambda]
+\begin{proposition}[Fidelity recovery]
 \begin{gather}
   \exists \rho, \rho s_1 \Eo \rho s_2 \Rightarrow
   \C{s_i}{t_i}{m_i}{l_i} \Rightarrow
@@ -853,7 +853,7 @@ $$
 
 \noindent
 
-\begin{proposition}[\wellb{}-preservation of \hstep]\label{prop:nf}
+\begin{proposition}[\wellb{}-preservation]\label{prop:nf}
 $\forall \hoUnifPb, \forall \linkStore, \forall p, \forall \sigma, \forall \sigma'$
 $$
 \begin{array}{l}
@@ -873,6 +873,7 @@ A less formal way to state \ref{prop:nf} is that \hstep{} and \progress never
 that could be erased by an $\eta$-contraction),
 nor put in $\sigma$ an application whose head is flexible
 (an application node that could be erased by a $\beta$-reduction).
+\todo{dire che W preservation is key for our claims}
 
 % Note that proposition \ref{prop:nf} does not hold for \hrun as a whole
 % since decompilation can introduce (actually restore) terms in
