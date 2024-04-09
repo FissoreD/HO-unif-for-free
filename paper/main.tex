@@ -1810,7 +1810,7 @@ when the \lhs is assigned to a variable that is the \lhs of another
 \paragraph{Example of \progressetaleft}
 
 The example at the beginning of \cref{sec:eta}, once
-$\sigma = \{~ A \mapsto f ~\}$, triggers this rule since the link
+$\sigma = \{~ A \mapsto f ~\}$, triggers \progressetaleft since the link
 becomes \linketaM{}{f}{\lambda x.B_{x}} and the \lhs is a constant.
 In turn the rule runs $\lambda x.f \appsep x \Ue{} \lambda x.B_{x}$,
 resulting in $\sigma = \{~ A \mapsto f ~;~ B_{x} \mapsto f ~\}$.
@@ -1957,17 +1957,15 @@ the \elpiIn{lam} constructor.
 % application of term whose argument can reduce to $x$.
 
 % \noteE[inline]{IIRC, second order unification, where variables can stand for functions, is semi-decidable, indeed Huet's algorith enumerates all solutions. Third order, functions that take functions, is undecidable, proved by Dowek. IMO here the problem is that there is no unique solution, (semi)decidability is a secondary point. This paragraph needs fixing.}
-\noteD[inline]{I've rewritten it, it is clearer?}
-Until now, we have only dealt we unification of terms in \llambda. However, we
-want the unification relation to be more robust so that it can work with terms
-in \notllambda. In general, unification in \notllambda admits more then one
+% \noteD[inline]{I've rewritten it, it is clearer?}
+In general, unification between \notllambda terms admits more then one
 solution and committing one of them in the substitution does not guarantee
-prop.~\ref{prop:complete}. For instance, $X \appsep a \Uo a$ is a unification
-problem admits two different substitutions: $\rho_1 = \{X \mapsto \lambda x.x\}$
+\cref{prop:complete}. For instance, $X \appsep a \Uo a$ 
+admits two different substitutions: $\rho_1 = \{X \mapsto \lambda x.x\}$
 and $\rho_2 = \{X \mapsto \lambda \_.a\}$. Prefer one over the other may break
 future unifications.
 
-It is the case that, given a list of unification problems, $\foUnifPb_1\dots
+It is the case, however, that, given a list of unification problems, $\foUnifPb_1\dots
 \foUnifPb_n$ with $\foUnifPb_n$ in \notllambda, the resolution of
 $\bigwedge_{i=0}^{n-1}\foUnifPb_i$ gives a partial substitution $\rho$, such
 that $\rho\foUnifPb_n$ falls again in \llambda.
@@ -1983,19 +1981,19 @@ that $\rho\foUnifPb_n$ falls again in \llambda.
   {{}}
 
 In the example above, we see that $\foUnifPb_1$ instantiates $X$ so that
-$\foUnifPb_2$, can be solved in \llambda.
-\noteE[inline]{it is even a ground term, there is no unification left to perform actually}
-\noteD[inline]{i don't understand the note}
+$\foUnifPb_2$ can be solved in \llambda.
+% \noteE[inline]{it is even a ground term, there is no unification left to perform actually}
+% \noteD[inline]{i don't understand the note}
 On the other hand, we see that, 
 \Ue can't solve the compiled problems \hoUnifPb. In
 fact, the resolution of $\hoUnifPb_1$ gives the substitution $\sigma = \{ A
 \mapsto \lambda x. B\}$, but the dereferencing of $\hoUnifPb_2$ gives the 
-non-unifiable problem $(\lambda x. B) \appsep a \Ue a$.
+non-unifiable problem $(\lambda x. B) \appsep a \nUe a$.
 
 To address
 this unification problem, term compilation should capture the
-terms $t$ in \notllambda and replace them with fresh variables $X$.
-The variables $X$ and the terms $t$ are linked through a \linkbeta.
+terms in \notllambda and replace them with fresh variables.
+This replacement should produce links that we call \linkbeta.
 
 \linkbeta guarantees \cref{inv:linklhs} and the term on the \rhs has the
 following property:
@@ -2004,12 +2002,11 @@ following property:
 \newcommand{\rhsBeta}{\ensuremath{\rhsBetaHead\appsep t_1\dots t_m}\xspace}
 % \noteE[inline]{Io direi $X_{s_1\ldots s_n}\appsep l_1\ldots l_m$
 % ... where S = [s1 .. sn] e L = [l1 .. lm]}
-\noteD[inline]{Is it clearer?}
 
 \begin{invariant}[\linkbeta \rhs]
   The \rhs of any \linkbeta has the shape \rhsBeta such that $X$ is a
   unification variable with scope $s_1\dots s_n$ and $t_1\dots t_m$ is a list of
-  terms. This is equivalent to \elpiIn{app[uva X S | L]}, where \elpiIn{S}~$=
+  terms. This is equivalent to \\\elpiIn{app[uva X S | L]}, where \elpiIn{S}~$=
   s_1\dots s_n$ and \elpiIn{L}~$=t_1\dots t_m$.
   \label{inv:beta-rhs}
 \end{invariant}
@@ -2033,9 +2030,9 @@ following property:
   Given $X \appsep t_1\dots t_n \Ue t$ where $t$ is a rigid term and
   $t_1\dots t_n$ is not in \llambda. By construction, $X \appsep t_1\dots t_n$
   is replaced with a variable $Y$, and the \linkbeta \linkbetaM{\Gamma}{Y}{X
-  \appsep t_1\dots t_n} is created. The unification instantiates $Y$ to $t$,
-  making the \lhs of the link a rigid term, while \rhs is still in \notllambda.
-  The original problem is in fact outside \llambda.
+  \appsep t_1\dots t_n} is created. If $Y$ is instantiated to the rigid term $t$,
+  and \rhs is still in \notllambda, then the original \Fo{} unification problem
+  is between two terms in \notllambda. Unification fails.
 \end{proof}
 
 % From \cref{lemma:keep-fidelity}, we can deduce the following corollary
@@ -2049,7 +2046,9 @@ following property:
 
 Detection of \notllambda is quite simple to implement in the compiler, since it
 is sufficient to detect applications with flexible head and argument that
-are not in \llambda.
+are not in \llambda. The following rule for \notllambda compilation is inserted 
+just before rule~\ref{rule:compapp}.
+
 
 \input{code/comp_beta}
 
@@ -2321,14 +2320,9 @@ that this is of course an approximation, since $\sigma = \{X = \lambda x.Y, Y =
 can be easily introduced in our unification procedure, by adding new custom 
 \linkbeta progress rules.
 
-\noteD{Paragraph for decompile in case of \maybebeta}
-The \elpiIn{commit-link} predicate can be extended to add heuristics if during
-the decompilation phase \linkbeta remain. For example, the same approximation
-explained above can be delayed and applied only if the terms in \maybebeta never
-falls in \llambda after the execution of all the unification problems. We want
-to point out, that we call this \emph{approximation}, since we are
-making a choice among all the possible unifiers and therefore, we can pick
-the wrong one.
+% \noteD{Paragraph for decompile in case of \maybebeta}
+Decompilation of \linkbeta is possible by extending \elpiIn{commit-link} with
+new heuristics.
 
 
 \section{Actual implementation in Elpi}\label{sec:implementation}
