@@ -392,7 +392,7 @@ features $\eta\beta$-conversion in the pattern-fragment.
 
 \cref{sec:problem-statement} formally states the problem and gives the
 intuition behind our solution. \cref{sec:encodings} discusses alternative
-term encodings and related works. \cref{sec:lang-spec} introduces
+term encodings and related works. \cref{sec:grounwork} introduces
 the languages \Fo{} and \Ho{}, \cref{sec:simulation} describes a
 basic simulation of higher order logic programs.
 \cref{sec:eta,sec:invariant1} completes its equational theory
@@ -408,7 +408,7 @@ URL: \url{https://github.com/FissoreD/paper-ho}.
 \label{sec:problem-statement}
 
 \newcommand{\specunif}[3]{
-  #3_i \in \llambda \Rightarrow %
+  \{#3_1, #3_2\} \subseteq \llambda \Rightarrow %
     \exists \rho, %
       \rho #3_1 #1 \rho #3_2  %
         \Leftrightarrow #3_1 #2 #3_2 \mapsto \rho' \subseteq \rho
@@ -418,7 +418,7 @@ URL: \url{https://github.com/FissoreD/paper-ho}.
 \newcommand{\unifcorrect}[3]{
   % \forall \rho #3_1 #3_2, %
     % \{#3_1, #3_2\} \subseteq \llambda \Rightarrow %
-    #3_i \in \llambda \Rightarrow
+    \{#3_1, #3_2\} \subseteq \llambda \Rightarrow
       #3_1 #2 #3_2 \mapsto \rho
         \Rightarrow
           \rho #3_1 #1 \rho #3_2  %
@@ -427,31 +427,34 @@ URL: \url{https://github.com/FissoreD/paper-ho}.
 \newcommand{\unifcomplete}[3]{
   % \forall #3_1 #3_2, %
     % \{#3_1, #3_2\} \subseteq \llambda \Rightarrow %
-    #3_i \in \llambda \Rightarrow
+    \{#3_1, #3_2\} \subseteq \llambda \Rightarrow
       % \forall \rho, %
         \rho #3_1 #1 \rho #3_2  %
           \Rightarrow \exists \rho', #3_1 #2 #3_2 \mapsto \rho' \land \rho' \subseteq \rho
 }
 \newcommand{\maybeeta}{\ensuremath{\Diamond\eta}\xspace}
 \newcommand{\maybebeta}{\ensuremath{\Diamond\beta_0}\xspace}
-\newcommand{\notllambda}{\ensuremath{\overline{\llambda}}\xspace}
+\newcommand{\notllambda}{\ensuremath{\Diamond\llambda}\xspace}
 %\newcommand{\notllambda}{\ensuremath{\Diamond\beta}\xspace}
 
-Even if we encountered the problem in CIC one does not need such a
-complex system in order to state it. The minimal setting we could find
-is one where a \Fo{} language (for first order) with a rich(er) equational
-theory is phrased in a \Ho{} meta language with a simpler one, and one
-needs to build the unification of \Fo{} on top of the one of \Ho{}.
+Even if we encountered the problem working on CIC we devise
+a minimal setting to ease its study. In this setting we have
+a \Fo{} language (for first order) with a rich(er) equational
+theory and a \Ho{} meta language with a simpler one, and we reuse
+the unification procedure of \Ho{} in order to implement one for \Fo.
+
 
 \subsection{Preliminaries: \Fo{} and \Ho{}}
 
 In order to reason about unification we provide a description of the
 \Fo{} and \Ho languages where unification variables
-are first class terms, i.e. they have a concrete syntax. We keep these languages
-minimal, for example, we omit the \elpiIn{all} quantifier of CIC we used
-in the example in Section~\ref{sec:intro} together with the type notation of
-terms carried by the \elpiIn{lam} constructor.
+are first class terms, i.e. they have a concrete syntax.
+% We keep these languages
+%minimal, for example, we omit the \elpiIn{all} quantifier of CIC we used
+%in the example in Section~\ref{sec:intro} together with the type notation of
+%terms carried by the \elpiIn{lam} constructor.
 %
+{
 \setlength{\abovecaptionskip}{0pt}
 \setlength{\belowcaptionskip}{-13pt}
 
@@ -469,22 +472,23 @@ terms carried by the \elpiIn{lam} constructor.
   \label{code:common-terms}
   \Description[code:common-terms]{code:common-terms}
 \end{figure}
-
+}
 \noindent
 Unification variables (\elpiIn{fuva} term constructor)
 in \Fo{} have no explicit scope:
 the arguments of an higher order variable are given via the \elpiIn{fapp}
-constructor. For example the term \coqIn{P x} is represented as
-\elpiIn{fapp[fuva N, x]}, where \elpiIn{N} is a memory address and
+constructor. For example the term <<\coqIn{P x}>> is represented as
+<<\elpiIn{fapp[fuva N, x]}>>, where \elpiIn{N} is a memory address and
 \elpiIn{x} is a bound variable.\\
-In \Ho the representation of \coqIn{P x} is instead \elpiIn{uva N [x]},
-since unification variables come equipped with an explicit scope.
-\todo{use faddr for Fo}
-
-faddr and addr are memory addresses, the details are given in bla,
-here they are just unique identifiers for unif variables and their types
-do now allow to mistake one for the other.
-\todo{cleanup}
+In \Ho the representation of <<\coqIn{P x}>> is instead <<\elpiIn{uva N [x]}>>,
+since unification variables are higher order and come equipped with an
+explicit scope.
+%\todo{use faddr for Fo}
+%
+%faddr and addr are memory addresses, the details are given in bla,
+%here they are just unique identifiers for unif variables and their types
+%do now allow to mistake one for the other.
+%\todo{cleanup}
 
 \paragraph{Notational conventions}
 
@@ -496,34 +500,39 @@ distinguish between the ``application'' of a unification variable
 to its scope and the application of a term to a list of arguments.
 We write the scope of unification variables in subscript
 while we use juxtaposition for regular application.
-Here a few examples:
+Here a few examples:\\
 \vspace{4pt}
-
+{
+\setlength{\tabcolsep}{1em}
 \begin{tabular}{ll}
-  $f\appsep a$ &  \elpiIn{app[con "f", con "a"]}\\
+  $f\appsep a$                  & \elpiIn{app [con "f", con "a"]}\\
   $\lambda x.\lambda y.F_{x y}$ & \elpiIn{lam x\ lam y\ uva F [x, y]} \\
-  $\lambda x.F_{x} \appsep a$ & \elpiIn{lam x\ app[uva F [x], con "a"]} \\
-  $\lambda x.F_{x} \appsep x$ & \elpiIn{lam x\ app[uva F [x], x]} \\
+  $\lambda x.F_{x} \appsep a$   & \elpiIn{lam x\ app [uva F [x], con "a"]} \\
+  $\lambda x.F_{x} \appsep x$   & \elpiIn{lam x\ app [uva F [x], x]} \\
 \end{tabular}
+}
 \vspace{4pt}
 
 \noindent
 When it is clear from the context we shall use the same syntax for \Fo{} terms
 (although we never subscripts unification variables).
 
+We use $s$, $s_1$, \ldots for terms in \Fo{} and $t$, $t_1$ \ldots for
+terms in \Ho{}.
+
 \subsection{Equational theories an unification}
 
-In order to specify the two unification procedures we need to
-define the equational theories of \Fo{} and \Ho{} and define
-what substitutions are.
+In order to specify unification we need to
+define the equational theory and
+substitution (unification-variable assignment).
 
-
-\paragraph{Term equality: \Eo vs. \Ee} We extend the equational theory
-over ground terms to the full languages by adding the reflexivity of
+\subsubsection{Term equality: \Eo and \Ee}
+For both languages we extend the equational theory
+over ground terms to the full language by adding the reflexivity of
 unification variables (a variable is equal to itself).
 
 The first four rules are common to both equalities
-and just define the usual congruence over terms, and since
+and just define the usual congruence over terms. Since
 we use an HOAS encoding they also capture $\alpha$-equivalence.
 In addition to that \Eo has rules for $\eta$ and $\beta$-equivalence.
 
@@ -538,72 +547,50 @@ In addition to that \Eo has rules for $\eta$ and $\beta$-equivalence.
 \end{elpicode}
 
 \noindent
-The main point in showing these equality tests is to remark how weaker \Ee is,
-and to identify the four rules that need special treatment in
-the implementation of \Uo.
+The main point in showing these equality tests is to remark how
+weaker \Ee is, and to identify the four rules that need special
+treatment in the implementation of \Uo.
+We defer the description of \elpiIn{beta} to \cref{sec:grounwork}, for now
+it is sufficient to know that <<\elpiIn{beta F L R}>> computes in \elpiIn{R} the
+weak head normal form of <<\elpiIn{app[F|L]}>>.
 
-\todo{move to next section}
-For reference, \elpiIn{(beta T A R)} reduces away \elpiIn{lam} nodes in head
-position in \elpiIn{T} whenever the list \elpiIn{A} provides a corresponding
-argument.
+\paragraph{Substitution: $\rho s$ and $\sigma t$}
 
-\input{code/beta_fo}
-
-\noindent
-The \elpiIn{name} predicate holds only on nominal constants (i.e. bound
-variables).\footnote{Elpi provides it as a builtin, but one could implement it by
-systematically loading the hypothetical rule \elpiIn{name x} every time
-a nominal constant is postulated via \elpiInFN{pi x\ }}
-The choice of using n-ary application, rather than binary, is to make it
-easy to access the application's head. The price we pay is that substituting
-an application in the head of an application should be amended by
-``flattening'' \elpiIn{fapp} nodes, that is the job of \elpiIn{napp}.
-\footnote{Note that \elpiIn{napp} is an artefact of formalization of \Fo{}
-we do in this presentation and, as we explain later,
-no equivalent of \elpiIn{napp} is needed in \Ho.}
-Finally note that the cut operator is inessential, it could be
-removed at the cost of a verbose test on the head of \elpiIn{L}
-in the second rule about \elpiIn{fapp}: \elpiIn{L}'s head
-can be \elpiIn{fcon}, \elpiIn{flam} or a name.
-
-
-\paragraph{Substitution application: $\rho s$ and $\sigma t$}
-
-Applying the substitution corresponds to dereferencing a term with respect to
-the memory. To ease the comparison we split \Fo dereferencing into a
-\elpiIn{fder} step and a \elpiIn{napp} one. The former step replaces references
-to memory cells that are set with their values, and has a corresponding
-operation in \Ho, namely \elpiIn{deref}. On the contrary \elpiIn{napp}
-has no corresponding operation in \Ho. The reasons for this asymmetry is
-that an \elpiIn{fapp} node with a flexible head is always mapped
-to a \elpiIn{uva} (as per \cref{sec:compilation} and \cref{sec:beta}),
-preventing nested applications to materialize.
-
-\input{code/fderef}
-
-\noindent
-Applying the substitution in \Ho{} is very similar, with
-the caveat that assignments have to be moved to the
-current scope, i.e. renaming the \elpiIn{abs}-bound variables
-with the names in the scope of the unification variable occurrence.
-
-\input{code/deref}
-
-\noindent
-Note that move strongly relies on invariant \ref{inv:uvaarity}
-that we shall define later.\todo{fixup}
-
-\input{code/move}
+We write $\sigma = \{~ X \mapsto t ~\}$ the substitution that assigns
+the term $t$ to the variable $X$.
+We write $\sigma t$ for the application of
+the substitution to a term $t$, and $\sigma X = \{~ \sigma t ~|~ t \in X ~\}$ when
+$X$ is a set of terms.
+We write $\sigma \subseteq \sigma'$ when $\sigma$ is more
+general than $\sigma'$.
+The domain of a substitution is the set of unification variables for which
+it provides an assignment.
+We write $\sigma \cup \sigma'$ set union to denote the concatenation of
+two substitutions whose domains are disjoint.
+We shall use $\rho$ for \Fo{} substitutions,
+and $\sigma$ for the \Ho ones.
+\todo{can be made a little more formal}
+For brevity, in this section we consider
+the substitution for \Fo{} and \Ho{} identical.
+We defer to \cref{sec:grounwork} a more precise description
+pointing out theirs differences.
 
 \paragraph{Term unification: \Uo vs. \Ue}
 
-In this paper we assume to have an implementation of \Ue that satisfies
-properties~\ref{prop:correct-ml} and~\ref{prop:complete-ml}. Although we provide an
-implementation in the appendix (that we used for testing purposes) we only
-describe its signature here. Elpi is expected to provide this brick, as well as
-any other implementation of $\lambda$Prolog.
+Although we provide an implementation of \Ue in the supplementary material
+(that we used for testing purposes) we only describe its signature here.
 
 \input{code/ue_type}
+
+The meta language of choice is expected to provide 
+an implementation of \Ue that satisfies
+the following properties:
+%~\ref{prop:correct-ml} and~\ref{prop:complete-ml}.
+\begin{gather}
+  \unifcorrect{\Ee}{\Ue}{t} \label{prop:correct-ml}\\
+  \unifcomplete{\Ee}{\Ue}{t}\label{prop:complete-ml}
+\end{gather}
+
 %
 % To state precisely the problem we solve we need a \Fo{} representation
 % of CIC terms and a \Ho one. We extend the equality over ground
@@ -612,38 +599,34 @@ any other implementation of $\lambda$Prolog.
 % We call \Eo that equality in \Fo{} and \Ee its counterpart in \Ho.
 % We call \Uo the unification procedure we want to implement and
 % \Ue the one provided by the meta language.
-We write $t_1 \Ue t_2 \mapsto \sigma$ when $t_1$ and $t_2$ unify
-with substitution $\sigma$; we write $\sigma t$ for the application of
-the substitution to $t$, and $\sigma X = \{ \sigma t ~|~ t \in X\}$ when
-$X$ is a set; we write $\sigma \subseteq \sigma'$ when $\sigma$ is more
-general than $\sigma'$ and we use set union to denote the concatenation of
-two substitutions. We shall use $\rho$ for \Fo{} substitutions, and
-$\sigma$ for the \Ho ones.
-We assume that the unification of our meta
-language is correct and complete in \llambda.
 
-\begin{gather}
-  \unifcorrect{\Ee}{\Ue}{t} \label{prop:correct-ml}\\
-  \unifcomplete{\Ee}{\Ue}{t}\label{prop:complete-ml}
-\end{gather}
+We write 
+$\sigma t_1 \Ue \sigma t_2 \mapsto \sigma'$ when
+$\sigma t_1$ and $\sigma t_2$ unify with substitution $\sigma'$.
+We write $t_1 \Ue t_2 \mapsto \sigma$ when
+the initial substitution is empty.
+Note that if $\sigma t_1 \Ue \sigma t_2 \mapsto \sigma'$ then
+the domains of $\sigma$ and $\sigma'$ are disjoint.
+
+Although we provide an implementation of \Uo{} in \cref{sec:founif},
+our real goal is the simulation of an entire logic program.
 
 \subsection{The problem: Logic Program Simulation}
 
-\newcommand{\C}[4]{\ensuremath{\langle #1 \rangle}\mapsto(#2,#3,#4)}
-\newcommand{\D}[4]{\ensuremath{\langle #1,#2,#3 \rangle^{-1}\mapsto #4}}
-
 We represent a logic program \emph{run} in \Fo{} as
 a list \emph{steps} $p$ of length $\mathcal{N}$.
-Each step $p$ represents 
-a unification problem between two terms $\foUnifPb_{p_l}$ and
+At each step $p$ we unify two terms $\foUnifPb_{p_l}$ and
 $\foUnifPb_{p_r}$ taken from the set of all terms \foUnifPb.
+\footnote{If the same rule is used multiple times in a run we
+just consider as many copies as needed of the terms composing the
+rules, with fresh unification variables each time.}
 The composition of these steps starting from the
 empty substitution $\rho_0$ produces the final
-substitution $\rho_\mathcal{N}$.
-\footnote{If the same rule is used multiple time in a run we
-just consider as many copies as needed of the terms composing the
-rules, with fresh unification variables each time}
+substitution $\rho_\mathcal{N}$, that is the result of the
+logic-program execution.
 %
+\newcommand{\C}[4]{\ensuremath{\langle #1 \rangle}\mapsto(#2,#3,#4)}
+\newcommand{\D}[4]{\ensuremath{\langle #1,#2,#3 \rangle^{-1}\mapsto #4}}
 \newcommand{\progress}{\ensuremath{\mathrm{progress}}\xspace}
 \newcommand{\fstep}{\ensuremath{\mathrm{fstep}}\xspace}
 \newcommand{\hstep}{\ensuremath{\mathrm{hstep}}\xspace}
@@ -675,16 +658,15 @@ $$
 $$
 
 \noindent 
-\todo{later in section..}
-We illustrate a compilation $\C{s}{t}{m}{l}$ that
-maps a term $s$ in \Fo{} to a term $t$ in \Ho{} and produces
-a variable mapping $m$ and list of links $l$.
+In order to simulate a \Fo{} logic program in \Ho{} we compile
+each term $s \in \Fo{}$ into a term $t \in \Ho{}$. We write this
+step $\C{s}{t}{m}{l}$. The implementation of the compiler
+is detailed in \cref{sec:compilation,sec:eta,sec:beta}, here we just point
+out that it additionally a variable mapping $m$ and list of links $l$.
 The variable map connects unification variables in \Ho with variables
 in \Fo{} and is used to ``decompile'' the assignment,
-$\D{\sigma}{m}{l}{\rho}$.
-Links are an accessory piece of information whose
+$\D{\sigma}{m}{l}{\rho}$. Links are an accessory piece of information whose
 description is deferred to \cref{sec:nutshell}.
-
 
 We simulate each run in \Fo{} with a run in \Ho as follows.
 %Note that $\sigma_0$ is the empty substitution.
@@ -700,8 +682,14 @@ $$
 $$
 
 \noindent
-Here \hstep{} is made of two sub-steps: a call to the meta language
-unification and a check for \progress{} on the set of links.
+By analogy with \foUnifPb, we write $\hoUnifPb_{p_l}$ and $\hoUnifPb_{p_r}$
+for the two \Ho{} terms being unified at step $p$, and we write $\hoUnifPb_p$
+for the set $\{ \hoUnifPb_{p_l}, \hoUnifPb_{p_r} \}$.\\
+\hstep{} is made of two sub-steps: a call to the meta language
+unification and a check for \progress{} on the set of links, that intuitively
+will compensate for the weaker equational theory honoured by \Ue.
+\hrun{} compiles all terms in \foUnifPb{}, then executes each step and
+finally decompiles the solution.
 We claim:
 
 \begin{proposition}[Simulation]\label{prop:simulation}
@@ -759,9 +747,9 @@ to debug a logic program in \Fo{} by looking at its execution trace in
 % \end{gather}
 % \end{proposition}
 
-\noindent
+
 %In addition to correctness and completeness in \llambda,
-We claim that \hrun
+We also claim that \hrun
 handles terms outside \llambda in the following sense:
 
 \begin{proposition}[Properties of \hrun outside \llambda]
@@ -769,33 +757,36 @@ handles terms outside \llambda in the following sense:
   \exists \rho, \rho s_1 \Eo \rho s_2 \Rightarrow
   \C{s_i}{t_i}{m_i}{l_i} \Rightarrow
   t_1 \Ue t_2 \mapsto \sigma \label{prop:compilation-nllam}\\
-  \sigma_{p-1} \hoUnifPb_{p} \in \llambda \Rightarrow
-  \stepH{\hoUnifPb}{p}{\sigma_{p-1}}{\linkStore_{p-1}}{\sigma_{p}}{\linkStore_p} \mapsto \sigma \label{prop:step-nllam}
+  \sigma_{p-1} \hoUnifPb_{p} \in \llambda \Rightarrow \label{prop:step-nllam}\\
+  \exists \rho,\stepF{\foUnifPb}{p}{\rho}{\rho'} \Leftrightarrow
+  \stepH{\hoUnifPb}{p}{\sigma_{p-1}}{\linkStore_{p-1}}{\sigma_{p}}{\linkStore_p} \nonumber
 \end{gather}
 \end{proposition}
 
 \noindent
 Property \ref{prop:compilation-nllam} states that two terms for which
-there is a unifier (given by an oracle, not necessarily a most general one),
-then the compiler generates two terms that unify in \Ho. In other words
-the compiler moves out of the way all problematic terms.
-
+there is a unifier (given by an oracle and not necessarily a most general one),
+then the compiler generates two terms that unify in \Ho.\\
+%In other words the compiler moves out of the way all problematic terms.
 Property \ref{prop:step-nllam} says that if the two terms involved in a step
 re-enter \llambda, then \hstep succeeds. This is a typical example
-in which the order of the unification problems in a logic program run
-do matter. The simplest example is the sequence $F = \lambda x.a$ and
-$F \appsep a = a$: the second problem is not in \llambda and has two unifiers,
-namely $F = \lambda x.x$ and $F = \lambda x.a$. The first problem picks one
-of the two, making the second problem re-enter \llambda.
+in which the order of the unification problems in a logic-program run
+does matter. The simplest example is the sequence $F \UnifRel \lambda x.a$ and
+$F \appsep a \UnifRel a$: the second problem is not in \llambda and has two
+unifiers, namely $\sigma_1 = \{~ F \mapsto \lambda x.x ~\}$ and
+$\sigma_2 = \{~ F \mapsto \lambda x.a ~\}$. The first problem picks $\sigma_2$
+making the second problem re-enter \llambda. In other words
+\cref{prop:fidelity} \todo{...}
 
 \subsection{The solution (in a nutshell)}
 \label{sec:nutshell}
 A term $s$ is compiled in a term $t$ where every
 ``problematic'' sub term $p$ is replaced by a fresh unification variable $h$
-and an accessory \emph{link} that represent a suspended unification problem
+and an accessory \emph{link} that represents a suspended unification problem
 $h \Ue p$. As a result \Ue is ``well behaved'' on $t$, in the sense that
-it does not contradict \Eo as it would otherwise do on ``problematic'' terms.
-We now define ``problematic'' and ``well behaved'' more formally.
+it does not contradict \Eo as it would otherwise do on the
+``problematic'' sub-terms. We now define ``problematic'' and ``well behaved''
+more formally.
 
 \begin{definition}[\maybeeta]\label{def:maybeeta}
   $\maybeeta = \{ t ~|~ \exists \rho, \rho t ~\mathrm{is~an~eta~expansion} \}$
@@ -823,7 +814,7 @@ unification failure, i.e. by properly instantiating $F$ the term
 head constructor may become a $\lambda$, or a constant or stay an application.
 
 \begin{definition}[\notllambda]\label{def:notllambda}
-  $\notllambda = \{ X \appsep t_1 \ldots t_n ~|~ X \appsep t_1 \ldots t_n \not\in \llambda \}$.
+  $\notllambda = \{ X \appsep t_1 \ldots t_n ~|~ X \appsep t_1 \ldots t_n ~\mathrm{are~not~distinct~names} \}$.
 \end{definition}
 
 \noindent
@@ -890,7 +881,7 @@ nor put in $\sigma$ an application whose head is flexible
 
 
 \section{Ground work for \Fo{}, \Ho and the compiler}
-\label{sec:lang-spec}
+\label{sec:grounwork}
 \todo{maybe move here napp beta deref fderef move}
 
 We say that the unification variable occurrence \elpiIn{uva N L} is in
@@ -980,6 +971,57 @@ number of abstractions in its assignment have to match. In turn
 this grants that \elpiIn{move} never fails.
 
 %\input{code/move}
+
+\input{code/beta_fo}
+
+\noindent
+The \elpiIn{name} predicate holds only on nominal constants (i.e. bound
+variables).\footnote{Elpi provides it as a builtin, but one could implement it by
+systematically loading the hypothetical rule \elpiIn{name x} every time
+a nominal constant is postulated via \elpiInFN{pi x\ }}
+The choice of using n-ary application, rather than binary, is to make it
+easy to access the application's head. The price we pay is that substituting
+an application in the head of an application should be amended by
+``flattening'' \elpiIn{fapp} nodes, that is the job of \elpiIn{napp}.
+\footnote{Note that \elpiIn{napp} is an artefact of formalization of \Fo{}
+we do in this presentation and, as we explain later,
+no equivalent of \elpiIn{napp} is needed in \Ho.}
+Finally note that the cut operator is inessential, it could be
+removed at the cost of a verbose test on the head of \elpiIn{L}
+in the second rule about \elpiIn{fapp}: \elpiIn{L}'s head
+can be \elpiIn{fcon}, \elpiIn{flam} or a name.
+
+
+Applying the substitution corresponds to dereferencing a term with respect to
+the memory. 
+
+
+
+To ease the comparison we split \Fo dereferencing into a
+\elpiIn{fder} step and a \elpiIn{napp} one. The former step replaces references
+to memory cells that are set with their values, and has a corresponding
+operation in \Ho, namely \elpiIn{deref}. On the contrary \elpiIn{napp}
+has no corresponding operation in \Ho. The reasons for this asymmetry is
+that an \elpiIn{fapp} node with a flexible head is always mapped
+to a \elpiIn{uva} (as per \cref{sec:compilation} and \cref{sec:beta}),
+preventing nested applications to materialize.
+
+\input{code/fderef}
+
+\noindent
+Applying the substitution in \Ho{} is very similar, with
+the caveat that assignments have to be moved to the
+current scope, i.e. renaming the \elpiIn{abs}-bound variables
+with the names in the scope of the unification variable occurrence.
+
+\input{code/deref}
+
+\noindent
+Note that move strongly relies on invariant \ref{inv:uvaarity}
+that we shall define later.\todo{fixup}
+
+\input{code/move}
+
 
 \subsection{Notational conventions}
 
@@ -1182,7 +1224,7 @@ no \elpiIn{fapp} node should appear).
   \label{inv:map-bijective}
 \end{invariant}
 
-\subsection{Definition of \Uo and its properties}
+\subsection{Definition of \Uo and its properties}\label{sec:founif}
 
 \input{code/unif_fo}
 
