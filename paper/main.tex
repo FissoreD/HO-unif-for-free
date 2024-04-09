@@ -1686,7 +1686,7 @@ There is a third case in which a link is removed from \linkStore, namely
 when the \lhs is assigned to a variable that is the \lhs of another
 \linketa.
 
-\newcommand{\progressetadedup}{\emph{progress-$\eta$-deduplicate}}
+\newcommand{\progressetadedup}{\emph{progress-$\eta$-deduplicate}\xspace}
 \begin{definition}[\progressetadedup]\label{def:progressetadedup}
   A link \linketaM{\Gamma}{X_{\vec{s}}}{T} is removed from \linkStore when
   another link \linketaM{\Delta}{X_{\vec{r}}}{T'} is in  \linkStore.
@@ -1748,7 +1748,7 @@ when the \lhs is assigned to a variable that is the \lhs of another
 
 \begin{proof}[Proof sketch]
   By \cref{lemma:unif-eta-1,lemma:unif-eta-2,lemma:unif-eta-3}, every
-  unification performed by the activation of a \linketa is performed between
+  unification performed by the activation of a \linketa is done between
   terms in \wellb, therefore, the substitution remains \wellb.
   \noteD[inline]{Bisogna aggiungere un lemma nella \cref{sec:nutshell} che dice che
   unificare due termini in \wellb, in una $\sigma$, tale che $\wellb(\sigma)$, 
@@ -1781,25 +1781,30 @@ when the \lhs is assigned to a variable that is the \lhs of another
   % terminates.
 \end{proof}
 
-\noteD[inline]{Proove simulation fidelity, dicendo che \progressetaright è inutile}
-
 \begin{lemma}[Fidelity with \linketa]
-  Let \hoUnifPb a unification problem and $\sigma$ a substitution. The introduction 
-  of \linketa guarantees \cref{prop:fidelity} 
+  The introduction 
+  of \linketa guarantees \fullref{prop:fidelity} 
   \label{lemma:fidelity-maybeeta}
 \end{lemma}
 
 \begin{proof}[Proof sketch]
-  If 1) a \linketa is activated by \progressetaleft, then unification is done
-  between a \maybeeta term $t_1$ and a term $t_2$ (with $\wellb(t_2)$). This
-  activation performs a unification which succeeds iff the original problem in
-  \Fo{} succeeds. If 2) a \linketa is activated by \progressetadedup, then the
-  unification is done between two \maybeeta terms, and again this unification
-  succeeds iff it succeeds in \Fo{}. Finally, if 3) a \linketa is activated by
-  \progressetaright, the unification, done between a variable and a term,
-  always succeeds, this is what we expect to guarantee fidelity, since we
-  are essentially removing a hole added by the compilation in the place of a
-  \maybeeta subterm. In all the cases fidelity is respected.
+  \progressetaleft and \progressetadedup activate a \linketa when, in the
+  original unification problem, a \maybeeta term is unified with respectively a
+  well-behaved term or another \maybeeta term. In both cases, the links trigger
+  a unification which succeeds iff the same unification in \Fo{} succeeds,
+  guaranteeing \cref{prop:fidelity}. \progressetaright never fails, in fact,
+  this progression refines a variable to a rigid term and plays no role in 
+  \cref{prop:fidelity}.
+  % If 1) a \linketa is activated by \progressetaleft, then unification is done
+  % between a \maybeeta term $t_1$ and a term $t_2$ (with $\wellb(t_2)$). This
+  % activation performs a unification which succeeds iff the original problem in
+  % \Fo{} succeeds. If 2) a \linketa is activated by \progressetadedup, then the
+  % unification is done between two \maybeeta terms, and again this unification
+  % succeeds iff it succeeds in \Fo{}. Finally, if 3) a \linketa is activated by
+  % \progressetaright, the unification, done between a variable and a term,
+  % always succeeds, this is what we expect to guarantee fidelity, since we
+  % are essentially removing a hole added by the compilation in the place of a
+  % \maybeeta subterm. In all the cases fidelity is respected.
 \end{proof}
 
 \paragraph{Example of \progressetaleft}
