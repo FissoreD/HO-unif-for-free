@@ -2020,24 +2020,6 @@ following property:
 
 % This property can be relaxed, to accept approximations: a dedicated
 % section is given in a future section
-\begin{lemma}[\linkbeta with rigid \lhs]
-  If the \lhs of a \linkbeta is instantiated to a rigid term and its \rhs
-  counterpart is still in \notllambda,
-  the original unification problem is not in \llambda
-  % \noteE[inline]{non capisco cosa vuoi dire con "the current...". Data la prova sotto vuoi dire che il problem originale sarebbe stato fuori... e quindi falliamo}
-  %\noteE[inline]{Is it clearer?}
-  and the unification fails.
-  \label{lemma:keep-fidelity}
-\end{lemma}
-
-\begin{proof}[Proof sketch]
-  Given $X \appsep t_1\dots t_n \Ue t$ where $t$ is a rigid term and
-  $t_1\dots t_n$ is not in \llambda. By construction, $X \appsep t_1\dots t_n$
-  is replaced with a variable $Y$, and the \linkbeta \linkbetaM{\Gamma}{Y}{X
-  \appsep t_1\dots t_n} is created. If $Y$ is instantiated to the rigid term $t$,
-  and \rhs is still in \notllambda, then the original \Fo{} unification problem
-  is between two terms in \notllambda. Unification fails.
-\end{proof}
 
 % From \cref{lemma:keep-fidelity}, we can deduce the following corollary
 
@@ -2115,8 +2097,9 @@ we should fail immediately: we have a \linkbeta and a \linketa with same \lhs}
 \subsection{Progress}
 
 \newcommand{\progBetaLL}{\emph{progress-beta-\llambda}\xspace}
-\newcommand{\progBetaRH}{\emph{progress-beta-rigid-head}\xspace}
+\newcommand{\progBetaRH}{\emph{progress-beta-rigid-\rhs}\xspace}
 \newcommand{\progBetaDedup}{\emph{progress-beta-dedup}\xspace}
+\newcommand{\progBetaLH}{\emph{progress-rigid-\lhs}\xspace}
 
 The activation of a \linkbeta is performed when its \rhs falls under \llambda
 under a given substitution.
@@ -2153,13 +2136,17 @@ under a given substitution.
   \label{def:progBetaRH}
 \end{definition}
 
-\noteD{added the def below to respect fidelity}
 % Example of this `X a = Y a'
 \begin{definition}[\progBetaDedup]
   Given a \linkbeta $l_1$ and second link $l_2 \in\linkStore$, such that they
-  share the same \lhs. In this case, the two \rhs are unified and a $l_2$ is
+  share the same \lhs. The two \rhs are unified and a $l_2$ is
   removed from \linkStore.
   \label{def:progBetaDedup}
+\end{definition}
+
+\begin{definition}[\progBetaLH]
+  Given a \linkbeta with rigid \lhs, the unification fails.
+  \label{def:progBetaLH}
 \end{definition}
 
 \begin{lemma}
@@ -2175,10 +2162,8 @@ under a given substitution.
   \linkbeta $l^m$ has no more arguments and is removed from \linkStore.
   Note that at the $m^{th}$ iteration, $m$ new \linketa have been added to
   \linkStore, however, by \cref{lemma:prog-eta-terminates}, the algorithm
-  terminates. Finally \progBetaDedup also guarantees termination since it 
-  makes a unification $\mathbb{U}$ and if $\mathbb{U}$ fails, then 
-  \elpiIn{progress} terminates and if $\mathbb{U}$ succeeds, 
-  the recursive calls to \elpiIn{progress} have a specialized \linkbeta\dots  
+  terminates. Finally \progBetaDedup (resp. \progBetaLH) also guarantees termination since 
+  it removes a link from \linkStore (resp. immediately fails).  
 
   % \Cref{def:progBetaRH} makes \elpiIn{progress} terminates, since it makes a
   % \linkbeta disappear from \linkStore. On the other hand, \cref{def:progBetaLL},
@@ -2194,23 +2179,23 @@ under a given substitution.
   \noteD{da finire}
 \end{proof}
 
-\begin{corollary}
-  Given a \linkbeta, the variables occurring in its \rhs are in \llambda.
-  % \noteE[inline]{vuoi dire: le variabili che occorrono nel rhs sono in...?}
-  \noteD[inline]{is it clearer?}
-\end{corollary}
+% \begin{corollary}
+%   Given a \linkbeta, the variables occurring in its \rhs are in \llambda.
+%   % \noteE[inline]{vuoi dire: le variabili che occorrono nel rhs sono in...?}
+%   \noteD[inline]{is it clearer?}
+% \end{corollary}
 
-\begin{proof}[Proof sketch]
-  By construction, the \rhs of \linkbeta has the shape \rhsBeta, $s_1\dots s_n$
-  is in \llambda and all the terms $t_1\dots t_n$ are in \llambda, too. If a
-  \linkbeta is triggered by \progBetaRH, then, by \cref{def:progBetaRH}, that
-  link is removed by \linkStore, and the property is satisfied. If the \linketa
-  is activated by \progBetaLL, then, by \cref{def:progBetaLL}, the new \linkbeta
-  as a variable as a scope which is still in \llambda. 
-\end{proof}
+% \begin{proof}[Proof sketch]
+%   By construction, the \rhs of \linkbeta has the shape \rhsBeta, $s_1\dots s_n$
+%   is in \llambda and all the terms $t_1\dots t_n$ are in \llambda, too. If a
+%   \linkbeta is triggered by \progBetaRH, then, by \cref{def:progBetaRH}, that
+%   link is removed by \linkStore, and the property is satisfied. If the \linketa
+%   is activated by \progBetaLL, then, by \cref{def:progBetaLL}, the new \linkbeta
+%   as a variable as a scope which is still in \llambda. 
+% \end{proof}
 
 \begin{lemma}[Fidelity with \linkbeta]
-  The introduction of \linkbeta guarantees \cref{prop:fidelity} 
+  The introduction of \linkbeta guarantees \fullref{prop:fidelity} 
 \end{lemma}
 
 \begin{proof}[Proof sketch]
@@ -2221,7 +2206,7 @@ under a given substitution.
   \hoUnifPb have been solved and removed. The
   unification is done between terms in \llambda and by \cref{lemma:fidelity-maybeeta}
   fidelity is guaranteed. If $\sigma\hoUnifPb$ is in \notllambda,
-  then, by \cref{lemma:keep-fidelity}, the unification fails, as per the
+  then, by \cref{def:progBetaLH}, the unification fails, as per the
   corresponding unification in \Fo{}.
 \end{proof}
 
