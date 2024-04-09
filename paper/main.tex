@@ -1696,8 +1696,8 @@ when the \lhs is assigned to a variable that is the \lhs of another
   We then run $T \Ue{} T''$ (under the context $\Gamma$).
 \end{definition}
 
-\noteD[inline]{Below the proof of \cref{prop:nf}, ho usato 3 lemmi ausiliari,
-forse si può compattare in una prova più piccola?}
+% \noteD[inline]{Below the proof of \cref{prop:nf}, ho usato 3 lemmi ausiliari,
+% forse si può compattare in una prova più piccola?}
 \begin{lemma}
   Given a \linketa $l$, the unification done by \progressetaleft is between
   terms in $\wellb$  
@@ -1705,13 +1705,14 @@ forse si può compattare in una prova più piccola?}
 \end{lemma}
 
 \begin{proof}[Proof sketch]
-  Let $\sigma$ be the substitution, such that $\wellb(\sigma)$. $\lhs \in
-  \sigma$, therefore $\wellb(\lhs)$. By \cref{def:progressetaleft}, if 1) \lhs is
-  a name, a constant of an application, then, \lhs is unified with the
-  $\eta$-reduced term $t$ obtain from \rhs. By \cref{cor:rhs-eta-onelamb}, \rhs
-  has one lambda, therefore $\wellb(t)$. Otherwise, 2) \lhs has \elpiIn{lam} as
-  functor, \rhs should not be an $\eta$-expansion ans, so, $\wellb(\rhs)$. In
-  both cases, unification is performed between terms in \wellb.
+  Let $\sigma$ be the substitution, which is  $\wellb(\sigma)$ (by
+  \cref{prop:nf}). $\lhs \in \sigma$, therefore $\wellb(\lhs)$. By
+  \cref{def:progressetaleft}, if 1) \lhs is a name, a constant of an
+  application, then, $\lambda x.\lhs \appsep x$ is unified with \rhs. By
+  \cref{inv:link-eta-right}, $\rhs = \lambda x. t$, therefore $\wellb(t)$.
+  Otherwise, 2) \lhs has \elpiIn{lam} as functor, \rhs should not be an
+  $\eta$-expansion, so, $\wellb(\rhs)$. In both cases, unification is
+  performed between terms in \wellb.
 \end{proof}
 
 \begin{lemma}
