@@ -2053,12 +2053,11 @@ termini che non sono il llambda, oppure dirlo in section of maybeeta + dare un
 esempio?}
 
 \paragraph{Decompilation}
-During \elpiIn{progress}, as claimed in \cref{inv:beta-rhs}, the decompilation
+During \elpiIn{progress}, as claimed in \fullref{inv:beta-rhs}, the decompilation
 can only have \linkbeta with not instantiated \lhs. In this case, \lhs is
 unified with \rhs.
-\noteD[inline]{not really sure of this, we can have $F\appsep a = \lambda x.G x$.
-In this case when do we fail: for sure in decompile. But to respect fidelity,
-we should fail immediately: we have a \linkbeta and a \linketa with same \lhs}
+\todo{qui falliamo, nella 7.3 dire che LHS è in llambda quindi LSH = Ugly può funzionare,
+in Elpi funziona però in questi casi il termine in llam deve essere a sinistra}.
 
 \subsection{Progress}
 
