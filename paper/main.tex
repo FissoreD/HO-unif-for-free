@@ -860,7 +860,11 @@ and granting \cref{prop:simulation,prop:fidelity,prop:fidelity-recovery}.
 % Note that proposition \ref{prop:w-preservation} does not hold for \hrun as a whole
 % since decompilation can introduce (actually restore) problematic terms.
 
-\section{Ground work for the compiler}
+\section{Basic compilation and simulation}
+\label{sec:simulation}
+
+
+\subsection{Memory (\mapStore) and substitution ($\rho$ and $\sigma$)}
 \label{sec:grounwork}
 
 % The predicate to test this condition is called \elpiIn{pattern-fragment}:
@@ -868,7 +872,7 @@ and granting \cref{prop:simulation,prop:fidelity,prop:fidelity-recovery}.
 % \input{code/pattern_fragment}
 
 Unification variables are identified by a
-natural number, that represents a memory addresses
+natural number that represents a memory addresses.
 The memory and its associated operations are described below:
 
 \input{code/mem_types}
@@ -879,8 +883,8 @@ is not set. \elpiIn{assign} sets an unset cell to the given value, while
 \elpiIn{new} finds the first unused address and sets it to \elpiIn{none}.
 
 Since each occurrence of a \Ho unification variables has a scope,
-its solution needs to be abstracted over it to enable the
-instantiation of a single assignment to different scopes.
+its assignment needs to be abstracted over it to enable the
+instantiation of the same assignment to different scopes.
 This is expressed by the \elpiIn{inctx} container, and in particular
 its \elpiIn{abs} binding constructor.
 On the contrary a solution to a \Fo variable is a plain term.
@@ -891,6 +895,7 @@ On the contrary a solution to a \Fo variable is a plain term.
 \noindent
 We call \elpiIn{fsubst} the memory of \Fo{}, while we call \elpiIn{subst}
 the one of \Ho.
+
 The compiler establishes a mapping between variables of the two languages.
 
 \input{code/comp_base_types}
@@ -898,11 +903,10 @@ The compiler establishes a mapping between variables of the two languages.
 Each \elpiIn{hvariable} is stored in the mapping together with
 its arity so that the code of \ref{clause:malloc} below can preserve:
 
-\begin{invariant}[Unification-variable arity]
+\begin{invariant}[Unification-variable arity]\label{inv:uvaarity}
   Each variable \elpiIn{A}
-  in \Ho has a (unique) arity \elpiIn{N} and each occurrence~
-  \elpiIn{(uva A L)} is such that \elpiIn{(len L N)} holds
-  \label{inv:uvaarity}
+  in \Ho has a (unique) arity \elpiIn{N} and each occurrence
+  \elpiIn{(uva A L)} is such that \elpiIn{L} has length \elpiIn{N}.
 \end{invariant}
 
 \input{code/alloc_mapping}
@@ -913,6 +917,40 @@ of arguments the compiler generates multiple mappings for it, on a first
 approximation, and then makes the mapping bijective by introducing
 \linketa; this detail is discussed in section \ref{sec:invariant1}.
 
+Applying the substitution corresponds to dereferencing a term with respect to
+the memory.
+%  To ease the comparison we split \Fo{} dereferencing into a
+% \elpiIn{fder} step and a \elpiIn{napp} one. The former step replaces references
+% to memory cells that are set with their values, and has a corresponding
+% operation in \Ho, namely \elpiIn{deref}. On the contrary \elpiIn{napp}
+% has no corresponding operation in \Ho, and only ensures that
+% terms of the form <<\elpiIn{fapp[fapp L1|L2]}>> are replaced by
+% <<\elpiIn{fapp L3}>> where \elpiIn{L3} is the concatenation of \elpiIn{L1}
+% and \elpiIn{L2}. The reasons for this asymmetry is
+% that an \elpiIn{fapp} node with a flexible head is always mapped
+% to a \elpiIn{uva} (as per \cref{sec:simulation,sec:beta}),
+% preventing nested applications to materialize.
+% \input{code/fderef}
+It is worth looking at the code fpr \Ho{} to remark how assignments are moved
+to the current scope, i.e. renaming the \elpiIn{abs}-bound variables
+with the names in the scope of the unification variable occurrence.
+
+\input{code/deref}
+
+\noindent
+Note that move strongly relies on invariant \ref{inv:uvaarity}: the length
+of the arguments of all occurrences of a unification are the same. Hence
+they have the same type in the meta-level and the number of \elpiIn{abs}
+nodes in the assignment matches that length. In turn this grants that
+\elpiIn{move} never fails.\todo{convoluted}
+
+\input{code/move}
+
+We write $\sigma = \{~ A_{xy} \mapsto y ~\}$ for the assignment
+<<\elpiIn{abs x\abs y\y}>> and $\sigma = \{~ A \mapsto \lambda x.\lambda y.y ~\}$
+for <<\elpiIn{lam x\lam y\y}>>.
+
+\subsection{Links (\linkStore)}
 
 \noindent
 As we mentioned in section~\ref{sec:nutshell} the compiler
@@ -922,6 +960,7 @@ need a link since \Ho{} variables faithfully represent
 the problematic term thanks to their scope.
 
 \input{code/comp_links}
+\todo{rename link beta to link llam?}
 
 \noindent
 The right hand side of a link, the problematic term, can occur under binders.
@@ -939,69 +978,6 @@ If the left hand side variable is assigned during a step, then
 the link is considered for progress and possibly eliminated.
 This is discussed in \cref{sec:eta} and \cref{sec:beta}.
 
-
-% \input{code/beta_fo}
-
-% \noindent
-% The \elpiIn{name} predicate holds only on nominal constants (i.e. bound
-% variables).\footnote{Elpi provides it as a builtin, but one could implement it by
-% systematically loading the hypothetical rule \elpiIn{name x} every time
-% a nominal constant is postulated via \elpiInFN{pi x\ }}
-% The choice of using n-ary application, rather than binary, is to make it
-% easy to access the application's head. The price we pay is that substituting
-% an application in the head of an application should be amended by
-% ``flattening'' \elpiIn{fapp} nodes, that is the job of \elpiIn{napp}.
-% \footnote{Note that \elpiIn{napp} is an artefact of formalization of \Fo{}
-% we do in this presentation and, as we explain later,
-% no equivalent of \elpiIn{napp} is needed in \Ho.}
-% Finally note that the cut operator is inessential, it could be
-% removed at the cost of a verbose test on the head of \elpiIn{L}
-% in the second rule about \elpiIn{fapp}: \elpiIn{L}'s head
-% can be \elpiIn{fcon}, \elpiIn{flam} or a name.
-
-
-Applying the substitution corresponds to dereferencing a term with respect to
-the memory. To ease the comparison we split \Fo{} dereferencing into a
-\elpiIn{fder} step and a \elpiIn{napp} one. The former step replaces references
-to memory cells that are set with their values, and has a corresponding
-operation in \Ho, namely \elpiIn{deref}. On the contrary \elpiIn{napp}
-has no corresponding operation in \Ho, and only ensures that
-terms of the form <<\elpiIn{fapp[fapp L1|L2]}>> are replaced by
-<<\elpiIn{fapp L3}>> where \elpiIn{L3} is the concatenation of \elpiIn{L1}
-and \elpiIn{L2}. The reasons for this asymmetry is
-that an \elpiIn{fapp} node with a flexible head is always mapped
-to a \elpiIn{uva} (as per \cref{sec:simulation,sec:beta}),
-preventing nested applications to materialize.
-
-\input{code/fderef}
-
-\noindent
-Applying the substitution in \Ho{} is very similar, with
-the caveat that assignments have to be moved to the
-current scope, i.e. renaming the \elpiIn{abs}-bound variables
-with the names in the scope of the unification variable occurrence.
-
-\input{code/deref}
-
-\noindent
-Note that move strongly relies on invariant \ref{inv:uvaarity}: the length
-of the arguments of all occurrences of a unification variable and the
-number of abstractions in its assignment have to match. In turn
-this grants that \elpiIn{move} never fails.
-
-\input{code/move}
-
-\subsection{Notational conventions}
-
-
-\noindent
-When variables $x$ and $y$ can occur in term $t$ we shall write
-$t_{xy}$ to stress this fact. 
-
-We write $\sigma = \{~ A_{xy} \mapsto y ~\}$ for the assignment
-\elpiIn{abs x\abs y\y} and $\sigma = \{~ A \mapsto \lambda x.\lambda y.y ~\}$
-for \elpiIn{lam x\lam y\y}.
-
 When detailing examples we write links as equations between two
 terms under a context.
 The equality sign is subscripted with
@@ -1010,7 +986,11 @@ kind of \elpiIn{baselink}. For example $\linkbetaM{x}{A_x}{F_x~a}$ corresponds t
 abs x\ val (link-beta (uva A [x]) (app[uva F [x],con "a"]))
 \end{elpicode}
 
-\todo{notation for problem compilation}
+\subsection{Notational conventions}\todo{move away}
+
+When variables $x$ and $y$ can occur in term $t$ we shall write
+$t_{xy}$ to stress this fact. 
+\todo{add notation for problem compilation}
 
 
 % The first three rules unify terms with same rigid heads, and
@@ -1047,14 +1027,13 @@ abs x\ val (link-beta (uva A [x]) (app[uva F [x],con "a"]))
 % In the following section we explain how we deal with term (de)compilation and
 % links between unification variables.
 
-\section[Compilation: fo\_tm to tm]{Basic simulation of \Fo{} in \Ho{}}
-\label{sec:simulation}
+% \section[Compilation: fo\_tm to tm]{Basic simulation of \Fo{} in \Ho{}}
 
-In this section we describe a basic compilation scheme that we refine
-later, in the following sections. This scheme is sufficient to implement
-a \hstep that respects $\beta$-conversion for terms in \llambda.
-The extension to $\eta\beta$-conversion is described in \cref{sec:eta} and
-the support for terms outside \llambda in \cref{sec:beta}.
+% In this section we describe a basic compilation scheme that we refine
+% later, in the following sections. This scheme is sufficient to implement
+% a \hstep that respects $\beta$-conversion for terms in \llambda.
+% The extension to $\eta\beta$-conversion is described in \cref{sec:eta} and
+% the support for terms outside \llambda in \cref{sec:beta}.
 
 \subsection{Compilation}
 \label{sec:compilation}
@@ -1244,27 +1223,33 @@ context where input terms are $\beta\eta$-normal and we disregard $\eta$-equival
 \Ue is equivalent to \Uo.
 \end{proof}
 
-\subsection{Limitations of by this basic scheme}
-\label{sec:basic-comp-limitations}
-The basic compilation scheme is not about to
-deal wit the following problem:
-\printAlll
-  {{{\lambda x y.X \appsep y \appsep x, \lambda x y.x},{\lambda x. f \appsep (X \appsep x) \appsep x,Y}}}
-  {{}}
-  {{}}
-  {{}}
-% \begin{gather}
-% \lambda x y.F \appsep y \appsep x = \lambda x y.x \label{eq:unif-eta1}\\
-% \lambda x. f \appsep (F \appsep x) \appsep x = G \label{eq:unif-eta2}
-% % \lambda x. f \appsep (F \appsep x) \appsep x = f \appsep (\lambda y.y) \label{eq:unif-eta2}
-% \end{gather}
+% \subsection{Limitations of by this basic scheme}
+% \label{sec:basic-comp-limitations}
+% The basic compilation scheme is not about to
+% deal wit the following problem:
+% \printAlll
+%   {{{\lambda x y.X \appsep y \appsep x, \lambda x y.x},{\lambda x. f \appsep (X \appsep x) \appsep x,Y}}}
+%   {{}}
+%   {{}}
+%   {{}}
+% % \begin{gather}
+% % \lambda x y.F \appsep y \appsep x = \lambda x y.x \label{eq:unif-eta1}\\
+% % \lambda x. f \appsep (F \appsep x) \appsep x = G \label{eq:unif-eta2}
+% % % \lambda x. f \appsep (F \appsep x) \appsep x = f \appsep (\lambda y.y) \label{eq:unif-eta2}
+% % \end{gather}
 
-\noindent Note that here $X$ is used with different arities, moreover
-in the second problem the left hand side happens to be an
-eta expansion (of $f (\lambda y.y)$) only after we discover (at run time)
-that $X = \lambda x\lambda y.y$ (i.e. that $X$ discards the $x$ argument).
-Both problems are addressed in the next two sections.
+% \noindent Note that here $X$ is used with different arities, moreover
+% in the second problem the left hand side happens to be an
+% eta expansion (of $f (\lambda y.y)$) only after we discover (at run time)
+% that $X = \lambda x\lambda y.y$ (i.e. that $X$ discards the $x$ argument).
+% Both problems are addressed in the next two sections.
   
+\section{Handling of \maybebeta}\label{sec:llam}
+
+\subsection{Detection}
+\subsection{Compilation and decompilation}
+\subsection{Progress}
+
 % \subsection{Example}
 
 % OK
