@@ -648,6 +648,10 @@ macro @sokl-delay N SX SS :- @sokl-call comp.suspend-out-of-lam N SX SS.
   pr (error "unif") "X Y = λx.(Z x)"
 ] [].
 
+@sokl 104 [
+  pr ok "λx.(f x) = X"
+] ["f"].
+
 % From the paper
 @sokl 7000 [
   pr ok "λx.(X x) = f"
