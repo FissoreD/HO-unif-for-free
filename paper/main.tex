@@ -1150,24 +1150,25 @@ occur check allows us to update the subst.
 
 \input{code/decompile}
 
-\noteE{What is commit-links and complete-mapping?}
+\todo{commit links + complete-map + abs to lam}
+% \noteE{What is commit-links and complete-mapping?}
 
-\noindent
-Decompiling an assignment requires to turn abstractions into
-lambdas. For aesthetic purposes we also eta-contract the result
-(not needed since \Fo{} equality can do that)
+% \noindent
+% Decompiling an assignment requires to turn abstractions into
+% lambdas. For aesthetic purposes we also eta-contract the result
+% (not needed since \Fo{} equality can do that)
 
-\input{code/decompm}
+% \input{code/decompm}
 
-\noindent
-Finally decompiling a term is trivial, now that we have an extended
-mapping containing all unassigned variables \Ue may have introduced.
+% \noindent
+% Finally decompiling a term is trivial, now that we have an extended
+% mapping containing all unassigned variables \Ue may have introduced.
 
-\input{code/decomp}
+% \input{code/decomp}
 
-\noindent
-Note that we use beta to build fapp nodes when needed (if Ag is empty
-no \elpiIn{fapp} node should appear).
+% \noindent
+% Note that we use beta to build fapp nodes when needed (if Ag is empty
+% no \elpiIn{fapp} node should appear).
 
 
 \begin{invariant}
