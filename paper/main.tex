@@ -822,6 +822,7 @@ $$
 \end{definition}
 
 \noindent
+We write $\wellb(t)$ as a short for $\wellb(\{t\})$.
 We claim our compiler validates the following property: 
 
 \begin{proposition}[\wellb-enforcing]\label{prop:w-enforcing}
@@ -1137,7 +1138,7 @@ $f~Y$ and that fails the occur check.
 The procedure \elpiIn{occur-check-links} is in charge of ensuring that
 each link does not represent a (suspended) unification problem doomed
 to fail because of occur check. This check is needed in order to
-guarantee \cref{prop:fidelity} (simulation fidelity).
+guarantee \fullref{prop:fidelity}.
 
 \subsection{Substitution decompilation}
 
@@ -1663,7 +1664,7 @@ when the \lhs is assigned to a variable that is the \lhs of another
 \end{definition}
 
 \begin{lemma}
-  Let $\lambda x.t$ the \rhs of a \linketa, then $\wellb{t}$.
+  Let $\lambda x.t$ the \rhs of a \linketa, then $\wellb(t)$.
   \label{lemma:unif-eta-aux}
 \end{lemma}
 
@@ -1753,11 +1754,11 @@ when the \lhs is assigned to a variable that is the \lhs of another
   % terminates.
 \end{proof}
 
-\begin{lemma}[Fidelity with \linketa]
+\begin{theorem}[Fidelity in \maybeeta]
   The introduction 
   of \linketa guarantees \fullref{prop:fidelity} 
   \label{lemma:fidelity-maybeeta}
-\end{lemma}
+\end{theorem}
 
 \begin{proof}[Proof sketch]
   \progressetaleft and \progressetadedup activate a \linketa when, in the
@@ -1813,12 +1814,13 @@ We delay at the end of  next section an example of \linketa progression due to
 \progressetaright
 
 
-\section{Enforcing inv.: \NoCaseChange{\nameref{inv:uvaarity}}}
+%\section{Enforcing inv.: \NoCaseChange{\nameref{inv:uvaarity}}}
+\section{Making \mapStore a bijection}
 \label{sec:invariant1}
-
+\todo{l'esempio è sparito}
 We report here the problem given in \cref{sec:basic-comp-limitations} where
 $X$ is used with two different arities and the output of the compilation does
-not respect \cref{inv:map-bijective}. Moreover, merging the two mappings\noteD{TODO: da cambiare 488 in tex}
+not respect \cref{inv:map-bijective}. Moreover, merging the two mappings
 for $s$ would break \fullref{inv:uvaarity}.
 In this section we explain how to replace the duplicate mapping with
 \linketa in order to restore the invariants.
