@@ -579,7 +579,7 @@ describe its signature here.
 
 \input{code/ue_type}
 
-We write 
+We write \todo{meglio dire che sigma' estende sigma, togliere unione e quindi dominio da sopra}
 $\sigma t_1 \Ue \sigma t_2 \mapsto \sigma'$ when
 $\sigma t_1$ and $\sigma t_2$ unify with substitution $\sigma'$.
 We write $t_1 \Ue t_2 \mapsto \sigma$ when
@@ -596,15 +596,15 @@ the following properties:
   \unifcomplete{\Ee}{\Ue}{t}\label{prop:complete-ml}
 \end{gather}
 
-
+\todo{spiegare llam (first use after intro)}
 Even if we provide an implementation of the object-language unification
 \Uo{} in \cref{sec:founif}, our real goal is the simulation of an entire
 logic program.
 
 \subsection{The problem: logic-program Simulation}
-
+\todo{dire che P e T sono liste di coppie, dire che P e T vengono anche usati come insiemi}
 We represent a logic program \emph{run} in \Fo{} as
-a list \emph{steps} $p$ of length $\mathcal{N}$.
+a list \emph{steps} of length $\mathcal{N}$.
 At each step $p$ we unify two terms $\foUnifPb_{p_l}$ and
 $\foUnifPb_{p_r}$ taken from the set of all terms \foUnifPb.
 \footnote{If the same rule is used multiple times in a run we
@@ -651,7 +651,7 @@ $$
 \todo{say that backtracking is not important} 
 In order to simulate a \Fo{} logic program in \Ho{} we compile
 each \Fo{} term in \foUnifPb into a \Ho{} term $t$.
-We write this step $\C{s}{t}{m}{l}$. The implementation of the compiler
+We write this translation $\C{s}{t}{m}{l}$. The implementation of the compiler
 is detailed in \cref{sec:simulation,sec:eta,sec:beta}, here we just point
 out that it additionally produce a variable mapping $m$ and list of links $l$.
 The variable map connects unification variables in \Ho to variables
@@ -670,7 +670,7 @@ $$
 $$
 \begin{array}{l}
   \runH{\foUnifPb}{\mathcal{N}}{\rho} \deff \vspace{2pt}\\
-  \qquad \hoUnifPb \times \mapStore \times \linkStore_0 = \{ (t_j,m_j,l_j) | s_j \in \foUnifPb, \C{s_j}{t_j}{m_j}{l_j} \}\vspace{2pt}\\
+  \qquad \hoUnifPb \times \mapStore \times \linkStore_0 = \{ (t,m,l) | s \in \foUnifPb, \C{s}{t}{m}{l} \}\vspace{2pt}\\
   \qquad \runHD{\hoUnifPb}{\mathcal{N}}{\linkStore}\vspace{2pt}\\
   \qquad \D{\sigma_{\mathcal{N}}}{\mapStore}{\linkStore_{\mathcal{N}}}{\rho_{\mathcal{N}}}
 \end{array}
@@ -719,7 +719,10 @@ to debug a logic program in \Fo{} by looking at its execution trace in
 We also claim that \hrun handles terms outside \llambda in the following sense:
 
 \begin{proposition}[Fidelity recovery]\label{prop:fidelity-recovery} 
-In the context of \hrun, if $\sigma_{p-1} \hoUnifPb_{p} \in \llambda$ then
+In the context of \hrun, if 
+$\rho_{p-1} \foUnifPb_{p} \in \llambda$ 
+(even if $\;\foUnifPb_{p} \not\in \llambda$)
+then
 $$
 \stepF{\foUnifPb}{p}{\rho_{p-1}}{\rho_p} \Leftrightarrow
 \stepH{\hoUnifPb}{p}{\sigma_{p-1}}{\linkStore_{p-1}}{\sigma_{p}}{\linkStore_p}
@@ -738,6 +741,7 @@ $F \appsep a \UnifRel a$: the second problem is not in \llambda and has two
 unifiers, namely $\sigma_1 = \{~ F \mapsto \lambda x.x ~\}$ and
 $\sigma_2 = \{~ F \mapsto \lambda x.a ~\}$. The first problem picks $\sigma_2$
 making the second problem re-enter \llambda.
+\todo{say that this is runtime, while the other fidelity is compile time}
 
 \subsection{The solution (in a nutshell)}
 \label{sec:nutshell}
@@ -820,7 +824,7 @@ $$
 \noindent
 We claim our compiler validates the following property: 
 
-\begin{proposition}[\wellb-enforcing]\ref{prop:w-enforcing}
+\begin{proposition}[\wellb-enforcing]\label{prop:w-enforcing}
   Given two terms $s_1$ and $s_2$, if $\exists \rho, \rho s_1 \Eo \rho s_2$,
   then 
   $$
@@ -830,6 +834,7 @@ We claim our compiler validates the following property:
 \end{proposition}
 
 \noindent
+\todo{dire perchè W(T), dire che il converse non vale (alcuni check li fa la progress)}
 Note that the property holds for any substitution, it could be given by an
 oracle and not necessarily a most general one, and for any terms,
 in particular terms in $\maybebeta{} ~\cup~ \maybeeta{} ~\cup~ \notllambda{}$.
