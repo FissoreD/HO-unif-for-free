@@ -36,6 +36,7 @@
 
 \newtheorem{invariant}{Invariant}
 \crefname{invariant}{invariant}{invariants}
+\crefname{equation}{property}{properties}
 
 
 \def\ol{\acronym{ol}} % object language
@@ -1238,8 +1239,7 @@ trivial, since the terms are beta normal beta just builds an app. \noteD{Reformu
 
 
 \begin{lemma}
-Properties \ref{prop:correct-ml} and
-\ref{prop:complete-ml} hold for the implementation of \Uo above
+\Cref{prop:correct-ml,prop:complete-ml} hold for the implementation of \Uo above
 \end{lemma}
 \begin{proof}[Proof sketch]
  In this setting \Ee is as strong as
@@ -1263,8 +1263,8 @@ Since the mapping is a bijection occur check in \Ho{} corresponds to occur
 check in \Fo{}.
 \end{proof}
 
-\begin{lemma} Properties simulation (\ref{prop:simulation}) and
-fidelity (\ref{prop:fidelity}) hold
+\begin{lemma} \Fullref{prop:simulation} and
+\fullref{prop:fidelity} hold
 \end{lemma}
 \begin{proof}[Proof sketch]
 Since \elpiIn{progress1} is trivial \fstep and \hstep are the same, that is
