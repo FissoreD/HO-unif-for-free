@@ -751,7 +751,10 @@ with an accessory \emph{link} that represents a suspended unification problem
 $h \Ue p$. As a result \Ue is ``well behaved'' on $t$, in the sense that
 it does not contradict \Eo as it would otherwise do on the
 ``problematic'' sub-terms.\\
-We now define ``problematic'' and ``well behaved'' more formally.
+We now define ``problematic'' and ``well behaved'' more formally
+and we pick the $\Diamond$ symbol since it
+stands for ``possibly'' in modal logic and all problematic terms
+are characterized by some ``uncertainty''.
 
 \begin{definition}[\maybebeta]\label{def:maybebeta}
   \maybebeta is the set of terms of the form $X \appsep x_1 \ldots x_n$
@@ -2277,6 +2280,8 @@ can be easily introduced in our unification procedure, by adding new custom
 % \noteD{Paragraph for decompile in case of \maybebeta}
 Decompilation of \linkbeta is possible by extending \elpiIn{commit-link} with
 new heuristics.
+\todo{cita paper su estensioni a llam via sospensione etc}
+\todo{cita teyjus (1) era 2nd order HO (huet's algorithm), teyjus 2 è llam ma sospende i disagreement pairs fuori da llam}
 
 
 \section{Actual implementation in Elpi}\label{sec:implementation}
