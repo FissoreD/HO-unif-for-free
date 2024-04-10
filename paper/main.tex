@@ -927,7 +927,7 @@ The compiler establishes a mapping between variables of the two languages.
 Each \elpiIn{hvariable} is stored in the mapping together with
 its arity so that the code of \ref{clause:malloc} below can preserve:
 
-\begin{invariant}[Unification variable arity]
+\begin{invariant}[Unification-variable arity]
   Each variable \elpiIn{A}
   in \Ho has a (unique) arity \elpiIn{N} and each occurrence~
   \elpiIn{(uva A L)} is such that \elpiIn{(len L N)} holds
@@ -1851,15 +1851,15 @@ We delay at the end of  next section an example of \linketa progression due to
 \progressetaright
 
 
-\section{Enforcing Invariant~\ref{inv:uvaarity}}
+\section{Enforcing inv.: \NoCaseChange{\nameref{inv:uvaarity}}}
 \label{sec:invariant1}
 
 We report here the problem given in \cref{sec:basic-comp-limitations} where
 $X$ is used with two different arities and the output of the compilation does
-not respect \cref{inv:map-bijective} (merging the two mappings
-for $s$ would break \cref{inv:uvaarity}).
-In this section we explain how to replace the duplicate mapping with some
-\linketa{} in order to restore the invariants.
+not respect \cref{inv:map-bijective}. Moreover, merging the two mappings\noteD{TODO: da cambiare 488 in tex}
+for $s$ would break \fullref{inv:uvaarity}.
+In this section we explain how to replace the duplicate mapping with
+\linketa in order to restore the invariants.
 % make test ONLY=7001 TEX=tex
 \printAlll
   {{{\lambda x.\lambda y.(X\appsep y\appsep x),\lambda x.\lambda y.x},
@@ -1930,14 +1930,12 @@ After deduplication the compiler output is as follows:
     {\eta,x,B_{x},\lambda y.C_{y x}}}}
 
 In this example, $\hoUnifPb_1$ assigns $A$ which triggers $\linkStore_3$ and
-then $\linkStore_4$ by \cref{def:progressetaleft}. $C_{yx}$ is therefore
+then $\linkStore_4$ by \progressetaleft. $C_{yx}$ is therefore
 assigned to $x$ (the second variable of its scope). We can finally see the
-\progressetaright of $\linkStore_1$: its \rhs is now $\lambda y.y$ ($C_{xy}$
-gives $y$). Since it is no more in \maybeeta, $\lambda y.y$ is unified with
-$E_x$. Moreover, $\linkStore_2$ is also triggered due to
-\cref{def:progressetaright}: $\lambda x.(f \appsep (\lambda y.y) \appsep x)$ is
-$\eta$-reducible to $f \appsep (\lambda y.y)$ which is a term not starting with
-the \elpiIn{lam} constructor.
+\progressetaright of $\linkStore_1$: its \rhs is now $\lambda y.y$ (the term $C_{xy}$
+reduces to $y$). Since it is no more in \maybeeta, $\lambda y.y$ is unified with
+$E_x$. After the execution of the remaining \hstep, we obtain the 
+following \Fo{} substitution $\rho = \{X := \lambda x.\lambda y.y, Y := (f\appsep \lambda x.x)\}$.
 
 % After unification of the two terms, $X$ is assigned to $\lambda x.\lambda y.x$.
 % This assignment makes $l_2$ to progress since the \lhs is materialized and by
@@ -1970,13 +1968,13 @@ the \elpiIn{lam} constructor.
 % \noteD[inline]{I've rewritten it, it is clearer?}
 In general, unification between \notllambda terms admits more then one
 solution and committing one of them in the substitution does not guarantee
-\cref{prop:complete}. For instance, $X \appsep a \Uo a$ 
+\cref{prop:complete-ml}. For instance, $X \appsep a \Uo a$ 
 admits two different substitutions: $\rho_1 = \{X \mapsto \lambda x.x\}$
 and $\rho_2 = \{X \mapsto \lambda \_.a\}$. Prefer one over the other may break
 future unifications.
 
-It is the case, however, that, given a list of unification problems, $\foUnifPb_1\dots
-\foUnifPb_n$ with $\foUnifPb_n$ in \notllambda, the resolution of
+Given a list of unification problems, $\foUnifPb_1\dots
+\foUnifPb_n$ with $\foUnifPb_n$ in \notllambda, it is often the case that the resolution of
 $\bigwedge_{i=0}^{n-1}\foUnifPb_i$ gives a partial substitution $\rho$, such
 that $\rho\foUnifPb_n$ falls again in \llambda.
 %
@@ -2001,11 +1999,11 @@ fact, the resolution of $\hoUnifPb_1$ gives the substitution $\sigma = \{ A
 non-unifiable problem $(\lambda x. B) \appsep a \nUe a$.
 
 To address
-this unification problem, term compilation should capture the
-terms in \notllambda and replace them with fresh variables.
-This replacement should produce links that we call \linkbeta.
+this unification problem, term compilation must recognize and replace
+\notllambda terms with fresh variables.
+This replacement produces links that we call \linkbeta.
 
-\linkbeta guarantees \cref{inv:linklhs} and the term on the \rhs has the
+\linkbeta respects \cref{inv:linklhs} and the term on the \rhs has the
 following property:
 
 \newcommand{\rhsBetaHead}{\ensuremath{X_{s_1\dots s_n}}}
@@ -2015,9 +2013,10 @@ following property:
 
 \begin{invariant}[\linkbeta \rhs]
   The \rhs of any \linkbeta has the shape \rhsBeta such that $X$ is a
-  unification variable with scope $s_1\dots s_n$ and $t_1\dots t_m$ is a list of
-  terms. This is equivalent to \\\elpiIn{app[uva X S | L]}, where \elpiIn{S}~$=
-  s_1\dots s_n$ and \elpiIn{L}~$=t_1\dots t_m$.
+  unification variable with scope $s_1\dots s_n$\footnote{with $s_1\dots s_n$
+  that are distinct names} and $t_1\dots t_m$ is a list of terms. This is
+  equivalent to \\\elpiIn{app[uva X S | L]}, where \elpiIn{S}~$= s_1\dots s_n$
+  and \elpiIn{L}~$=t_1\dots t_m$.
   \label{inv:beta-rhs}
 \end{invariant}
 
@@ -2050,17 +2049,14 @@ that \elpiIn{append Pf Extra Ag} and \elpiIn{Pf} is the largest prefix of
 the application of a fresh variable \elpiIn{C} having in scope all the free
 variables appearing in the compiled version of \elpiIn{Pf} and \elpiIn{Extra}. The
 variable \elpiIn{B}, returned has the compiled term, is a fresh variable having in
-scope all the free variables occurring in \elpiIn{Pf1} and \elpiIn{Extra1}
+scope all the free variables occurring in \elpiIn{Pf1} and \elpiIn{Extra1}.
+Note that this construction enforce \cref{inv:beta-rhs}.
 
 % In the following, we pose $X_{s_1\dots s_n}$ to represent a variable $X$ with
 % the list of distinct names $s_1\dots s_n$ as scope. Moreover, $X_{s_1\dots
 % s_n}\appsep t_1\dots t_m$ is the application of that variable to the list of
 % terms $t_1\dots t_m$. Note that \rhsBeta is equivalent to \elpiIn{app[uva N S |
 % T]}.
-
-\begin{invariant}
-  The \rhs of a \linkbeta has the shape \rhsBeta.
-\end{invariant}
 
 \begin{corollary}
   Let \rhsBeta be the \rhs of a \linkbeta, then $m > 0$.
