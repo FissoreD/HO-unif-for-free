@@ -1700,6 +1700,16 @@ when the \lhs is assigned to a variable that is the \lhs of another
   We then run $T \Ue{} T''$ (under the context $\Gamma$).
 \end{definition}
 
+\begin{lemma}
+  Let $\lambda x.t$ the \rhs of a \linketa, then $\wellb{t}$.
+  \label{lemma:unif-eta-aux}
+\end{lemma}
+
+\begin{proof}[Proof sketch]
+  By construction, every ``problematic'' term in \Fo{} is replaced with a variable
+  in the corresponding \Ho term. Therefore, $t$ is \wellb.
+\end{proof}
+
 % \noteD[inline]{Below the proof of \cref{prop:nf}, ho usato 3 lemmi ausiliari,
 % forse si può compattare in una prova più piccola?}
 \begin{lemma}
@@ -1711,11 +1721,10 @@ when the \lhs is assigned to a variable that is the \lhs of another
 \begin{proof}[Proof sketch]
   Let $\sigma$ be the substitution, which is  $\wellb(\sigma)$ (by
   \cref{prop:nf}). $\lhs \in \sigma$, therefore $\wellb(\lhs)$. By
-  \cref{def:progressetaleft}, if 1) \lhs is a name, a constant of an
+  \progressetaleft, if 1) \lhs is a name, a constant or an
   application, then, $\lambda x.\lhs \appsep x$ is unified with \rhs. By
-  \cref{inv:link-eta-right}, $\rhs = \lambda x. t$, therefore $\wellb(t)$.
-  Otherwise, 2) \lhs has \elpiIn{lam} as functor, \rhs should not be an
-  $\eta$-expansion, so, $\wellb(\rhs)$. In both cases, unification is
+  \cref{inv:link-eta-right} and \cref{lemma:unif-eta-aux}, $\rhs = \lambda x. t$ and $\wellb(t)$.
+  Otherwise, 2) \lhs has \elpiIn{lam} as functor. In both cases, unification is
   performed between terms in \wellb.
 \end{proof}
 
@@ -1727,10 +1736,10 @@ when the \lhs is assigned to a variable that is the \lhs of another
 
 \begin{proof}[Proof sketch]
   \lhs is variable, and, by \cref{def:progressetaright}, \rhs is either no more
-  a \maybeeta, i.e. \rhs is not a $\eta$-expansion and, so, $\wellb(\rhs)$.
-  Otherwise, \rhs can reduce to a term which cannot be a $\eta$-expansion, and,
-  so, $\wellb(\rhs)$. In both cases, unification is done between terms in
-  \wellb.
+  a \maybeeta, i.e. \rhs is not a $\eta$-expansion and, so, $\wellb(\rhs)$,
+  otherwise, \rhs can reduce to a term which cannot be a $\eta$-expansion, and,
+  so, $\wellb(\rhs)$. In both cases, the unification between \rhs and \lhs
+  is done between terms that are in \wellb.
 \end{proof}
 
 \begin{lemma}
@@ -1740,9 +1749,9 @@ when the \lhs is assigned to a variable that is the \lhs of another
 \end{lemma}
 
 \begin{proof}
-  The unification is done between the \rhs of two
-  \linketa. Both \rhs has the shape $\lambda x.t$, with $\wellb(t)$, therefore,
-  the unification is done between well-behaved terms.
+  The unification is done between the \rhs of two \linketa. Both \rhs has the
+  shape $\lambda x.t$, and by \cref{lemma:unif-eta-aux}, $\wellb(t)$.
+  Therefore, the unification is done between well-behaved terms.
 \end{proof}
 
 \begin{lemma}
@@ -1754,9 +1763,6 @@ when the \lhs is assigned to a variable that is the \lhs of another
   By \cref{lemma:unif-eta-1,lemma:unif-eta-2,lemma:unif-eta-3}, every
   unification performed by the activation of a \linketa is done between
   terms in \wellb, therefore, the substitution remains \wellb.
-  \noteD[inline]{Bisogna aggiungere un lemma nella \cref{sec:nutshell} che dice che
-  unificare due termini in \wellb, in una $\sigma$, tale che $\wellb(\sigma)$, 
-  non invalida \wellb}
 \end{proof}
 
 \begin{lemma}
