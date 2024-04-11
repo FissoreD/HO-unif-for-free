@@ -1816,8 +1816,12 @@ when the \lhs is assigned to a variable that is the \lhs of another
 \end{proof}
 
 \begin{theorem}[Fidelity in \maybeeta]
-  The introduction 
-  of \linketa guarantees \fullref{prop:fidelity} 
+  Given a list of unification problems \foUnifPb, such that 
+  $\forall t, t\in\subterm{\foUnifPb} \land t \notin \notllambda$,
+  the introduction 
+  of \linketa guarantees \fullref{prop:fidelity}.
+  \footnote{We also suppose that any higher-order variable is always applied with
+  the same number of arguments. This problem is addressed in \cref{sec:invariant1}}
   \label{lemma:fidelity-maybeeta}
 \end{theorem}
 
@@ -1878,13 +1882,12 @@ We delay at the end of  next section an example of \linketa progression due to
 %\section{Enforcing inv.: \NoCaseChange{\nameref{inv:uvaarity}}}
 \section{Making \mapStore a bijection}
 \label{sec:invariant1}
-\todo{l'esempio è sparito}
-We report here the problem given in \cref{sec:basic-comp-limitations} where
-$X$ is used with two different arities and the output of the compilation does
-not respect \cref{inv:map-bijective}. Moreover, merging the two mappings
-for $s$ would break \fullref{inv:uvaarity}.
-In this section we explain how to replace the duplicate mapping with
-\linketa in order to restore the invariants.
+
+In \cref{sec:grounwork}, we introduced the definition of ``memory map'' (\mapStore).
+This memory allows to decompile the \Ho terms back to the object language.
+It is the case that, while solving unification problems, a same unification
+variable $X$ is used multiple times with different arities.
+%
 % make test ONLY=7001 TEX=tex
 \printAlll
   {{{\lambda x.\lambda y.(X\appsep y\appsep x),\lambda x.\lambda y.x},
@@ -1898,15 +1901,28 @@ In this section we explain how to replace the duplicate mapping with
     {\eta,,A,\lambda x.B_{x}},
     {\eta,x,B_{x},\lambda y.C_{y x}}}}
 
-We see that the \elpiIn{maybe-eta} as identified $\lambda xy.X \appsep y \appsep
-x$ and $\lambda x.f\appsep (X \appsep x) \appsep x$ and the compiler has
-replaced them with $A$ and $D$ respectively.
-% $A$ is linked with $\lambda x.B_x$, $B$
-% has arity $1$ and is $\eta$-linked with $\lambda y.C\appsep y \appsep x$ and $D$
-% is linked to the term $\lambda x.f \appsep E_{x}~x$. 
-However, the mapping \mapStore breaks \cref{inv:map-bijective}: the \Fo{}
-variable $X$ is mapped to two different \Ho variables. To address this problem
-we adjust the compiler's output with a \elpiIn{map-deduplication} procedure.
+In the unification problems \foUnifPb above, we see that $X$ is used with arity $2$ in
+$\foUnifPb_1$ and with arity $1$ in $\foUnifPb_2$. 
+By \fullref{inv:uvaarity}, we are not allowed to use a same \Ho variable to 
+represent the two occurrences of $X$.
+If we execute \hrun, we remark that the unification fails.
+There is in fact a major problem:
+\hstep is not conscious of the connection between the variables $C$ and $E$ (both corresponding to $X$),
+since no link in \linkStore puts $C$ and $E$ in relation and decompilation
+does not work properly if a \Fo{} variable is mapped to two distinct \Ho variables. 
+The two main drawbacks connected to this situation are 
+firstly the lost of \fullref{prop:fidelity} and
+secondly, if we want to guarantee at least \fullref{prop:simulation}, we should
+overcomplicate the decompilation phase. In order to ease the second
+drawback, we pose the following property:
+
+\begin{proposition}[\mapStore is a bijection]
+  Given a list of unification problems \foUnifPb, then the memory map \mapStore
+  compiled from \foUnifPb is a bijection relating the \Fo{} and the \Ho{} 
+  variables.
+\end{proposition}
+
+We finally adjust the compiler's output with a \elpiIn{map-deduplication} procedure.
 
 \newcommand{\alignarity}{\emph{align-arity}}
 \begin{definition}[\alignarity] Given two mappings
@@ -1927,7 +1943,7 @@ with lower arity to match the higher arity. Since each \linketa can
 add exactly one lambda, we need as many links as the difference between the
 two arities.
 
-\newcommand{\mapdeduplication}{\emph{map-deduplication}}
+\newcommand{\mapdeduplication}{\emph{map-deduplication}\xspace}
 
 \begin{definition}[\mapdeduplication]
   Forall mappings $m_1, m_2\in \mapStore$ such that 
@@ -1936,6 +1952,24 @@ two arities.
   we remove $m_1$ from \mapStore and
   add to \linkStore the result of $\alignarity{}~m_1~m_2$.
 \end{definition}
+
+\begin{theorem}[Fidelity with \mapdeduplication]
+  Given a list of unification problems \foUnifPb, such that 
+  $\forall t, t\in\subterm{\foUnifPb} \Rightarrow \wellb(t) \lor t \in \maybeeta$,
+  if \foUnifPb contains two same \Fo{} variables with different arities,
+  then \mapdeduplication guarantees \fullref{prop:fidelity}
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+  By the definition of \mapdeduplication, any two same \Fo{} variables $X_1, X_2$
+  with different arities are related with \linketa. 
+  If one of the two variables is instantiated, the corresponding
+  \linketa is triggered instantiating the related variable.
+  This allows to make unification fail if $X_1$ and $X_2$ are unified with 
+  different terms. Finally, since \foUnifPb contains only terms thar are
+  either \wellb or \maybeeta, by \cref{lemma:fidelity-maybeeta},
+  we can conclude the proof.
+\end{proof}
 
 If we look back the example give at the beginning of this section, we can
 deduplicate $\mapping{X}{E}{1}, \mapping{X}{C}{2}$ by removing the first mapping
@@ -1962,25 +1996,6 @@ reduces to $y$). Since it is no more in \maybeeta, $\lambda y.y$ is unified with
 $E_x$. After the execution of the remaining \hstep, we obtain the 
 following \Fo{} substitution $\rho = \{X := \lambda x.\lambda y.y, Y := (f\appsep \lambda x.x)\}$.
 
-% After unification of the two terms, $X$ is assigned to $\lambda x.\lambda y.x$.
-% This assignment makes $l_2$ to progress since the \lhs is materialized and by
-% unification, between $X$ and $\lambda x.Y_{x}$, $Y_x$ is instantiate to $\lambda
-% y.x$. Once $Y_x$ is instantiated, $l_1$ can progress, and set $H_{xy}$ to $x$.
-% After all these progresses, $l_1$ and $l_2$ are remove from \linkStore and the
-% \elpiIn{progress} fixpoint terminates. Next, the second unification problem is
-% run, and $Z$ is set to $f\appsep(\lambda x.x)$. This unification wakes up $l_3$
-% and since $Z$ starts with the \elpiIn{app} node, the $\eta$-expanded version of
-% $Z$ is unified with $\lambda x.f \appsep G_{x}~x$ and $G_x$ is set to $x$.
-% As last step, the last link is progressed and the final \Ho substitution is
-% $\{X _{} \mapsto \lambda x.\lambda y.x, Y _{x} \mapsto \lambda y.x, 
-% G _{yx} \mapsto y, Z _{} \mapsto f~\lambda x.x, 
-% H _{x} \mapsto \lambda y.y\}$.
-% The decompilation phase is only charged, in this example to solve the mappings,
-% since no suspended links remain. The only mapping in the list is
-% \mapping{F}{H}{2}, which will assign the $F$ variable in \Fo{} to $\lambda xy.y$
-
-% \noteE[inline]{dire che preserviamo l'invariante che tutte le variable sono fully-applied
-% }
 \section{Handling of \notllambda}\label{sec:beta}
 
 % On
