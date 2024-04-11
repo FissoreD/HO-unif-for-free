@@ -73,7 +73,7 @@
 \newcommand*{\eqtau}{\ensuremath{\mathrel{\overset{\mathrm{\tau}}{=}}}}
 
 \newcommand{\linketaM}[3]{\ensuremath{#1 \vdash #2 =_\eta #3}}
-\newcommand{\linkbetaM}[3]{\ensuremath{#1 \vdash #2 =_\beta #3}}
+\newcommand{\linkbetaM}[3]{\ensuremath{#1 \vdash #2 =_{\llambda} #3}}
 \newcommand{\substCell}[3]{\ensuremath{#1 \vdash #2 = #3}}
 \newcommand{\mapping}[3]{\ensuremath{#1 \mapsto #2^#3}}
 
@@ -969,7 +969,6 @@ need a link since \Ho{} variables faithfully represent
 the problematic term thanks to their scope.
 
 \input{code/comp_links}
-\todo{rename link beta to link llam?}
 
 \noindent
 The right hand side of a link, the problematic term, can occur under binders.
@@ -2130,10 +2129,10 @@ in Elpi funziona però in questi casi il termine in llam deve essere a sinistra}
 
 \subsection{Progress}
 
-\newcommand{\progBetaLL}{\emph{progress-beta-\llambda}\xspace}
-\newcommand{\progBetaRH}{\emph{progress-beta-rigid-\rhs}\xspace}
-\newcommand{\progBetaDedup}{\emph{progress-beta-dedup}\xspace}
-\newcommand{\progBetaLH}{\emph{progress-beta-rigid-\lhs}\xspace}
+\newcommand{\progBetaLL}{\emph{progress-\llambda-refine}\xspace}
+\newcommand{\progBetaRH}{\emph{progress-\llambda-\rhs}\xspace}
+\newcommand{\progBetaDedup}{\emph{progress-\llambda-dedup}\xspace}
+\newcommand{\progBetaLH}{\emph{progress-\llambda-\lhs}\xspace}
 
 We give $4$ different definitions of \linkbeta progression for a given \linkbeta
 \linkbetaM{\Gamma}{T}{\rhsBeta}, say $l$.
