@@ -974,7 +974,7 @@ the problematic term thanks to their scope.
 \noindent
 The right hand side of a link, the problematic term, can occur under binders.
 To accommodate this situation the compiler wraps \elpiIn{baselink} using
-the \elpiIn{inctx} container (see, \ref{data:inctx}).
+the \elpiIn{inctx} container (see rule~\ref{data:inctx}).
 
 \begin{invariant}[Link left hand side]\label{inv:linklhs}
   The left hand side of a suspended link
@@ -2017,6 +2017,7 @@ In the example above, we see that $\foUnifPb_1$ instantiates $X$ so that
 $\foUnifPb_2$ can be solved in \llambda.
 % \noteE[inline]{it is even a ground term, there is no unification left to perform actually}
 % \noteD[inline]{i don't understand the note}
+\noteD{Cambiare esempio riprendendo quello di enrico}
 On the other hand, we see that, 
 \Ue can't solve the compiled problems \hoUnifPb. In
 fact, the resolution of $\hoUnifPb_1$ gives the substitution $\sigma = \{ A
@@ -2109,10 +2110,6 @@ Note that this construction enforce \cref{inv:beta-rhs}.
   \llambda, or it is a term with a constructor of \elpiIn{tm} as functor.  
 \end{proof}
 
-\noteE[inline]{Dire che maybe eta fa il detect anche su 
-termini che non sono il llambda, oppure dirlo in section of maybeeta + dare un
-esempio?}
-
 \paragraph{Decompilation}
 During \elpiIn{progress}, as claimed in \fullref{inv:beta-rhs}, the decompilation
 can only have \linkbeta with not instantiated \lhs. In this case, \lhs is
@@ -2125,20 +2122,19 @@ in Elpi funziona però in questi casi il termine in llam deve essere a sinistra}
 \newcommand{\progBetaLL}{\emph{progress-beta-\llambda}\xspace}
 \newcommand{\progBetaRH}{\emph{progress-beta-rigid-\rhs}\xspace}
 \newcommand{\progBetaDedup}{\emph{progress-beta-dedup}\xspace}
-\newcommand{\progBetaLH}{\emph{progress-rigid-\lhs}\xspace}
+\newcommand{\progBetaLH}{\emph{progress-beta-rigid-\lhs}\xspace}
 
-The activation of a \linkbeta is performed when its \rhs falls under \llambda
-under a given substitution.
+We give $4$ different definitions of \linkbeta progression for a given \linkbeta
+\linkbetaM{\Gamma}{T}{\rhsBeta}, say $l$.
 
 \begin{definition}[\progBetaLL]
-  Given a substitution $\sigma$ and a \linkbeta \linkbetaM{\Gamma}{T}{\rhsBeta}
-  such that $\sigma t_1$ is a name, say $t$, and $t\notin s_1\dots s_n$. If $m =
-  0$, then the \linkbeta is removed and \lhs is unified with \rhsBetaHead.
-  If $m > 0$, then the \linkbeta is replaced by a refined version
-  $\linkbetaM{\Gamma}{T}{Y_{s_1\dots s_n,t}\appsep t_2\dots t_m}$ with reduced
-  list of arguments and $Y$ being a fresh variable. Moreover, the new link
-  \linketaM{\Gamma}{X_{s_1\dots s_n}}{\lambda x.Y_{s_1\dots s_n,x}} is added to 
-  \linkStore.
+  Given a substitution $\sigma$, where $\sigma t_1$ is a name, say $t$, and
+  $t\notin s_1\dots s_n$. If $m = 0$, then $l$ is removed and \lhs is
+  unified with \rhsBetaHead. If $m > 0$, then $l$ is replaced by a
+  refined version $\linkbetaM{\Gamma}{T}{Y_{s_1\dots s_n,t}\appsep t_2\dots
+  t_m}$ with reduced list of arguments and $Y$ being a fresh variable. Moreover,
+  the new link \linketaM{\Gamma}{X_{s_1\dots s_n}}{\lambda x.Y_{s_1\dots s_n,x}}
+  is added to \linkStore.
 
   % A link \linkbetaM{\Gamma}{T}{\rhsBeta} is removed from \linkStore, if given
   % the substitution $\sigma$, $\sigma t_1$ is a name, say $t$, such that, $t
@@ -2151,21 +2147,21 @@ under a given substitution.
   % % \noteE[inline]{non è chiaro. la sostituzione immagino sia la corrente, non se ne esiste una. Poi non è chiaro se otherwise si riferische a in this case. Usa un enumerate}
   % %\noteE[inline]{Is it clearer?}
   % \noteE[inline]{l1 or t1? Forse è più chiaro dire che il ilnk beta viene raffinato con link beta cone meno argomenti, Se poi il numero di argomenti extra è 0 il tutto è in llambda e quindi viene buttato via. In questo modo la terminazione è ancora più chiara perchè si vede già che prima decresce la lista di argomenti e poi il numero di beta}
-  \noteD{L'ho riformulato}
+  % \noteD{L'ho riformulato}
 \end{definition}
 
 \begin{definition}[\progBetaRH]
-  A link \linkbetaM{\Gamma}{X}{\rhsBeta} is removed from
+  $l$ is removed from
   \linkStore if \rhsBetaHead is instantiated to a term $t$ and the
   $\beta$-reduced term $t'$ obtained from the application of $t$ to
-  $l_1\dots l_m$ is in \llambda. Moreover, $X$ is unified to $t$.
+  $l_1\dots l_m$ is in \llambda. Moreover, $X$ is unified with $t$.
   \label{def:progBetaRH}
 \end{definition}
 
 % Example of this `X a = Y a'
 \begin{definition}[\progBetaDedup]
   Given a \linkbeta $l_1$ and second link $l_2 \in\linkStore$, such that they
-  share the same \lhs. The two \rhs are unified and a $l_2$ is
+  share the same \lhs. The two \rhs are unified and $l_2$ is
   removed from \linkStore.
   \label{def:progBetaDedup}
 \end{definition}
@@ -2202,7 +2198,6 @@ under a given substitution.
   % \elpiIn{progress} still terminates.
   %\noteE[inline]{is it ok?}
   \noteE[inline]{funziona. per essere più precisi io parlerei di ordine lessicografico (tipico ordine ben fondato usato per dimostrare terminazione). Nl nostro caso è la tripla (argomenti extra dei beta, numero di beta, numero di eta).}
-  \noteD{da finire}
 \end{proof}
 
 % \begin{corollary}
@@ -2221,7 +2216,7 @@ under a given substitution.
 % \end{proof}
 
 \begin{lemma}[Fidelity with \linkbeta]
-  The introduction of \linkbeta guarantees \fullref{prop:fidelity} 
+  The introduction of \linkbeta guarantees \fullref{prop:fidelity}
 \end{lemma}
 
 \begin{proof}[Proof sketch]
