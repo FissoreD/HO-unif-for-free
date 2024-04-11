@@ -2094,6 +2094,7 @@ Note that this construction enforce \cref{inv:beta-rhs}.
 % terms $t_1\dots t_m$. Note that \rhsBeta is equivalent to \elpiIn{app[uva N S |
 % T]}.
 
+\noteD{Si puo togliere se serve spazio}
 \begin{corollary}
   Let \rhsBeta be the \rhs of a \linkbeta, then $m > 0$.
 \end{corollary}
@@ -2106,6 +2107,7 @@ Note that this construction enforce \cref{inv:beta-rhs}.
   no \linkbeta is produced which contradicts our initial assumption.
 \end{proof}
 
+\noteD{Si puo togliere se serve spazio}
 \begin{corollary}
   Let \rhsBeta be the \rhs of a \linkbeta, then $t_1$ either appears in $s_1\dots s_n$ or it is 
   not a name.
@@ -2121,21 +2123,21 @@ Note that this construction enforce \cref{inv:beta-rhs}.
 \end{proof}
 
 \paragraph{Decompilation}
-During \elpiIn{progress}, as claimed in \fullref{inv:beta-rhs}, the decompilation
-can only have \linkbeta with not instantiated \lhs. In this case, \lhs is
-unified with \rhs.
-\todo{qui falliamo, nella 7.3 dire che LHS è in llambda quindi LSH = Ugly può funzionare,
-in Elpi funziona però in questi casi il termine in llam deve essere a sinistra}.
+We suppose that the unification of the object language rejects any unification
+between two terms where at least one of them is not in \llambda 
+(this includes unifications like $X = Y\appsep Z$ and $X\appsep Y = X \appsep Y$).
+Therefore, a failure is thrown if any \linkbeta remains in \linkStore at the
+begin of decompilation, i.e. all \linkbeta should be solved before decompilation.
 
 \subsection{Progress}
 
 \newcommand{\progBetaLL}{\emph{progress-\llambda-refine}\xspace}
 \newcommand{\progBetaRH}{\emph{progress-\llambda-\rhs}\xspace}
-\newcommand{\progBetaDedup}{\emph{progress-\llambda-dedup}\xspace}
-\newcommand{\progBetaLH}{\emph{progress-\llambda-\lhs}\xspace}
+% \newcommand{\progBetaDedup}{\emph{progress-\llambda-dedup}\xspace}
+\newcommand{\progBetaFail}{\emph{progress-\llambda-fail}\xspace}
 
-We give $4$ different definitions of \linkbeta progression for a given \linkbeta
-\linkbetaM{\Gamma}{T}{\rhsBeta}, say $l$.
+Given a \linkbeta $l$ of the form \linkbetaM{\Gamma}{T}{\rhsBeta}, we provide
+$4$ different activation rules:
 
 \begin{definition}[\progBetaLL]
   Given a substitution $\sigma$, where $\sigma t_1$ is a name, say $t$, and
@@ -2169,16 +2171,18 @@ We give $4$ different definitions of \linkbeta progression for a given \linkbeta
 \end{definition}
 
 % Example of this `X a = Y a'
-\begin{definition}[\progBetaDedup]
-  Given a \linkbeta $l_1$ and second link $l_2 \in\linkStore$, such that they
-  share the same \lhs. The two \rhs are unified and $l_2$ is
-  removed from \linkStore.
-  \label{def:progBetaDedup}
-\end{definition}
+% \begin{definition}[\progBetaDedup]
+%   Given a \linkbeta $l_1$ and second link $l_2 \in\linkStore$, such that they
+%   share the same \lhs. The two \rhs are unified and $l_2$ is
+%   removed from \linkStore.
+%   \label{def:progBetaDedup}
+% \end{definition}
 
-\begin{definition}[\progBetaLH]
-  Given a \linkbeta with rigid \lhs, the unification fails.
-  \label{def:progBetaLH}
+\begin{definition}[\progBetaFail]
+  If it exists a link $l' \in \linkStore$ with same \lhs as $l$, or the \lhs 
+  of $l$ become rigid, then unification fail.
+  \footnote{This is a consequence of what claimed in \linkbeta decompilation}
+  \label{def:progBetaFail}
 \end{definition}
 
 \begin{lemma}
@@ -2194,8 +2198,8 @@ We give $4$ different definitions of \linkbeta progression for a given \linkbeta
   \linkbeta $l^m$ has no more arguments and is removed from \linkStore.
   Note that at the $m^{th}$ iteration, $m$ new \linketa have been added to
   \linkStore, however, by \cref{lemma:prog-eta-terminates}, the algorithm
-  terminates. Finally \progBetaDedup (resp. \progBetaLH) also guarantees termination since 
-  it removes a link from \linkStore (resp. immediately fails).  
+  terminates. Finally \progBetaFail also guarantees termination since 
+  it makes \elpiIn{progress} immediately fails.
 
   % \Cref{def:progBetaRH} makes \elpiIn{progress} terminates, since it makes a
   % \linkbeta disappear from \linkStore. On the other hand, \cref{def:progBetaLL},
@@ -2225,9 +2229,9 @@ We give $4$ different definitions of \linkbeta progression for a given \linkbeta
 %   as a variable as a scope which is still in \llambda. 
 % \end{proof}
 
-\begin{lemma}[Fidelity with \linkbeta]
+\begin{theorem}[Fidelity with \linkbeta]
   The introduction of \linkbeta guarantees \fullref{prop:fidelity}
-\end{lemma}
+\end{theorem}
 
 \begin{proof}[Proof sketch]
   Let \hoUnifPb a unification problem and $\sigma$ a substitution
@@ -2296,15 +2300,17 @@ gives the final substitution $\sigma = \{A \mapsto \lambda x.B, B \mapsto C, C
 \mapsto a\}$ which is decompiled into $\rho = \{X \mapsto \lambda x.a, Y \mapsto
 a\}$.
  
-\subsection{Relaxing \fullref{def:progBetaLH}}
+\subsection{Relaxing \fullref{def:progBetaFail}}
 
 \newcommand{\progBetaNoLLWait}{\emph{progress-beta-\notllambda}}
 
 % from https://www.cs.mcgill.ca/~bpientka/papers/unif_miller60.pdf
-Working with terms in \llambda is sometime too restrictive. There exists systems
-such as $\lambda$Prolog~\cite{lamProlog}, Abella~\cite{gacek2008abella}, which 
+Working with terms in \llambda is sometime too restrictive \cite{Abel2018ExtensionsTM}. 
+There exists systems
+such as $\lambda$Prolog~\cite{lamProlog} which 
 delay the resolution of \notllambda unification problems if the substitution
-is not able to put them in \llambda.
+is not able to put them in \llambda. For example in 
+\noteD{Teijus}
 %
 % make test ONLY=7005 TEX=tex
 \printAlll
