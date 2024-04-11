@@ -71,11 +71,11 @@ Explain builtin name (can be implemented by loading name after each pi)
           ho.subst -> ho.subst -> links -> o.
   progress-beta-link-aux T1 T2 S1 S2 [] :-  is-in-pf T2, !,
     (T1 ==l T2) S1 S2.
-  progress-beta-link-aux T1 T2 S S [@val-link-beta T1 T2] :- !.
+  progress-beta-link-aux T1 T2 S S [@val-link-llam T1 T2] :- !.
 
   type progress-beta-link ho.tm -> ho.tm -> ho.subst -> 
         ho.subst -> links -> o.
-  progress-beta-link T (ho.app[ho.uva V Scope | L] as T2) S S2 [@val-link-beta T T2] :- 
+  progress-beta-link T (ho.app[ho.uva V Scope | L] as T2) S S2 [@val-link-llam T T2] :- 
     arity T Arity, len L ArgsNb, ArgsNb >n Arity, !,
     minus ArgsNb Arity Diff, mem.new S V1 S1,
     eta-expand (ho.uva V1 Scope) Diff T1,
@@ -91,7 +91,7 @@ Explain builtin name (can be implemented by loading name after each pi)
     make-eta-link Scope1Len Scope2Len Ad1 Ad2 [] LinkEta S2 S3,
     if (L2 = []) (NewLinks = LinkEta, T2 = ho.uva Ad2 Scope2) 
       (T2 = ho.app [ho.uva Ad2 Scope2 | L2], 
-      NewLinks = [@val-link-beta T T2 | LinkEta]).
+      NewLinks = [@val-link-llam T T2 | LinkEta]).
 
   progress-beta-link T1 (ho.app[ho.uva _ _ | _] as T2) _ _ _ :- 
     not (T1 = ho.uva _ _), !, fail.
@@ -99,7 +99,7 @@ Explain builtin name (can be implemented by loading name after each pi)
   progress-beta-link (ho.uva _ _ as T) (ho.app[ho.uva _ _ | _] as T2) S1 _ _ :- 
     occur-check-err T T2 S1, !, fail.
 
-  progress-beta-link T1 (ho.app[ho.uva _ _ | _] as T2) H H [@val-link-beta T1 T2] :- !.
+  progress-beta-link T1 (ho.app[ho.uva _ _ | _] as T2) H H [@val-link-llam T1 T2] :- !.
 
   progress-beta-link T1 (ho.app [Hd | Tl]) S1 S2 B :-
     ho.beta Hd Tl T3, 
@@ -114,7 +114,7 @@ Explain builtin name (can be implemented by loading name after each pi)
   solve-link-abs (@val-link-eta A B) NewLinks S S1 :- !,
     progress-eta-link A B S S1 NewLinks.
 
-  solve-link-abs (@val-link-beta A B) NewLinks S S1 :- !,
+  solve-link-abs (@val-link-llam A B) NewLinks S S1 :- !,
     progress-beta-link A B S S1 NewLinks.
 
   type take-link link -> links -> link -> links -> o.
@@ -159,7 +159,7 @@ Explain builtin name (can be implemented by loading name after each pi)
   commit-links-aux (@val-link-eta T1 T2) H1 H2 :- 
     ho.deref H1 T1 T1', ho.deref H1 T2 T2',
     (T1' ==l T2') H1 H2.
-  commit-links-aux (@val-link-beta T1 T2) H1 H2 :- 
+  commit-links-aux (@val-link-llam T1 T2) H1 H2 :- 
     ho.deref H1 T1 T1', ho.deref H1 T2 T2',
     (T1' ==l T2') H1 H2.
   commit-links-aux (ho.abs B) H H1 :- 

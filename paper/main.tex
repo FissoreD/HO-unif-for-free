@@ -64,7 +64,7 @@
 
 \newcommand{\linkMacro}[1]{\ensuremath{#1}\texttt{-link}\xspace}
 
-\newcommand{\linkbeta}{\linkMacro{\beta}}
+\newcommand{\linkbeta}{\linkMacro{\llambda}}
 \newcommand{\linketa} {\linkMacro{\eta}}
 
 \newcommand{\Fo}{\ensuremath{\mathcal{F}_{\!o}\xspace}} % space non va
@@ -992,7 +992,7 @@ terms under a context.
 The equality sign is subscripted with
 kind of \elpiIn{baselink}. For example $\linkbetaM{x}{A_x}{F_x~a}$ corresponds to:
 \begin{elpicode}
-abs x\ val (link-beta (uva A [x]) (app[uva F [x],con "a"]))
+abs x\ val (link-llam (uva A [x]) (app[uva F [x],con "a"]))
 \end{elpicode}
 
 \subsection{Notational conventions}\todo{move away}
@@ -2020,24 +2020,20 @@ that $\rho\foUnifPb_n$ falls again in \llambda.
 %
 % make test ONLY=7003 TEX=TEX + deactivate beta tex
 \printAlll
-  {{{X,\lambda x.Y},
+  {{{X,\lambda x.a},
     {(X\appsep a),a}}}
-  {{{A,\lambda x.B},
+  {{{A,\lambda x.a},
     {(A\appsep a),a}}}
-  {{{Y,B,0},
-    {X,A,0}}}
+  {{{X,A,0}}}
   {{}}
 
 In the example above, we see that $\foUnifPb_1$ instantiates $X$ so that
 $\foUnifPb_2$ can be solved in \llambda.
-% \noteE[inline]{it is even a ground term, there is no unification left to perform actually}
-% \noteD[inline]{i don't understand the note}
-\noteD{Cambiare esempio riprendendo quello di enrico}
 On the other hand, we see that, 
 \Ue can't solve the compiled problems \hoUnifPb. In
 fact, the resolution of $\hoUnifPb_1$ gives the substitution $\sigma = \{ A
-\mapsto \lambda x. B\}$, but the dereferencing of $\hoUnifPb_2$ gives the 
-non-unifiable problem $(\lambda x. B) \appsep a \nUe a$.
+\mapsto \lambda x. a\}$, but the dereferencing of $\hoUnifPb_2$ gives the 
+non-unifiable problem $(\lambda x. a) \appsep a \nUe a$.
 
 To address
 this unification problem, term compilation must recognize and replace

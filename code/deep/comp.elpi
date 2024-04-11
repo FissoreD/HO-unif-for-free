@@ -33,21 +33,21 @@ namespace comp {
 %SNIP: comp_links
   kind baselink type.
   type link-eta  tm -> tm -> baselink.
-  type link-beta tm -> tm -> baselink.
+  type link-llam tm -> tm -> baselink.
   typeabbrev link (inctx baselink).
   typeabbrev links (list link).
 %ENDSNIP
 
   macro @val-link-eta T1 T2 :- ho.val (link-eta T1 T2).
-  macro @val-link-beta T1 T2 :- ho.val (link-beta T1 T2).
+  macro @val-link-llam T1 T2 :- ho.val (link-llam T1 T2).
 
 
   type get-lhs link -> tm -> o.
-  get-lhs (val (link-beta A _)) A.
+  get-lhs (val (link-llam A _)) A.
   get-lhs (val (link-eta A _)) A.
 
   type get-rhs link -> tm -> o.
-  get-rhs (val (link-beta _ A)) A.
+  get-rhs (val (link-llam _ A)) A.
   get-rhs (val (link-eta _ A)) A.
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -173,7 +173,7 @@ namespace comp {
     fold6 comp Extra Extra1 M2 M3 L1 L2 S3 S4,
     Beta = app [uva C Pf1 | Extra1],
     get-scope Beta Scope, 
-    L3 = [val (link-beta (uva B Scope) Beta) | L2].
+    L3 = [val (link-llam (uva B Scope) Beta) | L2].
 %ENDSNIP
 %SNIP: comp_base
   comp (fapp A) (app A1) M1 M2 L1 L2 S1 S2 :-            % label: rule:compapp cnt: \ensuremath{c_@}
@@ -361,7 +361,7 @@ new A B C :- mem.new A B C.
   progress-beta-llambda [] T1 T2 S1 S2 [] :- !,
     (T1 ==l T2) S1 S2.
   progress-beta-llambda Ag T1 T2 S S [L] :-
-    L = val (link-beta T1 (app [T2|Ag])).
+    L = val (link-llam T1 (app [T2|Ag])).
 
   type suspend-out-of-lam o.
   type progress-beta-force o.
@@ -374,26 +374,26 @@ new A B C :- mem.new A B C.
     T1 = app L, split {minus {len L} {len Ag}} L [HD|TL] Ag, !,
     ho.beta HD TL T,
     (Uv ==l T) S1 S2, print "End unif heuristic".
-  progress-out-llambda T1 Uv Ag S S [val(link-beta T1 (app [Uv | Ag]))] :- suspend-out-of-lam, !,
+  progress-out-llambda T1 Uv Ag S S [val(link-llam T1 (app [Uv | Ag]))] :- suspend-out-of-lam, !,
     print "Unification out of Lλ delayed".
   progress-out-llambda _ _ _ _ _ _ :- print "Unif out llambda: fail", fail.
 
   % a sx non c'è mai un app[uva _ _ | _] per costruzione
   % a dx abbiamo sempre app[uva _ N | L] dove N è nel PF e L no
   type progress-beta-link tm -> tm -> subst -> subst -> links -> o.
-  % progress-beta-link T (app[uva V Scope | L] as T2) S S2 [@val-link-beta T T2] :- 
+  % progress-beta-link T (app[uva V Scope | L] as T2) S S2 [@val-link-llam T T2] :- 
   %   arity T Arity, len L ArgsNb, ArgsNb >n Arity, !,
   %   minus ArgsNb Arity Diff, alloc S V1 S1,
   %   eta-expand (uva V1 Scope) Diff T1,
   %   (uva V Scope ==l T1) S1 S2,
   %   print "progress β big arity" {ho.pp T} "unified with" {ho.pp T1} "->" {ho.ppsubst S2}.
 
-  % this is for beta links of the form `link-beta T (app[uva N [], app[B, x] | ...])
+  % this is for beta links of the form `link-llam T (app[uva N [], app[B, x] | ...])
   % and B is instantiated to (x\x)
   % In this case, the terms on the right becomes (app[uva N [], x | L])
   % We want to put the name x in the scope of N to make HO unif, therefore, we
   % build a new var N' of arity 1, eta-linked to N and the beta links is updated
-  % New links will be: [link-beta T (app[uva N' [x] | L]), link-eta N (λx.uva N' [x])]
+  % New links will be: [link-llam T (app[uva N' [x] | L]), link-eta N (λx.uva N' [x])]
 
   progress-beta-link T (app[uva Ad1 Scope1 | [HD|TL]]) S1 S4 NewLinks :-
     append Scope1 [HD] Scope2,
@@ -406,7 +406,7 @@ new A B C :- mem.new A B C.
   progress-beta-link T1 (app[T2 | Ag]) S1 S2 L :- T2 = uva _ _, not (T1 = uva _ _), !,
     progress-out-llambda T1 T2 Ag S1 S2 L.
 
-  progress-beta-link T1 (app[uva _ _ | _] as T2) H H [@val-link-beta T1 T2] :- !, print "No β progress1".
+  progress-beta-link T1 (app[uva _ _ | _] as T2) H H [@val-link-llam T1 T2] :- !, print "No β progress1".
 
   progress-beta-link T1 (app [Hd | MS]) S1 S2 [] :- % Hd is rigid!
     ho.beta Hd MS T3, is-in-pf T3, !, 
@@ -415,7 +415,7 @@ new A B C :- mem.new A B C.
 
   progress-beta-link _ (uva _ _) _ _ _ :- !, halt "progress beta-link: invariant broken". 
 
-  progress-beta-link T1 T2 S S [val (link-beta T1 T2)] :- !, print "no progress β".
+  progress-beta-link T1 T2 S S [val (link-llam T1 T2)] :- !, print "no progress β".
 
   type solve-link-abs link -> links -> subst -> subst -> o.
   solve-link-abs (ho.abs X) R H H1 :- 
@@ -427,7 +427,7 @@ new A B C :- mem.new A B C.
     progress-eta-link A B S S1 NewLinks,
     if (NewLinks = []) (print "After progress the subst is" {ho.ppsubst S1}) (print "No progress").
 
-  solve-link-abs (@val-link-beta A B) NewLinks S S1 :- !,
+  solve-link-abs (@val-link-llam A B) NewLinks S S1 :- !,
     print "In progress beta link for" {ho.pp A} {ho.pp B} "in" {ho.ppsubst S}, %HIDE
     progress-beta-link A B S S1 NewLinks.
 
@@ -487,7 +487,7 @@ new A B C :- mem.new A B C.
 
   type get-head-link link -> addr -> tm -> o.
   get-head-link (@val-link-eta (uva Ad _) T) Ad T :- !.
-  get-head-link (@val-link-beta (uva Ad _) T) Ad T :- !.
+  get-head-link (@val-link-llam (uva Ad _) T) Ad T :- !.
   get-head-link (ho.abs B) Ad (lam T) :- !, pi x\ get-head-link (B x) Ad (T x).
   get-head-link Link _ _ :- print "get-head-link: attention not in PF" {pplink Link} /*,halt*/, fail.
 
@@ -543,7 +543,7 @@ new A B C :- mem.new A B C.
   type deref-link subst -> link -> link -> o.
   deref-link H (ho.abs F) (ho.abs G) :- pi x\ deref-link H (F x) (G x).
   deref-link H (@val-link-eta A B) (@val-link-eta A1 B1) :- ho.deref H A A1, ho.deref H B B1.
-  deref-link H (@val-link-beta A B) (@val-link-beta A1 B1) :- ho.deref H A A1, ho.deref H B B1.
+  deref-link H (@val-link-llam A B) (@val-link-llam A1 B1) :- ho.deref H A A1, ho.deref H B B1.
 
 %SNIP: progress
   type progress links -> links -> subst -> subst -> o.
@@ -579,7 +579,7 @@ new A B C :- mem.new A B C.
     ho.deref H1 T1 T1', ho.deref H1 T2 T2',
     print "Start decompl-η of" {ho.pp T1'} "and" {ho.pp T2'} "in" {ho.ppsubst H1}, !,
     (T1' ==l T2') H1 H2.
-  commit-links-aux (@val-link-beta T1 T2) H1 H2 :- 
+  commit-links-aux (@val-link-llam T1 T2) H1 H2 :- 
     ho.deref H1 T1 T1', ho.deref H1 T2 T2',
     print "Start decompl-β of" {ho.pp T1'} "and" {ho.pp T2'}, !,
     (T1' ==l T2') H1 H2.
@@ -700,7 +700,7 @@ new A B C :- mem.new A B C.
   pplink-latex-aux [] (ho.abs F) [A|AS] OP B C :- 
     pi x\ std.any->string x A, pplink-latex-aux [] (F x) AS OP B C.
   pplink-latex-aux BN (@val-link-eta X Y) [] "\\eta" B C :- ho.pp1 BN X B, ho.pp1 BN Y C.
-  pplink-latex-aux BN (@val-link-beta X Y) [] "\\beta" B C :- ho.pp1 BN X B, ho.pp1 BN Y C.
+  pplink-latex-aux BN (@val-link-llam X Y) [] "\\beta" B C :- ho.pp1 BN X B, ho.pp1 BN Y C.
 
   type ppctx list string -> string -> o.
   ppctx [] "".
@@ -717,7 +717,7 @@ new A B C :- mem.new A B C.
   pplink L S :- tex, !, pplink-latex L S.
   pplink (ho.abs F) S :- pi x\ std.any->string x N, pplink (F x) S1, S is N ^ " " ^ S1.
   pplink (@val-link-eta A B) S :- S is "|- " ^ {ho.pp A} ^ " =η= " ^ {ho.pp B}.
-  pplink (@val-link-beta A B) S :- S is "|- " ^ {ho.pp A} ^ " =β= " ^ {ho.pp B}.
+  pplink (@val-link-llam A B) S :- S is "|- " ^ {ho.pp A} ^ " =β= " ^ {ho.pp B}.
 
   type pplinks links -> list string -> o.
   pplinks L R :- forall2 pplink L R.
