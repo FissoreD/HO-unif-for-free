@@ -1996,8 +1996,11 @@ $E_x$. After the execution of the remaining \hstep, we obtain the
 following \Fo{} substitution $\rho = \{X := \lambda x.\lambda y.y, Y := (f\appsep \lambda x.x)\}$.
 
 \section{Handling of \notllambda}\label{sec:beta}
-\noteD[inline]{Dire che OL fallisce tutte le unif not in llambda, e poi modificare 
-le progress e la decomp}
+
+In this section we suppose the unification of the object language between two
+terms $t_1$ and $t_2$ to fail each time at least one of the between $t_1$ or
+$t_2$ is outside $\llambda$. This means for instance that $X \nUo Y \appsep Z$ and 
+$X\appsep Y \nUo X\appsep Y$.
 
 % On
 % the other hand, we also point out that the \maybeeta detection spot out
@@ -2125,10 +2128,7 @@ Note that this construction enforce \cref{inv:beta-rhs}.
 \end{proof}
 
 \paragraph{Decompilation}
-We suppose that the unification of the object language rejects any unification
-between two terms where at least one of them is not in \llambda 
-(this includes unifications like $X = Y\appsep Z$ and $X\appsep Y = X \appsep Y$).
-Therefore, a failure is thrown if any \linkbeta remains in \linkStore at the
+A failure is thrown if any \linkbeta remains in \linkStore at the
 begin of decompilation, i.e. all \linkbeta should be solved before decompilation.
 
 \subsection{Progress}
@@ -2183,7 +2183,6 @@ $4$ different activation rules:
 \begin{definition}[\progBetaFail]
   If it exists a link $l' \in \linkStore$ with same \lhs as $l$, or the \lhs 
   of $l$ become rigid, then unification fail.
-  \footnote{This is a consequence of what claimed in \linkbeta decompilation}
   \label{def:progBetaFail}
 \end{definition}
 
