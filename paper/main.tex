@@ -1261,10 +1261,27 @@ context where input terms are $\beta\eta$-normal and all is \wellb,
   
 \section{Handling of \maybebeta}\label{sec:llam}
 
-\paragraph{Detection} trivial, pattern-fragment.
+A first problem we encounter when making unification between terms that are
+well behaved is the need to treat higher-order variables. 
+%
+% make test ONLY=7006 TEX=tex
+\printAlll
+  {{{\lambda x.(f\appsep (X\appsep x)\appsep a),\lambda x.(f\appsep x\appsep a)}}}
+  {{{\lambda x.(f\appsep (A\appsep x)\appsep a),\lambda x.(f\appsep x\appsep a)}}}
+  {{{X,A,0}}}
+  {{}}
+
+In the example above, we can note that the very basilar compilation given in 
+the previous section is not able to make the \Ho unification problem succeeds.
+The unification of $T_1$ fails while trying to unifying $A \appsep x$ and $x$.
+This is due to the fact that $A \appsep x$ (equivalent to \elpiIn{app[uva A [], x]})
+is represented as the application of the variable $A$ to the name $x$.
+In order to exploit the higher-order unification algorithm of the meta language,
+we need to compile the \Fo{} term $X\appsep x$ into the \Ho term $A_x$.
+
 \subsection{Compilation and decompilation}
 
-The following rule is inserted just before rule~\ref{rule:compapp}.
+In order to address this problem, we add the following rule before rule~\ref{rule:compapp}.
 
 \input{code/comp_base_beta}
 
@@ -1280,10 +1297,12 @@ substitution, rather than just crafting one as presented in
 section~\ref{sec:problem-statement}. The reason is that the algorithm folds
 over a term, updating a substitution while it traverses it.\noteE[inline]{explain better}
 
-\paragraph{Decompilation} since no link, nothing new
+\paragraph{Decompilation} Since no link is created by the compilation of 
+\maybebeta terms, no modification should be done
+to the \elpiIn{commit-link} predicate.
 
-\paragraph{Progress} since ML unif is complete here, no
-need to move terms aside, just use uva is enough. 
+\paragraph{Progress} Similarly to decompilation, since no link is produced,
+no modification to the \elpiIn{progress} predicate is needed.
 
 \begin{lemma}
   \Cref{prop:correct-ml,prop:complete-ml} hold for the implementation of \Uo

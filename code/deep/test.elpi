@@ -681,6 +681,10 @@ macro @sokl-delay N SX SS :- @sokl-call comp.suspend-out-of-lam N SX SS.
   pr ok "X = λx.Y",
 ] ["λx.a", "a"].
 
+@sokl 7006 [
+  pr ok "λx.(f (X x) a) = λx.(f x a)"
+] ["λx.x"].
+
 % TEST NON IN PF
 @sokl 9001 [
   pr (error "unif") "λx.(X b x) = λx.(X a x)"
