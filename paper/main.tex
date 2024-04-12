@@ -179,7 +179,7 @@ Calculus of Inductive Constructions (CIC) and we want to implement a
 form of proof search known as type-class~\cite{wadler89,sozeau08} resolution.
 Type-class solvers are unification based proof search procedures
 reminiscent of Prolog that back-chain lemmas taken
-from a designated database of ``type class instances''. Given this
+from a database of ``type-class instances''. Given this
 analogy with Logic Programming we want to leverage the
 Elpi~\cite{tassi:hal-01637063} meta programming language,
 a dialect of $\lambda$Prolog, already used to extend
@@ -194,7 +194,7 @@ from the Stdpp~\cite{JUNG_KREBBERS_JOURDAN_BIZJAK_BIRKEDAL_DREYER_2018}
 library. The class  \coqIn{Decision}
 identifies predicates equipped with a decision procedure, while
 \coqIn{Finite} the types whose inhabitants can be enumerated in a (finite) list.
-The following three designated type-class instances state that:
+The following three type-class instances state that:
 1) the type of natural numbers smaller than \coqIn{n}, called \coqIn{fin n},
 is finite;
 2) the predicate \coqIn{nfact n nf}, relating a natural number
@@ -226,11 +226,11 @@ The solver has to infer a value for \coqIn{P} by unifying the conclusion
 of rule 3 with the goal, and in particular it has to solve the unification
 problem \coqIn{P x = nfact x 3}. This higher order problem falls in the so
 called pattern-fragment \llambda~\cite{miller92jsc} and admits a unique
-solution $\customlabel{solution:intro}{\sigma}$ that assigns
+solution $\customlabel{solution:intro}{\rho}$ that assigns
 the term \elpiIn{~$\lambda$~x.nfact x 3} to \coqIn{P}.
 
 In order to implement such a search in Elpi we shall describe the encoding
-of CIC terms and then the encoding of instances as rules (a.k.a. clauses).
+of CIC terms and then the encoding of instances as rules.
 Elpi comes equipped with
 an Higher Order Abstract Syntax (HOAS~\cite{10.1145/53990.54010}) datatype of CIC
 terms, called \elpiIn{tm}, that features (among others) the following
@@ -244,9 +244,9 @@ type con  string -> tm.               % constants
 \end{elpicode}
 
 \noindent
-Following $\lambda$Prolog~\cite{miller_nadathur_2012}'s standard syntax,
+Following the standard syntax of $\lambda$Prolog~\cite{miller_nadathur_2012}
 the meta level binding of a variable \elpiIn{x} in an expression
-\elpiIn{e} is written <<\elpiIn{x\ e}>>, and square brackets delimit a
+\elpiIn{e} is written <<\elpiIn{x\ e}>>, while square brackets delimit a
 list of terms separated by comma. For example the term
 <<\coqIn{~$\forall$~y:t, nfact y 3}>> is encoded as follows:
 
@@ -269,14 +269,14 @@ decision (all A x\ app [P, x]) :- finite A,           ~\customlabel{clause:r3}{(
 \end{elpicode}
 
 \noindent
-Unfortunately this intuitive encoding of rule \ref{clause:r3} does not work,
+Unfortunately this intuitive encoding of rule \ref{clause:r3} does not work
 since it uses the predicate \coqIn{P} as a first order term: for the meta
 language its type is \elpiIn{tm}. If we try to back-chain the rule
 \ref{clause:r3} on the encoding of the goal \ref{goal:g} given below
 
 \begin{elpicode}
-decision (all (app [con"fin", con"7"]) y\              ~\customlabel{goal:g}{(g)}~
-  app [con"nfact", y, con"3"]).
+decision (all (app [con"fin", con"7"]) x\              ~\customlabel{goal:g}{(g)}~
+  app [con"nfact", x, con"3"]).
 \end{elpicode}
 
 \noindent
@@ -287,7 +287,7 @@ the two lists of terms have different lengths!
 %first order in the meta language due to the ``naive'' encoding.
 
 \begin{elpicode}
-app [con"nfact", y, con"3"] = app [P, y]               ~\customlabel{problem:p}{(p)}~
+app [con"nfact", x, con"3"] = app [P, x]               ~\customlabel{problem:p}{(p)}~
 \end{elpicode}
 
 \noindent
@@ -307,8 +307,8 @@ in its scope, the unification problem \ref{problem:pa}
 admits one solution:
 
 \begin{elpicode}
-app [con"nfact", y, con"3"] = Pm y                    ~\customlabel{problem:pa}{(p')}~
-Pm = x\ app [con"nfact", x, con"3"]                   ~\customlabel{solution:pm}{(\rho)}~
+app [con"nfact", x, con"3"] = Pm x                    ~\customlabel{problem:pa}{(p')}~
+Pm = x\ app [con"nfact", x, con"3"]                   ~\customlabel{solution:pm}{(\sigma)}~
 \end{elpicode}
 
 \noindent
@@ -328,30 +328,31 @@ of unification problems that constitute the execution of a logic program.
 In fact
 the solution for \elpiIn{P} above generates a
 (Coq) $\beta$-redex in the second premise (the predicate
-under the \elpiIn{pi w\ }\hspace{-0.4em}). We show below the premise before and
-after the instantiation of \elpiIn{P}:
+under the \elpiIn{pi w\ }\hspace{-0.4em}).
+% We show below the premise before and
+% after the instantiation of \elpiIn{P}:
 
-\begin{elpicode}
-decision (app [                   P                  , w])
-decision (app [lam A (a\ app [con"nfact", a, con"3"]), w])
-\end{elpicode}
+% \begin{elpicode}
+% decision (app [                   P                  , w])
+% decision (app [lam A (a\ app [con"nfact", a, con"3"]), w])
+% \end{elpicode}
 
-\noindent
+% \noindent
 In turn this redex prevents the rule \ref{clause:r2} to backchain properly since
 the following unification problem has no solution:
 
 \begin{elpicode}
-app[ lam A (a\ app [con"nfact", a, con"3"]) , x] =
-app[ con"nfact"                             , N, NF]
+app [ lam A (a\ app [con"nfact", a, con"3"]) , x] =
+app [ con"nfact"                             , N, NF]
 \end{elpicode}
+
 \noindent
-~\\
 The root cause of the problems we sketched in this example
 is a subtle mismatch between the equational theories of the meta language
 and the object language, that in turns makes the 
-unification procedures of the meta language weak.\\
+unification procedures of the meta language weak.
 The equational theory of the meta language Elpi encompasses
-$\eta\beta$-equivalence and its unification procedure can solve higher order
+$\eta\beta$-equivalence and its unification procedure can solve higher-order
 problems in the pattern fragment. Although 
 the equational theory of CIC is much richer, for efficiency and predictability
 reasons automatic proof search procedure typically employ a unification
@@ -359,47 +360,24 @@ procedure that only captures a $\eta\beta$-equivalence and only operates
 in \llambda. The similarity is striking, but one needs some care in order to
 simulate a logic program in CIC using the unification of Elpi.
 
-% For example:\\
-% %
-% \vspace{4pt}
-% {
-% \setlength{\tabcolsep}{2pt}
-% \begin{tabular}{lcl|}
-% \elpiIn{x\ f x} & \Ue{} & \elpiIn{f}\\
-% \elpiIn{lam A x\ app[con"f", x]} & \Uo{} & \elpiIn{con"f"} \phantom{mn} \\
-% \elpiIn{lam A x\ app[con"f", x]} & \nUe{} & \elpiIn{con"f"}
-% \end{tabular}
-% \phantom{mn}
-% \begin{tabular}{lcl}
-% \elpiIn{P x} & \Ue{} & \elpiIn{x}\\
-% \elpiIn{app[P, x]} & \Uo{} & \elpiIn{x}\\
-% \elpiIn{app[P, x]} & \nUe{} & \elpiIn{x}\\
-% \end{tabular}
-% }
-% \vspace{4pt}
-%
 \paragraph{Contributions}
 In this paper we identify a minimal language \Fo{} in which the problems
 sketched in the introduction can be formally described.
-We detail an encoding of a logic program on \Fo{} to a strongly related
-logic program in \Ho (the language of the meta language) and we show that
-the unification procedure of the meta language \Ue{} can be effectively
-used to simulate a unification procedure \Uo for the object language that
-features $\eta\beta$-conversion in the pattern-fragment.
-
-\todo{fix}\cref{sec:problem-statement} formally states the problem and gives the
-intuition behind our solution. \cref{sec:encodings} discusses alternative
-term encodings and related works. \cref{sec:grounwork} introduces
-the languages \Fo{} and \Ho{}, \cref{sec:simulation} describes a
-basic simulation of higher order logic programs.
-\cref{sec:eta,sec:invariant1} completes its equational theory
-with support for $\eta$-conversion. \cref{sec:beta} deals with the
-practical necessity of ``tolerating'' terms outside of the
-pattern-fragment and discusses how heuristic can be applied.
-Finally \cref{sec:implementation} discusses the implementation in Elpi.
-
+We detail an encoding of a logic program in \Fo{} to a strongly related
+logic program in \Ho (the language of the meta-language) and we show that
+the higher-order unification procedure of the meta language \Ue{} can be
+efficiently used to simulate a higher-order unification procedure \Uo for
+the object language that features $\eta\beta$-conversion. We show how \Uo
+can be extended with heuristics to deal with problems outside the pattern
+fragment.\\
+Section~\ref{sec:problem-statement} formally states the problem and gives the
+intuition behind our solution; \cref{sec:simulation} sets up a basic
+simulation of first-order logic programs, \cref{sec:llam} and \cref{sec:eta}
+extend it to higher-order logic programs in the pattern fragment
+while \cref{sec:beta} goes beyond the pattern fragment.
+Section \ref{sec:implementation} discusses the implementation in Elpi.\\
 The $\lambda$Prolog code discussed in the paper can be accessed at the
-URL: \url{https://github.com/FissoreD/paper-ho}.
+address \url{https://github.com/FissoreD/paper-ho}.
 
 \section{Problem statement and solution} %%%%%%%%%%%%%%%%%%%%%%
 \label{sec:problem-statement}
@@ -436,9 +414,8 @@ URL: \url{https://github.com/FissoreD/paper-ho}.
 
 Even if we encountered the problem working on CIC we devise
 a minimal setting to ease its study. In this setting we have
-a \Fo{} language (for first order) with a rich(er) equational
-theory and a \Ho{} meta language with a simpler one, and we reuse
-the unification procedure of \Ho{} in order to implement one for \Fo.
+a \Fo{} language (for first order) with a richer equational
+theory and a \Ho{} meta language with a simpler one.
 
 
 \subsection{Preliminaries: \Fo{} and \Ho{}}
