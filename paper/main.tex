@@ -759,11 +759,11 @@ and all problematic terms are characterized by some ``uncertainty''.
 \end{definition}
 
 \noindent
-An example of term \maybebeta{} is the application $F \appsep x$.
+An example of a \maybebeta{} term is the application $F \appsep x$.
 This term is problematic since the application node of
 its syntax tree cannot be used to justify a
 unification failure, i.e. by properly instantiating $F$ the term
-head constructor may become a $\lambda$, or a constant or stay an application.
+head constructor may become a $\lambda$, or a constant, or remain an application.
 
 \begin{definition}[\maybeeta]\label{def:maybeeta}
   \maybeeta is the set of terms $s$ such that $\exists \rho, \rho s$
@@ -771,12 +771,12 @@ head constructor may become a $\lambda$, or a constant or stay an application.
 \end{definition}
 
 \noindent
-An example of term $s$ in \maybeeta{} is
+An example of a term $s$ in \maybeeta{} is
 $\lambda x.\lambda y.F \appsep y \appsep x$
 since the substitution
 $\rho = \{ F \mapsto \lambda a.\lambda b.f \appsep b \appsep a\}$
-makes $\rho s = \lambda x.\lambda y.f \appsep x \appsep y$
-that is the eta long form of $f$. This term is problematic since
+makes $\rho s = \lambda x.\lambda y.f \appsep x \appsep y$,
+which is the eta long form of $f$. This term is problematic since
 its leading $\lambda$ abstraction cannot justify a
 unification failure against a constant $f$.
 
@@ -787,7 +787,7 @@ unification failure against a constant $f$.
 
 \noindent
 These terms are problematic for the very same reason terms in \maybebeta are,
-but cannot be handled directly by the unification of the meta language, that
+but they cannot be handled directly by the unification of the meta language, which
 is only required to handle terms in \llambda. Still, there exists a
 substitution $\rho$ such that $\rho s \in \llambda$.
 
@@ -856,13 +856,13 @@ $$
 \end{proposition}
 
 \noindent
-Proposition \ref{prop:w-preservation} is key to prove \cref{prop:simulation,prop:fidelity}:
-informally it says that the problematic terms moved on the side by the compiler
-are not put back by \hstep, hence \Ue{} can continue to operate properly.
+Proposition \ref{prop:w-preservation} is key to proving \cref{prop:simulation,prop:fidelity}.
+Informally, it says that the problematic terms moved on the side by the compiler
+are not reintroduced by \hstep, hence \Ue{} can continue to operate properly.
 In \cref{sec:simulation,sec:eta,sec:beta}
 we describe how the compiler recognizes terms in \maybebeta, \maybeeta and
 \notllambda and how \progress takes care of them preserving \wellb
-and granting \cref{prop:simulation,prop:fidelity,prop:fidelity-recovery}.
+and ensuring \cref{prop:simulation,prop:fidelity,prop:fidelity-recovery}.
 
 % Note that proposition \ref{prop:w-preservation} does not hold for \hrun as a whole
 % since decompilation can introduce (actually restore) problematic terms.
