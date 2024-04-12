@@ -580,11 +580,13 @@ Even if we provide an implementation of the object-language unification
 logic program.
 
 \subsection{The problem: logic-program simulation}
-\todo{dire che P e T sono liste di coppie, dire che P e T vengono anche usati come insiemi}
+% \todo{dire che P e T sono liste di coppie, dire che P e T vengono anche usati come insiemi}
 We represent a logic program \emph{run} in \Fo{} as
 a list \emph{steps} of length $\mathcal{N}$.
-At each step $p$ we unify two terms $\foUnifPb_{p_l}$ and
-$\foUnifPb_{p_r}$ taken from the set of all terms \foUnifPb.
+\foUnifPb is a list of pair of terms, each pair correspond to a unification
+problem. At each step $p$ we unify two terms $\foUnifPb_{p_l}$ and
+$\foUnifPb_{p_r}$ (the small $l$ and $r$ represent respectively the left and right 
+elements extracted from $P_p$).
 \footnote{If the same rule is used multiple times in a run we
 just consider as many copies as needed of the terms composing the
 rules, with fresh unification variables each time.}
