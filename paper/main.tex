@@ -604,11 +604,11 @@ logic-program execution.
 \newcommand{\frun}{\ensuremath{\mathrm{frun}}\xspace}
 \newcommand{\hrun}{\ensuremath{\mathrm{hrun}}\xspace}
 \newcommand{\stepF}[4]{\ensuremath{\fstep(#1,#2,#3) \mapsto #4}}
-\newcommand{\stepFD}[5]{%
-\ensuremath{#3 #1_{#2_l} \Uo #3 #1_{#2_r} \mapsto #4 \land #5 = #3 \cup #4}}
+\newcommand{\stepFD}[4]{%
+\ensuremath{#3 #1_{#2_l} \Uo #3 #1_{#2_r} \mapsto #4}}
 \newcommand{\stepH}[6]{\ensuremath{\hstep(#1,#2,#3,#4) \mapsto (#5, #6)}}
 \newcommand{\stepHD}[6]{\ensuremath{%
-#3 #1_{#2_l} \Ue #3 #1_{#2_r} \mapsto #4 \land \progress(#6,#3 \cup #4) \mapsto (#6',#5)}}
+#3 #1_{#2_l} \Ue #3 #1_{#2_r} \mapsto #4 \land \progress(#6,#4) \mapsto (#6',#5)}}
 \newcommand{\runF}[3]{\ensuremath{\frun(#1,#2) \mapsto #3_{#2}}}
 \newcommand{\runFD}[2]{\ensuremath{%
 \bigwedge_{p = 1}^{#2} \stepF{#1}{p}{\rho_{p-1}}{\rho_{p}}}}
@@ -619,9 +619,9 @@ logic-program execution.
 %
 $$
 \begin{array}{l}
-\stepF{\foUnifPb}{p}{\rho}{\rho''}
+\stepF{\foUnifPb}{p}{\rho}{\rho'}
 \deff
-\stepFD{\foUnifPb}{p}{\rho}{\rho'}{\rho''}\vspace{2pt}\\
+\stepFD{\foUnifPb}{p}{\rho}{\rho'}\vspace{2pt}\\
 \runF{\foUnifPb}{\mathcal{N}}{\rho}
 \deff
 \runFD{\foUnifPb}{\mathcal{N}}
