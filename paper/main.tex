@@ -152,7 +152,7 @@
 
 \end{abstract}
 
-\keywords{Logic Programming, Meta-Programming, Higher-Order Unification, Proof Automation}
+\keywords{Logic Programming, Meta-Programming, Higher-Order Unification}
 
 \maketitle
 
@@ -2155,8 +2155,8 @@ Note that this construction enforce \cref{inv:beta-rhs}.
 \end{comment}
 
 \paragraph{Decompilation}
-A failure is thrown if any \linkbeta remains in \linkStore at the
-begin of decompilation, i.e. all \linkbeta should be solved before decompilation.
+All \linkbeta should be solved before decompilation.
+If any \linkbeta remains in \linkStore, decompilation fails.
 
 \subsection{Progress}
 
