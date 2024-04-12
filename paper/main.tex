@@ -125,19 +125,19 @@
 
   The object logic we are interested in is % an extension of the latter,
   Coq's~\cite{Coq-refman} Calculus of Inductive Constructions (CIC), for which 
-  we want to implement a unification based 
+  we want to implement a higher-order unification-based 
   proof search procedure using the ML
   Elpi~\cite{dunchev15lpar}, a dialect of $\lambda$Prolog.
   Elpi's equational theory comprises
   $\eta\beta$ equivalence and comes equipped with a
-  higher order unification procedure \Ue restricted to the pattern
+  higher-order unification procedure \Ue restricted to the pattern
   fragment~\cite{miller92jsc}.
-  Elpi also comes with an encoding for CIC that works well
-  for meta-programming~\cite{tassi:hal-01637063,tassi:hal-01897468,gregoire:hal-03800154,newtc}.
-  Unfortunately this encoding, which we refer to as \Fo,
-  ``underuses'' \Ue by restricting it to first-order unification problems only.
+  Elpi comes with an encoding of CIC that works well
+  for meta-programming~\cite{tassi:hal-01637063,tassi:hal-01897468,gregoire:hal-03800154,newtc}
+  but restricts \Ue to roughly first-order unification problems only.
+  We call this basic encoding \Fo.
   
-  In this paper we propose a better-behaved encoding, \Ho,
+  In this paper we propose a better-behaved encoding \Ho,
   and show how to map unification problems in \Fo{}
   to related problems in \Ho.
     As a result we can lift the ML
@@ -146,7 +146,7 @@
   problems in the pattern fragment and finally allows
   for the addition of heuristics to deal with problems outside the
   pattern fragment. The unification procedure we build can be used to
-  effectively simulate a logic program in \Fo{} by re-using optimizations
+  efficiently simulate a logic program in \Fo{} by re-using optimizations
   provided by the ML such as clause indexing.
 
 \end{abstract}
@@ -185,8 +185,8 @@ Elpi~\cite{tassi:hal-01637063} meta programming language,
 a dialect of $\lambda$Prolog, already used to extend
 Coq in various ways~\cite{tassi:hal-01637063,tassi:hal-01897468,gregoire:hal-03800154,newtc}.
 In this paper we focus on one aspect of
-this work, precisely \emph{how to reuse the higher order unification procedure
-of the meta language in order to simulate a higher order logic program
+this work, precisely \emph{how to reuse the higher-order unification procedure
+of the meta language in order to simulate a higher-order logic program
 for the object language}.
 
 We take as an example the \coqIn{Decision} and \coqIn{Finite} type classes
@@ -2480,6 +2480,10 @@ the authors do not aim at exploiting it to the degree we want.\todo{sucks}
 \todo{cite isabelle's TC, that are baked in}
 
 \section{Conclusion}
+
+In this paper we show how to lift the meta language higher-order
+unification procedure to the object language. The resulting
+unification honours $\eta\beta$-equivalence for 
 
 Benefits: less work, reuse efficient ho unif (3x faster), indexing,
 
