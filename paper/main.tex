@@ -140,14 +140,14 @@
   In this paper we propose a better-behaved encoding \Ho,
   and show how to map unification problems in \Fo{}
   to related problems in \Ho.
-    As a result we can lift the ML
-  higher-order unification procedure to \Fo{} in a way that it
-  honours $\eta\beta$-equivalence (for CIC functions), solves
-  problems in the pattern fragment and finally allows
-  for the addition of heuristics to deal with problems outside the
-  pattern fragment. The unification procedure we build can be used to
-  efficiently simulate a logic program in \Fo{} by re-using optimizations
-  provided by the ML such as clause indexing.
+    As a result we obtain \Uo{}, a higher-order unification procedure for \Fo{}
+    that honours $\eta\beta$-equivalence (for CIC functions), solves
+  problems in the pattern fragment and allows
+  for the use of heuristics to deal with problems outside the
+  pattern fragment. Moreover, since \Uo{} delegates most of the work to \Ue,
+  it can be used to efficiently simulate a logic program in \Fo{} by
+  taking advantage of
+  unification-related optimizations of the ML, such as clause indexing.
 
 \end{abstract}
 
