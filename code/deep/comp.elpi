@@ -700,7 +700,7 @@ new A B C :- mem.new A B C.
   pplink-latex-aux [] (ho.abs F) [A|AS] OP B C :- 
     pi x\ std.any->string x A, pplink-latex-aux [] (F x) AS OP B C.
   pplink-latex-aux BN (@val-link-eta X Y) [] "\\eta" B C :- ho.pp1 BN X B, ho.pp1 BN Y C.
-  pplink-latex-aux BN (@val-link-llam X Y) [] "\\beta" B C :- ho.pp1 BN X B, ho.pp1 BN Y C.
+  pplink-latex-aux BN (@val-link-llam X Y) [] "\\llambda" B C :- ho.pp1 BN X B, ho.pp1 BN Y C.
 
   type ppctx list string -> string -> o.
   ppctx [] "".

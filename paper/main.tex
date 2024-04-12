@@ -61,7 +61,7 @@
 \newcommand{\nUe}{\ensuremath{\nUnifRel_\lambda}\xspace}
 \newcommand{\Ee}{\ensuremath{\EqualRel_\lambda}\xspace}
 \newcommand{\nEe}{\ensuremath{\nEqualRel_\lambda}\xspace}
-\newcommand{\llambda}{\ensuremath{\mathcal{L}_\lambda}\xspace}
+\newcommand{\llambda}{\ensuremath{\mathcal{L}}\xspace}
 
 \newcommand{\linkMacro}[1]{\ensuremath{#1}\texttt{-link}\xspace}
 
@@ -78,8 +78,8 @@
 \newcommand{\substCell}[3]{\ensuremath{#1 \vdash #2 = #3}}
 \newcommand{\mapping}[3]{\ensuremath{#1 \mapsto #2^#3}}
 
-\newcommand{\lhs}{\ensuremath{\mathrm{lhs}}\xspace}
-\newcommand{\rhs}{\ensuremath{\mathrm{rhs}}\xspace}
+\newcommand{\lhs}{lhs\xspace}
+\newcommand{\rhs}{rhs\xspace}
 
 \newcommand{\linkStore}{\texorpdfstring{\ensuremath{\mathbb{L}}\xspace}{L}}
 \newcommand{\mapStore}{\texorpdfstring{\ensuremath{\mathbb{M}}\xspace}{M}}
@@ -1706,7 +1706,7 @@ in any other \linketa (by \cref{def:progressetadedup}).
 \linketa are meant to delay the unification of ``problematic'' terms until
 we know for sure if the term has to be $\eta$-contracted or not.
 
-\newcommand{\progressetaleft}{\emph{progress-$\eta$-left}\xspace}
+\newcommand{\progressetaleft}{\emph{$\eta$-progress-\lhs}\xspace}
 \begin{definition}[\progressetaleft]\label{def:progressetaleft}
 A link \linketaM{\Gamma}{X}{T} is removed from \linkStore when
 $X$ becomes rigid. Let $y\in\Gamma$, there are two cases:
@@ -1718,7 +1718,7 @@ $X$ becomes rigid. Let $y\in\Gamma$, there are two cases:
 \end{enumerate}
 \end{definition}
 
-\newcommand{\progressetaright}{\emph{progress-$\eta$-right}\xspace}
+\newcommand{\progressetaright}{\emph{$\eta$-progress-\rhs}\xspace}
 \begin{definition}[\progressetaright]\label{def:progressetaright} A link
 \linketaM{\Gamma}{X}{T} is removed from \linkStore when either 1)
 $\testmaybeeta~T$ does not hold (anymore) or 2) by $\eta$-contracting $T$ to
@@ -1731,7 +1731,7 @@ There is a third case in which a link is removed from \linkStore, namely
 when the \lhs is assigned to a variable that is the \lhs of another
 \linketa.
 
-\newcommand{\progressetadedup}{\emph{progress-$\eta$-deduplicate}\xspace}
+\newcommand{\progressetadedup}{\emph{$\eta$-progress-deduplicate}\xspace}
 \begin{definition}[\progressetadedup]\label{def:progressetadedup}
   A link \linketaM{\Gamma}{X_{\vec{s}}}{T} is removed from \linkStore when
   another link \linketaM{\Delta}{X_{\vec{r}}}{T'} is in  \linkStore.
@@ -1834,12 +1834,13 @@ when the \lhs is assigned to a variable that is the \lhs of another
 \end{proof}
 
 \begin{theorem}[Fidelity in \maybeeta]
-  Given a list of unification problems \foUnifPb, such that 
-  $\forall t, t\in\subterm{\foUnifPb} \land t \notin \notllambda$,
+  % F x = z, F x y = z y
+  Given a list of unification problems \foUnifPb, such that \noteD{riprendere sec 3.1}
+  $\forall t, t\in\subterm{\foUnifPb} \land t \notin \notllambda$, \noteD{dire che M e biiettivo}
   the introduction 
   of \linketa guarantees \fullref{prop:fidelity}.
   \footnote{We also suppose that any higher-order variable is always applied with
-  the same number of arguments. This problem is addressed in \cref{sec:invariant1}}
+  the same number of arguments. This problem is addressed in \cref{sec:invariant1}}\noteD{modificare accordingly}
   \label{lemma:fidelity-maybeeta}
 \end{theorem}
 
@@ -1979,7 +1980,8 @@ two arities.
 \end{theorem}
 
 \begin{proof}[Proof sketch]
-  By the definition of \mapdeduplication, any two same \Fo{} variables $X_1, X_2$
+  By the definition of \mapdeduplication, any two occurrencies of the same \Fo{} 
+  variables $X_1, X_2$
   with different arities are related with \linketa. 
   If one of the two variables is instantiated, the corresponding
   \linketa is triggered instantiating the related variable.
@@ -2123,6 +2125,7 @@ Note that this construction enforce \cref{inv:beta-rhs}.
   Let \rhsBeta be the \rhs of a \linkbeta, then $m > 0$.
 \end{corollary}
 
+\begin{comment}
 \begin{proof}[Proof sketch]
   Assume we have a \linkbeta, by contradiction, if $m = 0$, then the original
   \Fo{} term has the shape \elpiIn{fapp[fuva M | Ag]} where \elpiIn{Ag} is a
@@ -2130,6 +2133,7 @@ Note that this construction enforce \cref{inv:beta-rhs}.
   however captured by rule~\ref{rule:complam} (from \cref{sec:compilation}) and
   no \linkbeta is produced which contradicts our initial assumption.
 \end{proof}
+\end{comment}
 
 \noteD{Si puo togliere se serve spazio}
 \begin{corollary}
@@ -2137,6 +2141,7 @@ Note that this construction enforce \cref{inv:beta-rhs}.
   not a name.
 \end{corollary}
 
+\begin{comment}
 \begin{proof}[Proof sketch]
   By construction, the lists $s_1\dots s_n$ and $t_1\dots t_m$ are built by splitting
   the list \elpiIn{Ag} from the original term \elpiIn{fapp [fuva A|Ag]}.
@@ -2145,6 +2150,7 @@ Note that this construction enforce \cref{inv:beta-rhs}.
   in $s_1\dots s_n$, otherwise $s_1\dots s_n$ is not the longest prefix in
   \llambda, or it is a term with a constructor of \elpiIn{tm} as functor.  
 \end{proof}
+\end{comment}
 
 \paragraph{Decompilation}
 A failure is thrown if any \linkbeta remains in \linkStore at the
@@ -2152,10 +2158,10 @@ begin of decompilation, i.e. all \linkbeta should be solved before decompilation
 
 \subsection{Progress}
 
-\newcommand{\progBetaLL}{\emph{progress-\llambda-refine}\xspace}
-\newcommand{\progBetaRH}{\emph{progress-\llambda-\rhs}\xspace}
+\newcommand{\progBetaLL}{\emph{\llambda-progress-refine}\xspace}
+\newcommand{\progBetaRH}{\emph{\llambda-progress-\rhs}\xspace}
 % \newcommand{\progBetaDedup}{\emph{progress-\llambda-dedup}\xspace}
-\newcommand{\progBetaFail}{\emph{progress-\llambda-fail}\xspace}
+\newcommand{\progBetaFail}{\emph{\llambda-progress-fail}\xspace}
 
 Given a \linkbeta $l$ of the form \linkbetaM{\Gamma}{T}{\rhsBeta}, we provide
 $3$ different activation rules:
@@ -2167,7 +2173,7 @@ $3$ different activation rules:
   refined version $\linkbetaM{\Gamma}{T}{Y_{s_1\dots s_n,t}\appsep t_2\dots
   t_m}$ with reduced list of arguments and $Y$ being a fresh variable. Moreover,
   the new link \linketaM{\Gamma}{X_{s_1\dots s_n}}{\lambda x.Y_{s_1\dots s_n,x}}
-  is added to \linkStore.
+  is added to \linkStore.   
 
   % A link \linkbetaM{\Gamma}{T}{\rhsBeta} is removed from \linkStore, if given
   % the substitution $\sigma$, $\sigma t_1$ is a name, say $t$, such that, $t
@@ -2211,7 +2217,7 @@ $3$ different activation rules:
 
 \begin{proof}[Proof sketch]
   Let $l$ a \linkbeta in the store \linkStore. If $l$ is activated by
-  \progBetaRH, then it disappears from \linkStore and \elpiIn{progress}
+  \progBetaRH{}, then it disappears from \linkStore and \elpiIn{progress}
   terminates. Otherwise, the \rhs of $l$ is made by a variable applied to $m$
   arguments. At each activation of \progBetaLL, $l$ is replaced by a new
   \linkbeta $l^1$ having $m-1$ arguments. At the $m^{th}$ iteration, the
@@ -2231,7 +2237,7 @@ $3$ different activation rules:
   % terminates if \linkStore is made by only \linketa and therefore
   % \elpiIn{progress} still terminates.
   %\noteE[inline]{is it ok?}
-  \noteE[inline]{funziona. per essere più precisi io parlerei di ordine lessicografico (tipico ordine ben fondato usato per dimostrare terminazione). Nl nostro caso è la tripla (argomenti extra dei beta, numero di beta, numero di eta).}
+  % \noteE[inline]{funziona. per essere più precisi io parlerei di ordine lessicografico (tipico ordine ben fondato usato per dimostrare terminazione). Nl nostro caso è la tripla (argomenti extra dei beta, numero di beta, numero di eta).}
 \end{proof}
 
 % \begin{corollary}
@@ -2250,7 +2256,7 @@ $3$ different activation rules:
 % \end{proof}
 
 \begin{theorem}[Fidelity with \linkbeta]
-  The introduction of \linkbeta guarantees \fullref{prop:fidelity}
+  The introduction of \linkbeta guarantees \fullref{prop:fidelity-recovery}
 \end{theorem}
 
 \begin{proof}[Proof sketch]
@@ -2261,7 +2267,7 @@ $3$ different activation rules:
   \hoUnifPb have been solved and removed. The
   unification is done between terms in \llambda and by \cref{lemma:fidelity-maybeeta}
   fidelity is guaranteed. If $\sigma\hoUnifPb$ is in \notllambda,
-  then, by \cref{def:progBetaLH}, the unification fails, as per the
+  then, by \cref{def:progBetaFail}, the unification fails, as per the
   corresponding unification in \Fo{}.
 \end{proof}
 
@@ -2278,7 +2284,7 @@ Consider the \linkbeta below:
     {X,A,0}}}
   {{{\eta,,A,\lambda x.E_{x}},
     {\eta,,B,\lambda x.C_{x}},
-    {\beta,x,C_{x},(D\appsep E_{x})}}}
+    {\llambda,x,C_{x},(D\appsep E_{x})}}}
 
 \noindent
 Initially the \linkbeta \rhs is a variable $D$ applied to the $E_x$.
@@ -2309,7 +2315,9 @@ into:
     {C,a}}}
   {{{Y,B,0},
     {X,A,0}}}
-  {{{\beta,,C,(A\appsep a)}}}
+  {{{\llambda,,C,(A\appsep a)}}}
+
+% \todo{Rinominare i print dei problemi}
 
 The first unification problems is solved by the substitution $\sigma = \{A
 \mapsto \lambda x.B\}$. The \linkbeta becomes
@@ -2480,7 +2488,7 @@ the authors do not aim at exploiting it to the degree we want.\todo{sucks}
 
 \todo{cite isabelle's TC, that are baked in}
 
-\section{Conclusion}
+\section{Related work and conclusion}
 
 In this paper we show how to lift the meta language higher-order unification
 procedure to the object language. Our proposed approach is highly adaptable to
