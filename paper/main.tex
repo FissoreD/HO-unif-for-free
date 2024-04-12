@@ -111,7 +111,7 @@
   Specifying and implementing a proof system from scratch requires significant effort.
   Logical Frameworks and Higher Order Logic Programming Languages provide
   dedicated, high-level Meta Languages (ML) to facilitate this task in two
-  key ways: 1) variable binding and substitution are simplified when ML binders
+  key ways: 1) variable binding and substitution are for free when ML binders
   represent object logic ones; 2) proof construction, and even proof search, is
   greatly simplified by leveraging the unification procedure provided by the ML.
   Notable examples of ML are Elf~\cite{elf}, Twelf~\cite{twelf},
@@ -123,33 +123,32 @@
   Higher Order Logic~\cite{books/sp/NipkowPW02}, and even the Calculus of
   Constructions~\cite{felty93lics}.
 
-  The object logic we are interested in is Coq's~\cite{Coq-refman}
-  Calculus of Inductive Constructions (CIC),
-  for which we aim to implement a unification procedure \Uo using the ML
+  The object logic we are interested in is % an extension of the latter,
+  Coq's~\cite{Coq-refman} Calculus of Inductive Constructions (CIC), for which 
+  we want to implement a unification based 
+  proof search procedure using the ML
   Elpi~\cite{dunchev15lpar}, a dialect of $\lambda$Prolog.
   Elpi's equational theory comprises
   $\eta\beta$ equivalence and comes equipped with a
   higher order unification procedure \Ue restricted to the pattern
   fragment~\cite{miller92jsc}.
-  We want \Uo to be as powerful as \Ue but on the object logic CIC.
   Elpi also comes with an encoding for CIC that works well
   for meta-programming~\cite{tassi:hal-01637063,tassi:hal-01897468,gregoire:hal-03800154,newtc}.
   Unfortunately this encoding, which we refer to as \Fo,
   ``underuses'' \Ue by restricting it to first-order unification problems only.
-  To address this issue, we propose a better-behaved encoding, \Ho,
-  demonstrate how to map unification problems in \Fo{}
-  to related problems in \Ho, and illustrate
-  how to map back the unifiers found by \Ue, effectively implementing
-   \Uo on top of \Ue for the encoding \Fo.
+  
+  In this paper we propose a better-behaved encoding, \Ho,
+  and show how to map unification problems in \Fo{}
+  to related problems in \Ho.
+    As a result we can lift the ML
+  higher-order unification procedure to \Fo{} in a way that it
+  honours $\eta\beta$-equivalence (for CIC functions), solves
+  problems in the pattern fragment and finally allows
+  for the addition of heuristics to deal with problems outside the
+  pattern fragment. The unification procedure we build can be used to
+  effectively simulate a logic program in \Fo{} by re-using optimizations
+  provided by the ML such as clause indexing.
 
-  % We apply this technique to the implementation of a type-class~\cite{wadler89}
-  % solver for Coq~\cite{Coq-refman}.
-  % Type-class solvers are proof search procedures based on
-  % unification that back-chain designated lemmas, providing essential
-  % automation to widely used
-  % Coq libraries such as Stdpp/Iris~\cite{JUNG_KREBBERS_JOURDAN_BIZJAK_BIRKEDAL_DREYER_2018}
-  % and TLC~\cite{10.1007/978-3-642-14052-5_15}. These two libraries
-  % constitute our test bed.
 \end{abstract}
 
 \keywords{Logic Programming, Meta-Programming, Higher-Order Unification, Proof Automation}
