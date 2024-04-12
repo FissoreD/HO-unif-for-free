@@ -113,7 +113,7 @@
   Logical Frameworks and Higher Order Logic Programming Languages provide
   dedicated, high-level Meta Languages (ML) to facilitate this task in two
   key ways: 1) variable binding and substitution are for free when ML binders
-  represent object logic ones; 2) proof construction, and even proof search, is
+  represent object logic ones; 2) proof construction, and even proof search, are
   greatly simplified by leveraging the unification procedure provided by the ML.
   Notable examples of ML are Elf~\cite{elf}, Twelf~\cite{twelf},
   $\lambda$Prolog~\cite{miller_nadathur_2012} and
@@ -124,28 +124,28 @@
   Higher Order Logic~\cite{books/sp/NipkowPW02}, and even the Calculus of
   Constructions~\cite{felty93lics}.
 
-  The object logic we are interested in is % an extension of the latter,
-  Coq's~\cite{Coq-refman} Calculus of Inductive Constructions (CIC), for which 
-  we want to implement a higher-order unification-based 
-  proof search procedure using the ML
+  The object logic we are interested in is
+  Coq's Calculus of Inductive Constructions (CIC)\cite{Coq-refman}. We aim to
+  develop a higher-order unification-based 
+  proof search procedure for it using the ML
   Elpi~\cite{dunchev15lpar}, a dialect of $\lambda$Prolog.
-  Elpi's equational theory comprises
-  $\eta\beta$ equivalence and comes equipped with a
+  Elpi's equational theory includes
+  $\eta\beta$ equivalence and features a
   higher-order unification procedure \Ue restricted to the pattern
   fragment~\cite{miller92jsc}.
-  Elpi comes with an encoding of CIC that works well
+  Elpi offers an encoding of CIC suitable
   for meta-programming~\cite{tassi:hal-01637063,tassi:hal-01897468,gregoire:hal-03800154,newtc}
   but restricts \Ue to roughly first-order unification problems only.
-  We call this basic encoding \Fo.
+  We refer to this basic encoding as \Fo.
   
-  In this paper we propose a better-behaved encoding \Ho,
-  and show how to map unification problems in \Fo{}
-  to related problems in \Ho.
-    As a result we obtain \Uo{}, a higher-order unification procedure for \Fo{}
-    that honours $\eta\beta$-equivalence (for CIC functions), solves
-  problems in the pattern fragment and allows
+  In this paper we propose a more well-behaved encoding called \Ho,
+  and show how to translate unification problems from \Fo{}
+  to corresponding ones in \Ho.
+  Consequently, we derive \Uo{}, the higher-order unification procedure of \Fo{}
+    that honours $\eta\beta$-equivalence (for CIC functions), addresses
+  problems within the pattern fragment, and allows
   for the use of heuristics to deal with problems outside the
-  pattern fragment. Moreover, since \Uo{} delegates most of the work to \Ue,
+  pattern fragment. Moreover, as \Uo{} delegates most of the work to \Ue,
   it can be used to efficiently simulate a logic program in \Fo{} by
   taking advantage of
   unification-related optimizations of the ML, such as clause indexing.
