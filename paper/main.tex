@@ -2478,9 +2478,23 @@ the authors do not aim at exploiting it to the degree we want.\todo{sucks}
 
 \section{Conclusion}
 
-In this paper we show how to lift the meta language higher-order
-unification procedure to the object language. The resulting
-unification honours $\eta\beta$-equivalence for 
+In this paper we show how to lift the meta language higher-order unification
+procedure to the object language. Our proposed approach is highly adaptable to
+align closely with the behavior of the object language. It is not tightly
+coupled with the Coq system but can serve as a flexible framework for meta
+programming in any ML.
+
+Our encoding leverages the advantage of not needing to recode the unification
+algorithm of the object language. Instead, it utilizes the unification of the
+meta language facilitated by the various links we establish to handle
+``problematic'' subterms. Additionally, our encoding benefits from the
+application of indexing algorithms for static clause filtering.
+
+Furthermore, the unification process we propose is tailored for potential future
+implementations of tabled search, incorporating memoization to retrieve
+solutions from previous searches.
+
+---
 
 Benefits: less work, reuse efficient ho unif (3x faster), indexing,
 
