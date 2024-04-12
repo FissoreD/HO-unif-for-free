@@ -588,7 +588,7 @@ logic program.
 \subsection{The problem: logic-program simulation}
 We represent a logic program \emph{run} in \Fo{} as
 a sequence of \emph{steps} of length $\mathcal{N}$.
-At each step $p$ we unify two terms, $\foUnifPb_{p_l}$ and
+At each step, $p$ we unify two terms, $\foUnifPb_{p_l}$ and
 $\foUnifPb_{p_r}$, taken from the list of all unification
 problems \foUnifPb.
 % \footnote{If the same rule is used multiple times in a run we
@@ -600,8 +600,8 @@ problems \foUnifPb.
 % where at least one run does not end in a failure. }
 The composition of these steps starting from the
 empty substitution $\rho_0$ produces the final
-substitution $\rho_\mathcal{N}$, that is the result of the
-logic-program execution.
+substitution $\rho_\mathcal{N}$, which is the result of the
+logic program execution.
 %
 \newcommand{\C}[4]{\ensuremath{\langle #1 \rangle}\mapsto(#2,#3,#4)}
 \newcommand{\D}[4]{\ensuremath{\langle #1,#2,#3 \rangle^{-1}\mapsto #4}}
@@ -636,12 +636,11 @@ $$
 $$
 
 \noindent
-\todo{say that backtracking is not important} 
-In order to simulate a \Fo{} logic program in \Ho{} we compile
+In order to simulate a \Fo{} logic program in \Ho{}, we compile
 each \Fo{} term $s$ in \foUnifPb to a \Ho{} term $t$.
-We write this translation $\C{s}{t}{m}{l}$. The implementation of the compiler
+We write this translation as $\C{s}{t}{m}{l}$. The implementation of the compiler
 is detailed in \cref{sec:simulation,sec:eta,sec:beta}, here we just point
-out that it additionally produce a variable mapping $m$ and list of links $l$.
+out that it additionally produces a variable mapping $m$ and a list of links $l$.
 The variable map connects unification variables in \Ho to variables
 in \Fo{} and is used to ``decompile'' the assignment,
 $\D{\sigma}{m}{l}{\rho}$. Links are an accessory piece of information whose
@@ -669,8 +668,8 @@ for the two \Ho{} terms being unified at step $p$, and we write $\hoUnifPb_p$
 for the set $\{~ \hoUnifPb_{p_l}, \hoUnifPb_{p_r} ~\}$.\\
 \hstep{} is made of two sub-steps: a call to the meta language
 unification and a check for \progress{} on the set of links, that intuitively
-will compensate for the weaker equational theory honoured by \Ue.
-\hrun{} compiles all terms in \foUnifPb{}, then executes each step and
+will compensate for the weaker equational theory honored by \Ue.
+\hrun{} compiles all terms in \foUnifPb{}, then executes each step, and
 finally decompiles the solution.
 We claim:
 
@@ -697,10 +696,10 @@ $$
 $$
 \end{proposition}
 \noindent
-In particular this property guarantees that a \emph{failure} in the \Fo{} run
+In particular, this property guarantees that a \emph{failure} in the \Fo{} run
 is matched by a failure in \Ho{} \emph{at the same step}. We consider this
 property very important from a practical point of view since it guarantees
-that the execution traces are strongly related and in turn this enables a user
+that the execution traces are strongly related, and in turn, this enables a user
 to debug a logic program in \Fo{} by looking at its execution trace in
 \Ho{}.
 
@@ -717,30 +716,30 @@ $$
 $$
 \end{proposition}
   
-In other words if the two terms involved in a step
+In other words, if the two terms involved in a step
 re-enter \llambda, then \hstep and \fstep are again related, even if
 $\foUnifPb \not\subseteq \llambda$ and hence \cref{prop:fidelity} does not apply.
 Indeed, the main difference between \cref{prop:fidelity} and \cref{prop:fidelity-recovery}
 is that the assumption of the former is purely static, it can be checked upfront. 
-When this assumption is not satisfied one can still simulate a logic program and
+When this assumption is not satisfied, one can still simulate a logic program and
 have guarantees of fidelity if, at run time, decidability of higher-order
 unification is restored.
 
-This property has a practical relevance since in many logic programming
+This property has practical relevance since in many logic programming
 implementations, including Elpi, the order in which unification problems
 are tackled does matter.
 The simplest example is the sequence $F \UnifRel \lambda x.a$ and
 $F \appsep a \UnifRel a$: the second problem is not in \llambda and has two
 unifiers, namely $\sigma_1 = \{~ F \mapsto \lambda x.x ~\}$ and
-$\sigma_2 = \{~ F \mapsto \lambda x.a ~\}$. The first problem picks $\sigma_2$
+$\sigma_2 = \{~ F \mapsto \lambda x.a ~\}$. The first problem picks $\sigma_2$,
 making the second problem re-enter \llambda.
 
-\paragraph{Backtracking} We omit it from our model of a logic programs execution
-since it pays a very minor role, orthogonal to higher-order unification.
+\paragraph{Backtracking} We omit it from our model of a logic program's execution
+since it plays a very minor role, orthogonal to higher-order unification.
 We point out that each \emph{run} corresponds to a (proof search) branch in the
 logic program that either fails at some point, or succeeds. A computation that
 succeeds by backtracking, exploring multiple branches, could be
-modeled as set of runs with (possibly non empty) common prefixes.
+modeled as a set of runs with (possibly non-empty) common prefixes.
 
 \subsection{The solution (in a nutshell)}
 \label{sec:nutshell}
