@@ -2444,60 +2444,43 @@ have the same length. Also note that N1 only contains the names of the first
 link (while relocate runs in the disjoint union) and Elpi ensures that
 T2' can live in N1.
 
-
-\section{Other encodings and related work}\label{sec:encodings}
-
 \noindent
-One could ignore the similarity between \Uo{} and \Ue{} and ``just''
-describe the object language unification procedure in the meta language by
-crafting a \elpiIn{unif} routine and using it as follows in
-rule \ref{clause:r3}:
+\section{Related work and conclusion}
+
+Different strategies can be used to unify terms of the object language in the
+meta langauge. One initial approach involves integrating \Uo as a procedure
+within the ML, outlined as follows:
 
 \begin{elpicode}
-decision X :- unif X (all A x\ app [P, x]), finite A,
-  pi x\ decision (app [P, x]).
+  decision X :- X ~\Uo~(all A x\ app [P, x]), finite A,
+    pi x\ decision (app [P, x]).
 \end{elpicode}
 
-\noindent
-This choice would underuse the logic programming engine provided by
-the meta language since, by removing any datum from the head of rules,
-indexing degenerates. Moreover the unification procedure \elpiIn{unif}
-programmed in the meta language is likely to be an order of magnitude
-slower than one that is built-in.
+Opting for this method would result in a suboptimal utilization of the logic
+programming engine provided by the meta language, as it degrades indexing by
+eliminating data from rule heads. Additionally, embedding \Uo within the meta
+language is likely to be significantly slower compared to a built-in
+solution.
 
 % Paper \cite{10.1145/2966268.2966272} introduces semi-shallow.
 Another possibility is to avoid having the application and abstraction nodes
 in the syntax tree, and use the ones of meta language, as in the following:
 
 \begin{elpicode}
-finite (fin N).
-decision (nfact N NF).
 decision (all A x\ P x) :- finite A, pi x\ decision (P x).
 \end{elpicode}
 
 \noindent
-There are two reasons for dismissing this encoding. The first one is that
-in CIC it is not always possible to adopt it since the type system
-of the meta language is too weak to accommodate for the one of the 
-object language. In CIC the lambda abstraction has to carry a type in order to
-make type checking decidable. Moreover CIC allows for functions with a
-variable arity, like the following example:
-
-\begin{coqcode}
-Fixpoint arr T n := if n is S m then T -> arr T m else T.
-Definition sum n : arr nat n := ...
-Check sum 2   7 8   : nat.
-Check sum 3   7 8 9 : nat.
-\end{coqcode}
-
-\noindent
-The type system of the $\lambda$Prolog is too stringent to accept this terms.\\
-The second reason is that the CIC encoding provided by Elpi is used for meta
-programming (extending) the Coq system, hence it must accommodate the
-manipulation of terms that are now know in advance (not even defined in Coq)
-without using introspection primitives such as Prologs's \texttt{functor}
-and \texttt{arg}. In this sense constants have to live in an open world, like
-the \elpiIn{string} data type used in the examples so far.
+However, two reasons justify rejecting this encoding. Firstly, in CIC, it is
+not always feasible to adopt it due to the meta language's type system being
+too limited to accommodate that of the object language. \\
+Secondly, the CIC encoding provided by Elpi is primarily utilized for meta
+programming, in order to extend the Coq system. Consequently, it must be able to
+manipulate terms that are not known in advance
+without relying on introspection primitives such as Prolog's
+\texttt{functor} and \texttt{arg}. In this context, constants need to live in
+an open world, akin to the \elpiIn{string} data type used in the preceding
+examples.
 
 In the literature we could find related encoding of the Calculus of
 Constructions~\cite{felty93lics}. The goal of that work was to exhibit
@@ -2511,19 +2494,19 @@ the authors do not aim at exploiting it to the degree we want.\todo{sucks}
 
 \todo{cite isabelle's TC, that are baked in}
 
-\section{Related work and conclusion}
+Our encoding provides a third option that addresses all the considerations
+mentioned earlier. It capitalizes on the benefit of not requiring the recoding
+of the unification algorithm of the object language. Instead, it employs the
+unification capabilities of the meta language, facilitated by the various links
+we establish to manage ``problematic'' subterms. Moreover, our encoding takes
+advantage of indexing algorithms for static clause filtering. It's noteworthy
+that we only replace the minimum necessary information with variables,
+specifically targeting \maybeeta and \notllambda subterms.
 
-In this paper we show how to lift the meta language higher-order unification
-procedure to the object language. Our proposed approach is highly adaptable to
+Our proposed approach is highly adaptable to
 align closely with the behavior of the object language. It is not tightly
 coupled with the Coq system but can serve as a flexible framework for meta
 programming in any ML.
-
-Our encoding leverages the advantage of not needing to recode the unification
-algorithm of the object language. Instead, it utilizes the unification of the
-meta language facilitated by the various links we establish to handle
-``problematic'' subterms. Additionally, our encoding benefits from the
-application of indexing algorithms for static clause filtering.
 
 Furthermore, the unification process we propose is tailored for potential future
 implementations of tabled search, incorporating memoization to retrieve
