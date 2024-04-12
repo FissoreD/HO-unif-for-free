@@ -391,25 +391,28 @@ address \githubUrl.
 }
 
 
-\newcommand{\unifcorrect}[3]{
+\newcommand{\unifcorrectX}[4]{
   % \forall \rho #3_1 #3_2, %
     % \{#3_1, #3_2\} \subseteq \llambda \Rightarrow %
-    \{#3_1, #3_2\} \subseteq \llambda \Rightarrow
+   #4 \Rightarrow
       #3_1 #2 #3_2 \mapsto \rho
         \Rightarrow
           \rho #3_1 #1 \rho #3_2  %
 }
+\newcommand{\unifcorrect}[3]{\unifcorrectX{#1}{#2}{#3}{ \{#3_1, #3_2\} \subseteq \llambda}}
 
-\newcommand{\unifcomplete}[3]{
+\newcommand{\unifcompleteX}[4]{
   % \forall #3_1 #3_2, %
     % \{#3_1, #3_2\} \subseteq \llambda \Rightarrow %
-    \{#3_1, #3_2\} \subseteq \llambda \Rightarrow
+    #4 \Rightarrow
       % \forall \rho, %
         \rho #3_1 #1 \rho #3_2  %
           \Rightarrow \exists \rho', #3_1 #2 #3_2 \mapsto \rho' \land \rho' \subseteq \rho
 }
+\newcommand{\unifcomplete}[3]{\unifcompleteX{#1}{#2}{#3}{\{#3_1, #3_2\} \subseteq \llambda}}
+
 \newcommand{\maybeeta}{\texorpdfstring{\ensuremath{\Diamond\eta}\xspace}{maybeeta}}
-\newcommand{\maybebeta}{\texorpdfstring{\ensuremath{\Diamond\beta_0}\xspace}{maybebeta}}
+\newcommand{\maybebeta}{\texorpdfstring{\ensuremath{\Diamond\beta}\xspace}{maybebeta}}
 \newcommand{\notllambda}{\texorpdfstring{\ensuremath{\Diamond\llambda}\xspace}{maybellam}}
 %\newcommand{\notllambda}{\ensuremath{\Diamond\beta}\xspace}
 
@@ -993,28 +996,6 @@ kind of \elpiIn{baselink}. For example $\linkbetaM{x}{A_x}{F_x~a}$ corresponds t
 abs x\ val (link-llam (uva A [x]) (app[uva F [x],con "a"]))
 \end{elpicode}
 
-\subsection{Notational conventions}\todo{move away}
-
-In \cref{sec:eta,sec:invariant1,sec:beta,sec:llam},
-we use the following schema to represent the compilation of the list of \Fo{}
-problems \foUnifPb into the \Ho problems \hoUnifPb. \mapStore and \linkStore are
-respectively the mapping and the link store.
-%
-\printAlll
-  {{{p_1,p_2},{p_3,p_4}}}
-  {{{t_1,t_2},{t_3,t_4}}}
-  {{{X_1,A_1,{{x}}},{X_2,A_2,{{y}}}}}
-  {{{\eta,\Gamma,a,b}}}
-
-We index each sub-problem, sub-mapping, sub-link with its position in the image
-starting from $1$ and counting from left to right, top to bottom. For example,
-$\hoUnifPb_2$ corresponds to the \Ho problem $t_3 \Ue t_4$.
-The compiled version of each $\foUnifPb_i$ is represented by $\hoUnifPb_i$.
-
-Moreover, to indicate the scope of a \Ho variable, we use that scope as
-subscript of the considered variable. For example, $X_{xy}$ is the variable $X$ 
-having in scope $x$ and $y$.
-
 % The first three rules unify terms with same rigid heads, and
 % call the unification relation on the sub-terms. If $t_1$ (resp. $t_2$) is an
 % assigned variables, $t_1$ is dereferenced to $t_1'$ (resp. $t_2'$) and the
@@ -1181,22 +1162,30 @@ needed in order to express their assignment.
 
 \subsection{Definition of \Uo{} and its properties}\label{sec:founif}
 
-Even if the compiler, so far, makes no use 
-of the higher-order nature of the meta language (all variables have
-an empty scope so far) we can already show the code of \Ue{}.
+We already have all the pieces to show the code of \Ue{}.
 
 \input{code/unif_fo}
 
-If \wellb{\foUnifPb} then we can prove that \Uo is a good
-``first order'' unification algorithm. Later, when the compiler will
-enforce it by \cref{prop:w-enforcing} and the proof will be adjusted.
+\noindent
+So far the compiler is very basic, it does not really
+enforce the terms passed to \hstep are in \wellb,
+and indeed makes no use of the higher-order capabilities
+of the meta language (all generated
+variables have an empty scope).
+Still, we can prove that \Uo is a good
+``first order'' unification algorithm if the input
+already happens to be in \wellb.
+Later, when the compiler will enforce \cref{prop:w-enforcing}
+and the proof will be adjusted to cover for thew cases.
 
-\begin{lemma}
-\Cref{prop:correct-ml,prop:complete-ml} hold for the implementation of \Uo above
+\begin{lemma}[Properties of \Uo]\label{prop:uniffow} The following properties hold for \Uo:
+\begin{gather}
+  \unifcorrectX{\Ee}{\Ue}{t}{\wellb(\{t_1, t_2\})}\\
+  \unifcompleteX{\Ee}{\Ue}{t}{\wellb(\{t_1, t_2\})}
+\end{gather}
 \end{lemma}
 \begin{proof}[Proof sketch]
- In this setting \Ee is as strong as
-\Eo. What we have to show is that whenever two different \Fo{}
+ In this setting \Ee is as strong as \Eo on ground terms.What we have to show is that whenever two different \Fo{}
 terms can be made equal by a substitution $\rho$ (plus the \ref{clause:beta1}
 and \ref{clause:beta2} if needed) we can produce this $\rho$ by finding
 a $\sigma$ via \Ue{} on the corresponding \Ho terms and by decompiling it.
@@ -1207,12 +1196,29 @@ $\sigma$ is decompiled to $\rho = \{ Y \mapsto s\}$ by \cref{prop:comprt}.
 \end{proof}
 
 \begin{theorem}[Fidelity in \wellb] \Fullref{prop:simulation} and
-\fullref{prop:fidelity} hold
+\fullref{prop:fidelity} hold if $\;\wellb{(\foUnifPb)}$.
 \end{theorem}
 \begin{proof}[Proof sketch]
-Trivial since \elpiIn{progress1} is a no-op and \fstep and \hstep are the same.
-Since all terms are $\beta$-normal and \wellb, \Ue is equivalent to \Uo.
+Trivial since \elpiIn{progress1} is a no-op and \fstep and \hstep are the same,
+and by \cref{prop:uniffow} \Ue is equivalent to \Uo.
 \end{proof}
+
+\subsection{Notational conventions}
+
+In the following sections we adopt this notation to talk about the compiler's
+output: \foUnifPb is the input set of problems that compiled to
+\hoUnifPb with memory mapping \mapStore and links \linkStore. For example:
+%
+\printAlll
+  {{{p_1,p_2},{p_3,p_4}}}
+  {{{t_1,t_2},{t_3,t_4}}}
+  {{{X_1,A_1,{{x}}},{X_2,A_2,{{y}}}}}
+  {{{\eta,\Gamma,a,b}}}
+
+We index each sub-problem, sub-mapping, sub-link with its position
+starting from $1$ and counting from left to right, top to bottom.
+For example, $\hoUnifPb_2$ corresponds to the \Ho problem $t_3 \Ue t_4$.
+%The compiled version of each $\foUnifPb_i$ is represented by $\hoUnifPb_i$.
 
 % \subsection{Limitations of by this basic scheme}
 % \label{sec:basic-comp-limitations}
@@ -1237,8 +1243,10 @@ Since all terms are $\beta$-normal and \wellb, \Ue is equivalent to \Uo.
   
 \section{Handling of \maybebeta}\label{sec:llam}
 
-A first problem we encounter when making unification between terms that are
-well behaved is the need to treat higher-order variables. 
+In order to make \Uo higher-order we need to
+take care of terms in \maybebeta.
+In the example below, we can see that the basic compilation given in 
+the previous section is not able to make the \Ho unification problem succeeds.
 %
 % make test ONLY=7006 TEX=tex
 \printAlll
@@ -1246,71 +1254,89 @@ well behaved is the need to treat higher-order variables.
   {{{\lambda x.(f\appsep (A\appsep x)\appsep a),\lambda x.(f\appsep x\appsep a)}}}
   {{{X,A,0}}}
   {{}}
-
-In the example above, we can note that the very basilar compilation given in 
-the previous section is not able to make the \Ho unification problem succeeds.
-The unification of $T_1$ fails while trying to unifying $A \appsep x$ and $x$.
-This is due to the fact that $A \appsep x$ (equivalent to \elpiIn{app[uva A [], x]})
-is represented as the application of the variable $A$ to the name $x$.
+\todo{fix indentation}
+The unification problem $\hoUnifPb_1$ fails while trying to unifying
+$A \appsep x$ and $x$, equivalent to \elpiIn{app [uva A [], x]}
+versus \elpiIn{x}.
 In order to exploit the higher-order unification algorithm of the meta language,
-we need to compile the \Fo{} term $X\appsep x$ into the \Ho term $A_x$.
+we need to compile the \Fo{} term $X\appsep x$ into the \Ho term $A_x$
+that is \elpiIn{uva A [x]}.
 
 \subsection{Compilation and decompilation}
 
-In order to address this problem, we add the following rule before rule~\ref{rule:compapp}.
+We add the following rule before rule~\ref{rule:compapp}, where
+\elpiIn{pattern-fragment} is a predicate checking is a list of
+terms is a list of distinct names.
 
 \input{code/comp_base_beta}
 
 \noindent
 Note that compiling \elpiIn{Ag} cannot create new mappings nor links, since \elpiIn{Ag}
-is made of bound variables and the hypothetical rule loaded by \elpiIn{comp-lam}
-(see below) grants this property. Also note that this rule generates no links.
+is made of bound variables and the hypothetical rule 
+\cref{rule:complamh}
+loaded by \elpiIn{comp-lam}
+grants this property.
 
-
-\noindent
-The only detail worth discussing is the fact that the procedure updates a
-substitution, rather than just crafting one as presented in
-section~\ref{sec:problem-statement}. The reason is that the algorithm folds
-over a term, updating a substitution while it traverses it.\noteE[inline]{explain better}
+% The only detail worth discussing is the fact that the procedure updates a
+% substitution, rather than just crafting one as presented in
+% section~\ref{sec:problem-statement}. The reason is that the algorithm folds
+% over a term, updating a substitution while it traverses it.\noteE[inline]{explain better}
 
 \paragraph{Decompilation} Since no link is created by the compilation of 
-\maybebeta terms, no modification should be done
-to the \elpiIn{commit-link} predicate.
+\maybebeta terms, no modification to the \elpiIn{commit-link}
+is needed.
 
 \paragraph{Progress} Similarly to decompilation, since no link is produced,
 no modification to the \elpiIn{progress} predicate is needed.
 
-\begin{lemma}
-  \Cref{prop:correct-ml,prop:complete-ml} hold for the implementation of \Uo
-  in \cref{sec:founif}
-  \end{lemma}
+\begin{definition}[$\wellb/_\beta$]
+$
+\wellb/_\beta(X) \Leftrightarrow \forall t \in \subterm{X}, t \not\in (\maybeeta{} ~\cup~ \notllambda{})
+$
+\end{definition}
+
+\begin{lemma}[Properties of \Uo]\label{prop:uniffowb} The following properties hold for \Uo
+  where
+  \begin{gather}
+    \unifcorrectX{\Ee}{\Ue}{t}{\wellb/_\beta(\{t_1, t_2\})}\\
+    \unifcompleteX{\Ee}{\Ue}{t}{\wellb/_\beta(\{t_1, t_2\})}
+  \end{gather}
+\end{lemma}
+
   \begin{proof}[Proof sketch]
-  If we look at the \Fo{} terms, the is one more case interesting cases:
-  \begin{itemize}
-  \item \elpiIn{fapp[fuva X|L] ~\Uo~s}. In this case
-   we have $Y_{\vec{x}} \Ue t$ that succeeds with
-   $\sigma = \{ Y_{\vec{y}} \mapsto t[\vec{x}/\vec{y}]\}$ that in turn
-\todo{ste x escono da L}   is decompiled to $\rho = \{ Y \mapsto \lambda \vec{y}.s[\vec{x}/\vec{y}]\}$.
+  If we look at the \Fo{} terms the is one more interesting case,
+  namely \elpiIn{fapp[fuva X|W] ~\Uo~s} when \elpiIn{W}
+  are distinct names compiled to $\vec{w}$. In this case
+  the \Ho problem is $Y_{\vec{w}} \Ue t$ that succeeds with
+   $\sigma = \{ Y_{\vec{y}} \mapsto t[\vec{w}/\vec{y}]\}$ that in turn
+   is decompiled to $\rho = \{ Y \mapsto \lambda \vec{y}.s[\vec{w}/\vec{y}]\}$.
    Thanks to \ref{clause:beta1}
-   $(\lambda \vec{y}.s[\vec{x}/\vec{y}])~\vec{x} \Eo s$.
-  \end{itemize}
+   $(\lambda \vec{y}.s[\vec{w}/\vec{y}])~\vec{w} \Eo s$.
   \end{proof}
   
-\begin{lemma}[\wellb-enforcement]\label{lem:w-enforcement-maybebeta} Even if $\foUnifPb \cap \maybebeta \ne \emptyset$,
-  $\hoUnifPb \cup \maybebeta = \emptyset$
-\end{lemma}\noteD{Non capisco}
+\begin{lemma}[$\wellb/_\beta$-enforcement]\label{lem:w-enforcement-maybebeta}
+  Given two terms $s_1$ and $s_2$ in \maybebeta, if $\exists \rho, \rho s_1 \Eo \rho s_2$,
+  then 
+  $$
+    \C{s_i}{t_i}{m_i}{l_i} ~\mathrm{for}~ i \in \{ 1,2 \} \Rightarrow
+    t_1 \Ue t_2 \mapsto \sigma
+  $$ 
+\end{lemma}
 \begin{proof}[Proof sketch]
-  problematic terms are mapped to uva by comp, the problematic fapp node is gone.
+  problematic terms are mapped to uva by comp,
+  the problematic fapp node is gone.
+  if F x = t then  F = lam x.t[]
+  \todo{finish/maybe W enforcement is not needed here}
 \end{proof}
 
-\begin{theorem}[Fidelity in \maybebeta] \Fullref{prop:simulation} and
-\fullref{prop:fidelity} hold
+\begin{theorem}[Fidelity in $\wellb/_\beta$] \Fullref{prop:simulation} and
+\fullref{prop:fidelity} hold if $\;\wellb/_\beta(\foUnifPb)$
 \end{theorem}
 \begin{proof}[Proof sketch] thanks to \cref{lem:w-enforcement-maybebeta}
-  it is the same as in \cref{sec:simulation}, even if now
-  we really need \Ue{} to deal with \llambda, while before a FO unif
-  would have done.
+  \Ue is as powerful as \Uo in \maybebeta, as well as in \wellb by
+  \cref{prop:uniffowb}.
 \end{proof}
+
 % \subsection{Example}
 
 % OK

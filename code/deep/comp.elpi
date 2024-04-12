@@ -124,7 +124,7 @@ namespace comp {
   type comp-lam (fm -> fm) -> (tm -> tm) -> 
     mmap -> mmap -> links -> links -> subst -> subst -> o.
   comp-lam F G M1 M2 L1 L3 S1 S2 :-
-    pi x y\ (pi M L S\ comp x y M M L L S S) => 
+    pi x y\ (pi M L S\ comp x y M M L L S S) =>         % label: rule:complamh cnt: \ensuremath{H_\lambda}
       comp (F x) (G y) M1 M2 L1 (L2 y) S1 S2,
     close-links L2 L3.
 %ENDSNIP
