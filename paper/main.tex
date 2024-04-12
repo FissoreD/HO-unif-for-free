@@ -160,12 +160,12 @@
 \label{sec:intro}
 
 Meta languages such as Elf~\cite{elf}, Twelf~\cite{twelf},
-$\lambda$Prolog~\cite{miller_nadathur_2012} and
+$\lambda$Prolog~\cite{miller_nadathur_2012}, and
 Isabelle~\cite{10.1007/978-3-540-71067-7_7}
 have been utilized to specify various
 logics~\cite{felty88cade,books/sp/NipkowPW02,10.1007/BF00881873,felty93lics}.
 The use of these meta languages facilitates this task in two
-key ways. The first and most well know one is that variable binding and
+key ways. The first and most well-know one is that variable binding and
 substitution come for free. %, exploited in all works mentioned above.
 The second one is that these meta languages come equipped with some form
 of unification, a cornerstone of proof construction and proof search.
@@ -176,16 +176,16 @@ of unification, a cornerstone of proof construction and proof search.
 %implement an interactive proof system for the object logic, in addition to
 %it specification.\\
 The object logic we are interested in is Coq's~\cite{Coq-refman}
-Calculus of Inductive Constructions (CIC) and we want to implement a
+Calculus of Inductive Constructions (CIC), and we aim to implement a
 form of proof search known as type-class~\cite{wadler89,sozeau08} resolution.
-Type-class solvers are unification based proof search procedures
-reminiscent of Prolog that back-chain lemmas taken
+Type-class solvers are unification based on proof search procedures
+reminiscent of Prolog, which back-chain lemmas taken
 from a database of ``type-class instances''. Given this
 analogy with Logic Programming we want to leverage the
-Elpi~\cite{tassi:hal-01637063} meta programming language,
+Elpi~\cite{tassi:hal-01637063} meta-programming language,
 a dialect of $\lambda$Prolog, already used to extend
 Coq in various ways~\cite{tassi:hal-01637063,tassi:hal-01897468,gregoire:hal-03800154,newtc}.
-In this paper we focus on one aspect of
+In this paper, we focus on one aspect of
 this work, precisely \emph{how to reuse the higher-order unification procedure
 of the meta language in order to simulate a higher-order logic program
 for the object language}.
@@ -194,7 +194,7 @@ We take as an example the \coqIn{Decision} and \coqIn{Finite} type classes
 from the Stdpp~\cite{JUNG_KREBBERS_JOURDAN_BIZJAK_BIRKEDAL_DREYER_2018}
 library. The class  \coqIn{Decision}
 identifies predicates equipped with a decision procedure, while
-\coqIn{Finite} the types whose inhabitants can be enumerated in a (finite) list.
+\coqIn{Finite} identifies types whose inhabitants can be enumerated in a (finite) list.
 The following three type-class instances state that:
 1) the type of natural numbers smaller than \coqIn{n}, called \coqIn{fin n},
 is finite;
@@ -210,7 +210,7 @@ Instance forall_dec: ~$\forall$~A P, Finite A ~$\to$~            (* r3 *)
   ~$\forall$~x:A, Decision (P x) ~$\to$~ Decision (~$\forall$~x:A, P x).
 \end{coqcode}
 
-\noindent Given this database a type-class solver is expected to
+\noindent Given this database, a type-class solver is expected to
 prove the following statement automatically:
 
 \begin{coqcode}
@@ -221,20 +221,20 @@ prove the following statement automatically:
 The proof found by the solver back-chains on rule 3 (the only rule
 about the $\forall$ quantifier), and then solves the premises with
 rules 1 and 2 respectively.
-Note that rule 3 features a second order parameter \coqIn{P} that stands for
+Note that rule 3 features a second-order parameter \coqIn{P} that represents
 a function of type \coqIn{A ~$\to$~ Prop} (a predicate over \coqIn{A}).
 The solver has to infer a value for \coqIn{P} by unifying the conclusion
-of rule 3 with the goal, and in particular it has to solve the unification
-problem \coqIn{P x = nfact x 3}. This higher order problem falls in the so
-called pattern-fragment \llambda~\cite{miller92jsc} and admits a unique
+of rule 3 with the goal, and in particular, it has to solve the unification
+problem \coqIn{P x = nfact x 3}. This higher-order problem falls in the so-called 
+pattern-fragment \llambda~\cite{miller92jsc} and admits a unique
 solution $\customlabel{solution:intro}{\rho}$ that assigns
 the term \elpiIn{~$\lambda$~x.nfact x 3} to \coqIn{P}.
 
-In order to implement such a search in Elpi we shall describe the encoding
+In order to implement such a search in Elpi, we shall describe the encoding
 of CIC terms and then the encoding of instances as rules.
 Elpi comes equipped with
 an Higher Order Abstract Syntax (HOAS~\cite{10.1145/53990.54010}) datatype of CIC
-terms, called \elpiIn{tm}, that features (among others) the following
+terms, called \elpiIn{tm}, that includes (among others) the following
 constructors:
 
 \begin{elpicode}
@@ -245,10 +245,10 @@ type con  string -> tm.               % constants
 \end{elpicode}
 
 \noindent
-Following the standard syntax of $\lambda$Prolog~\cite{miller_nadathur_2012}
-the meta level binding of a variable \elpiIn{x} in an expression
-\elpiIn{e} is written <<\elpiIn{x\ e}>>, while square brackets delimit a
-list of terms separated by comma. For example the term
+Following the standard syntax of $\lambda$Prolog~\cite{miller_nadathur_2012},
+the meta-level binding of a variable \elpiIn{x} in an expression
+\elpiIn{e} is written as <<\elpiIn{x\ e}>>, while square brackets delimit a
+list of terms separated by comma. For example, the term
 <<\coqIn{~$\forall$~y:t, nfact y 3}>> is encoded as follows:
 
 \begin{elpicode}
@@ -257,8 +257,8 @@ all (con"t") y\ app [con"nfact", y, con"3"]
 
 \noindent
 We now illustrate the encoding of the three instances above as higher-order
-logic-programming rules: capital letters denote rule
-parameters; \elpiIn{:-} separates the rule's head from the premises and
+logic programming rules: capital letters denote rule
+parameters; \elpiIn{:-} separates the rule's head from the premises, and
 \elpiIn{pi w\ p} introduces a fresh nominal constant \elpiIn{w}
 for the premise \elpiIn{p}.
 
@@ -301,7 +301,7 @@ decision (all A x\ Pm x) :- link Pm P A, finite A,    ~\customlabel{clause:r3a}{
 \end{elpicode}
 
 \noindent
-Since \elpiIn{Pm} is an higher-order unification variable
+Since \elpiIn{Pm} is a higher-order unification variable
 of type \elpiIn{tm -> tm},
 with \elpiIn{x}
 in its scope, the unification problem \ref{problem:pa}
@@ -313,7 +313,7 @@ Pm = x\ app [con"nfact", x, con"3"]                   ~\customlabel{solution:pm}
 \end{elpicode}
 
 \noindent
-Once the head of rule \ref{clause:r3a} unifies with the goal \ref{goal:g}
+Once the head of rule \ref{clause:r3a} unifies with the goal \ref{goal:g},
 the premise <<\elpiIn{link Pm A P}>> brings the assignment \ref{solution:pm}
 back to the domain \elpiIn{tm} of Coq terms, obtaining the expected solution
 \ref{solution:intro}:
@@ -339,7 +339,7 @@ under the \elpiIn{pi w\ }\hspace{-0.4em}).
 % \end{elpicode}
 
 % \noindent
-In turn this redex prevents the rule \ref{clause:r2} to backchain properly since
+In turn, this redex prevents rule \ref{clause:r2} from backchaining properly since
 the following unification problem has no solution:
 
 \begin{elpicode}
@@ -348,17 +348,17 @@ app [ con"nfact"                             , N, NF]
 \end{elpicode}
 
 \noindent
-The root cause of the problems we sketched in this example
+The root cause of the problems we outlined in this example
 is a subtle mismatch between the equational theories of the meta language
-and the object language, that in turns makes the 
+and the object language, which in turn makes the 
 unification procedures of the meta language weak.
 The equational theory of the meta language Elpi encompasses
 $\eta\beta$-equivalence and its unification procedure can solve higher-order
 problems in the pattern fragment. Although 
 the equational theory of CIC is much richer, for efficiency and predictability
-reasons automatic proof search procedure typically employ a unification
+reasons, automatic proof search procedures typically employ a unification
 procedure that only captures a $\eta\beta$-equivalence and only operates
-in \llambda. The similarity is striking, but one needs some care in order to
+in \llambda. The similarity is striking, but one needs to exercise some caution in order to
 simulate a logic program in CIC using the unification of Elpi.
 
 \paragraph{Contributions}
