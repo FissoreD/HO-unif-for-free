@@ -495,19 +495,19 @@ terms in \Ho{}.
 
 \subsection{Equational theories an unification}
 
-In order to specify unification we need to
+In order to specify unification, we need to
 define the equational theory and
 substitution (unification-variable assignment).
 
 \subsubsection{Term equality: \Eo and \Ee}
-For both languages we extend the equational theory
-over ground terms to the full language by adding the reflexivity of
+For both languages, we extend the equational theory
+over ground terms to the full language by adding the reflexivity for
 unification variables (a variable is equal to itself).
 
 The first four rules are common to both equalities
 and define the usual congruence over terms. Since
-we use an HOAS encoding they also capture $\alpha$-equivalence.
-In addition to that \Eo has rules for $\eta$ and $\beta$-equivalence.
+we use an HOAS encoding, they also capture $\alpha$-equivalence.
+In addition to that, \Eo has rules for $\eta$ and $\beta$-equivalence.
 
 \input{code/feq}
 
@@ -523,7 +523,7 @@ In addition to that \Eo has rules for $\eta$ and $\beta$-equivalence.
 The main point in showing these equality tests is to remark how
 weaker \Ee is, and to identify the four rules that need special
 treatment in the implementation of \Uo.
-For brevity we omit the code of \elpiIn{beta}:
+For brevity, we omit the code of \elpiIn{beta}:
 it is sufficient to know that <<\elpiIn{beta F L R}>> computes in \elpiIn{R} the
 weak head normal form of <<\elpiIn{app [F|L]}>>.
 Note that the symbol \elpiIn{|} separates the head of a list from the tail.
@@ -544,10 +544,10 @@ general than $\sigma'$.
 % two substitutions whose domains are disjoint.
 We shall use $\rho$ for \Fo{} substitutions,
 and $\sigma$ for the \Ho ones.
-For brevity, in this section we consider
+For brevity, in this section, we consider
 the substitution for \Fo{} and \Ho{} identical.
 We defer to \cref{sec:grounwork} a more precise description
-pointing out theirs differences.
+pointing out their differences.
 
 \paragraph{Term unification: \Uo vs. \Ue}
 
@@ -563,7 +563,7 @@ We write
 $\sigma t_1 \Ue \sigma t_2 \mapsto \sigma'$ when
 $\sigma t_1$ and $\sigma t_2$ unify with substitution $\sigma'$.
 Note that $\sigma'$ is a refined (i.e. extended) version of $\sigma$; this is
-reflected by signature above that relates two substitutions.
+reflected by the signature above that relates two substitutions.
 We write $t_1 \Ue t_2 \mapsto \sigma'$ when
 the initial substitution $\sigma$ is empty.
 % Note that if $\sigma t_1 \Ue \sigma t_2 \mapsto \sigma'$ then
