@@ -413,18 +413,18 @@ address \githubUrl.
 \newcommand{\notllambda}{\texorpdfstring{\ensuremath{\Diamond\llambda}\xspace}{maybellam}}
 %\newcommand{\notllambda}{\ensuremath{\Diamond\beta}\xspace}
 
-Even if we encountered the problem working on CIC we devise
-a minimal setting to ease its study. In this setting we have
+Even if we encountered the problem working on CIC, we devise
+a minimal setting to ease its study. In this setting, we have
 a \Fo{} language (for first order) with a rich equational
 theory and a \Ho{} meta language with a simpler one.
 
 
 \subsection{Preliminaries: \Fo{} and \Ho{}}
 
-In order to reason about unification we provide a description of the
+To reason about unification, we provide a description of the
 \Fo{} and \Ho languages where unification variables
-are first class terms, i.e. they have a concrete syntax as
-per \cref{code:common-terms}.
+are first-class terms, i.e. they have a concrete syntax as
+shown in \cref{code:common-terms}.
 % We keep these languages
 %minimal, for example, we omit the \elpiIn{all} quantifier of CIC we used
 %in the example in Section~\ref{sec:intro} together with the type notation of
@@ -450,12 +450,12 @@ per \cref{code:common-terms}.
 }
 Unification variables
 in \Fo{} (\elpiIn{fuva} term constructor) have no explicit scope:
-the arguments of an higher order variable are given via the \elpiIn{fapp}
+the arguments of a higher-order variable are given via the \elpiIn{fapp}
 constructor. For example the term <<\coqIn{P x}>> is represented as
 <<\elpiIn{fapp [fuva N, x]}>>, where \elpiIn{N} is the memory address
 of \elpiIn{P} and \elpiIn{x} is a bound variable.\\
-In \Ho the representation of <<\coqIn{P x}>> is instead <<\elpiIn{uva N [x]}>>,
-since unification variables are higher order and come equipped with an
+In \Ho, the representation of <<\coqIn{P x}>> is instead <<\elpiIn{uva N [x]}>>,
+since unification variables are higher-order and come equipped with an
 explicit scope.
 %\todo{use faddr for Fo}
 %
@@ -469,12 +469,12 @@ explicit scope.
 When we write \Ho terms outside code blocks we follow the
 usual $\lambda$-calculus notation, reserving $f, g, a, b$ for constants,
 $x, y, z$ for bound variables and $X, Y, Z, F, G, H$ for unification variables.
-However we need to
+However, we need to
 distinguish between the ``application'' of a unification variable
 to its scope and the application of a term to a list of arguments.
 We write the scope of unification variables in subscript
 while we use juxtaposition for regular application.
-Here a few examples:\\
+Here are few examples:\\
 \vspace{4pt}
 {
 \setlength{\tabcolsep}{1em}
@@ -488,9 +488,9 @@ Here a few examples:\\
 \vspace{4pt}
 
 \noindent
-When it is clear from the context we shall use the same syntax for \Fo{} terms
+When it is clear from the context, we shall use the same syntax for \Fo{} terms
 (although we never subscripts unification variables).\\
-We use $s$, $s_1$, \ldots for terms in \Fo{} and $t$, $t_1$ \ldots for
+We use $s$, $s_1$, \ldots for terms in \Fo{} and $t$, $t_1$, \ldots for
 terms in \Ho{}.
 
 \subsection{Equational theories an unification}
