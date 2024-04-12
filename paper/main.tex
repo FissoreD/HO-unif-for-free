@@ -631,7 +631,7 @@ $$
 \noindent
 \todo{say that backtracking is not important} 
 In order to simulate a \Fo{} logic program in \Ho{} we compile
-each \Fo{} term in \foUnifPb into a \Ho{} term $t$.
+each pair of \Fo{} terms in \foUnifPb into a pair of \Ho{} terms $t$.
 We write this translation $\C{s}{t}{m}{l}$. The implementation of the compiler
 is detailed in \cref{sec:simulation,sec:eta,sec:beta}, here we just point
 out that it additionally produce a variable mapping $m$ and list of links $l$.
@@ -660,7 +660,7 @@ $$
 \noindent
 By analogy with \foUnifPb, we write $\hoUnifPb_{p_l}$ and $\hoUnifPb_{p_r}$
 for the two \Ho{} terms being unified at step $p$, and we write $\hoUnifPb_p$
-for the set $\{ \hoUnifPb_{p_l}, \hoUnifPb_{p_r} \}$.\\
+for the pair $(\hoUnifPb_{p_l}, \hoUnifPb_{p_r})$.\\
 \hstep{} is made of two sub-steps: a call to the meta language
 unification and a check for \progress{} on the set of links, that intuitively
 will compensate for the weaker equational theory honoured by \Ue.
