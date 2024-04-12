@@ -3,13 +3,13 @@ shorten fo.{(==o) , parse, parse-eq}.
 macro @read :- input_line std_in _.
 
 shorten ho.{(==l)}.
-shorten fo.{(==o)}.
+shorten fo.{(==o), beta-normal}.
 typeabbrev tm ho.tm.
 typeabbrev fm fo.fm.
 typeabbrev subst ho.subst.
 typeabbrev fsubst fo.fsubst.
 typeabbrev links comp.links.
-shorten comp.{ progress , comp , decompm }.
+shorten comp.{ progress , comp , decompm, mmap, decompile }.
 
 typeabbrev (diagn A) (triple diagnostic A A).
 
@@ -31,13 +31,20 @@ hstep T1 T2 L1 L2 S1 S3 :-
   progress L1 L2 S2 S3.
 %ENDSNIP
 
+%SNIP: compile
+type compile fm -> tm -> mmap -> mmap ->  links -> links -> 
+  subst -> subst -> o.
+compile F G M1 M2 L1 L2 S1 S2 :-
+  beta-normal F F', comp F' G M1 M2 L1 L2 S1 S2.
+%ENDSNIP
+
 %SNIP: unif_fo
 type (===o) fm -> fm -> fsubst -> o.
 (A ===o B) F :-
-  comp A A' [] M1 [] [] [] S1,
-  comp B B' M1 M2 [] [] S1 S2,
-  hstep A' B' [] [] S2 S3,
-  decompm M2 M2 S3 [] F.
+  compile A A' [] M1 [] L1 [] S1,
+  compile B B' M1 M2 L1 L2 S1 S2,
+  hstep A' B' L2 L3 S2 S3,
+  decompile M2 L3 S3 [] F.
 %ENDSNIP
 
 %END

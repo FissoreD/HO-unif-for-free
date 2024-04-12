@@ -1076,13 +1076,7 @@ With respect to \cref{sec:problem-statement} the signature also allows
 for updates to the substitution.
 
 \input{code/comp_base}
-\todo{use the real code}
-\begin{elpicode}
-type compile fm -> tm -> mmap -> mmap -> links -> links ->
-  subst -> subst -> o.
-compile Fo0 Ho M0 M1 L0 M1 S0 S1 :-
-  beta-normal Fo0 Fo, comp Fo Ho M0 M1 L0 M1 S0 S1.
-\end{elpicode}
+\input{code/compile.tex}
 
 \noindent
 The code above uses that possibility
