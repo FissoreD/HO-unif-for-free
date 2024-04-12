@@ -586,16 +586,18 @@ Even if we provide an implementation of the object-language unification
 logic program.
 
 \subsection{The problem: logic-program simulation}
-% \todo{dire che P e T sono liste di coppie, dire che P e T vengono anche usati come insiemi}
 We represent a logic program \emph{run} in \Fo{} as
-a list \emph{steps} of length $\mathcal{N}$.
-\foUnifPb is a list of pair of terms, each pair corresponds to a unification
-problem. At each step $p$ we unify two terms $\foUnifPb_{p_l}$ and
-$\foUnifPb_{p_r}$ (the small $l$ and $r$ represent respectively the left and right 
-elements extracted from $\foUnifPb_p$).
-\footnote{If the same rule is used multiple times in a run we
-just consider as many copies as needed of the terms composing the
-rules, with fresh unification variables each time.}
+a sequence of \emph{steps} of length $\mathcal{N}$.
+At each step $p$ we unify two terms, $\foUnifPb_{p_l}$ and
+$\foUnifPb_{p_r}$, taken from the list of all unification
+problems \foUnifPb.
+% \footnote{If the same rule is used multiple times in a run we
+% consider as many copies as needed of the terms composing the
+% rules, with fresh unification variables each time. Also, we do not
+% model backtracking directly, but rather the fact that a step in a run may
+% fail, and in that case the entire run is said to fail. A regular logic program
+% that succeeds is modeled as a many runs, with possibly overlapping starts,
+% where at least one run does not end in a failure. }
 The composition of these steps starting from the
 empty substitution $\rho_0$ produces the final
 substitution $\rho_\mathcal{N}$, that is the result of the
@@ -636,7 +638,7 @@ $$
 \noindent
 \todo{say that backtracking is not important} 
 In order to simulate a \Fo{} logic program in \Ho{} we compile
-each pair of \Fo{} terms in \foUnifPb into a pair of \Ho{} terms $t$.
+each \Fo{} term $s$ in \foUnifPb to a \Ho{} term $t$.
 We write this translation $\C{s}{t}{m}{l}$. The implementation of the compiler
 is detailed in \cref{sec:simulation,sec:eta,sec:beta}, here we just point
 out that it additionally produce a variable mapping $m$ and list of links $l$.
@@ -644,8 +646,11 @@ The variable map connects unification variables in \Ho to variables
 in \Fo{} and is used to ``decompile'' the assignment,
 $\D{\sigma}{m}{l}{\rho}$. Links are an accessory piece of information whose
 description is deferred to \cref{sec:nutshell}.
+We write $\hoUnifPb_p = \{~ \hoUnifPb_{p_l}, \hoUnifPb_{p_r} ~\}$
+and $s \in \foUnifPb \Leftrightarrow \exists p, s \in \foUnifPb_p$.
 
-We simulate each run in \Fo{} with a run in \Ho as follows.
+We simulate each run in \Fo{} with a run in \Ho as follows:
+
 %Note that $\sigma_0$ is the empty substitution.
 $$
 \begin{array}{l}
@@ -661,7 +666,7 @@ $$
 \noindent
 By analogy with \foUnifPb, we write $\hoUnifPb_{p_l}$ and $\hoUnifPb_{p_r}$
 for the two \Ho{} terms being unified at step $p$, and we write $\hoUnifPb_p$
-for the pair $(\hoUnifPb_{p_l}, \hoUnifPb_{p_r})$.\\
+for the set $\{~ \hoUnifPb_{p_l}, \hoUnifPb_{p_r} ~\}$.\\
 \hstep{} is made of two sub-steps: a call to the meta language
 unification and a check for \progress{} on the set of links, that intuitively
 will compensate for the weaker equational theory honoured by \Ue.
@@ -679,7 +684,8 @@ $$
 \end{proposition}
 
 \noindent
-That is, the two executions give the same result. Moreover:
+That is, the two executions give the same result if all terms in
+\foUnifPb are in the pattern fragment. Moreover:
 
 \begin{proposition}[Simulation fidelity]\label{prop:fidelity}
 In the context of$\;$ \hrun, if $~\foUnifPb \subseteq \llambda$ we have that
@@ -714,6 +720,11 @@ $$
 In other words if the two terms involved in a step
 re-enter \llambda, then \hstep and \fstep are again related, even if
 $\foUnifPb \not\subseteq \llambda$ and hence \cref{prop:fidelity} does not apply.
+Indeed, the main difference between \cref{prop:fidelity} and \cref{prop:fidelity-recovery}
+is that the assumption of the former is purely static, it can be checked upfront. 
+When this assumption is not satisfied one can still simulate a logic program and
+have guarantees of fidelity if, at run time, decidability of higher-order
+unification is restored.
 
 This property has a practical relevance since in many logic programming
 implementations, including Elpi, the order in which unification problems
@@ -723,7 +734,13 @@ $F \appsep a \UnifRel a$: the second problem is not in \llambda and has two
 unifiers, namely $\sigma_1 = \{~ F \mapsto \lambda x.x ~\}$ and
 $\sigma_2 = \{~ F \mapsto \lambda x.a ~\}$. The first problem picks $\sigma_2$
 making the second problem re-enter \llambda.
-\todo{say that this is runtime, while the other fidelity is compile time}
+
+\paragraph{Backtracking} We omit it from our model of a logic programs execution
+since it pays a very minor role, orthogonal to higher-order unification.
+We point out that each \emph{run} corresponds to a (proof search) branch in the
+logic program that either fails at some point, or succeeds. A computation that
+succeeds by backtracking, exploring multiple branches, could be
+modeled as set of runs with (possibly non empty) common prefixes.
 
 \subsection{The solution (in a nutshell)}
 \label{sec:nutshell}
@@ -734,9 +751,8 @@ $h \Ue p$. As a result \Ue is ``well behaved'' on $t$, in the sense that
 it does not contradict \Eo as it would otherwise do on the
 ``problematic'' sub-terms.\\
 We now define ``problematic'' and ``well behaved'' more formally
-and we pick the $\Diamond$ symbol since it
-stands for ``possibly'' in modal logic and all problematic terms
-are characterized by some ``uncertainty''.
+We use the $\Diamond$ symbol since it stands for ``possibly'' in modal logic
+and all problematic terms are characterized by some ``uncertainty''.
 
 \begin{definition}[\maybebeta]\label{def:maybebeta}
   \maybebeta is the set of terms of the form $X \appsep x_1 \ldots x_n$
@@ -820,11 +836,12 @@ We claim our compiler validates the following property:
 \end{proposition}
 
 \noindent
-\todo{dire perchè W(T), dire che il converse non vale (alcuni check li fa la progress)}
-Note that the property holds for any substitution, it could be given by an
-oracle and not necessarily a most general one, and for any terms,
-in particular terms in $\maybebeta{} ~\cup~ \maybeeta{} ~\cup~ \notllambda{}$.
-  
+In other words the compiler outputs terms in \wellb, even if its
+input is not.
+Note that the property holds for any substitution. $\rho$ could be given by an
+oracle and/or not necessarily be a most general one: in \wellb \Ue{} simply
+does not contradict \Eo.
+
 \begin{proposition}[\wellb{}-preservation]\label{prop:w-preservation}
 $\forall \hoUnifPb, \forall \linkStore, \forall p, \forall \sigma, \forall \sigma'$
 $$
