@@ -2335,15 +2335,23 @@ a\}$.
 \newcommand{\progBetaNoLLWait}{\emph{progress-beta-\notllambda}}
 
 % from https://www.cs.mcgill.ca/~bpientka/papers/unif_miller60.pdf
-Working with terms in \llambda is sometime too restrictive \cite{Abel2018ExtensionsTM}. 
-There exists systems
-such as Teyjus~\cite{Nadathur2001} and $\lambda$Prolog~\cite{lamProlog} which 
-delay the resolution of \notllambda unification problems if the substitution
-is not able to put them in \llambda.
+Working with terms in \llambda is sometime too restrictive \cite{Abel2018ExtensionsTM}
+and a there exist a few strategies to go bejond \llambda without 
+implementing Huet's algorithm~\ref{REF}.
 
-In this section we want to show how we can adapt the unification of the object
-language in the meta language by simply adding (or removing) rules to the
+Some implementations
+of $\lambda$Prolog~\cite{lamProlog} 
+such as Teyjus~\cite{Nadathur2001} delay the resolution of \notllambda unification problems until the substitution
+ put them in \llambda. Other systems,
+for example of the unification algorithm of Coq
+used in its type-class solver~\cite{sozeau08},
+ apply heuristics like preferring projection over mimic, and commit
+ to that solution.
+
+In this section we show how we can implement these strategies
+by simply adding (or removing) rules to the
 \elpiIn{progress} predicate.
+In the example below $\foUnifPb_1$ is in \notllambda.
 %
 % make test ONLY=7005 TEX=tex
 \printAlll
@@ -2353,36 +2361,35 @@ language in the meta language by simply adding (or removing) rules to the
   {{}}
   {{}}
 
-In the example above, $\foUnifPb_1$ is in \notllambda. \emph{If} the object
-language delays the first unification problem waiting $X$ to be
-be instantiated in a future unification, we can relax \cref{def:progBetaFail}. 
+
+If we want the object language unification to delay the first unification problem
+(waiting for $X$ to be be instantiated by a future unification),
+we can relax \cref{def:progBetaFail}. 
 Instead of failing because the \lhs of the considered \linkbeta $l$ becomes rigid,
 we keep it in \linkStore until the head of its \rhs also become rigid.
 In this case, since \lhs and \rhs have rigid heads, they can be unified
 just before removing $l$ from \linkStore. We can note that this rule trivially
 guarantees \fullref{prop:fidelity}. On the other hand, the occur check becomes 
-partial: there exists \linkbeta with a non-flexible \lhs.
+partial since we break \fullref{inv:linklhs}. %: there exists \linkbeta with a non-flexible \lhs.
 
-A second strategy to deal with problem that are in \notllambda is to make
-approximations. This is the case for example of the unification algorithm of Coq
-used in its type-class solver~\cite{sozeau08}. The approximation consists in
-forcing a choice (among the others) when the unification problem is outside
-\llambda. For instance, in $X \appsep a \appsep b = Y \appsep b$, the last
-argument of the two terms is the same, therefore $Y$ is assigned to $X a$. Note
-that this is of course an approximation, since $\sigma = \{X \mapsto \lambda x.Y, Y \mapsto
-\_\}$ is another valid substitution for the original problem. We stress the 
-fact that, again, our unification procedure in the meta language can be 
-accommodated for this new behavior: given a \linkbeta, if \lhs is not in \llambda,
-then \elpiIn{progress} can try to align the rightmost arguments and unify
-the resulting heads. 
+If we want to follow the second strategy and pick an
+arbitrary solution. For instance, in $X \appsep a \appsep b = Y \appsep b$, the last
+argument of the two terms is the same and unification can succeed by assigning
+$X a$ to $Y$. Note
+that this is not the only solution, since $\sigma = \{X \mapsto \lambda x.Y \}$
+is another valid substitution. Our unification procedure
+can be modified to accommodate this behavior by adding a
+rule to \elpiIn{progress} that tries to
+align the rightmost arguments and unify
+the resulting heads whenever \lhs of a \linkbeta is not in \llambda.
 
-Note that delaying unification outside \llambda can leave \linkbeta during the
-decompilation phase. Therefore, new rules to \elpiIn{commit-links} should
-be added accordingly.
+Note that delaying unification outside \llambda can leave \linkbeta for the
+decompilation phase. Therefore \elpiIn{commit-links} should
+be modified accordingly.
 
 % \noteD{Paragraph for decompile in case of \maybebeta}
 % \todo{cita paper su estensioni a llam via sospensione etc}
-\todo[inline]{cita teyjus (1) era 2nd order HO (huet's algorithm), teyjus 2 è llam ma sospende i disagreement pairs fuori da llam}
+\todo{cita teyjus (1) era 2nd order HO (huet's algorithm), teyjus 2 è llam ma sospende i disagreement pairs fuori da llam}
 
 
 \section{Actual implementation in Elpi}\label{sec:implementation}
@@ -2426,23 +2433,25 @@ T2' can live in N1.
 \noindent
 \section{Related work and conclusion}
 
-Different strategies can be used to unify terms of the object language in the
-meta langauge. One initial approach involves integrating \Uo as a procedure
-within the ML, outlined as follows:
+Different strategies can be used to unify terms of the object language.
+% in the meta langauge. 
+The first approach that comes to mind consist in implementing \Uo as a
+regular routine in the ML as follows:
 
 \begin{elpicode}
   decision X :- X ~\Uo~(all A x\ app [P, x]), finite A,
     pi x\ decision (app [P, x]).
 \end{elpicode}
 
+\noindent
 Opting for this method would result in a suboptimal utilization of the logic
 programming engine provided by the meta language, as it degrades indexing by
-eliminating data from rule heads. Additionally, embedding \Uo within the meta
-language is likely to be significantly slower compared to a built-in
-solution.
+eliminating all data from rule heads. Additionally,
+implementing an unification procedure in the meta
+language is likely to be significantly slower compared to the built-in one.
 
 % Paper \cite{10.1145/2966268.2966272} introduces semi-shallow.
-Another possibility is to avoid having the application and abstraction nodes
+Another possibility is to avoid having application and abstraction nodes
 in the syntax tree, and use the ones of meta language, as in the following:
 
 \begin{elpicode}
@@ -2450,9 +2459,10 @@ decision (all A x\ P x) :- finite A, pi x\ decision (P x).
 \end{elpicode}
 
 \noindent
-However, two reasons justify rejecting this encoding. Firstly, in CIC, it is
+However, this encoding has two big limitations. Firstly, in CIC, it is
 not always feasible to adopt it due to the meta language's type system being
-too limited to accommodate that of the object language. \\
+too limited to accommodate for that one the object language. E.g. CIC
+can typecheck variadic functions, see for example~\ref{CPDT chlipala}. \\
 Secondly, the CIC encoding provided by Elpi is primarily utilized for meta
 programming, in order to extend the Coq system. Consequently, it must be able to
 manipulate terms that are not known in advance
@@ -2461,35 +2471,38 @@ without relying on introspection primitives such as Prolog's
 an open world, akin to the \elpiIn{string} data type used in the preceding
 examples.
 
-In the literature we could find related encoding of the Calculus of
-Constructions~\cite{felty93lics}. The goal of that work was to exhibit
-a logic program performing proof checking in CC and hence relate the
+In the literature we could find a related encoding of the Calculus of
+Constructions (CC)~\cite{felty93lics}. The goal of that work was to exhibit
+a logic program performing proof checking for CC and hence relate the
 proof system of intuitionistic higher-order logic (that animates $\lambda$Prolog
-programs) with the Calculus of Constructions. The encoding is hence tailored
-toward a different goal, and utilizes three relations to represent the
+programs) with the one of CC. The encoding is hence tailored
+toward a different goal, for example it utilizes three relations to represent the
 equational theory of CC. Section 6 contains a discussion about the use of the
 unification procedure of the meta language in presence of non ground goals, but
 the authors do not aim at exploiting it to the degree we want.\todo{sucks}
 
 \todo{cite isabelle's TC, that are baked in}
 
-Our encoding provides a third option that addresses all the considerations
-mentioned earlier. It capitalizes on the benefit of not requiring the recoding
-of the unification algorithm of the object language. Instead, it employs the
+\emph{The approach presented in this paper}
+provides a third option that addresses all the concerns
+mentioned earlier. It capitalizes on the benefit of not requiring to fully
+implement
+the unification algorithm of the object language. Instead, it employs the
 unification capabilities of the meta language, facilitated by the various links
-we establish to manage ``problematic'' subterms. Moreover, our encoding takes
-advantage of indexing algorithms and mode analysis for static clause filtering. It's noteworthy
-that we only replace the minimum necessary information with variables,
-specifically targeting \maybeeta and \notllambda subterms.
+%we establish
+to manage ``problematic'' subterms. As a result of this choice our encoding takes
+advantage of indexing data structures and mode analysis for clause filtering.
+It it worth mentioning that we only replace terms with variables only
+when it is strictly needed, leaving the rest of the term structure intact
+and hence indexable by the meta language logic programming engine.
+Moreover, the unification process we obtain is ready to take
+advantage of potential improvements to the programming engine,
+such as tabled search, and apply forms of static analysis for
+the meta language, such as determinacy, to the object language. 
+Finally, our approach is flexible enough to accommodate different strategies
+and heuristics to handle terms outside the pattern fragment, and
+it is not tightly coupled with CIC.
 
-Our proposed approach is highly adaptable to
-align closely with the behavior of the object language. It is not tightly
-coupled with the Coq system but can serve as a flexible framework for meta
-programming in any ML.
-
-Furthermore, the unification process we propose is tailored for potential future
-implementations of tabled search, incorporating memoization to retrieve
-solutions from previous searches.
 
 % ---
 
