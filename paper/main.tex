@@ -977,10 +977,25 @@ abs x\ val (link-llam (uva A [x]) (app[uva F [x],con "a"]))
 
 \subsection{Notational conventions}\todo{move away}
 
-When variables $x$ and $y$ can occur in term $t$ we shall write
-$t_{xy}$ to stress this fact. 
-\todo{add notation for problem compilation}
+In \cref{sec:eta,sec:invariant1,sec:beta,sec:llam},
+we use the following schema to represent the compilation of the list of \Fo{}
+problems \foUnifPb into the \Ho problems \hoUnifPb. \mapStore and \linkStore are
+respectively the mapping and the link store.
+%
+\printAlll
+  {{{p_1,p_2},{p_3,p_4}}}
+  {{{t_1,t_2},{t_3,t_4}}}
+  {{{X_1,A_1,{{x}}},{X_2,A_2,{{y}}}}}
+  {{{\eta,\Gamma,a,b}}}
 
+We index each sub-problem, sub-mapping, sub-link with its position in the image
+starting from $1$ and counting from left to right, top to bottom. For example,
+$\hoUnifPb_2$ corresponds to the \Ho problem $t_3 \Ue t_4$.
+The compiled version of each $\foUnifPb_i$ is represented by $\hoUnifPb_i$.
+
+Moreover, to indicate the scope of a \Ho variable, we use that scope as
+subscript of the considered variable. For example, $X_{xy}$ is the variable $X$ 
+having in scope $x$ and $y$.
 
 % The first three rules unify terms with same rigid heads, and
 % call the unification relation on the sub-terms. If $t_1$ (resp. $t_2$) is an
