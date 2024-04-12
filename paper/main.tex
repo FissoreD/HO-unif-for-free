@@ -415,7 +415,7 @@ address \githubUrl.
 
 Even if we encountered the problem working on CIC we devise
 a minimal setting to ease its study. In this setting we have
-a \Fo{} language (for first order) with a richer equational
+a \Fo{} language (for first order) with a rich equational
 theory and a \Ho{} meta language with a simpler one.
 
 
@@ -489,8 +489,7 @@ Here a few examples:\\
 
 \noindent
 When it is clear from the context we shall use the same syntax for \Fo{} terms
-(although we never subscripts unification variables).
-
+(although we never subscripts unification variables).\\
 We use $s$, $s_1$, \ldots for terms in \Fo{} and $t$, $t_1$ \ldots for
 terms in \Ho{}.
 
@@ -526,7 +525,8 @@ weaker \Ee is, and to identify the four rules that need special
 treatment in the implementation of \Uo.
 For brevity we omit the code of \elpiIn{beta}:
 it is sufficient to know that <<\elpiIn{beta F L R}>> computes in \elpiIn{R} the
-weak head normal form of <<\elpiIn{app[F|L]}>>.
+weak head normal form of <<\elpiIn{app [F|L]}>>.
+Note that the symbol \elpiIn{|} separates the head of a list from the tail.
 
 \paragraph{Substitution: $\rho s$ and $\sigma t$}
 
@@ -550,16 +550,19 @@ pointing out theirs differences.
 
 \paragraph{Term unification: \Uo vs. \Ue}
 
-Although we provide an implementation of the meta-language unification \Ue
-in the supplementary material (that we used for testing purposes) we only
-describe its signature here.
+% Although we provide an implementation of the meta-language unification \Ue
+% in the supplementary material (that we used for testing purposes) we only
+% describe its signature here.
+\Ho{}'s unification signature is:
 
 \input{code/ue_type}
 
+\noindent
 We write 
 $\sigma t_1 \Ue \sigma t_2 \mapsto \sigma'$ when
 $\sigma t_1$ and $\sigma t_2$ unify with substitution $\sigma'$.
-Note that $\sigma'$ is a refined (i.e. extended) version of $\sigma$.
+Note that $\sigma'$ is a refined (i.e. extended) version of $\sigma$; this is
+reflected by signature above that relates two substitutions.
 We write $t_1 \Ue t_2 \mapsto \sigma'$ when
 the initial substitution $\sigma$ is empty.
 % Note that if $\sigma t_1 \Ue \sigma t_2 \mapsto \sigma'$ then
@@ -576,6 +579,7 @@ the following properties:
   \unifcomplete{\Ee}{\Ue}{t}\label{prop:complete-ml}
 \end{gather}
 
+\noindent
 Even if we provide an implementation of the object-language unification
 \Uo{} in \cref{sec:founif}, our real goal is the simulation of an entire
 logic program.
@@ -584,10 +588,10 @@ logic program.
 % \todo{dire che P e T sono liste di coppie, dire che P e T vengono anche usati come insiemi}
 We represent a logic program \emph{run} in \Fo{} as
 a list \emph{steps} of length $\mathcal{N}$.
-\foUnifPb is a list of pair of terms, each pair correspond to a unification
+\foUnifPb is a list of pair of terms, each pair corresponds to a unification
 problem. At each step $p$ we unify two terms $\foUnifPb_{p_l}$ and
 $\foUnifPb_{p_r}$ (the small $l$ and $r$ represent respectively the left and right 
-elements extracted from $P_p$).
+elements extracted from $\foUnifPb_p$).
 \footnote{If the same rule is used multiple times in a run we
 just consider as many copies as needed of the terms composing the
 rules, with fresh unification variables each time.}
