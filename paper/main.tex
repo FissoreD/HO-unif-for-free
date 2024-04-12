@@ -536,10 +536,10 @@ the substitution to a term $t$, and $\sigma X = \{~ \sigma t ~|~ t \in X ~\}$ wh
 $X$ is a set of terms.
 We write $\sigma \subseteq \sigma'$ when $\sigma$ is more
 general than $\sigma'$.
-The domain of a substitution is the set of unification variables for which
-it provides an assignment.
-We write $\sigma \cup \sigma'$ to denote the concatenation of
-two substitutions whose domains are disjoint.
+% The domain of a substitution is the set of unification variables for which
+% it provides an assignment.
+% We write $\sigma \cup \sigma'$ to denote the concatenation of
+% two substitutions whose domains are disjoint.
 We shall use $\rho$ for \Fo{} substitutions,
 and $\sigma$ for the \Ho ones.
 For brevity, in this section we consider
@@ -555,13 +555,16 @@ describe its signature here.
 
 \input{code/ue_type}
 
-We write \todo{meglio dire che sigma' estende sigma, togliere unione e quindi dominio da sopra}
+We write 
 $\sigma t_1 \Ue \sigma t_2 \mapsto \sigma'$ when
 $\sigma t_1$ and $\sigma t_2$ unify with substitution $\sigma'$.
-We write $t_1 \Ue t_2 \mapsto \sigma$ when
-the initial substitution is empty.
-Note that if $\sigma t_1 \Ue \sigma t_2 \mapsto \sigma'$ then
-the domains of $\sigma$ and $\sigma'$ are disjoint.
+Note that $\sigma'$ is a refined (i.e. extended) version of $\sigma$.
+We write $t_1 \Ue t_2 \mapsto \sigma'$ when
+the initial substitution $\sigma$ is empty.
+% Note that if $\sigma t_1 \Ue \sigma t_2 \mapsto \sigma'$ then
+% the domains of $\sigma$ and $\sigma'$ are disjoint.
+We write \llambda as the set of terms that are in the pattern-fragment, i.e.
+every higher-order variable is applied to a list of distinct names.
 
 The meta language of choice is expected to provide 
 an implementation of \Ue that satisfies
@@ -572,7 +575,6 @@ the following properties:
   \unifcomplete{\Ee}{\Ue}{t}\label{prop:complete-ml}
 \end{gather}
 
-\todo{spiegare llam (first use after intro)}
 Even if we provide an implementation of the object-language unification
 \Uo{} in \cref{sec:founif}, our real goal is the simulation of an entire
 logic program.
@@ -1298,7 +1300,7 @@ no modification to the \elpiIn{progress} predicate is needed.
   
 \begin{lemma}[\wellb-enforcement]\label{lem:w-enforcement-maybebeta} Even if $\foUnifPb \cap \maybebeta \ne \emptyset$,
   $\hoUnifPb \cup \maybebeta = \emptyset$
-\end{lemma}
+\end{lemma}\noteD{Non capisco}
 \begin{proof}[Proof sketch]
   problematic terms are mapped to uva by comp, the problematic fapp node is gone.
 \end{proof}
