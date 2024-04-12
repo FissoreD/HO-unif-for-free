@@ -1,10 +1,9 @@
 namespace mem {
 %BEGIN
-%SNIP: mem_types
   kind addr type.
   type addr nat -> addr.
+%SNIP: mem_types
   typeabbrev (mem A) (list (option A)).
-
   type set? addr -> mem A -> A -> o.
 %ENDSNIP
   set? (addr A) Mem Val :- get A Mem Val.

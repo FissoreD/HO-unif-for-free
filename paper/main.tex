@@ -879,8 +879,7 @@ and granting \cref{prop:simulation,prop:fidelity,prop:fidelity-recovery}.
 
 % \input{code/pattern_fragment}
 
-Unification variables are identified by a
-natural number that represents a memory addresses.
+Unification variables are identified by a (unique) memory address.
 The memory and its associated operations are described below:
 
 \input{code/mem_types}
@@ -890,26 +889,27 @@ If a memory cell is \elpiIn{none}, then the corresponding unification variable
 is not set. \elpiIn{assign} sets an unset cell to the given value, while
 \elpiIn{new} finds the first unused address and sets it to \elpiIn{none}.
 
-Since each occurrence of a \Ho unification variables has a scope,
+Since each \Ho unification variables occurs together with a scope,
 its assignment needs to be abstracted over it to enable the
 instantiation of the same assignment to different scopes.
 This is expressed by the \elpiIn{inctx} container, and in particular
 its \elpiIn{abs} binding constructor.
-On the contrary a solution to a \Fo variable is a plain term.
 
-\input{code/fo_subst}
 \input{code/ho_subst}
 
 \noindent
-We call \elpiIn{fsubst} the memory of \Fo{}, while we call \elpiIn{subst}
-the one of \Ho.
+A solution to a \Fo{} variable is a plain term, that is \elpiIn{fsubst}
+is an abbreviation for \elpiIn{mem fm}.
+%We call \elpiIn{fsubst} the memory of \Fo{}, while we call \elpiIn{subst}
+%the one of \Ho.
 
 The compiler establishes a mapping between variables of the two languages.
 
 \input{code/comp_base_types}
 
+\noindent
 Each \elpiIn{hvariable} is stored in the mapping together with
-its arity so that the code of \ref{clause:malloc} below can preserve:
+its arity (a number) so that the code of \ref{clause:malloc} below can preserve:
 
 \begin{invariant}[Unification-variable arity]\label{inv:uvaarity}
   Each variable \elpiIn{A}
@@ -925,8 +925,8 @@ of arguments the compiler generates multiple mappings for it, on a first
 approximation, and then makes the mapping bijective by introducing
 \linketa; this detail is discussed in section \ref{sec:invariant1}.
 
-Applying the substitution corresponds to dereferencing a term with respect to
-the memory.
+%Applying the substitution corresponds to dereferencing a term with respect to
+%the memory.
 %  To ease the comparison we split \Fo{} dereferencing into a
 % \elpiIn{fder} step and a \elpiIn{napp} one. The former step replaces references
 % to memory cells that are set with their values, and has a corresponding
@@ -939,7 +939,8 @@ the memory.
 % to a \elpiIn{uva} (as per \cref{sec:simulation,sec:beta}),
 % preventing nested applications to materialize.
 % \input{code/fderef}
-It is worth looking at the code fpr \Ho{} to remark how assignments are moved
+It is worth looking at the code of \elpiIn{deref} that
+applies the substitution to a \Ho{} term. Remark how assignments are moved
 to the current scope, i.e. renaming the \elpiIn{abs}-bound variables
 with the names in the scope of the unification variable occurrence.
 
@@ -948,9 +949,9 @@ with the names in the scope of the unification variable occurrence.
 \noindent
 Note that move strongly relies on invariant \ref{inv:uvaarity}: the length
 of the arguments of all occurrences of a unification are the same. Hence
-they have the same type in the meta-level and the number of \elpiIn{abs}
-nodes in the assignment matches that length. In turn this grants that
-\elpiIn{move} never fails.\todo{convoluted}
+they have the same simple type for the meta-level and hence the number of
+\elpiIn{abs} nodes in the assignment matches that length.
+In turn this grants that \elpiIn{move} never fails.
 
 \input{code/move}
 
@@ -972,7 +973,7 @@ the problematic term thanks to their scope.
 \noindent
 The right hand side of a link, the problematic term, can occur under binders.
 To accommodate this situation the compiler wraps \elpiIn{baselink} using
-the \elpiIn{inctx} container (see rule~\ref{data:inctx}).
+the \elpiIn{inctx} container (see~\ref{data:inctx} also used for \elpiIn{subst}).
 
 \begin{invariant}[Link left hand side]\label{inv:linklhs}
   The left hand side of a suspended link
@@ -981,7 +982,7 @@ the \elpiIn{inctx} container (see rule~\ref{data:inctx}).
 
 \noindent
 New links are suspended by construction.
-If the left hand side variable is assigned during a step, then 
+If the left hand side is assigned during a step, then 
 the link is considered for progress and possibly eliminated.
 This is discussed in \cref{sec:eta} and \cref{sec:beta}.
 
@@ -1059,21 +1060,29 @@ having in scope $x$ and $y$.
 
 \subsection{Compilation}
 \label{sec:compilation}
-\noteE[inline]{manca beta normal in entrata}
 
-The main task of the compiler is to recognize \Fo{} variables standing
-for functions and map them to higher order variables in \Ho.
+The simple compiler described in this section serves as a base for the
+extensions in \cref{sec:llam,sec:eta,sec:beta}.
+Its main task is to beta normalize the term and map one syntax tree to
+the other.
 In order to bring back the substitution from \Ho{} to \Fo{} the compiler
 builds a ``memory map'' connecting the the kind of variables using routine
 \ref{clause:malloc}.
 
 The signature of the \elpiIn{comp} predicate below allows for the generation of
 links (suspended unification problems) that play no role in this section
-but play a major role in \cref{sec:eta} and \cref{sec:beta}.
+but play a major role in \cref{sec:llam,sec:eta,sec:beta}.
 With respect to \cref{sec:problem-statement} the signature also allows
 for updates to the substitution.
 
 \input{code/comp_base}
+\todo{use the real code}
+\begin{elpicode}
+type compile fm -> tm -> mmap -> mmap -> links -> links ->
+  subst -> subst -> o.
+compile Fo0 Ho M0 M1 L0 M1 S0 S1 :-
+  beta-normal Fo0 Fo, comp Fo Ho M0 M1 L0 M1 S0 S1.
+\end{elpicode}
 
 \noindent
 The code above uses that possibility
@@ -1097,14 +1106,14 @@ of binders.
 \input{code/comp_close_links}
 
 \noindent
-Note that we could remove the first rule, whose solve purpose is to make
+Note that we could remove the first rule, whose sole purpose is to make
 links more readable by pruning unused context entries.
 
 \subsection{Execution}
 \label{sec:execution}
 
 A step in \Ho consists in unifying two terms and reconsidering all
-links for progress. If any of the two tasks fail we say that the entire step
+links for progress. If any of the two tasks fails we say that the entire step
 fails, and it is at this granularity that we can relate steps in the
 two languages.
 
@@ -1124,20 +1133,20 @@ substitution and in turn enable another link to progress.
 In the base compilation scheme \elpiIn{progress1} is the identity
 on both the links and the substitution, so the fixpoint trivially terminates.
 Sections \ref{sec:eta} and \ref{sec:beta} add rules to \elpiIn{progress1}
-and justify why the don't hinder termination. For brevity we omit the code
-that applies the substitution \elpiIn{S1} to all terms in \linkStore.
+and justify why the don't hinder termination.
+% For brevity we omit the code
+% that applies the substitution \elpiIn{S1} to all terms in \linkStore.
 
 \subsubsection{Occur check}
-Since compilation moves problematic terms out of the sigh of \Ue{},
+Since compilation moves problematic terms out of the sight of \Ue{},
 that procedure can only perform a partial occur check. For example the
 unification problem $X \Ue f~Y$ cannot generate a cyclic substitution alone,
 but should be disallowed if a $\linkStore$ contains a link like
-$\linketaM{}{Y}{\lambda z.X_z}$: We don't know yet if $Y$ will feature
+$\linketaM{}{Y}{\lambda z.X_z}$: we don't know yet if $Y$ will feature
 a lambda in head position, but we surely know it contains $X$, hence
 $f~Y$ and that fails the occur check.
-The procedure \elpiIn{occur-check-links} is in charge of ensuring that
-each link does not represent a (suspended) unification problem doomed
-to fail because of occur check. This check is needed in order to
+The procedure \elpiIn{occur-check-links} is in charge of
+performing this check that is needed in order to
 guarantee \fullref{prop:fidelity}.
 
 \subsection{Substitution decompilation}
