@@ -1086,34 +1086,34 @@ links more readable by pruning unused context entries.
 \subsection{Execution}
 \label{sec:execution}
 
-A step in \Ho consists in unifying two terms and reconsidering all
-links for progress. If any of the two tasks fails we say that the entire step
-fails, and it is at this granularity that we can relate steps in the
+A step in \Ho consists of unifying two terms and reconsidering all
+links for progress. If either of these tasks fails, we consider the entire step to
+fail. It is at this granularity that we can relate steps in the
 two languages.
 
 
 \input{code/hstep}
 
 \noindent
-Note tha the infix notation \elpiIn{((A ~\Ue~B) C D)} is syntactic sugar for
+Note that the infix notation \elpiIn{((A ~\Ue~B) C D)} is syntactic sugar for
 \elpiIn{((~\Ue\!\!\!~) A B C D)}.
 
-Reconsidering links is a fixpoint, since the progress of a link can update the
-substitution and in turn enable another link to progress.
+Reconsidering links is a fixpoint process because the progress of a link
+can update the substitution, which may then enable another link to progress.
 
 \input{code/progress}
 
 \subsubsection{Progress}
-In the base compilation scheme \elpiIn{progress1} is the identity
+In the base compilation scheme, \elpiIn{progress1} is the identity function
 on both the links and the substitution, so the fixpoint trivially terminates.
 Sections \ref{sec:eta} and \ref{sec:beta} add rules to \elpiIn{progress1}
-and justify why the don't hinder termination.
+and explain why the don't hinder termination.
 % For brevity we omit the code
 % that applies the substitution \elpiIn{S1} to all terms in \linkStore.
 
 \subsubsection{Occur check}\label{sec:oc}
 Since compilation moves problematic terms out of the sight of \Ue{},
-that procedure can only perform a partial occur check. For example the
+that procedure can only perform a partial occur check. For example, the
 unification problem $X \Ue f~Y$ cannot generate a cyclic substitution alone,
 but should be disallowed if a $\linkStore$ contains a link like
 $\linketaM{}{Y}{\lambda z.X_z}$: we don't know yet if $Y$ will feature
