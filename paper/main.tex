@@ -652,7 +652,7 @@ We write $\hoUnifPb_p = \{~ \hoUnifPb_{p_l}, \hoUnifPb_{p_r} ~\}$
 and $s \in \foUnifPb \Leftrightarrow \exists p, s \in \foUnifPb_p$.
 
 We simulate each run in \Fo{} with a run in \Ho as follows:
-
+%
 %Note that $\sigma_0$ is the empty substitution.
 $$
 \begin{array}{l}
@@ -891,7 +891,7 @@ If a memory cell is \elpiIn{none}, then the corresponding unification variable
 is not set. \elpiIn{assign} sets an unset cell to the given value, while
 \elpiIn{new} finds the first unused address and sets it to \elpiIn{none}.
 
-Since each \Ho unification variables occurs together with a scope,
+Since each \Ho unification variable occurs together with a scope,
 its assignment needs to be abstracted over it to enable the
 instantiation of the same assignment to different scopes.
 This is expressed by the \elpiIn{inctx} container, and in particular
@@ -923,8 +923,8 @@ its arity (a number) so that the code of \ref{clause:malloc} below can preserve:
 
 \noindent
 When a single \elpiIn{fvariable} occurs multiple times with different numbers
-of arguments the compiler generates multiple mappings for it, on a first
-approximation, and then makes the mapping bijective by introducing
+of arguments, the compiler generates multiple mappings for it, on a first
+approximation, and then ensures the mapping are bijective by introducing
 \linketa; this detail is discussed in section \ref{sec:invariant1}.
 
 %Applying the substitution corresponds to dereferencing a term with respect to
@@ -941,19 +941,19 @@ approximation, and then makes the mapping bijective by introducing
 % to a \elpiIn{uva} (as per \cref{sec:simulation,sec:beta}),
 % preventing nested applications to materialize.
 % \input{code/fderef}
-It is worth looking at the code of \elpiIn{deref} that
-applies the substitution to a \Ho{} term. Remark how assignments are moved
-to the current scope, i.e. renaming the \elpiIn{abs}-bound variables
+It is worth examining the code of \elpiIn{deref}, which
+applies the substitution to a \Ho{} term. Notice how assignments are moved
+to the current scope, i.e. the \elpiIn{abs}-bound variables are renamed
 with the names in the scope of the unification variable occurrence.
 
 \input{code/deref}
 
 \noindent
-Note that move strongly relies on invariant \ref{inv:uvaarity}: the length
-of the arguments of all occurrences of a unification are the same. Hence
-they have the same simple type for the meta-level and hence the number of
+Note that \elpiIn{move} strongly relies on invariant \ref{inv:uvaarity}: the length
+of the arguments of all occurrences of a unification variable is the same. Hence,
+they have the same simple type for the meta-level, and therefore the number of
 \elpiIn{abs} nodes in the assignment matches that length.
-In turn this grants that \elpiIn{move} never fails.
+This guarantees that \elpiIn{move} never fails.
 
 \input{code/move}
 
