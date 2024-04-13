@@ -964,8 +964,8 @@ for <<\elpiIn{lam x\lam y\y}>>.
 \subsection{Links (\linkStore)}
 
 \noindent
-As we mentioned in section~\ref{sec:nutshell} the compiler
-replaces terms in \maybeeta, \maybebeta and \notllambda with fresh
+As mentioned in section~\ref{sec:nutshell}, the compiler
+replaces terms in \maybeeta, \maybebeta, and \notllambda with fresh
 variables linked to the problematic terms. Terms in \maybebeta do not
 need a link since \Ho{} variables faithfully represent
 the problematic term thanks to their scope.
@@ -973,24 +973,24 @@ the problematic term thanks to their scope.
 \input{code/comp_links}
 
 \noindent
-The right hand side of a link, the problematic term, can occur under binders.
-To accommodate this situation the compiler wraps \elpiIn{baselink} using
+The right-hand side of a link, the problematic term, can occur under binders.
+To accommodate this situation, the compiler wraps \elpiIn{baselink} using
 the \elpiIn{inctx} container (see~\ref{data:inctx} also used for \elpiIn{subst}).
 
 \begin{invariant}[Link left hand side]\label{inv:linklhs}
-  The left hand side of a suspended link
+  The left-hand side of a suspended link
   is a variable.
 \end{invariant}
 
 \noindent
 New links are suspended by construction.
-If the left hand side is assigned during a step, then 
+If the left-hand side is assigned during a step, then 
 the link is considered for progress and possibly eliminated.
 This is discussed in \cref{sec:eta} and \cref{sec:beta}.
 
-When detailing examples we write links as equations between two
+When detailing examples, we represent links as equations between two
 terms under a context.
-The equality sign is subscripted with
+The equality sign is subscripted with the
 kind of \elpiIn{baselink}. For example $\linkbetaM{x}{A_x}{F_x~a}$ corresponds to:
 \begin{elpicode}
 abs x\ val (link-llam (uva A [x]) (app[uva F [x],con "a"]))
@@ -1046,13 +1046,13 @@ extensions in \cref{sec:llam,sec:eta,sec:beta}.
 Its main task is to beta normalize the term and map one syntax tree to
 the other.
 In order to bring back the substitution from \Ho{} to \Fo{} the compiler
-builds a ``memory map'' connecting the the kind of variables using routine
-\ref{clause:malloc}.
+builds a ``memory map'' connecting the kind of variables using routine
+\ref{clause:malloc}.\noteD{non mi piace}
 
 The signature of the \elpiIn{comp} predicate below allows for the generation of
-links (suspended unification problems) that play no role in this section
+links (suspended unification problems), which play no role in this section
 but play a major role in \cref{sec:llam,sec:eta,sec:beta}.
-With respect to \cref{sec:problem-statement} the signature also allows
+With respect to \cref{sec:problem-statement}, the signature also allows
 for updates to the substitution.
 
 \input{code/comp_base}
@@ -1060,7 +1060,7 @@ for updates to the substitution.
 
 \noindent
 The code above uses that possibility
-in order to allocate space for the variables, i.e. sets their memory
+in order to allocate space for the variables, i.e. it sets their memory
 address to \elpiIn{none} (a details not worth mentioning in the
 previous sections).
 \todo{explain fold6}
@@ -1068,11 +1068,11 @@ previous sections).
 \input{code/comp_lam}
 
 \noindent
-In the code above the syntax \elpiIn{pi x y\..} is syntactic sugar for
+In the code above, the syntax \elpiIn{pi x y\..} is syntactic sugar for
 iterated \elpiIn{pi} abstraction, as in \elpiIn{pi x\ pi y\..}.
 
 The auxiliary function \elpiIn{close-links} tests if the bound variable
-\elpiIn{v} really occurs in the link. If it is the case the link is wrapped into
+\elpiIn{v} really occurs in the link. If it does, the link is wrapped into
 an additional \elpiIn{abs} node binding \elpiIn{v}. In this way links generated
 deep inside the compiled terms can be moved outside their original context
 of binders.
