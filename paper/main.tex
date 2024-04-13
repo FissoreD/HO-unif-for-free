@@ -1127,33 +1127,33 @@ guarantee \fullref{prop:fidelity}.
 
 Decompiling the substitution involves three steps.
 
-First and foremost problematic terms stored in
+First and foremost, problematic terms stored in
 \linkStore have to be moved back into the game:
 a suspended link must be turned into a valid assignment.
 This operation is possible thanks to \fullref{inv:linklhs},
-thanks to the fact that no link causes an occur-check~(\ref{sec:oc})
-and the fact that \linkStore is duplicate free (\cref{TODO}).
+which ensures that no link causes an occur-check~(\ref{sec:oc})
+and the fact that \linkStore is duplicate-free (\cref{TODO}).
 
-The second step amounts at allocating new variables in the
+The second step involves allocating new variables in the
 memory of \Fo{}. This technicality is required because some
-higher-order unification may need to prune a variable. For example
-$F\appsep x\appsep y = F\appsep x\appsep z$ requires to allocate a 
+higher-order unifications may require pruning a variable. For example,
+$F\appsep x\appsep y = F\appsep x\appsep z$ requires allocating a 
 variable $G$ in order to express the assignment $F_{ab} \mapsto G_a$.
 
-The last step amounts at decompiling each assignment.
-Decompiling a term is trivial since \mapStore is a bijection.
-The only tricky part concerns the \elpiIn{abs} node. In out simple setting
-the \elpiIn{flam} node carries no extra info (other then the function body),
+The final step is to decompile each assignment.
+Decompiling a term is straightforward since \mapStore is a bijection.
+The only complex part concerns the \elpiIn{abs} node. In our simple setting,
+the \elpiIn{flam} node carries no additional information (other than the function body),
 so each \elpiIn{abs} node can be trivially converted to a \elpiIn{flam} one.
-In the case of CIC, where lambdas carry the type of the bound variable, one
-has to store it somewhere. Note how this piece of information is akin
-to the arity of variables, that is CIC's unification variables have a
-(function) type, and that type can be used to annotate the lambdas
-needed in order to express their assignment.
+However, in the case of CIC, where lambdas carry the type of the bound variable, one
+must store this information somewhere. Note that this information is similar
+to the arity of variables; that in CIC, unification variables have a
+(function) type, and this type can be used to annotate the lambdas
+needed to express their assignment.
 
 \begin{lemma}[Compilation round trip]\label{prop:comprt} If
   \elpiIn{compile S T [] M [] _ [] _} then \elpiIn{decompile M T S}
-\end{lemma}
+\end{lemma}\noteD{Should also decompile links\dots}
 % \begin{proof}[Proof sketch]
 % Trivial since \mapStore is a bijection and 
 % the terms are beta normal.
@@ -1838,11 +1838,13 @@ when the \lhs is assigned to a variable that is the \lhs of another
 \begin{theorem}[Fidelity in \maybeeta]
   % F x = z, F x y = z y
   Given a list of unification problems \foUnifPb, such that \noteD{riprendere sec 3.1}
-  $\forall t, t\in\subterm{\foUnifPb} \land t \notin \notllambda$, \noteD{dire che M e biiettivo}
+  $\forall t, t\in\subterm{\foUnifPb} \land t \notin \notllambda$ and the 
+  map memory is bijective,
   the introduction 
   of \linketa guarantees \fullref{prop:fidelity}.
-  \footnote{We also suppose that any higher-order variable is always applied with
-  the same number of arguments. This problem is addressed in \cref{sec:invariant1}}\noteD{modificare accordingly}
+  \footnote{A map memory is bijective if any higher-order variable is applied
+  with the same number of arguments. This problem is addressed in
+  \cref{sec:invariant1}}
   \label{lemma:fidelity-maybeeta}
 \end{theorem}
 
