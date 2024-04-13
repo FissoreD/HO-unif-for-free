@@ -1455,13 +1455,12 @@ $
 % sequenza)
 
 \section{Handling of \maybeeta}\label{sec:eta}
-$\eta$-reduction is an equivalence relation where a term of the form
-$\lambda x.t \appsep x$ can be converted to $t$ any time $x$ does not occur as a
-free variable in $t$. We call $t$ the $\eta$-contraction of
-$\lambda x. t \appsep x$.
-
-Following the compilation scheme of \cref{sec:compilation} the
-unification problem \foUnifPb is compiled as follows:
+A term 
+$\lambda x. t \appsep x$ is said to be the $\eta$-expansion of $t$ if
+$x$ does not occur free in $t$, and conversely $t$ is the $\eta$-contraction of
+$\lambda x. t \appsep x$. The equational theory of \Fo{} identifies these terms,
+but the current compilation scheme does not,
+as shown by the following example:
 %
 \printAlll
   {{{\lambda x. X \appsep x, f}}}
@@ -1478,10 +1477,11 @@ $\rho = \{~ X \mapsto f ~\}$, the corresponding problem in
 \Ue{} fails.
 
 In order to guarantee \cref{prop:simulation} we detect
-lambdas that can disappear by eta contraction (\cref{sec:etadetection}) and
-we modify the compiled terms by putting fresh unification variables
-in their place: the problematic term is moved 
-from  \hoUnifPb to \linkStore (\cref{sec:etacomp}). The compilation
+lambda abstractions that can disappear by $\eta$-contraction
+(\cref{sec:etadetection}) and we modify the compiler so that it
+generates fresh unification variables
+in their place and moves the problematic term 
+from \hoUnifPb to \linkStore (\cref{sec:etacomp}). The compilation
 of the problem \foUnifPb above is refined to: 
 %
 \printAlll
@@ -1491,9 +1491,8 @@ of the problem \foUnifPb above is refined to:
   {{{\eta,,A,\lambda x.B_x}}}
 
 \noindent
-As per \cref{inv:linklhs} the term on the left is a variable, and its
-right counterpart is the
-term in \maybeeta. That term has the following property:
+As per \cref{inv:linklhs} the \linketa left hand side is a variable
+while the right hand side is a term in \maybeeta that has the following property:
 
 \begin{invariant}[\linketa \rhs]
   The \rhs of any \linketa %in \linkStore 
@@ -1503,10 +1502,10 @@ term in \maybeeta. That term has the following property:
   \label{inv:link-eta-right}
 \end{invariant}
 
-\linketa are kept in the link store \linkStore during execution
-and activated when some conditions hold on \lhs or \rhs.
-Link activation is implemented by extending the \elpiIn{progress1}
-predicate (defined in \cref{sec:execution}).
+Each \linketa is kept in the link store \linkStore during execution
+and is activated under some conditions.
+Activation is implemented by extending the \elpiIn{progress1}
+predicate defined in \cref{sec:execution}.
 
 \subsection{Detection of \maybeeta}\label{sec:etadetection}
 
