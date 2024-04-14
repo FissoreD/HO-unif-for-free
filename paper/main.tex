@@ -1596,7 +1596,7 @@ of $X$ can make $x$ disappears from $t$.
 Moreover, note that $\eta$-contracting $t$ cannot make $x$ disappear, since
 $x$ is not a locally bound variable inside $t$.
 
-We can now derive the implementation for \maybeeta detection:
+We can now describe the implementation of \maybeeta detection:
 
 \newcommand{\testmaybeeta}{\emph{maybe-eta}\xspace}
 \begin{definition}[\testmaybeeta]\label{def:testmaybeeta}
@@ -1617,8 +1617,9 @@ We can now derive the implementation for \maybeeta detection:
   \end{enumerate}
 \end{definition}
 \begin{lemma}[\maybeeta detection]\label{lem:maybeeta}
-  If $t$ is a $\beta$-normal term and \testmaybeeta{} $t$ holds,
-  then $t \in \maybeeta$.
+  If $t$ is a $\beta$-normal term
+  and
+  $t \in \maybeeta$ then \testmaybeeta{} $t$ holds.
 \end{lemma}
 \begin{proof}[Proof sketch]
 Follows from \cref{def:occrigid} and \cref{lem:reduceto}
@@ -1672,39 +1673,38 @@ The following rule is inserted just before rule~\ref{rule:complam} from the code
 \input{code/comp_eta}
 
 \noindent
-The rule triggers when the input term \elpiIn{flam F} is in
-\maybeeta. It compiles \elpiIn{flam F} to \elpiIn{lam F1} but puts the fresh
-variable \elpiIn{A} in its place. This variable sees all the names free in
-\elpiIn{lam F1}. The critical part of this rule is the creation of the \linketa,
-which relates the variable \elpiIn{A} with \elpiIn{lam F1}.
-This link clearly validates \cref{inv:linklhs}.
+TWhenever \elpiIn{flam F} is detected to be in
+\maybeeta it is compiled to \elpiIn{lam F1} and replaced by the fresh
+variable \elpiIn{A}. This variable sees all the names free in
+\elpiIn{lam F1}. The variable is connected to \elpiIn{lam F1} via a \linketa.
+Invariant~\fullref{inv:linklhs} holds for this link, moreover:
 
 \begin{corollary}
   The \rhs of any \linketa has exactly one lambda abstraction, hence
-  the rule above respects \cref{inv:link-eta-right}.
+  the rule above respects \fullref{inv:link-eta-right}.
   \label{cor:rhs-eta-onelamb}
 \end{corollary}
 
 \begin{proof}[Proof sketch]
-  By contradiction, suppose that the rule above is triggered and that
-  the \rhs of the link is $\lambda x.\lambda y.t_{xy}$.
-  If $\testmaybeeta{}~\lambda y.t_{xy}$ holds the recursive call to
+  By contradiction, suppose that the rule above is applied and that
+  the \rhs of the link is $\lambda x.\lambda y.t$, where $x$ and $y$ occur in $t$.
+  If $\testmaybeeta{}~\lambda y.t$ holds then the recursive call to
   \elpiIn{comp} (made by \elpiIn{comp-lam}) must have put a fresh variable
   in its place, so this case is impossible.
-  Otherwise, if $\testmaybeeta{}~\lambda y.t_{xy}$ does not hold, also
-  $\testmaybeeta{}~\lambda x.\lambda y.t_{xy}$ does not hold, contradicting
-  the assumption that the rule triggered.
+  Otherwise, if $\testmaybeeta{}~\lambda y.t$ does not hold, also
+  $\testmaybeeta{}~\lambda x.\lambda y.t$ does not hold, contradicting
+  the assumption that the rule was applied.
 \end{proof}
 
 \paragraph{Decompilation}
-Decompilation of the remaining \linketa (i.e. the \linketa that have been
-activated) is performed by iterating over them and unifying \lhs and \rhs. Note
-that this unification never fails, since \lhs is a flexible term not appearing
-in any other \linketa (by \cref{def:progressetadedup}).
+The decompilation of a \linketa is performed by unifying
+the \lhs with the \rhs. Note that this unification never fails, since \lhs is a
+flexible term not appearing in any other \linketa
+(by \cref{def:progressetadedup}).
 
 \subsection{Progress}\label{sec:etaprogress}
 
-\linketa are meant to delay the unification of ``problematic'' terms until
+\linketa{}s are meant to delay the unification of ``problematic'' terms until
 we know for sure if the term has to be $\eta$-contracted or not.
 
 \newcommand{\progressetaleft}{\emph{$\eta$-progress-\lhs}\xspace}
@@ -1723,7 +1723,7 @@ $X$ becomes rigid. Let $y\in\Gamma$, there are two cases:
 \begin{definition}[\progressetaright]\label{def:progressetaright} A link
 \linketaM{\Gamma}{X}{T} is removed from \linkStore when either 1)
 $\testmaybeeta~T$ does not hold (anymore) or 2) by $\eta$-contracting $T$ to
-$T'$, $T'$ is a term not starting with the \elpiIn{lam} constructor. In the
+$T'$ where $T'$ does not start with the \elpiIn{lam} constructor. In the
 first case, $X$ is unified with $T$ and in the second one, $X$ is unified with
 $T'$ (under the context $\Gamma$).
 \end{definition}
@@ -1762,11 +1762,15 @@ when the \lhs is assigned to a variable that is the \lhs of another
 
 \begin{proof}[Proof sketch]
   Let $\sigma$ be the substitution, which is  $\wellb(\sigma)$ (by
+  \todo{is w sigmaa defined?}
   \cref{prop:w-preservation}). $\lhs \in \sigma$, therefore $\wellb(\lhs)$. By
-  \progressetaleft, if 1) \lhs is a name, a constant or an
-  application, then, $\lambda x.\lhs \appsep x$ is unified with \rhs. By
-  \cref{inv:link-eta-right} and \cref{lemma:unif-eta-aux}, $\rhs = \lambda x. t$ and $\wellb(t)$.
-  Otherwise, 2) \lhs has \elpiIn{lam} as functor. In both cases, unification is
+  \progressetaleft, if 1) the \lhs is a name, a constant or an
+  application, then, $\lambda x.\lhs \appsep x$ is unified with the \rhs. By
+  \cref{inv:link-eta-right} and \cref{lemma:unif-eta-aux},
+  $\rhs = \lambda x. t$ and $\wellb(t)$.
+  Otherwise, 2) the \lhs has \elpiIn{lam} as functor.
+  \todo{what does as a functor mean?}
+  In both cases, unification is
   performed between terms in \wellb.
 \end{proof}
 
@@ -1791,16 +1795,23 @@ when the \lhs is assigned to a variable that is the \lhs of another
 \end{lemma}
 
 \begin{proof}
-  The unification is done between the \rhs of two \linketa. Both \rhs has the
-  shape $\lambda x.t$, and by \cref{lemma:unif-eta-aux}, $\wellb(t)$.
-  Therefore, the unification is done between well-behaved terms.
+  We unify the \rhs{} of two \linketa. Both have the
+  shape $\lambda x.t$ and by \cref{lemma:unif-eta-aux}, $\wellb(t)$.
 \end{proof}
 
 \begin{lemma}
-  The introduction of \linketa guarantees \fullref{prop:w-preservation}
+  The introduction of \linketa guarantees \fullref{prop:w-enforcing}
+  %\label{lemma:unif-wellb}
+\end{lemma}
+
+\begin{proof}[Proof sketch]
+  By \cref{def:testmaybeeta}.\todo{shall we move the proof here?}
+\end{proof}
+
+\begin{lemma}
+  The progress of \linketa guarantees \fullref{prop:w-preservation}
   \label{lemma:unif-wellb}
 \end{lemma}
-\todo{is this W-enforcing?}
 
 \begin{proof}[Proof sketch]
   By \cref{lemma:unif-eta-1,lemma:unif-eta-2,lemma:unif-eta-3}, every
@@ -1836,14 +1847,12 @@ when the \lhs is assigned to a variable that is the \lhs of another
 
 \begin{theorem}[Fidelity in \maybeeta]
   % F x = z, F x y = z y
-  Given a list of unification problems \foUnifPb, such that \noteD{riprendere sec 3.1}
-  $\forall t, t\in\subterm{\foUnifPb} \land t \notin \notllambda$ and the 
-  map memory is bijective,
+  Given a list of unification problems \foUnifPb, if \noteD{riprendere sec 3.1}
+  $\forall t, t\in\subterm{\foUnifPb} \Rightarrow t \notin \notllambda$ and if the 
+  memory map is bijective, then
   the introduction 
   of \linketa guarantees \fullref{prop:fidelity}.
-  \footnote{A map memory is bijective if any higher-order variable is applied
-  with the same number of arguments. This problem is addressed in
-  \cref{sec:invariant1}}
+  \footnote{This premise is fulfilled in \cref{sec:invariant1}}
   \label{lemma:fidelity-maybeeta}
 \end{theorem}
 
@@ -1852,6 +1861,7 @@ when the \lhs is assigned to a variable that is the \lhs of another
   original unification problem, a \maybeeta term is unified with respectively a
   well-behaved term or another \maybeeta term. In both cases, the links trigger
   a unification which succeeds iff the same unification in \Fo{} succeeds,
+  \todo{Fix: show that 5.7 an 5.8 compensate for missing eta rule}
   guaranteeing \cref{prop:fidelity}. \progressetaright never fails, in fact,
   this progression refines a variable to a rigid term and plays no role in 
   \cref{prop:fidelity}.
@@ -1872,11 +1882,12 @@ when the \lhs is assigned to a variable that is the \lhs of another
 The example at the beginning of \cref{sec:eta}, once
 $\sigma = \{~ A \mapsto f ~\}$, triggers \progressetaleft since the link
 becomes \linketaM{}{f}{\lambda x.B_{x}} and the \lhs is a constant.
-In turn the rule runs $\lambda x.f \appsep x \Ue{} \lambda x.B_{x}$,
+In turn the rule \todo{which rule} runs $\lambda x.f \appsep x \Ue{} \lambda x.B_{x}$,
 resulting in $\sigma = \{~ A \mapsto f ~;~ B_{x} \mapsto f ~\}$.
 Decompilation the generates $\rho = \{~ X \mapsto f ~\}$, since
 $X$ is mapped to $B$ and
 $f$ is the $\eta$-contracted version of $\lambda x.f \appsep x$.
+\todo{explain why decompile does so and which eta?}
 
 \paragraph{Example of \progressetadedup}
 
@@ -1897,8 +1908,8 @@ $\sigma = \{ A~ \mapsto C, B \mapsto D ~\}$.
 In turn, given the map \mapStore, this second assignment is decompiled to
 $\rho = \{~ X \mapsto Y ~\}$ as expected.
 
-We delay at the end of  next section an example of \linketa progression due to
-\progressetaright
+We give an example for rule
+\progressetaright in the next section.
 
 
 %\section{Enforcing inv.: \NoCaseChange{\nameref{inv:uvaarity}}}
