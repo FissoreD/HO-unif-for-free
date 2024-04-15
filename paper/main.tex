@@ -2217,15 +2217,17 @@ If any \linkbeta remains in \linkStore, decompilation fails.
 \newcommand{\progBetaFail}{\emph{\llambda-progress-fail}\xspace}
 
 Given a \linkbeta $l$ of the form \linkbetaM{\Gamma}{T}{\rhsBeta}, we provide
-$3$ different activation rules:
+the following activation rules:
 
 \begin{definition}[\progBetaLL]
-  Given a substitution $\sigma$, where $\sigma t_1$ is a name, say $t$, and
-  $t\notin s_1\dots s_n$. If $m = 0$, then $l$ is removed and \lhs is
-  unified with \rhsBetaHead. If $m > 0$, then $l$ is replaced by a
-  refined version $\linkbetaM{\Gamma}{T}{Y_{s_1\dots s_n,t}\appsep t_2\dots
-  t_m}$ with reduced list of arguments and $Y$ being a fresh variable. Moreover,
-  the new link \linketaM{\Gamma}{X_{s_1\dots s_n}}{\lambda x.Y_{s_1\dots s_n,x}}
+  Let $\sigma$ be a substitution such that $\sigma t_1$ is a name $s$
+  not occurring$s_1\dots s_n$. If $m = 1$, then $l$ is removed and \lhs is
+  unified with $X_{s_1\ldots s_n~s}$.
+  \todo{I changed this part, it is OK?}
+  If $m > 1$, then $l$ is replaced by the link
+  $\linkbetaM{\Gamma}{T}{Y_{s_1\dots s_n~s}\appsep t_2\dots t_m}$
+  (where $Y$ is a fresh variable of arity $n+1$) and link
+  \linketaM{\Gamma}{X_{s_1\dots s_n}}{\lambda x.Y_{s_1\dots s_n~x}}
   is added to \linkStore.   
 
   % A link \linkbetaM{\Gamma}{T}{\rhsBeta} is removed from \linkStore, if given
@@ -2243,10 +2245,9 @@ $3$ different activation rules:
 \end{definition}
 
 \begin{definition}[\progBetaRH]
-  $l$ is removed from
-  \linkStore if \rhsBetaHead is instantiated to a term $t$ and the
-  $\beta$-reduced term $t'$ obtained from the application of $t$ to
-  $l_1\dots l_m$ is in \llambda. Moreover, $X$ is unified with $t$.
+  Link $l$ is removed from
+  \linkStore if \rhsBetaHead is instantiated to a term $t$ and
+  $t \appsep t_1 \ldots t_m$ $\beta$-reduces to a $t' \in \llambda$.
   \label{def:progBetaRH}
 \end{definition}
 
@@ -2259,10 +2260,14 @@ $3$ different activation rules:
 % \end{definition}
 
 \begin{definition}[\progBetaFail]
-  If it exists a link $l' \in \linkStore$ with same \lhs as $l$, or the \lhs 
-  of $l$ become rigid, then unification fail.
+  \progress fails whenever:
+  there exists another link $l' \in \linkStore$ with same \lhs as $l$;
+  or the \lhs  of $l$ become rigid.
   \label{def:progBetaFail}
 \end{definition}
+
+\noindent In order to accommodate for the implementation of heuristics we
+shall relax these failure conditions in~\cref{sec:heuristics}.
 
 \begin{lemma}
   \elpiIn{progress} terminates
@@ -2310,18 +2315,20 @@ $3$ different activation rules:
 
 \begin{theorem}[Fidelity with \linkbeta]
   The introduction of \linkbeta guarantees \fullref{prop:fidelity-recovery}
+  if \Uo{} fails outside \llambda.
 \end{theorem}
 
 \begin{proof}[Proof sketch]
-  Let \hoUnifPb a unification problem and $\sigma$ a substitution
-  such that $\hoUnifPb \in \notllambda$. 
-  If $\sigma\hoUnifPb$ is in \llambda, then by
-  \cref{def:progBetaLL,def:progBetaRH}, the \linkbeta associated to the subterm of
-  \hoUnifPb have been solved and removed. The
-  unification is done between terms in \llambda and by \cref{lemma:fidelity-maybeeta}
-  fidelity is guaranteed. If $\sigma\hoUnifPb$ is in \notllambda,
-  then, by \cref{def:progBetaFail}, the unification fails, as per the
-  corresponding unification in \Fo{}.
+  Let $\foUnifPb_i$ be the first problem in \foUnifPb not in \llambda and
+  le $\sigma$ be the substitution obtained solving $\hoUnifPb_1\ldots\hoUnifPb_{i-1}$.
+  If $\sigma\hoUnifPb_i$ is in \llambda, then each variable that the
+  compiler used to replace a problemat term is assigned and hence
+  by \cref{def:progBetaLL,def:progBetaRH} the associated \linkbeta
+  been solved and removed. Note that in this case all
+  calls to \Ue{} are between terms in \llambda and by \cref{lemma:fidelity-maybeeta}
+  fidelity is guaranteed. If $\sigma\hoUnifPb$ is still in \notllambda,
+  then by \cref{def:progBetaFail} unification fails as the
+  corresponding unification in \Fo{} would.
 \end{proof}
 
 \paragraph{Example of \progBetaLL}
@@ -2351,14 +2358,16 @@ it is replaced with the link:
 \linketaM{}{E}{\lambda x.D_x}, while $C_x$ is unified with $D_x$. The second unification
 problem assigns $f$ to $B$, that in turn activates
 the second \linketa ($f$ is assigned to $C$), and then all the remaining links
-are solved. The final \Ho substitution is $\sigma = \{A _{} \mapsto \lambda x.x, 
-B _{} \mapsto f, C _{x} \mapsto (f\appsep x), 
-D _{} \mapsto f, E _{x} \mapsto x, F _{x} \mapsto C_{x} \}$ and is decompiled into $\rho = \{X \mapsto \lambda x.x,
-Y \mapsto f\}$.
+are solved. The final \Ho substitution is $\sigma = \{~A _{} \mapsto \lambda x.x ~;~
+B _{} \mapsto f ~;~ C _{x} \mapsto (f\appsep x) ~;~
+D _{} \mapsto f ~;~ E _{x} \mapsto x ~;~
+F _{x} \mapsto C_{x} ~\}$ and is decompiled into $\rho = \{~X \mapsto \lambda x.x ~;~
+Y \mapsto f~\}$.
 
 \paragraph{Example of \progBetaRH}
-We can take the example provided in \cref{sec:beta}. The problem is compiled
-into:
+We give a second look at the opening example in \cref{sec:beta}.
+\todo{this is a little more complex that the opening problem}
+The problem is compiled into:
 %
 % make test ONLY=7003 TEX=tex
 \printAlll
@@ -2372,32 +2381,29 @@ into:
 
 % \todo{Rinominare i print dei problemi}
 
-The first unification problems is solved by the substitution $\sigma = \{A
-\mapsto \lambda x.B\}$. The \linkbeta becomes
+The first unification problems is solved by the substitution
+$\sigma = \{~A \mapsto \lambda x.B~\}$. The \linkbeta becomes
 \linkbetaM{}{C}{((\lambda x.B) \appsep a)} whose \rhs can be $\beta$-reduced to
 $B$. $B$ is in \llambda and is unified with $C$. The resolution of the second
 unification problem
-gives the final substitution $\sigma = \{A \mapsto \lambda x.B, B \mapsto C, C
-\mapsto a\}$ which is decompiled into $\rho = \{X \mapsto \lambda x.a, Y \mapsto
-a\}$.
+gives the final substitution $\sigma = \{~A \mapsto \lambda x.B ~;~ B \mapsto C ~;~ C
+\mapsto a ~\}$ that is decompiled into $\rho = \{~ X \mapsto \lambda x.a ~;~ Y \mapsto
+a ~\}$.
  
 \subsection{\texorpdfstring{Relaxing \fullref{def:progBetaFail}}{Relaxing progress-llam-fail}}
-
+\label{sec:heuristics}
 \newcommand{\progBetaNoLLWait}{\emph{progress-beta-\notllambda}}
 
 % from https://www.cs.mcgill.ca/~bpientka/papers/unif_miller60.pdf
-Working with terms in \llambda is sometime too restrictive \cite{Abel2018ExtensionsTM}
-and a there exist a few strategies to go bejond \llambda without 
-implementing Huet's algorithm~\ref{REF}.
-
-Some implementations
-of $\lambda$Prolog~\cite{lamProlog} 
-such as Teyjus~\cite{Nadathur2001} delay the resolution of \notllambda unification problems until the substitution
- put them in \llambda. Other systems,
-for example of the unification algorithm of Coq
-used in its type-class solver~\cite{sozeau08},
- apply heuristics like preferring projection over mimic, and commit
- to that solution.
+Working with terms in \llambda is sometime too restrictive~\cite{Abel2018ExtensionsTM}
+and we could find in literature a few strategies to go beyond \llambda without 
+implementing Huet's algorithm~\cite{Huet75}.
+Some implementations of $\lambda$Prolog~\cite{lamProlog} such as
+Teyjus~\cite{Nadathur2001} delay the resolution of \notllambda unification
+problems until the substitution makes them reenter \llambda. Other systems, for
+example of the unification algorithm of Coq used in its type-class
+solver~\cite{sozeau08}, apply heuristics like preferring projection over mimic,
+and commit to that solution.
 
 In this section we show how we can implement these strategies
 by simply adding (or removing) rules to the
@@ -2407,41 +2413,37 @@ In the example below $\foUnifPb_1$ is in \notllambda.
 % make test ONLY=7005 TEX=tex
 \printAlll
   {{{(X\appsep a),a},
-    {X,\lambda x.a}}}
-  {{}}
-  {{}}
-  {{}}
+    {X,\lambda x.Y}}}
+  {{{A,a},
+    {B,\lambda x.C}}}
+  {{{Y,C,0},
+    {X,B,0}}}
+  {{{\llambda,,A,(B\appsep a)}}}
 
-
+\noindent
 If we want the object language unification to delay the first unification problem
-(waiting for $X$ to be be instantiated by a future unification),
+(waiting for $X$ to be be instantiated),
 we can relax \cref{def:progBetaFail}. 
-Instead of failing because the \lhs of the considered \linkbeta $l$ becomes rigid,
+Instead of failing when the \lhs of $\linkStore_1$ becomes rigid (equal to $a$),
 we keep it in \linkStore until the head of its \rhs also become rigid.
-In this case, since \lhs and \rhs have rigid heads, they can be unified
-just before removing $l$ from \linkStore. We can note that this rule trivially
-guarantees \fullref{prop:fidelity}. On the other hand, the occur check becomes 
-partial since we break \fullref{inv:linklhs}. %: there exists \linkbeta with a non-flexible \lhs.
-
-If we want to follow the second strategy and pick an
-arbitrary solution. For instance, in $X \appsep a \appsep b = Y \appsep b$, the last
-argument of the two terms is the same and unification can succeed by assigning
-$X a$ to $Y$. Note
-that this is not the only solution, since $\sigma = \{X \mapsto \lambda x.Y \}$
-is another valid substitution. Our unification procedure
-can be modified to accommodate this behavior by adding a
-rule to \elpiIn{progress} that tries to
-align the rightmost arguments and unify
-the resulting heads whenever \lhs of a \linkbeta is not in \llambda.
-
-Note that delaying unification outside \llambda can leave \linkbeta for the
+In this case, since both the \lhs and \rhs have rigid heads, they can be unified.
+While this relaxed rule does not break \fullref{prop:fidelity} per se,
+the \elpiIn{occur-check-links} procedure becomes incomplete since
+\fullref{inv:linklhs} is broken. Also note that delaying unification outside \llambda can leave \linkbeta for the
 decompilation phase. Therefore \elpiIn{commit-links} should
 be modified accordingly.
 
-% \noteD{Paragraph for decompile in case of \maybebeta}
-% \todo{cita paper su estensioni a llam via sospensione etc}
-\todo{cita teyjus (1) era 2nd order HO (huet's algorithm), teyjus 2 è llam ma sospende i disagreement pairs fuori da llam}
 
+If instead we want \Uo{} to follow the second strategy and pick an
+arbitrary solution we can modify \progress by applying the desired heuristic.
+For instance, in $X \appsep a \appsep b = Y \appsep b$, the last
+argument of the two terms is the same and unification can succeed by assigning
+$X a$ to $Y$. This heuristic can be implemented by adding the following rule:
+
+\input{code/progress_heuristic}
+
+\noindent
+Note that \elpiIn{UV} is in \llambda as well as \elpiIn{T}. 
 
 \section{Actual implementation in Elpi}\label{sec:implementation}
 

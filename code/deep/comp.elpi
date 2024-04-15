@@ -364,17 +364,28 @@ new A B C :- mem.new A B C.
   type suspend-out-of-lam o.
   type progress-beta-force o.
 
+%SNIP: progress_heuristic
+  type app-align-heuristic tm -> tm -> subst -> subst -> o.
+  app-align-heuristic (app [HD|L1]) (app [UV|L2]) S1 S2 :-
+    print "Unification align heuristics", % HIDE
+    append Prefix L2 L1,
+    !, % HIDE
+    ho.beta HD Prefix T,
+    print "End unif heuristic", %HIDE
+    (UV ==l T) S1 S2.
+%ENDSNIP
+  app-align-heuristic (app [HD|L1]) (app [UV|L2]) S1 S2 :-
+    print "Unification align heuristics", % HIDE
+    append Prefix L1 L2,
+    !, % HIDE
+    ho.beta UV Prefix T,
+    print "End unif heuristic", %HIDE
+    (T ==l HD) S1 S2. % XXX this time  T is not in llam
   % progress-out-llambda LHS V_RHS AG_RHS S1 S2 L % Note AG_RHS is non-empty, otherwise we are in llambda
-  type progress-out-llambda tm -> tm -> list tm -> subst -> subst -> links -> o.
-  % Approx1 : last of 
-  progress-out-llambda T1 Uv Ag S1 S2 [] :- progress-beta-force, !,
-    print "Unification align heuristics",
-    T1 = app L, split {minus {len L} {len Ag}} L [HD|TL] Ag, !,
-    ho.beta HD TL T,
-    (Uv ==l T) S1 S2, print "End unif heuristic".
-  progress-out-llambda T1 Uv Ag S S [val(link-llam T1 (app [Uv | Ag]))] :- suspend-out-of-lam, !,
+  type progress-out-llambda tm -> tm -> subst -> subst -> links -> o.
+  progress-out-llambda T1 T2 S S [val(link-llam T1 T2)] :- suspend-out-of-lam, !,
     print "Unification out of Lλ delayed".
-  progress-out-llambda _ _ _ _ _ _ :- print "Unif out llambda: fail", fail.
+  progress-out-llambda _ _ _ _ _ :- print "Unif out llambda: fail", fail.
 
   % a sx non c'è mai un app[uva _ _ | _] per costruzione
   % a dx abbiamo sempre app[uva _ N | L] dove N è nel PF e L no
@@ -401,8 +412,11 @@ new A B C :- mem.new A B C.
     progress-beta-llambda TL T (uva Ad2 Scope2) S2 S4 L,
     NewLinks = [LinkEta | L].
 
-  progress-beta-link T1 (app[T2 | Ag]) S1 S2 L :- T2 = uva _ _, not (T1 = uva _ _), !,
-    progress-out-llambda T1 T2 Ag S1 S2 L.
+  progress-beta-link T1 T2 S1 S2 [] :- T2 = app[uva _ _|_], not (T1 = uva _ _), progress-beta-force, !,
+    app-align-heuristic T1 T2 S1 S2.
+
+  progress-beta-link T1 T2 S1 S2 L :- T2 = app[uva _ _|_], not (T1 = uva _ _), suspend-out-of-lam, !,
+    progress-out-llambda T1 T2 S1 S2 L.
 
   progress-beta-link T1 (app[uva _ _ | _] as T2) H H [@val-link-llam T1 T2] :- !, print "No β progress1".
 
