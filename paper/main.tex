@@ -1673,7 +1673,7 @@ The following rule is inserted just before rule~\ref{rule:complam} from the code
 \input{code/comp_eta}
 
 \noindent
-TWhenever \elpiIn{flam F} is detected to be in
+Whenever \elpiIn{flam F} is detected to be in
 \maybeeta it is compiled to \elpiIn{lam F1} and replaced by the fresh
 variable \elpiIn{A}. This variable sees all the names free in
 \elpiIn{lam F1}. The variable is connected to \elpiIn{lam F1} via a \linketa.
@@ -1691,8 +1691,8 @@ Invariant~\fullref{inv:linklhs} holds for this link, moreover:
   If $\testmaybeeta{}~\lambda y.t$ holds then the recursive call to
   \elpiIn{comp} (made by \elpiIn{comp-lam}) must have put a fresh variable
   in its place, so this case is impossible.
-  Otherwise, if $\testmaybeeta{}~\lambda y.t$ does not hold, also
-  $\testmaybeeta{}~\lambda x.\lambda y.t$ does not hold, contradicting
+  Otherwise, if $\testmaybeeta{}~\lambda y.t$ does not hold, then also
+  $\testmaybeeta{}~\lambda x.\lambda y.t$ does not hold either, contradicting
   the assumption that the rule was applied.
 \end{proof}
 
@@ -1724,7 +1724,7 @@ $X$ becomes rigid. Let $y\in\Gamma$, there are two cases:
 \linketaM{\Gamma}{X}{T} is removed from \linkStore when either 1)
 $\testmaybeeta~T$ does not hold (anymore) or 2) by $\eta$-contracting $T$ to
 $T'$ where $T'$ does not start with the \elpiIn{lam} constructor. In the
-first case, $X$ is unified with $T$ and in the second one, $X$ is unified with
+first case, $X$ is unified with $T$, and in the second one, $X$ is unified with
 $T'$ (under the context $\Gamma$).
 \end{definition}
 
@@ -1736,7 +1736,7 @@ when the \lhs is assigned to a variable that is the \lhs of another
 \begin{definition}[\progressetadedup]\label{def:progressetadedup}
   A link \linketaM{\Gamma}{X_{\vec{s}}}{T} is removed from \linkStore when
   another link \linketaM{\Delta}{X_{\vec{r}}}{T'} is in  \linkStore.
-  By \cref{inv:uvaarity} the length of $\vec{s}$ and $\vec{r}$ is the same
+  By \cref{inv:uvaarity} the length of $\vec{s}$ and $\vec{r}$ is the same;
   hence we can move the term $T'$ from $\Delta$ to $\Gamma$ by renaming its
   bound variables, i.e. $T'' = T'[\vec{r}/\vec{s}]$.
   We then run $T \Ue{} T''$ (under the context $\Gamma$).
@@ -1882,12 +1882,12 @@ when the \lhs is assigned to a variable that is the \lhs of another
 The example at the beginning of \cref{sec:eta}, once
 $\sigma = \{~ A \mapsto f ~\}$, triggers \progressetaleft since the link
 becomes \linketaM{}{f}{\lambda x.B_{x}} and the \lhs is a constant.
-In turn the rule \todo{which rule} runs $\lambda x.f \appsep x \Ue{} \lambda x.B_{x}$,
+This rule runs $\lambda x.f \appsep x \Ue{} \lambda x.B_{x}$,
 resulting in $\sigma = \{~ A \mapsto f ~;~ B_{x} \mapsto f ~\}$.
-Decompilation the generates $\rho = \{~ X \mapsto f ~\}$, since
-$X$ is mapped to $B$ and
-$f$ is the $\eta$-contracted version of $\lambda x.f \appsep x$.
-\todo{explain why decompile does so and which eta?}
+By the definition of \linketa decompilation,
+decompilation generates $\rho = \{~ X \mapsto \lambda x. f \appsep x ~\}$, since:
+$X$ is mapped to $B_x$ and $B_x$ is decompiled into $\lambda x.f \appsep x$.
+% \todo{explain why decompile does so and which eta?}
 
 \paragraph{Example of \progressetadedup}
 
