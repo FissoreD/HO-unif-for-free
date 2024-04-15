@@ -1123,7 +1123,7 @@ The procedure \elpiIn{occur-check-links} is in charge of
 performing this check that is needed in order to
 guarantee \fullref{prop:fidelity}.
 
-\subsection{Substitution decompilation}
+\subsection{Substitution decompilation}\label{sec:decompilation}
 
 Decompiling the substitution involves three steps.
 
@@ -1916,9 +1916,9 @@ We give an example for rule
 \section{Making \mapStore a bijection}
 \label{sec:invariant1}
 
-In \cref{sec:grounwork}, we introduced the definition of ``memory map'' (\mapStore).
-This memory allows to decompile the \Ho terms back to the object language.
-It is the case that, while solving unification problems, a same unification
+In \cref{sec:grounwork}, we introduced the definition of memory map \mapStore.
+This map allows to decompile the \Ho substitution to the object language.
+Given the higher order nature of CIC the same unification
 variable $X$ is used multiple times with different arities.
 %
 % make test ONLY=7001 TEX=tex
@@ -1936,26 +1936,26 @@ variable $X$ is used multiple times with different arities.
 
 In the unification problems \foUnifPb above, we see that $X$ is used with arity $2$ in
 $\foUnifPb_1$ and with arity $1$ in $\foUnifPb_2$. 
-By \fullref{inv:uvaarity}, we are not allowed to use a same \Ho variable to 
-represent the two occurrences of $X$.
-If we execute \hrun, we remark that the unification fails.
-There is in fact a major problem:
-\hstep is not conscious of the connection between the variables $C$ and $E$ (both corresponding to $X$),
-since no link in \linkStore puts $C$ and $E$ in relation and decompilation
-does not work properly if a \Fo{} variable is mapped to two distinct \Ho variables. 
-The two main drawbacks connected to this situation are 
-firstly the lost of \fullref{prop:fidelity} and
-secondly, if we want to guarantee at least \fullref{prop:simulation}, we should
-overcomplicate the decompilation phase. In order to ease the second
-drawback, we pose the following property:
+In order to preserve \fullref{inv:uvaarity} the compiler
+did generate two entries in \mapStore for $X$, and in turn this
+breaks \fullref{prop:fidelity} since two incompatible assignements to
+the variables $X$ maps to, namely $E$ and $C$, would not be detected.
+We remedy by post-processing the compiler's output by adding
+additional \linketa to ensure the folllowgin property:
 
 \begin{proposition}[\mapStore is a bijection]
-  Given a list of unification problems \foUnifPb, then the memory map \mapStore
-  compiled from \foUnifPb is a bijection relating the \Fo{} and the \Ho{} 
-  variables.
+  After compilation, for each \Fo{} variable $X$ in \foUnifPb{} and for each \Ho{}
+  variable $A$ in \hoUnifPb{} there is exactly one entry $X \mapsto A^n$
+  (for any arity $n$).
 \end{proposition}
 
-We finally adjust the compiler's output with a \elpiIn{map-deduplication} procedure.
+\noindent
+Note that the execution in \Ho{} may require allocating new variables as
+explained in~\cref{sec:decompilation}. The property above does not
+concern these.
+
+The core procedure of this post-processing step is \emph{align-arity} that
+is iterated by \elpiIn{map-deduplication}:
 
 \newcommand{\alignarity}{\emph{align-arity}}
 \begin{definition}[\alignarity] Given two mappings
@@ -1989,21 +1989,26 @@ two arities.
 \begin{theorem}[Fidelity with \mapdeduplication]
   Given a list of unification problems \foUnifPb, such that 
   $\forall t, t\in\subterm{\foUnifPb} \Rightarrow \wellb(t) \lor t \in \maybeeta$,
-  if \foUnifPb contains two same \Fo{} variables with different arities,
+  if $\;\foUnifPb$ contains the same \Fo{} variable used at different arities,
   then \mapdeduplication guarantees \fullref{prop:fidelity}
 \end{theorem}
 
 \begin{proof}[Proof sketch]
   By the definition of \mapdeduplication, any two occurrencies of the same \Fo{} 
-  variables $X_1, X_2$
-  with different arities are related with \linketa. 
-  If one of the two variables is instantiated, the corresponding
-  \linketa is triggered instantiating the related variable.
-  This allows to make unification fail if $X_1$ and $X_2$ are unified with 
-  different terms. Finally, since \foUnifPb contains only terms thar are
-  either \wellb or \maybeeta, by \cref{lemma:fidelity-maybeeta},
-  we can conclude the proof.
+  variables $X_1, X_2$ with different arities are compiled to two
+  variables $A^n$ and $C^m$ related by a chain of \linketa.
+  We show that whenever one of the two is instantiated with a rigid term the 
+  the chain becomes shorter and hence, eventually, the
+  other variable is instantiated too.
+  Without loss of generality we assume $m < n$ and $A$ is instantiated.
+  The corresponding \linketa is triggered by \progressetaleft instantiating
+  the next variable in the chain of links.
 \end{proof}
+\todo{Not sure I fullfy fixed the proof, but the old oen was not ok}
+
+\noindent
+Note that shortening the chain of links allows unification to fail if
+$X_1$ and $X_2$ are unified with different terms.
 
 If we look back the example give at the beginning of this section, we can
 deduplicate $\mapping{X}{E}{1}, \mapping{X}{C}{2}$ by removing the first mapping
@@ -2022,13 +2027,20 @@ After deduplication the compiler output is as follows:
     {\eta,,A,\lambda x.B_{x}},
     {\eta,x,B_{x},\lambda y.C_{y x}}}}
 
-In this example, $\hoUnifPb_1$ assigns $A$ which triggers $\linkStore_3$ and
-then $\linkStore_4$ by \progressetaleft. $C_{yx}$ is therefore
-assigned to $x$ (the second variable of its scope). We can finally see the
-\progressetaright of $\linkStore_1$: its \rhs is now $\lambda y.y$ (the term $C_{xy}$
-reduces to $y$). Since it is no more in \maybeeta, $\lambda y.y$ is unified with
-$E_x$. After the execution of the remaining \hstep, we obtain the 
-following \Fo{} substitution $\rho = \{X := \lambda x.\lambda y.y, Y := (f\appsep \lambda x.x)\}$.
+\noindent
+The resolution of $\hoUnifPb_1$ assigns $\lambda x.\lambda y.x$ to $A$
+that in turn triggers $\linkStore_3$ and then $\linkStore_4$ by \progressetaleft,
+one per $\lambda$ in the solution of $A$.
+The unification variable $C_{yx}$ is therefore unified with $x$
+(the second variable of its scope).
+As a result $\linkStore_1$ becomes \linketaM{x}{E_x}{\lambda y.y},
+and the \rhs is no more in \maybeeta so \progressetaright fires and
+$E_x$ is unified with $\lambda y.y$, resulting in
+$\sigma = \{~ A \mapsto \lambda x.\lambda y.x ~;~ B_x \mapsto \lambda y.x ~;~ C_{yx} \mapsto x ~;~ E_x \mapsto \lambda y.y~\}$.\\
+The remaining simplify step $\hoUnifPb_2$ identified $D$ with $F$,
+hence the resulting \Fo{} substitution is
+$\rho = \{X \mapsto \lambda x.\lambda y.y ~;~ Y \mapsto \lambda x.(f\appsep (\lambda y.y))\appsep x\}$.
+\todo{verificare, la vecchia soluzione era sballata}
 
 \section{Handling of \notllambda}\label{sec:beta}
 
