@@ -829,6 +829,13 @@ We write $\wellb(t)$ as a short for $\wellb(\{t\})$.
 We claim our compiler validates the following property: 
 
 \begin{proposition}[\wellb-enforcing]\label{prop:w-enforcing}
+  Given a term $s$ in \Fo{}, 
+  $$
+    \C{s}{t}{m}{l} \Rightarrow \wellb(t)
+  $$
+\end{proposition}
+
+\begin{proposition}[compiler-useful]\label{prop:w-noncontra}
   Given two terms $s_1$ and $s_2$, if $\exists \rho, \rho s_1 \Eo \rho s_2$,
   then 
   $$
@@ -839,10 +846,13 @@ We claim our compiler validates the following property:
 
 \noindent
 In other words the compiler outputs terms in \wellb, even if its
-input is not.
+input is not. And if two terms can unify in the source language
+then these terms also unify in the target language. 
 Note that the property holds for any substitution, $\rho$ could be given by an
 oracle and/or not necessarily be a most general one: in \wellb \Ue{} simply
-does not contradict \Eo.
+does not contradict \Eo. Also note that a compiler that
+translate all terms to unification variables would satisfy this
+property, but wound fail to verify \cref{prop:fidelity}.
 
 \begin{proposition}[\wellb{}-preservation]\label{prop:w-preservation}
 $\forall \hoUnifPb, \forall \linkStore, \forall p, \forall \sigma, \forall \sigma'$
