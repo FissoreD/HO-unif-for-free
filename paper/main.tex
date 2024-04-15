@@ -1457,7 +1457,7 @@ $
 \section{Handling of \maybeeta}\label{sec:eta}
 A term 
 $\lambda x. t \appsep x$ is said to be the $\eta$-expansion of $t$ if
-$x$ does not occur free in $t$, and conversely $t$ is the $\eta$-contraction of
+$x$ does not occur free in $t$, and conversely, $t$ is the $\eta$-contraction of
 $\lambda x. t \appsep x$. The equational theory of \Fo{} identifies these terms,
 but the current compilation scheme does not,
 as shown by the following example:
@@ -1476,9 +1476,9 @@ $\rho = \{~ X \mapsto f ~\}$, the corresponding problem in
 \elpiIn{con"f"} start with different, rigid, term constructors hence
 \Ue{} fails.
 
-In order to guarantee \cref{prop:simulation} we detect
+In order to guarantee \cref{prop:simulation}, we detect
 lambda abstractions that can disappear by $\eta$-contraction
-(\cref{sec:etadetection}) and we modify the compiler so that it
+(\cref{sec:etadetection}), and we modify the compiler so that it
 generates fresh unification variables
 in their place and moves the problematic term 
 from \hoUnifPb to \linkStore (\cref{sec:etacomp}). The compilation
@@ -1491,8 +1491,8 @@ of the problem \foUnifPb above is refined to:
   {{{\eta,,A,\lambda x.B_x}}}
 
 \noindent
-As per \cref{inv:linklhs} the \linketa left hand side is a variable
-while the right hand side is a term in \maybeeta that has the following property:
+As per \cref{inv:linklhs} the \linketa left-hand side is a variable
+while the right-hand side is a term in \maybeeta that has the following property:
 
 \begin{invariant}[\linketa \rhs]
   The \rhs of any \linketa %in \linkStore 
@@ -1509,12 +1509,12 @@ predicate defined in \cref{sec:execution}.
 
 \subsection{Detection of \maybeeta}\label{sec:etadetection}
 
-When compiling a term $t$ we need to determine if any
+When compiling a term $t$, we need to determine if any
 subterm $s \in \subterm{t}$ that is of the form $\lambda x. r$,
 where $x$ occurs in $r$, can be a $\eta$-expansion, i.e. if
 there exists a substitution $\rho$ such that $\rho (\lambda x.r) \Eo s$.
 The detection of lambda abstractions that can ``disappear''
-is not as trivial as it may seems, here a few examples:
+is not as trivial as it may seems. Here a few examples:
 %
 \begin{center}
   \begin{tabular}{lll}
@@ -1533,11 +1533,11 @@ is not as trivial as it may seems, here a few examples:
 % for $A_x$ such that $A_x$ reduces to $x$ and $x$ is not free in the subterm $f \appsep x$.
 \noindent
 The first two examples are easy, and show how a unification variable can expose
-or erase a variable in their scope and turn the resulting term in an $\eta$-expansion or not.\\
+or erase a variable in its scope, turning the resulting term into an $\eta$-expansion or not.\\
 The third example shows that when a variable occurs outside the scope of a unification
-variable it cannot be erased and can hence prevent a term from being an $\eta$-expansion.\\
+variable, it cannot be erased and can hence prevent a term from being an $\eta$-expansion.\\
 The last example shows the recursive nature of the check we need to implement.
-The term starts with a spine of two lambdas hence the whole term
+The term starts with a spine of two lambdas, hence the whole term
 is in \maybeeta iff the inner term $\lambda y.f\appsep (A \appsep x) \appsep (B \appsep y \appsep x)$
 is in \maybeeta itself. If it is, it could $\eta$-contract to
 $f \appsep (A \appsep x)$ making $\lambda x.f \appsep (A \appsep x)$ a potential
@@ -1573,7 +1573,7 @@ hence if the term $s$ is not exactly $x$ (case 1)
 it can only be an $\eta$-expansion of $x$, or a unification
 variable that can be assigned to $x$, or a combination of both.
 If $s$ begins with a lambda, then the lambda can only disappear by $\eta$
-contraction. In that case the term $t$ is under the spine of binders
+contraction. In that case, the term $t$ is under the spine of binders
 $x_1\ldots x_n$, $t$ can either be $x$ applied to terms that can
 \reduceto{} these variables (case 2), or a unification variable
 that can be assigned to that application (case 3).
@@ -1590,8 +1590,8 @@ that can be assigned to that application (case 3).
   \subterm{\rho t}$
 \end{definition}
 
-In other words $x$ \occursrigid in $t$ if it occurs in $t$
-outside of the scope of a unification variable $X$, otherwise an instantiation
+In other words, $x$ \occursrigid in $t$ if it occurs in $t$
+outside of the scope of a unification variable $X$; otherwise, an instantiation
 of $X$ can make $x$ disappears from $t$.
 Moreover, note that $\eta$-contracting $t$ cannot make $x$ disappear, since
 $x$ is not a locally bound variable inside $t$.
@@ -1640,7 +1640,7 @@ may either use or discard $x$, but our analysis does not
 take into account that \emph{the same
 term} cannot have two contrasting behaviors.
 
-As we will see in the rest of this section this is not a problem
+As we will see in the rest of this section, this is not a problem
 since it does not break
 \cref{prop:simulation} nor \cref{prop:fidelity}.
 % A term in \maybeeta{} is compiled to a
