@@ -2485,11 +2485,10 @@ they are part of a new goal (see \cite[section 4.3]{TASSI_2019}).
 
 \begin{elpicode}
 constraint link-eta {
-  rule (N1 ~$\triangleright$~ G1 ?- link-eta (uvar X LX1) T1) % match
-    /  (N2 ~$\triangleright$~ G2 ?- link-eta (uvar X LX2) T2) % remove
-    |  (relocate LX1 LX2 T2 T2')             % condition
-   <=> (N1 ~$\triangleright$~ G1 ?- T1 = T2').                % new goal
-}
+  rule (N1 ~$\triangleright$~ G1 ?- link-eta (uvar X LX1) T1)   % match
+    /  (N2 ~$\triangleright$~ G2 ?- link-eta (uvar X LX2) T2)   % remove
+    |  (relocate LX1 LX2 T2 T2')               % condition
+   <=> (N1 ~$\triangleright$~ G1 ?- T1 = T2').                } % new goal
 \end{elpicode}
 
 \noindent
@@ -2510,7 +2509,7 @@ heigenvariables \elpiIn{N1}.
 Different strategies can be used to unify terms of the object language.
 % in the meta langauge. 
 The first approach that comes to mind consist in implementing \Uo as a
-regular routine in the ML as follows:
+regular routine in the ML, i.e. write rules as follows:
 
 \begin{elpicode}
   decision X :- X ~\Uo~(all A x\ app [P, x]), finite A,
@@ -2519,43 +2518,47 @@ regular routine in the ML as follows:
 
 \noindent
 Opting for this method would result in a suboptimal utilization of the logic
-programming engine provided by the meta language, as it degrades indexing by
+programming engine provided by the ML, as it degrades indexing by
 eliminating all data from rule heads. Additionally,
-implementing an unification procedure in the meta
-language is likely to be significantly slower compared to the built-in one.
+implementing a unification procedure in the ML is likely to be significantly
+slower compared to the built-in one.
 
-% Paper \cite{10.1145/2966268.2966272} introduces semi-shallow.
 Another possibility is to avoid having application and abstraction nodes
-in the syntax tree, and use the ones of meta language, as in the following:
+in the syntax tree, and use the ones of the ML, as in:
 
 \begin{elpicode}
 decision (all A x\ P x) :- finite A, pi x\ decision (P x).
 \end{elpicode}
 
 \noindent
-However, this encoding has two big limitations. Firstly, in CIC, it is
-not always feasible to adopt it due to the meta language's type system being
-too limited to accommodate for that one the object language. E.g. CIC
-can typecheck variadic functions, see for example~\ref{CPDT chlipala}. \\
-Secondly, the CIC encoding provided by Elpi is primarily utilized for meta
+However, this encoding has two big limitations. First it is
+not always feasible to adopt it for CIC due to the fact that the type system
+of the ML is too limited to accommodate for that one the object language,
+e.g. CIC can typecheck variadic functions~\cite{cpdt}. \\
+Second, the CIC encoding provided by Elpi is primarily utilized for meta
 programming, in order to extend the Coq system. Consequently, it must be able to
 manipulate terms that are not known in advance
 without relying on introspection primitives such as Prolog's
 \texttt{functor} and \texttt{arg}. In this context, constants need to live in
 an open world, akin to the \elpiIn{string} data type used in the preceding
-examples.
+examples, they cannot be symbols of the ML.
 
 In the literature we could find a related encoding of the Calculus of
-Constructions (CC)~\cite{felty93lics}. The goal of that work was to exhibit
+Constructions (CC)~\cite{felty93lics}. The goal of that work is to exhibit
 a logic program performing proof checking for CC and hence relate the
 proof system of intuitionistic higher-order logic (that animates $\lambda$Prolog
 programs) with the one of CC. The encoding is hence tailored
 toward a different goal, for example it utilizes three relations to represent the
-equational theory of CC. Section 6 contains a discussion about the use of the
-unification procedure of the meta language in presence of non ground goals, but
+equational theory of CC, and that choice alone makes things arder for us.
+Section 6 contains a discussion about the use of the
+unification procedure of the ML in presence of non ground goals, but
 the authors do not aim at exploiting it to the degree we want.\todo{sucks}
 
-\todo{cite isabelle's TC, that are baked in}
+Another work that is, surprisingly, only superficially related to ours is the
+type-class engine built in Isabelle's meta language. In~\cite{wenzel97}
+classes identify (simple) types, they are not higher order predicates
+as in Coq, hence the solver does not require a higher-order unification
+procedure.
 
 \emph{The approach presented in this paper}
 provides a third option that addresses all the concerns
