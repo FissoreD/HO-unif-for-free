@@ -2447,27 +2447,41 @@ Note that \elpiIn{UV} is in \llambda as well as \elpiIn{T}.
 
 \section{Actual implementation in Elpi}\label{sec:implementation}
 
-In this paper we show a minimized example. The full code is there.
-But we also have to code things in Coq-Elpi.
+In this paper we did study a compiler and simulation loop on a minimal language.
+The actual implementation uses the Coq-Elpi meta language to both compile
+the sequence of problems (the rules) and execute them, that is Elpi
+plays the role of \Ho{} as well.
 
-The main difference between the presentation in the previous sections and
-the actual implementation for Coq is that the main loop \hrun is replaced by
-the one of Prolog that chains calls to the unification procedure. In order
-implement the store of links we resort to Elpi's CLP engine and
-use constraints (suspended goals) to represent links, and constraint
-handling rules to implement progress operations involving more than one link.
-
-\todo{finish}
-about the progress of 1 link:
+The main difference is that we cannot implement \hrun since it comes as part of
+the runtime of the programming language. In particular the runtime iterates
+\Ue, but \hstep also needs to check for \progress. Luckily Elpi extends~\cite{TASSI_2019}
+$\lambda$Prolog with syntactic constraints (suspended goals) and
+Constraint Handling Rules (CHR)~\cite{fruehwirth2017constraint} to operate on them.
+An important design choice is that constraints are suspended on a user
+computed list of unification variables, and are resumed as soon as one of them
+is assigned, before any other existing goal is considered. In turn this
+property enables a timely activation of links that grants~\fullref{prop:fidelity}.
+For brevity we only provide two pseaudo-code snippets. The first one depicts
+how \linketa are suspended or make \progress.
 
 \begin{elpicode}
-link-eta L R :- suspend-condition L R Holes, !,
-  declare_constraint (link-eta L R) Holes.
-link-eta L R :-
-  progress. % e.g. L = R.
+link-eta L R :- var L, maybe-eta R HolesInR, !,
+  declare_constraint (link-eta L R) [L|HolesInR].
+link-eta L R :- not (var L), !, eta-progress-lhs L R.
+link-eta L R :- not (maybe-eta R), !, contract R S, L = S.
 \end{elpicode}
+\todo{improve code}
 
-about the progress of 2 links:
+\noindent
+The second snippet illustrate the deduplication of \linketa. The syntax
+<<\elpiIn{N ~$\triangleright$~ G ?- P}>> denotes a $\lambda$Prolog sequent, that is a 
+goal \elpiIn{P} under a set \elpiIn{G} of hypothetical rules (introduced
+by \elpiIn{=>}) and where the program context binds (via the \elpiIn{pi}
+operator) \elpi{N} heigenvariables. Sequents are presented to
+CHR with their higher order unification variables replaced by
+``frozen constants'', that is $A_{xyz}$ becomes <<\elpiIn{uvar ~$f_A$~ [x,y,z]}>>
+for a fresh constant $f_A$. Frozen constants are ``defrost'' when
+they are part of a new goal (see \cite[section 4.3]{TASSI_2019}).
 
 \begin{elpicode}
 constraint link-eta {
@@ -2478,10 +2492,17 @@ constraint link-eta {
 }
 \end{elpicode}
 
-Remark how the invariant about uvar arity makes this easy, since LX1 and LX2
-have the same length. Also note that N1 only contains the names of the first
-link (while relocate runs in the disjoint union) and Elpi ensures that
-T2' can live in N1.
+\noindent
+The first directive matches a constraint
+whose \lhs is a variable \elpiIn{X}; the second mathes \emph{and removes}
+a constrain on the same variable; the third is a test that accessorily
+relocates \elpiIn{T2} and the latter crafs the new goal that unifies
+\elpiIn{T1} with \elpiIn{T2'} under \elpiIn{G1} and the set of
+heigenvariables \elpiIn{N1}.
+
+% Remark that \fullref{inv:uvaarity} makes it possible to relocate \elpiIn{T2}
+% using the name-to-name mapping obtained by zipping
+% the lists (of equal length) \elpiIn{LX1} and \elpiIn{LX2}.
 
 \noindent
 \section{Related work and conclusion}
