@@ -516,10 +516,10 @@ In addition to that, \Eo has rules for $\eta$ and $\beta$-equivalence.
 
 \begin{elpicode}
   ~\PYG{k+kd}{type} \PYG{n+nf}{(\Ee)} \PYG{k+kt}{tm -> tm -> o}~.
-  con C ~\Ee~fcon C.
-  app A ~\Ee~fapp B :- forall2 ~(\Ee)~ A B.
-  lam F ~\Ee~flam G :- pi x\ x ~\Ee~x => F x ~\Ee~G x.
-  uva N A ~\Ee~fuva N B :- forall2 ~(\Ee)~ A B.
+  con C ~\Ee~con C.
+  app A ~\Ee~app B :- forall2 ~(\Ee)~ A B.
+  lam F ~\Ee~lam G :- pi x\ x ~\Ee~x => F x ~\Ee~G x.
+  uva N A ~\Ee~uva N B :- forall2 ~(\Ee)~ A B.
 \end{elpicode}
 
 \noindent
