@@ -591,7 +591,7 @@ logic program.
 \subsection{The problem: logic-program simulation}
 We represent a logic program \emph{run} in \Fo{} as
 a sequence of \emph{steps} of length $\mathcal{N}$.
-At each step, $p$ we unify two terms, $\foUnifPb_{p_l}$ and
+At each step $p$ we unify two terms, $\foUnifPb_{p_l}$ and
 $\foUnifPb_{p_r}$, taken from the list of all unification
 problems \foUnifPb.
 % \footnote{If the same rule is used multiple times in a run we
@@ -648,7 +648,7 @@ The variable map connects unification variables in \Ho to variables
 in \Fo{} and is used to ``decompile'' the assignment,
 $\D{\sigma}{m}{l}{\rho}$. Links are an accessory piece of information whose
 description is deferred to \cref{sec:nutshell}.
-We write $\hoUnifPb_p = \{~ \hoUnifPb_{p_l}, \hoUnifPb_{p_r} ~\}$
+We write $\foUnifPb_p = \{~ \foUnifPb_{p_l}, \foUnifPb_{p_r} ~\}$
 and $s \in \foUnifPb \Leftrightarrow \exists p, s \in \foUnifPb_p$.
 
 We simulate each run in \Fo{} with a run in \Ho as follows:
