@@ -2037,7 +2037,7 @@ As a result $\linkStore_1$ becomes \linketaM{x}{E_x}{\lambda y.y},
 and the \rhs is no more in \maybeeta so \progressetaright fires and
 $E_x$ is unified with $\lambda y.y$, resulting in
 $\sigma = \{~ A \mapsto \lambda x.\lambda y.x ~;~ B_x \mapsto \lambda y.x ~;~ C_{yx} \mapsto x ~;~ E_x \mapsto \lambda y.y~\}$.\\
-The remaining simplify step $\hoUnifPb_2$ identified $D$ with $F$,
+The remaining step $\hoUnifPb_2$ identifies $D$ with $F$,
 hence the resulting \Fo{} substitution is
 \todo{verificare, la vecchia soluzione era sballata}
 $\rho = \{X \mapsto \lambda x.\lambda y.y ~;~ Y \mapsto \lambda x.(f\appsep (\lambda y.y))\appsep x\}$.
