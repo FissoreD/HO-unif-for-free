@@ -2368,28 +2368,26 @@ Y \mapsto f~\}$.
 
 \paragraph{Example of \progBetaRH}
 We give a second look at the opening example in \cref{sec:beta}.
-\todo{this is a little more complex that the opening problem}
+% \todo{this is a little more complex that the opening problem}
 The problem is compiled into:
 %
 % make test ONLY=7003 TEX=tex
 \printAlll
-  {{{X,\lambda x.Y},
+  {{{X,\lambda x.a},
     {(X\appsep a),a}}}
-  {{{A,\lambda x.B},
-    {C,a}}}
-  {{{Y,B,0},
-    {X,A,0}}}
-  {{{\llambda,,C,(A\appsep a)}}}
+  {{{A,\lambda x.a},
+    {B,a}}}
+  {{{X,A,0}}}
+  {{{\llambda,,B,(A\appsep a)}}}
 
 % \todo{Rinominare i print dei problemi}
 
-The first unification problems is solved by the substitution
-$\sigma = \{~A \mapsto \lambda x.B~\}$. The \linkbeta becomes
-\linkbetaM{}{C}{((\lambda x.B) \appsep a)} whose \rhs can be $\beta$-reduced to
-$B$. $B$ is in \llambda and is unified with $C$. The resolution of the second
+The first unification problem is solved with the substitution
+$\sigma = \{~A \mapsto \lambda x.a~\}$. The \linkbeta becomes
+\linkbetaM{}{B}{((\lambda x.a) \appsep a)} whose \rhs can be $\beta$-reduced to
+$a$. $a$ is in \llambda and is unified with $B$. The resolution of the second
 unification problem
-gives the final substitution $\sigma = \{~A \mapsto \lambda x.B ~;~ B \mapsto C ~;~ C
-\mapsto a ~\}$ that is decompiled into $\rho = \{~ X \mapsto \lambda x.a ~;~ Y \mapsto
+confirm that $B$ equal $a$. The final substitution $\sigma = \{~A \mapsto \lambda x.a ~;~ B \mapsto a ~\}$ is decompiled into $\rho = \{~ X \mapsto \lambda x.a ~;~ Y \mapsto
 a ~\}$.
  
 \subsection{\texorpdfstring{Relaxing \fullref{def:progBetaFail}}{Relaxing progress-llam-fail}}
