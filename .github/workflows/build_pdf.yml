@@ -6,6 +6,8 @@ on:
       - '**.bib'
       - '**.sty'
       - '**/build_pdf.yml'
+    branches:
+      - main
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
