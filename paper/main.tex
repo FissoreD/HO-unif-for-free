@@ -1249,12 +1249,11 @@ In the example below, we can see that the basic compilation given in
 the previous section is not able to make the \Ho unification problem succeeds.
 %
 % make test ONLY=7006 TEX=tex
-\printAlll
+\printAlllSingle
   {{{\lambda x.(f\appsep (X\appsep x)\appsep a),\lambda x.(f\appsep x\appsep a)}}}
   {{{\lambda x.(f\appsep (A\appsep x)\appsep a),\lambda x.(f\appsep x\appsep a)}}}
   {{{X,A,0}}}
   {{}}
-\todo{fix indentation}
 The unification problem $\hoUnifPb_1$ fails while trying to unify
 $A \appsep x$ and $x$, which is equivalent to \elpiIn{app [uva A [], x]}
 versus \elpiIn{x}.

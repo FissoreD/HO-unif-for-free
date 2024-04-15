@@ -86,6 +86,13 @@
   \ifthenelse{\equal{#1}{{}}}{}{#2}
 }
 
+% Input is: 
+%   P = a list of pairs for FoUnifPb    (leftPb, rightPb)
+%   T = a list of pairs for HoUnifPb    (leftPb, rightPb)
+%   M = a list of triples for mappings  (FoVar, HoVar, Arity)
+%   L = a list of 4-uplet for links     (link-type, ctx, lhs, rhs)
+% T, M, L can be empty
+% Note: this macro is used when the length of P > 1
 \newcommand{\printAlll}[4]{
   \arraycolsep=2pt
   $$
@@ -100,6 +107,28 @@
     }}
     \hideEmpty{#4}{\\
       \linkStore = \putBigPar{#4}{2}\{ & \multicolumn{7}{l}{
+        \printLink{#4} ~\putBigPar{#4}{2}\}
+    }}
+  \end{array}
+  $$
+}
+
+% Same as printAlll, but the length of P is 1, the if then else
+% seems not to work on the fst parameter of multicolumn
+\newcommand{\printAlllSingle}[4]{
+  \arraycolsep=2pt
+  $$
+  \begin{array}{rrcll}
+    \foUnifPb = \{ & \printPb{\Uo}{#1} &\}
+    \hideEmpty{#2}{\\
+      \hoUnifPb = \{ & \printPb{\Ue}{#2} &\}
+    }
+    \hideEmpty{#3}{\\
+      \mapStore = \putBigPar{#3}{3}\{ & \multicolumn{4}{l}{
+        \printMap{#3} ~\putBigPar{#3}{3}\}
+    }}
+    \hideEmpty{#4}{\\
+      \linkStore = \putBigPar{#4}{2}\{ & \multicolumn{4}{l}{
         \printLink{#4} ~\putBigPar{#4}{2}\}
     }}
   \end{array}
