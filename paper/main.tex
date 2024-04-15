@@ -737,7 +737,7 @@ unifiers, namely $\sigma_1 = \{~ F \mapsto \lambda x.x ~\}$ and
 $\sigma_2 = \{~ F \mapsto \lambda x.a ~\}$. The first problem picks $\sigma_2$,
 making the second problem re-enter \llambda.
 
-\paragraph{Backtracking} We omit it from our model of a logic program's execution
+\paragraph{Backtracking} We omit it from our model of a logic-program execution
 since it plays a very minor role, orthogonal to higher-order unification.
 We point out that each \emph{run} corresponds to a (proof search) branch in the
 logic program that either fails at some point, or succeeds. A computation that
@@ -840,7 +840,7 @@ We claim our compiler validates the following property:
 \noindent
 In other words the compiler outputs terms in \wellb, even if its
 input is not.
-Note that the property holds for any substitution. $\rho$ could be given by an
+Note that the property holds for any substitution, $\rho$ could be given by an
 oracle and/or not necessarily be a most general one: in \wellb \Ue{} simply
 does not contradict \Eo.
 
