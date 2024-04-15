@@ -1167,16 +1167,16 @@ We already have all the pieces to show the code of \Ue{}.
 \input{code/unif_fo}
 
 \noindent
-So far the compiler is very basic, it does not really
-enforce the terms passed to \hstep are in \wellb,
+So far the compiler is very basic. It does not really
+enforce that the terms passed to \hstep are in \wellb,
 and indeed makes no use of the higher-order capabilities
 of the meta language (all generated
 variables have an empty scope).
 Still, we can prove that \Uo is a good
-``first order'' unification algorithm if the input
+``first-order'' unification algorithm if the input
 already happens to be in \wellb.
 Later, when the compiler will enforce \cref{prop:w-enforcing}
-and the proof will be adjusted to cover for thew cases.
+the proof will be adjusted to cover for the new cases.
 
 \begin{lemma}[Properties of \Uo]\label{prop:uniffow} The following properties hold for \Uo:
 \begin{gather}
@@ -1185,12 +1185,12 @@ and the proof will be adjusted to cover for thew cases.
 \end{gather}
 \end{lemma}
 \begin{proof}[Proof sketch]
- In this setting \Ee is as strong as \Eo on ground terms.What we have to show is that whenever two different \Fo{}
+ In this setting, \Ee is as strong as \Eo on ground terms. What we have to show is that whenever two different \Fo{}
 terms can be made equal by a substitution $\rho$ (plus the \ref{clause:beta1}
-and \ref{clause:beta2} if needed) we can produce this $\rho$ by finding
+and \ref{clause:beta2} if needed), we can produce this $\rho$ by finding
 a $\sigma$ via \Ue{} on the corresponding \Ho terms and by decompiling it.
-If we look at the syntax of \Fo{} terms the only interesting case is
-\elpiIn{fuva X ~\Uo~s}. In this case after compilation we have
+If we look at the syntax of \Fo{}, terms the only interesting case is
+\elpiIn{fuva X ~\Uo~s}. In this case, after compilation, we have
 $Y \Ue t$ that succeeds with $\sigma = \{ Y \mapsto t\}$ and
 $\sigma$ is decompiled to $\rho = \{ Y \mapsto s\}$ by \cref{prop:comprt}.
 \end{proof}
@@ -1205,8 +1205,8 @@ and by \cref{prop:uniffow} \Ue is equivalent to \Uo.
 
 \subsection{Notational conventions}
 
-In the following sections we adopt this notation to talk about the compiler's
-output: \foUnifPb is the input set of problems that compiled to
+In the following sections, we adopt this notation discuss the compiler's
+output: \foUnifPb represents the input set of problems that compiled to
 \hoUnifPb with memory mapping \mapStore and links \linkStore. For example:
 %
 \printAlll
@@ -1215,7 +1215,7 @@ output: \foUnifPb is the input set of problems that compiled to
   {{{X_1,A_1,{{x}}},{X_2,A_2,{{y}}}}}
   {{{\eta,\Gamma,a,b}}}
 
-We index each sub-problem, sub-mapping, sub-link with its position
+We index each sub-problem, sub-mapping, and sub-link with its position
 starting from $1$ and counting from left to right, top to bottom.
 For example, $\hoUnifPb_2$ corresponds to the \Ho problem $t_3 \Ue t_4$.
 %The compiled version of each $\foUnifPb_i$ is represented by $\hoUnifPb_i$.
@@ -1243,7 +1243,7 @@ For example, $\hoUnifPb_2$ corresponds to the \Ho problem $t_3 \Ue t_4$.
   
 \section{Handling of \maybebeta}\label{sec:llam}
 
-In order to make \Uo higher-order we need to
+In order to make \Uo higher-order, we need to
 take care of terms in \maybebeta.
 In the example below, we can see that the basic compilation given in 
 the previous section is not able to make the \Ho unification problem succeeds.
@@ -1255,25 +1255,25 @@ the previous section is not able to make the \Ho unification problem succeeds.
   {{{X,A,0}}}
   {{}}
 \todo{fix indentation}
-The unification problem $\hoUnifPb_1$ fails while trying to unifying
-$A \appsep x$ and $x$, equivalent to \elpiIn{app [uva A [], x]}
+The unification problem $\hoUnifPb_1$ fails while trying to unify
+$A \appsep x$ and $x$, which is equivalent to \elpiIn{app [uva A [], x]}
 versus \elpiIn{x}.
 In order to exploit the higher-order unification algorithm of the meta language,
-we need to compile the \Fo{} term $X\appsep x$ into the \Ho term $A_x$
-that is \elpiIn{uva A [x]}.
+we need to compile the \Fo{} term $X\appsep x$ into the \Ho term $A_x$,
+which is \elpiIn{uva A [x]}.
 
 \subsection{Compilation and decompilation}
 
 We add the following rule before rule~\ref{rule:compapp}, where
-\elpiIn{pattern-fragment} is a predicate checking is a list of
+\elpiIn{pattern-fragment} is a predicate checking if a list of
 terms is a list of distinct names.
 
 \input{code/comp_base_beta}
 
 \noindent
 Note that compiling \elpiIn{Ag} cannot create new mappings nor links, since \elpiIn{Ag}
-is made of bound variables and the hypothetical rule 
-\cref{rule:complamh}
+is made of bound variables, and the hypothetical rule 
+\ref{rule:complamh}
 loaded by \elpiIn{comp-lam}
 grants this property.
 
@@ -1304,11 +1304,11 @@ $
 \end{lemma}
 
   \begin{proof}[Proof sketch]
-  If we look at the \Fo{} terms the is one more interesting case,
+  If we look at the \Fo{} terms, there is one more interesting case,
   namely \elpiIn{fapp[fuva X|W] ~\Uo~s} when \elpiIn{W}
   are distinct names compiled to $\vec{w}$. In this case
   the \Ho problem is $Y_{\vec{w}} \Ue t$ that succeeds with
-   $\sigma = \{ Y_{\vec{y}} \mapsto t[\vec{w}/\vec{y}]\}$ that in turn
+   $\sigma = \{ Y_{\vec{y}} \mapsto t[\vec{w}/\vec{y}]\}$, which in turn
    is decompiled to $\rho = \{ Y \mapsto \lambda \vec{y}.s[\vec{w}/\vec{y}]\}$.
    Thanks to \ref{clause:beta1}
    $(\lambda \vec{y}.s[\vec{w}/\vec{y}])~\vec{w} \Eo s$.
