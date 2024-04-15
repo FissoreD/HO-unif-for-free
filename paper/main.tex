@@ -2441,10 +2441,9 @@ argument of the two terms is the same and unification can succeed by assigning
 $X a$ to $Y$. This heuristic can be implemented by adding the following rule:
 
 \input{code/progress_heuristic}
-
-\noindent
-Note that \elpiIn{UV} is in \llambda as well as \elpiIn{T}. 
-
+%\noindent
+%Note that \elpiIn{UV} is in \llambda as well as \elpiIn{T}. 
+\vspace{-1em}
 \section{Actual implementation in Elpi}\label{sec:implementation}
 
 In this paper we did study a compiler and simulation loop on a minimal language.
@@ -2484,17 +2483,16 @@ for a fresh constant $f_A$. Frozen constants are ``defrost'' when
 they are part of a new goal (see \cite[section 4.3]{TASSI_2019}).
 
 \begin{elpicode}
-constraint link-eta {
   rule (N1 ~$\triangleright$~ G1 ?- link-eta (uvar X LX1) T1)   % match
     /  (N2 ~$\triangleright$~ G2 ?- link-eta (uvar X LX2) T2)   % remove
     |  (relocate LX1 LX2 T2 T2')               % condition
-   <=> (N1 ~$\triangleright$~ G1 ?- T1 = T2').                } % new goal
+   <=> (N1 ~$\triangleright$~ G1 ?- T1 = T2').                  % new goal
 \end{elpicode}
 
 \noindent
 The first directive matches a constraint
-whose \lhs is a variable \elpiIn{X}; the second mathes \emph{and removes}
-a constrain on the same variable; the third is a test that accessorily
+whose \lhs is a variable \elpiIn{X}; the second mathes and removes
+a constraint on the same variable; the third
 relocates \elpiIn{T2} and the latter crafs the new goal that unifies
 \elpiIn{T1} with \elpiIn{T2'} under \elpiIn{G1} and the set of
 heigenvariables \elpiIn{N1}.
@@ -2549,12 +2547,12 @@ a logic program performing proof checking for CC and hence relate the
 proof system of intuitionistic higher-order logic (that animates $\lambda$Prolog
 programs) with the one of CC. The encoding is hence tailored
 toward a different goal, for example it utilizes three relations to represent the
-equational theory of CC, and that choice alone makes things arder for us.
+equational theory of CC, and that choice alone makes things harder for us.
 Section 6 contains a discussion about the use of the
 unification procedure of the ML in presence of non ground goals, but
 the authors do not aim at exploiting it to the degree we want.\todo{sucks}
 
-Another work that is, surprisingly, only superficially related to ours is the
+Another work that is, somewhat surprisingly, only superficially related to ours is the
 type-class engine built in Isabelle's meta language. In~\cite{wenzel97}
 classes identify (simple) types, they are not higher order predicates
 as in Coq, hence the solver does not require a higher-order unification
@@ -2580,6 +2578,17 @@ Finally, our approach is flexible enough to accommodate different strategies
 and heuristics to handle terms outside the pattern fragment, and
 it is not tightly coupled with CIC.
 
+We considered mechanizing our results with Abella, especially in the early phases.
+Unfortunately we could not. One reason
+is that eliminating the cut operator, although possible, has a high cost in
+verbosity.
+% he same for the \elpiIn{name}
+%\todo{is it sill described?} predicate.
+Another problem is that the logic of Abella does not let one quantify over
+predicates and combinators like \elpiIn{forall} are used pervasively in our
+code.
+\todo{finish}
+
 
 % ---
 
@@ -2592,8 +2601,8 @@ it is not tightly coupled with CIC.
 
 \printbibliography
 
-\clearpage
+% \clearpage
 
-\input{appendix.tex}
+% \input{appendix.tex}
 
 \end{document}
