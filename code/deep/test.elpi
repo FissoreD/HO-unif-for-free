@@ -660,6 +660,12 @@ macro @sokl-delay N SX SS :- @sokl-call comp.suspend-out-of-lam N SX SS.
   pr ok "λx.(f x) = X"
 ] ["f"].
 
+% Example of usefulness of progress-eta-right
+@sokl 105 [
+  pr ok "λx.(X x) = λx.Y",
+  pr (error "unif") "λx.λy.(X x y) = f"
+] [].
+
 % From the paper
 @sokl 7000 [
   pr ok "λx.(X x) = f"
