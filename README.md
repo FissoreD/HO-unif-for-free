@@ -27,7 +27,7 @@ Name: https://ppdp2024.github.io/
 
 | Command                    | Description                                           |
 | -------------------------- | ----------------------------------------------------- |
-| `make`                     | builds `main.pdf` in `./paper/.aux`                   |
+| `make`                     | build `main.pdf` in `./paper/.aux`                   |
 | `make test`                | run all the test taken from `./code/deep/test.elpi`   |
 | `make test ONLY=N`         | run the test with number `N`                          |
 | `make test ONLY=N TEX=tex` | run the test with number `N` and prints in *tex* mode |
@@ -37,4 +37,4 @@ Name: https://ppdp2024.github.io/
 
 ## Continuous integration
 
-The CI builds `./paper/main.tex` and push the compiled pdf in the [`pdf` branch](https://github.com/FissoreD/HO-unif-for-free/tree/pdf)
+The CI builds `./paper/main.tex` and pushes the compiled pdf in the [`pdf` branch](https://github.com/FissoreD/HO-unif-for-free/tree/pdf)
