@@ -1367,7 +1367,8 @@ $
 In other word the compiler eliminates all subterms that are in \maybebeta.
 
 \begin{theorem}[Fidelity in $\wellb_\beta$] \Fullref{prop:simulation} and
-\fullref{prop:fidelity} hold if $\;\wellb_\beta(\foUnifPb)$
+\fullref{prop:fidelity} hold if $\;\wellb_\beta(\foUnifPb)$.
+\label{th:fidelity-beta}
 \end{theorem}
 \begin{proof}[Proof sketch] thanks to \cref{lem:w-enforcement-maybebeta}
   \Ue is as powerful as \Uo in \maybebeta, as well as in \wellb by
@@ -1884,8 +1885,8 @@ when the \lhs is assigned to a variable that is the \lhs of another
 
 \begin{theorem}[Fidelity in $\wellb_{\beta \eta}$]
   % F x = z, F x y = z y
-  Given a list of unification problems \foUnifPb, if
-  $\wellb_{\beta \eta}(\foUnifPb)$ and if the 
+  Given a list of unification problems \foUnifPb, such that
+  $\wellb_{\beta \eta}(\foUnifPb)$, if the 
   memory map is bijective, then
   the introduction 
   of \linketa guarantees \fullref{prop:fidelity}.
@@ -1894,24 +1895,20 @@ when the \lhs is assigned to a variable that is the \lhs of another
 \end{theorem}
 
 \begin{proof}[Proof sketch]
-  \progressetaleft and \progressetadedup activate a \linketa when, in the
-  original unification problem, a \maybeeta term is unified with respectively a
-  well-behaved term or another \maybeeta term. In both cases, the links trigger
-  a unification which succeeds iff the same unification in \Fo{} succeeds,
-  \todo{Fix: show that 5.7 an 5.8 compensate for missing eta rule, citare regolae in =o}
-  guaranteeing \cref{prop:fidelity}. \progressetaright never fails, in fact,
-  this progression refines a variable to a rigid term and plays no role in 
-  \cref{prop:fidelity}.
-  % If 1) a \linketa is activated by \progressetaleft, then unification is done
-  % between a \maybeeta term $t_1$ and a term $t_2$ (with $\wellb(t_2)$). This
-  % activation performs a unification which succeeds iff the original problem in
-  % \Fo{} succeeds. If 2) a \linketa is activated by \progressetadedup, then the
-  % unification is done between two \maybeeta terms, and again this unification
-  % succeeds iff it succeeds in \Fo{}. Finally, if 3) a \linketa is activated by
-  % \progressetaright, the unification, done between a variable and a term,
-  % always succeeds, this is what we expect to guarantee fidelity, since we
-  % are essentially removing a hole added by the compilation in the place of a
-  % \maybeeta subterm. In all the cases fidelity is respected.
+  We want to prove that for any $\fstep_i$, $\fstep_i$ succeeds iff $\hstep_i$
+  succeeds. An $\hstep_i$ is made by a unification $\mathcal{U}$ and a link
+  progression $\mathcal{P}$.
+  Two cases should be analyzed: 1) $\fstep_i$ succeeds, this means that $\mathcal{U}$
+  succeeds since any \maybeeta term is replaced with a fresh variable, and by
+  \cref{th:fidelity-beta}, the other subterms unify. Moreover, $\mathcal{P}$
+  succeeds, since the $\eta$-progression
+  rules simply imitate the rules~\ref{clause:eta1} and \ref{clause:eta2},
+  performing unification between $\eta$-contracted terms. 
+  If 2) $\fstep_i$ fails, either the failure is 
+  due to the unification of terms that are not in \maybeeta. In this case
+  $\mathcal{U}$ fails thanks to \cref{th:fidelity-beta}. 
+  On the other hand, the failure is
+  due to a unification over \maybeeta terms, making $\mathcal{P}$ to fail.
 \end{proof}
 
 \paragraph{Example of \progressetaleft}
@@ -2032,16 +2029,18 @@ two arities.
 
 \begin{proof}[Proof sketch]
   By the definition of \mapdeduplication, any two occurrencies of the same \Fo{} 
-  variables with different arities are compiled to two
-  variables $A^n$ and $C^m$ related by a chain of \linketa.
-  We show that whenever one of the two is instantiated with a rigid term then
-  the chain becomes shorter and hence, eventually, the
-  other variable is instantiated too.
-  Without loss of generality we assume $m < n$ and $A$ is instantiated.
-  The corresponding \linketa is triggered by \progressetaleft instantiating
-  the next variable in the chain of links.
+  variable used at different arities are compiled to two
+  variables $A^m$ and $C^n$ related by a chain of \linketa.
+  Whenever the two variables are assigned to the non-unifiable terms,
+  the chain of \linketa is entirely waken up refining little by little
+  the intermediate variables between $A^m$ and $C^n$ leading eventually to a failure. 
+  On the other
+  hand, if the two variables still remain unifiable after their assignement, 
+  then the activation of 
+  the corresponding \linketa just refines the chain, by reducing eventually
+  its length.
 \end{proof}
-\todo{Not sure I fullfy fixed the proof, but the old oen was not ok}
+% \todo{Not sure I fullfy fixed the proof, but the old oen was not ok}
 
 \noindent
 Note that shortening the chain of links allows unification to fail if
