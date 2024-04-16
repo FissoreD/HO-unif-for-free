@@ -111,26 +111,31 @@
 \begin{abstract}
   Specifying and implementing a proof system from scratch requires significant effort.
   Logical Frameworks and Higher Order Logic Programming Languages provide
-  dedicated, high-level Meta Languages (ML) to facilitate this task in two
-  key ways: 1) variable binding and substitution are for free when ML binders
-  represent object logic ones; 2) proof construction, and even proof search, are
-  greatly simplified by leveraging the unification procedure provided by the ML.
-  Notable examples of ML are Elf~\cite{elf}, Twelf~\cite{twelf},
+  dedicated, high-level meta languages to facilitate this task in two
+  % key 
+  ways: 1) variable binding and substitution are for free when meta language binders
+  represent object logic ones; 2) proof construction, and %even 
+  proof search, are
+  greatly simplified by leveraging the unification procedure provided by the meta language.
+  Notable examples of meta languages are Elf~\cite{elf}, Twelf~\cite{twelf},
   $\lambda$Prolog~\cite{miller_nadathur_2012} and
   Isabelle~\cite{10.1007/978-3-540-71067-7_7}
-  which have been utilized to implement various formal systems such as
+  which have been %utilized
+  used to implement %various
+  many formal systems such as
   First Order Logic~\cite{felty88cade},
   Set Theory~\cite{10.1007/BF00881873},
-  Higher Order Logic~\cite{books/sp/NipkowPW02}, and even the Calculus of
+  Higher Order Logic~\cite{books/sp/NipkowPW02}, and %even
+  the Calculus of
   Constructions~\cite{felty93lics}.
 
   The object logic we are interested in is
   Coq's Calculus of Inductive Constructions (CIC)\cite{Coq-refman}. We aim to
   develop a higher-order unification-based 
-  proof search procedure for it using the ML
+  proof search procedure for it using the meta language
   Elpi~\cite{dunchev15lpar}, a dialect of $\lambda$Prolog.
   Elpi's equational theory includes
-  $\eta\beta$ equivalence and features a
+  $\eta\beta$-equivalence and features a
   higher-order unification procedure \Ue restricted to the pattern
   fragment~\cite{miller92jsc}.
   Elpi offers an encoding of CIC suitable
@@ -148,7 +153,7 @@
   pattern fragment. Moreover, as \Uo{} delegates most of the work to \Ue,
   it can be used to efficiently simulate a logic program in \Fo{} by
   taking advantage of
-  unification-related optimizations of the ML, such as clause indexing.
+  unification-related optimizations of the meta language, such as clause indexing.
 
 \end{abstract}
 
@@ -1165,12 +1170,19 @@ needed to express their assignment.
 \begin{proposition}[Compilation round trip]\label{prop:comprt}
   % \elpiIn{compile F T [] M [] L [] S} then 
   % if \elpiIn{T} $\in$ S
-  If $\C{s}{t}{m}{l}$, such that $l \in \linkStore$ and $m \in \mapStore$, if
+  If $\C{s}{t}{m}{l}$ and $l \in \linkStore$ and $m \in \mapStore$
+  and
   $\sigma = \{ A \mapsto t\}$ and $\mapping{X}{A}{n} \in \mapStore$
   then $\D{\sigma}{\mapStore}{\linkStore}{\rho}$ and
   $\rho X \Eo \rho s$.
 \end{proposition}
-\todo{explain no proof, llam link breaks}
+
+\noindent
+The statement above roughly states that the translation from
+\Fo{} to \Ho is not lossy, it can be reversed. The statement
+is made convoluted by the fact that we hid the procedure to
+decompile a term in favor of the one to decompile substitutions.
+We omit to sketch the proof of this property for brevity.
 
 % \noteD{Should also decompile links\dots}
 % \begin{proof}[Proof sketch]
