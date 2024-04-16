@@ -1887,35 +1887,57 @@ when the \lhs is assigned to a variable that is the \lhs of another
 \end{theorem}
 
 \begin{proof}[Proof sketch]\todo{to reformulate}
-  We want to prove that for any $i$, $\fstep_i$ succeeds iff $\hstep_i$
-  succeeds. An $\hstep_i$ is made by a unification
-  $u = \sigma_{i-1}\hoUnifPb_{i_l} \Ue \sigma_{i-1}\hoUnifPb_{i_r} \mapsto \sigma_i'$ and a link
-  progression $p = \progress(\linkStore_{i-1},\sigma_i') \mapsto (\linkStore_i,\sigma_i)$.
-  The interesting case is when the infolved terms are in \maybeeta.
-  wlog we assume s1 is in \maybeeta, s2 is not (if both are thanks to dedup we are back in this situation).
-  we assume s1 is compiled to X and $\linketaM{\Gamma}{X}{t1}$.
-  In all cases $X \Ue t2$ succeeds since X is a variable and
-  hence assigns t2 to X.
-  Rule \progressetaleft unify with \Ue X (hence t2) with t1, with the only
-  additional care of eta expanding t2 if needed (5.9.1).
+  % For any step $i$, we want to prove that $\fstep_i$ succeeds iff $\hstep_i$
+  % succeeds. A $\hstep_i$ is made by a unification
+  % $u = \sigma_{i-1}\hoUnifPb_{i_l} \Ue \sigma_{i-1}\hoUnifPb_{i_r} \mapsto \sigma_i'$ and a link
+  % progression $p = \progress(\linkStore_{i-1},\sigma_i') \mapsto (\linkStore_i,\sigma_i)$.
+  For any step $i$, we want to prove that $\fstep_i$ succeeds iff $\hstep_i$
+  succeeds. A $\hstep_i$ is made by a unification $u$ and a link
+  progression $p$.
+  Without loss of generality,\todo{explain why} we consider a \Fo unification problem of the form $s_1 \Uo s_2$
+  where $s_1 \in \maybeeta$, which is compiled into the \linketa $\linketaM{}{X}{\lambda x.t_1}$. 
+  The unification $u$ always succeeds, since $X$ is a fresh variable, we 
+  only have to treat the progression $p$.
+  Two cases should be analyzed:
+  \begin{itemize}
+    \item $s_2 \notin \maybeeta$, in this case, the unification problem becomes
+          $X \Ue t_2$, which assigns $X$ to $t_2$.
+          After the unification, \progressetaleft triggers the \linketa,
+          and $\lambda x.t_1$ is unified with $t_2$ (or its $\eta$-expansion when needed).
+          This unification succeeds iff $s_1$ and $s_2$ unify. \progressetaleft
+          aims essentially to transpose the two rules \ref{clause:eta1} and \ref{clause:eta2}
+          of the object language in the meta one.
+    \item $s_2 \in \maybeeta$, in this case, the unification problem becomes $X \Ue Y$ 
+          with the extra link $\linketaM{}{Y}{\lambda x.t_2}$. After the unification of 
+          $X$ and $Y$, \progressetadedup is fired and $t_1$ and $t_2$ are unified.
+          This unification succeeds iff $s_1 \Uo s_2$ succeeds.
+  \end{itemize}
+  In this setting, \progressetaright does not play a critical role since \mapStore
+  is a bijection; it's role is to perform variable refinement, i.e. it never fails.
+  % wlog we assume s1 is in \maybeeta, s2 is not (if both are thanks to dedup we are back in this situation).
+  % we assume s1 is compiled to X and $\linketaM{\Gamma}{X}{t1}$.
+  % In all cases $X \Ue t2$ succeeds since X is a variable and
+  % hence assigns t2 to X.
+  % Rule \progressetaleft unify with \Ue X (hence t2) with t1, with the only
+  % additional care of eta expanding t2 if needed (5.9.1).
+% 
+  % Two cases should be analyzed: 1) $\fstep_i$ succeeds to unify 
+  % $s1$ with $s2$. The interesting case is when fostep succeds by
+  % finding a $\rho$ such that $\rho s1 \Eo \rho s2$ requires
+  % rules~\ref{clause:eta1} and \ref{clause:eta2} at the top level,
+  % and that is in exactly the cases in which T (from page 3) is
+  % not a lam (see 5.9.1) compensating for the missing rules in \Ue.
+  % 
+  % 2) If $\fstep_i$ fails to unify $s1 \Uo s2$
+  % it means that, after applying rules~\ref{clause:eta1} and \ref{clause:eta2}
+  % and the one flam-flam we find different terms.
+  % (5.9.1) only adds lambdas that are forcibly consumed by
+  % lam-lam rule.
+\end{proof}
 
-  Two cases should be analyzed: 1) $\fstep_i$ succeeds to unify 
-  $s1$ with $s2$. The interesting case is when fostep succeds by
-  finding a $\rho$ such that $\rho s1 \Eo \rho s2$ requires
-  rules~\ref{clause:eta1} and \ref{clause:eta2} at the top level,
-  and that is in exactly the cases in which T (from page 3) is
-  not a lam (see 5.9.1) compensating for the missing rules in \Ue.
-  
-  2) If $\fstep_i$ fails to unify $s1 \Uo s2$
-  it means that, after applying rules~\ref{clause:eta1} and \ref{clause:eta2}
-  and the one flam-flam we find different terms.
-  (5.9.1) only adds lambdas that are forcibly consumed by
-  lam-lam rule.
-  \end{proof}
-
-Note that \progressetadedup always unifies terms starting with exaclty one
-lambda, hence lam-lma, so we can't fail due to that lambda or succed thanks
-to that lambda. Hence it does not impact fidelity.
+% Note that \progressetadedup always unifies terms starting with exaclty one
+% lambda, hence lam-lma, so we can't fail due to that lambda or succed thanks
+% to that lambda. Hence it does not impact fidelity.
 
 \begin{corollary}[Properties of \Uo in $\wellb_{\beta\eta}$]\label{prop:unifetawb}
   Given the updated compilation scheme, the \Uo of~\cref{sec:founif}
