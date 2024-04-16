@@ -256,7 +256,7 @@ all (con"t") y\ app [con"nfact", y, con"3"]
 \end{elpicode}
 
 \noindent
-We now illustrate the encoding of the three instances above as higher-order
+We now illustrate a naive encoding of the three instances above as higher-order
 logic programming rules: capital letters denote rule
 parameters; \elpiIn{:-} separates the rule's head from the premises, and
 \elpiIn{pi w\ p} introduces a fresh nominal constant \elpiIn{w}
@@ -270,7 +270,7 @@ decision (all A x\ app [P, x]) :- finite A,           ~\customlabel{clause:r3}{(
 \end{elpicode}
 
 \noindent
-Unfortunately this intuitive encoding of rule \ref{clause:r3} does not work
+Unfortunately this encoding of rule \ref{clause:r3} does not work
 since it uses the predicate \coqIn{P} as a first order term: for the meta
 language its type is \elpiIn{tm}. If we try to back-chain the rule
 \ref{clause:r3} on the encoding of the goal \ref{goal:g} given below
