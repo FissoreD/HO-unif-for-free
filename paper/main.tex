@@ -228,10 +228,10 @@ a function of type \coqIn{A ~$\to$~ Prop} (a 1-argument predicate over \coqIn{A}
 The solver has to infer a value for \coqIn{P} by unifying the conclusion
 of rule 3 with the goal, and in particular, it has to solve the unification
 problem \coqIn{P x = nfact x 3}. This higher-order problem falls in the so-called 
-pattern-fragment and admits a unique
+pattern fragment and admits a unique
 solution $\customlabel{solution:intro}{\rho}$ that assigns
 the term \elpiIn{~$\lambda$~x.nfact x 3} to \coqIn{P}.
-In the rest of this paper shall refer to the pattern-fragment as
+In the rest of this paper shall refer to the pattern fragment as
 \llambda~\cite{miller92jsc}.
 
 In order to implement such a search in Elpi, we shall describe the encoding
@@ -532,14 +532,19 @@ In addition to that, \Eo has rules for $\eta$ and $\beta$-equivalence.
 \end{elpicode}
 
 \noindent
+Note that the symbol \elpiIn{|} separates the head of a list from the tail,
+that \elpiIn{forall2} applies a binary predicate to two lists (of the same
+length). Finally \elpiIn{=>} is $\lambda$Prolog syntax to augment the
+current program with an extra rule, and both procedures use it to
+assume that the fresh nominal constants introduces by \elpiIn{pi} are
+equal to themselves.
+
 The main point in showing these equality tests is to remark how
 weaker \Ee is, and to identify the four rules that need special
 treatment in the implementation of \Uo.
 For brevity, we omit the code of \elpiIn{beta}:
 it is sufficient to know that <<\elpiIn{beta F L R}>> computes in \elpiIn{R} the
 weak head normal form of <<\elpiIn{app [F|L]}>>.
-Note that the symbol \elpiIn{|} separates the head of a list from the tail.
-\todo{explain forall2}
 
 \paragraph{Substitution: $\rho s$ and $\sigma t$}
 
@@ -685,7 +690,7 @@ will compensate for the weaker equational theory honored by \Ue.
 finally decompiles the solution.
 We claim:
 
-\begin{proposition}[Simulation]\label{prop:simulation}
+\begin{proposition}[Run equivalence]\label{prop:simulation}
 $\forall \foUnifPb, \forall \mathcal{N},$ if $~\foUnifPb \subseteq \llambda$
 $$
   \runF{\foUnifPb}{\mathcal{N}}{\rho}
