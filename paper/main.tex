@@ -427,7 +427,7 @@ of \elpiIn{P} and \elpiIn{x} is a bound variable.\\
 In \Ho, the representation of <<\coqIn{P x}>> is instead <<\elpiIn{uva N [x]}>>,
 since unification variables are higher-order and come equipped with an
 explicit scope.
-
+%
 % We keep these languages
 %minimal, for example, we omit the \elpiIn{all} quantifier of CIC we used
 %in the example in Section~\ref{sec:intro} together with the type notation of
@@ -1886,7 +1886,7 @@ when the \lhs is assigned to a variable that is the \lhs of another
   \label{lemma:fidelity-maybeeta}
 \end{theorem}
 
-\begin{proof}[Proof sketch]
+\begin{proof}[Proof sketch]\todo{to reformulate}
   We want to prove that for any $i$, $\fstep_i$ succeeds iff $\hstep_i$
   succeeds. An $\hstep_i$ is made by a unification
   $u = \sigma_{i-1}\hoUnifPb_{i_l} \Ue \sigma_{i-1}\hoUnifPb_{i_r} \mapsto \sigma_i'$ and a link
