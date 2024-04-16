@@ -1822,17 +1822,18 @@ when the \lhs is assigned to a variable that is the \lhs of another
 \end{proof}
 
 \begin{lemma}
-  Given a \linketa $l$, the unification done by \progressetaright is between
+  Given a \linketa \linketaM{\Gamma}{X}{\lambda x.t}, the unification done by \progressetaright is between
   terms in \wellb.
   \label{lemma:unif-eta-2}
 \end{lemma}
 
 \begin{proof}[Proof sketch]
-  \lhs is variable, and, by \cref{def:progressetaright}, \rhs is either no more
-  a \maybeeta, i.e. \rhs is not a $\eta$-expansion and, so, $\wellb(\rhs)$,
-  otherwise, \rhs can reduce to a term which cannot be a $\eta$-expansion, and,
-  so, $\wellb(\rhs)$. In both cases, the unification between \rhs and \lhs
-  is done between terms that are in \wellb.
+  $X$ is variable, and, by \cref{def:progressetaright}, $\lambda x.t$ is either no more
+  a \maybeeta, i.e. it is not a $\eta$-expansion and, so, $\wellb(\lambda x.t)$, 
+  the unification is performed between $X$ and $\lambda x.t$.
+  Otherwise, $\lambda x.t$ has the shape $\lambda x.t' \appsep x$ with $x$ not free in $t'$ and
+   $\wellb(t')$. In this second case the unification is done between $X$ and $t'$.
+  In both cases, unifications are between \wellb terms.
 \end{proof}
 
 \begin{lemma}
