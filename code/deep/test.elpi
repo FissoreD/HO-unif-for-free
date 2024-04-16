@@ -149,7 +149,8 @@ print-compil-result C P L M :- tex, !,
   std.string.concat Sep1 {std.map P (pppbsc ho.pp)} Ppp, 
   std.string.concat Sep1 {comp.pplinks L} Lpp, 
   std.string.concat Sep1 {comp.ppmappings M} Mpp,
-  R is "\\printAlll" ^ Sep ^ "{{" ^ Cpp ^ "}}" ^ Sep ^ "{{" ^ Ppp ^ "}}" ^ Sep ^ "{{" ^ Mpp ^ "}}" ^ Sep ^ "{{" ^ Lpp ^ "}}",
+  if (C = [_]) (Single = "Single") (Single = ""),
+  R is "\\printAlll" ^ Single ^ Sep ^ "{{" ^ Cpp ^ "}}" ^ Sep ^ "{{" ^ Ppp ^ "}}" ^ Sep ^ "{{" ^ Mpp ^ "}}" ^ Sep ^ "{{" ^ Lpp ^ "}}",
   print "The result of the compilation is",
   print R.
 

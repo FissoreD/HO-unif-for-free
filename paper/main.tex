@@ -581,7 +581,7 @@ the following properties:
 \begin{gather}
   \unifcorrect{\Ee}{\Ue}{t} \label{prop:correct-ml}\\
   \unifcomplete{\Ee}{\Ue}{t}\label{prop:complete-ml}
-\end{gather}
+\end{gather}\todo{give a name and reuse it for \Uo in next sections}
 
 \noindent
 Even if we provide an implementation of the object-language unification
@@ -829,6 +829,13 @@ We write $\wellb(t)$ as a short for $\wellb(\{t\})$.
 We claim our compiler validates the following property: 
 
 \begin{proposition}[\wellb-enforcing]\label{prop:w-enforcing}
+  Given a term $s$ in \Fo{}, 
+  $$
+    \C{s}{t}{m}{l} \Rightarrow \wellb(t)
+  $$
+\end{proposition}
+
+\begin{proposition}[compiler-useful]\label{prop:w-noncontra}
   Given two terms $s_1$ and $s_2$, if $\exists \rho, \rho s_1 \Eo \rho s_2$,
   then 
   $$
@@ -839,10 +846,13 @@ We claim our compiler validates the following property:
 
 \noindent
 In other words the compiler outputs terms in \wellb, even if its
-input is not.
+input is not. And if two terms can unify in the source language
+then these terms also unify in the target language. 
 Note that the property holds for any substitution, $\rho$ could be given by an
 oracle and/or not necessarily be a most general one: in \wellb \Ue{} simply
-does not contradict \Eo.
+does not contradict \Eo. Also note that a compiler that
+translate all terms to unification variables would satisfy this
+property, but wound fail to verify \cref{prop:fidelity}.
 
 \begin{proposition}[\wellb{}-preservation]\label{prop:w-preservation}
 $\forall \hoUnifPb, \forall \linkStore, \forall p, \forall \sigma, \forall \sigma'$
@@ -1046,8 +1056,9 @@ extensions in \cref{sec:llam,sec:eta,sec:beta}.
 Its main task is to beta normalize the term and map one syntax tree to
 the other.
 In order to bring back the substitution from \Ho{} to \Fo{} the compiler
-builds a ``memory map'' connecting the kind of variables using routine
-\ref{clause:malloc}.\noteD{non mi piace}
+builds a ``memory map'' connecting the \Fo{} variables to the \Ho ones
+using the routine
+\ref{clause:malloc}.
 
 The signature of the \elpiIn{comp} predicate below allows for the generation of
 links (suspended unification problems), which play no role in this section
@@ -1061,7 +1072,7 @@ for updates to the substitution.
 \noindent
 The code above uses that possibility
 in order to allocate space for the variables, i.e. it sets their memory
-address to \elpiIn{none} (a details not worth mentioning in the
+address to \elpiIn{none} (a detail not worth mentioning in the
 previous sections).
 \todo{explain fold6}
 
@@ -1151,9 +1162,17 @@ to the arity of variables; that in CIC, unification variables have a
 (function) type, and this type can be used to annotate the lambdas
 needed to express their assignment.
 
-\begin{lemma}[Compilation round trip]\label{prop:comprt} If
-  \elpiIn{compile S T [] M [] _ [] _} then \elpiIn{decompile M T S}
-\end{lemma}\noteD{Should also decompile links\dots}
+\begin{proposition}[Compilation round trip]\label{prop:comprt}
+  % \elpiIn{compile F T [] M [] L [] S} then 
+  % if \elpiIn{T} $\in$ S
+  If $\C{s}{t}{m}{l}$, such that $l \in \linkStore$ and $m \in \mapStore$, if
+  $\sigma = \{ A \mapsto t\}$ and $\mapping{X}{A}{n} \in \mapStore$
+  then $\D{\sigma}{\mapStore}{\linkStore}{\rho}$ and
+  $\rho X \Eo \rho s$.
+\end{proposition}
+\todo{explain no proof, llam link breaks}
+
+% \noteD{Should also decompile links\dots}
 % \begin{proof}[Proof sketch]
 % Trivial since \mapStore is a bijection and 
 % the terms are beta normal.
@@ -1178,10 +1197,11 @@ already happens to be in \wellb.
 Later, when the compiler will enforce \cref{prop:w-enforcing}
 the proof will be adjusted to cover for the new cases.
 
-\begin{lemma}[Properties of \Uo]\label{prop:uniffow} The following properties hold for \Uo:
+\begin{lemma}[Properties of \Uo in \wellb]\label{prop:uniffow} The following properties hold for \Uo
+  as implemented above: \todo{reuse statement from section 2.4}
 \begin{gather}
-  \unifcorrectX{\Ee}{\Ue}{t}{\wellb(\{t_1, t_2\})}\\
-  \unifcompleteX{\Ee}{\Ue}{t}{\wellb(\{t_1, t_2\})}
+  \unifcorrectX{\Eo}{\Uo}{t}{\wellb(\{t_1, t_2\})}\\
+  \unifcompleteX{\Eo}{\Uo}{t}{\wellb(\{t_1, t_2\})}
 \end{gather}
 \end{lemma}
 \begin{proof}[Proof sketch]
@@ -1192,7 +1212,7 @@ a $\sigma$ via \Ue{} on the corresponding \Ho terms and by decompiling it.
 If we look at the syntax of \Fo{}, terms the only interesting case is
 \elpiIn{fuva X ~\Uo~s}. In this case, after compilation, we have
 $Y \Ue t$ that succeeds with $\sigma = \{ Y \mapsto t\}$ and
-$\sigma$ is decompiled to $\rho = \{ Y \mapsto s\}$ by \cref{prop:comprt}.
+$\sigma$ is decompiled to $\rho = \{ X \mapsto s\}$ by \cref{prop:comprt}.
 \end{proof}
 
 \begin{theorem}[Fidelity in \wellb] \Fullref{prop:simulation} and
@@ -1249,12 +1269,11 @@ In the example below, we can see that the basic compilation given in
 the previous section is not able to make the \Ho unification problem succeeds.
 %
 % make test ONLY=7006 TEX=tex
-\printAlll
+\printAlllSingle
   {{{\lambda x.(f\appsep (X\appsep x)\appsep a),\lambda x.(f\appsep x\appsep a)}}}
   {{{\lambda x.(f\appsep (A\appsep x)\appsep a),\lambda x.(f\appsep x\appsep a)}}}
   {{{X,A,0}}}
   {{}}
-\todo{fix indentation}
 The unification problem $\hoUnifPb_1$ fails while trying to unify
 $A \appsep x$ and $x$, which is equivalent to \elpiIn{app [uva A [], x]}
 versus \elpiIn{x}.
@@ -1289,17 +1308,17 @@ is needed.
 \paragraph{Progress} Similarly to decompilation, since no link is produced,
 no modification to the \elpiIn{progress} predicate is needed.
 
-\begin{definition}[$\wellb/_\beta$]
+\begin{definition}[$\wellb_\beta$]
 $
-\wellb/_\beta(X) \Leftrightarrow \forall t \in \subterm{X}, t \not\in (\maybeeta{} ~\cup~ \notllambda{})
+\wellb_\beta(X) \Leftrightarrow \forall t \in \subterm{X}, t \not\in (\maybeeta{} ~\cup~ \notllambda{})
 $
 \end{definition}
 
-\begin{lemma}[Properties of \Uo]\label{prop:uniffowb} The following properties hold for \Uo
-  where
+\begin{lemma}[Properties of \Uo in $\wellb_\beta$]\label{prop:uniffowb} The following properties hold for \Uo
+  where \todo{reuse 2.4}
   \begin{gather}
-    \unifcorrectX{\Ee}{\Ue}{t}{\wellb/_\beta(\{t_1, t_2\})}\\
-    \unifcompleteX{\Ee}{\Ue}{t}{\wellb/_\beta(\{t_1, t_2\})}
+    \unifcorrectX{\Ee}{\Ue}{t}{\wellb_\beta(\{t_1, t_2\})}\\
+    \unifcompleteX{\Ee}{\Ue}{t}{\wellb_\beta(\{t_1, t_2\})}
   \end{gather}
 \end{lemma}
 
@@ -1314,23 +1333,20 @@ $
    $(\lambda \vec{y}.s[\vec{w}/\vec{y}])~\vec{w} \Eo s$.
   \end{proof}
   
-\begin{lemma}[$\wellb/_\beta$-enforcement]\label{lem:w-enforcement-maybebeta}
-  Given two terms $s_1$ and $s_2$ in \maybebeta, if $\exists \rho, \rho s_1 \Eo \rho s_2$,
-  then 
-  $$
-    \C{s_i}{t_i}{m_i}{l_i} ~\mathrm{for}~ i \in \{ 1,2 \} \Rightarrow
-    t_1 \Ue t_2 \mapsto \sigma
-  $$ 
+\begin{lemma}[$\wellb$-partial-enforcement]\label{lem:w-enforcement-maybebeta}
+  $\forall s, \C{s}{t}{m}{l}$, if $\:\wellb_\beta(s)$  then $\:\wellb(t)$.
 \end{lemma}
-\begin{proof}[Proof sketch]
-  problematic terms are mapped to uva by comp,
-  the problematic fapp node is gone.
-  if F x = t then  F = lam x.t[]
-  \todo{finish/maybe W enforcement is not needed here}
-\end{proof}
+% \begin{proof}[Proof sketch]
+%   problematic terms are mapped to uva by comp,
+%   the problematic fapp node is gone.
+%   if F x = t then  F = lam x.t[]
+%   \todo{finish/maybe W enforcement is not needed here}
+% \end{proof}
+\noindent
+In other word the compiler eliminates all subterms that are in \maybebeta.
 
-\begin{theorem}[Fidelity in $\wellb/_\beta$] \Fullref{prop:simulation} and
-\fullref{prop:fidelity} hold if $\;\wellb/_\beta(\foUnifPb)$
+\begin{theorem}[Fidelity in $\wellb_\beta$] \Fullref{prop:simulation} and
+\fullref{prop:fidelity} hold if $\;\wellb_\beta(\foUnifPb)$
 \end{theorem}
 \begin{proof}[Proof sketch] thanks to \cref{lem:w-enforcement-maybebeta}
   \Ue is as powerful as \Uo in \maybebeta, as well as in \wellb by
@@ -1696,6 +1712,21 @@ Invariant~\fullref{inv:linklhs} holds for this link, moreover:
   the assumption that the rule was applied.
 \end{proof}
 
+\begin{definition}[$\wellb_{\beta \eta}$]
+  $
+  \wellb_{\beta \eta}(X) \Leftrightarrow \forall t \in \subterm{X}, t \not\in \notllambda{}
+  $
+\end{definition}
+
+\begin{lemma}[$\wellb$-partial-enforcement]\label{lem:w-enforcement-maybeeta}
+  $\forall s, \C{s}{t}{m}{l}$, if $\:\wellb_{\beta \eta}(s)$  then $\:\wellb(t)$.
+\end{lemma}
+
+\begin{proof}[Proof sketch]
+  By \cref{lem:maybeeta}
+\end{proof}
+
+
 \paragraph{Decompilation}
 The decompilation of a \linketa is performed by unifying
 the \lhs with the \rhs. Note that this unification never fails, since \lhs is a
@@ -1755,21 +1786,20 @@ when the \lhs is assigned to a variable that is the \lhs of another
 % \noteD[inline]{Below the proof of \cref{prop:w-preservation}, ho usato 3 lemmi ausiliari,
 % forse si può compattare in una prova più piccola?}
 \begin{lemma}
-  Given a \linketa $l$, the unification done by \progressetaleft is between
+  Given a \linketa \linketaM{\Gamma}{X}{T}, the unification done by \progressetaleft is between
   terms in $\wellb$  
   \label{lemma:unif-eta-1}
 \end{lemma}
 
 \begin{proof}[Proof sketch]
-  Let $\sigma$ be the substitution, which is  $\wellb(\sigma)$ (by
-  \todo{is w sigmaa defined?}
-  \cref{prop:w-preservation}). $\lhs \in \sigma$, therefore $\wellb(\lhs)$. By
-  \progressetaleft, if 1) the \lhs is a name, a constant or an
-  application, then, $\lambda x.\lhs \appsep x$ is unified with the \rhs. By
+  Let $\sigma$ be the substitution, such that $\wellb(\sigma X)$ (since \Ue preserves \wellb),
+  By\todo{reformulate}
+  \progressetaleft, if 1) the $\sigma X$ is a name, a constant or an
+  application, then, $\lambda x.X \appsep x$ is unified with the \rhs. By
   \cref{inv:link-eta-right} and \cref{lemma:unif-eta-aux},
   $\rhs = \lambda x. t$ and $\wellb(t)$.
-  Otherwise, 2) the \lhs has \elpiIn{lam} as functor.
-  \todo{what does as a functor mean?}
+  Otherwise, 2) $\sigma X = \lambda x.t$.
+  % \todo{what does as a functor mean?}
   In both cases, unification is
   performed between terms in \wellb.
 \end{proof}
@@ -1797,15 +1827,6 @@ when the \lhs is assigned to a variable that is the \lhs of another
 \begin{proof}
   We unify the \rhs{} of two \linketa. Both have the
   shape $\lambda x.t$ and by \cref{lemma:unif-eta-aux}, $\wellb(t)$.
-\end{proof}
-
-\begin{lemma}
-  The introduction of \linketa guarantees \fullref{prop:w-enforcing}
-  %\label{lemma:unif-wellb}
-\end{lemma}
-
-\begin{proof}[Proof sketch]
-  By \cref{def:testmaybeeta}.\todo{shall we move the proof here?}
 \end{proof}
 
 \begin{lemma}
@@ -1843,26 +1864,25 @@ when the \lhs is assigned to a variable that is the \lhs of another
   % remains suspended, then \linkStore remains unchanged like the substitution;
   % therefore, \elpiIn{if (L = L1, S1 = S2)} succeeds and \elpiIn{progress}
   % terminates.
-\end{proof}
+\end{proof}  
 
-\begin{theorem}[Fidelity in \maybeeta]
+\begin{theorem}[Fidelity in $\wellb_{\beta \eta}$]
   % F x = z, F x y = z y
-  Given a list of unification problems \foUnifPb, if \noteD{riprendere sec 3.1}
-  $\forall t, t\in\subterm{\foUnifPb} \Rightarrow t \notin \notllambda$ and if the 
+  Given a list of unification problems \foUnifPb, if
+  $\wellb_{\beta \eta}(\foUnifPb)$ and if the 
   memory map is bijective, then
   the introduction 
   of \linketa guarantees \fullref{prop:fidelity}.
   \footnote{This premise is fulfilled in \cref{sec:invariant1}}
   \label{lemma:fidelity-maybeeta}
 \end{theorem}
-\todo{should we introduce W/eta as prev section W/beta?}
 
 \begin{proof}[Proof sketch]
   \progressetaleft and \progressetadedup activate a \linketa when, in the
   original unification problem, a \maybeeta term is unified with respectively a
   well-behaved term or another \maybeeta term. In both cases, the links trigger
   a unification which succeeds iff the same unification in \Fo{} succeeds,
-  \todo{Fix: show that 5.7 an 5.8 compensate for missing eta rule}
+  \todo{Fix: show that 5.7 an 5.8 compensate for missing eta rule, citare regolae in =o}
   guaranteeing \cref{prop:fidelity}. \progressetaright never fails, in fact,
   this progression refines a variable to a rigid term and plays no role in 
   \cref{prop:fidelity}.
@@ -1989,16 +2009,16 @@ two arities.
 
 \begin{theorem}[Fidelity with \mapdeduplication]
   Given a list of unification problems \foUnifPb, such that 
-  $\forall t, t\in\subterm{\foUnifPb} \Rightarrow \wellb(t) \lor t \in \maybeeta$,
+  $\wellb_{\beta \eta}(\foUnifPb)$,
   if $\;\foUnifPb$ contains the same \Fo{} variable used at different arities,
   then \mapdeduplication guarantees \fullref{prop:fidelity}
 \end{theorem}
 
 \begin{proof}[Proof sketch]
   By the definition of \mapdeduplication, any two occurrencies of the same \Fo{} 
-  variables $X_1, X_2$ with different arities are compiled to two
+  variables with different arities are compiled to two
   variables $A^n$ and $C^m$ related by a chain of \linketa.
-  We show that whenever one of the two is instantiated with a rigid term the 
+  We show that whenever one of the two is instantiated with a rigid term then
   the chain becomes shorter and hence, eventually, the
   other variable is instantiated too.
   Without loss of generality we assume $m < n$ and $A$ is instantiated.
@@ -2036,12 +2056,12 @@ The unification variable $C_{yx}$ is therefore unified with $x$
 (the second variable of its scope).
 As a result $\linkStore_1$ becomes \linketaM{x}{E_x}{\lambda y.y},
 and the \rhs is no more in \maybeeta so \progressetaright fires and
-$E_x$ is unified with $\lambda y.y$, resulting in
-$\sigma = \{~ A \mapsto \lambda x.\lambda y.x ~;~ B_x \mapsto \lambda y.x ~;~ C_{yx} \mapsto x ~;~ E_x \mapsto \lambda y.y~\}$.\\
+$E_x$ is unified with $\lambda y.y$; then $\linkStore_2$ makes progress thanks to the same 
+rule giving
+$\sigma = \{~ A \mapsto \lambda x.\lambda y.x ~;~ B_x \mapsto \lambda y.x ~;~ C_{yx} \mapsto x ~;~ D \mapsto f\appsep (\lambda y.y) ~;~ E_x \mapsto \lambda y.y ~\}$.\\
 The remaining step $\hoUnifPb_2$ identifies $D$ with $F$,
 hence the resulting \Fo{} substitution is
-\todo{verificare, la vecchia soluzione era sballata}
-$\rho = \{X \mapsto \lambda x.\lambda y.y ~;~ Y \mapsto \lambda x.(f\appsep (\lambda y.y))\appsep x\}$.
+$\rho = \{X \mapsto \lambda x.\lambda y.y ~;~ Y \mapsto f\appsep (\lambda y.y)\}$.
 
 \section{Handling of \notllambda}\label{sec:beta}
 
@@ -2206,6 +2226,23 @@ This construction enforces \cref{inv:beta-rhs}.
 % \end{proof}
 % \end{comment}
 
+
+% \begin{definition}[$\wellb_{\beta \eta \llambda}$]
+%   $
+%   \wellb_{\beta \eta}(X) \Leftrightarrow \forall t \in \subterm{X}, t \not\in \notllambda{}
+%   $
+% \end{definition}
+
+\begin{lemma}[$\wellb$-enforcement]\label{lem:w-enforcement-maybellam}
+  $\forall s, \C{s}{t}{m}{l}$, then $\:\wellb(t)$.
+\end{lemma}
+
+\begin{proof}[Proof sketch]
+  By \cref{lem:w-enforcement-maybebeta,lem:w-enforcement-maybeeta} and the 
+  rule above.
+\end{proof}
+
+
 \paragraph{Decompilation}
 All \linkbeta should be solved before decompilation.
 If any \linkbeta remains in \linkStore, decompilation fails.
@@ -2224,7 +2261,6 @@ the following activation rules:
   Let $\sigma$ be a substitution such that $\sigma t_1$ is a name $s$
   not occurring$s_1\dots s_n$. If $m = 1$, then $l$ is removed and \lhs is
   unified with $X_{s_1\ldots s_n~s}$.
-  \todo{I changed this part, it is OK?}
   If $m > 1$, then $l$ is replaced by the link
   $\linkbetaM{\Gamma}{T}{Y_{s_1\dots s_n~s}\appsep t_2\dots t_m}$
   (where $Y$ is a fresh variable of arity $n+1$) and link
@@ -2285,7 +2321,7 @@ shall relax these failure conditions in~\cref{sec:heuristics}.
   \linkStore, however, by \cref{lemma:prog-eta-terminates}, the algorithm
   terminates. Finally \progBetaFail also guarantees termination since 
   it makes \elpiIn{progress} immediately fails.
-
+%
   % \Cref{def:progBetaRH} makes \elpiIn{progress} terminates, since it makes a
   % \linkbeta disappear from \linkStore. On the other hand, \cref{def:progBetaLL},
   % creates each time a new \linketa and replace the old \linkbeta with a new one.
@@ -2314,11 +2350,10 @@ shall relax these failure conditions in~\cref{sec:heuristics}.
 %   as a variable as a scope which is still in \llambda. 
 % \end{proof}
 
-\begin{theorem}[Fidelity with \linkbeta]
+\begin{theorem}[Fidelity in \Fo]
   The introduction of \linkbeta guarantees \fullref{prop:fidelity-recovery}
   if \Uo{} fails outside \llambda.
 \end{theorem}
-\todo{should we introduce W/llam as prev section W/beta and W/eta?}
 
 \begin{proof}[Proof sketch]
   Let $\foUnifPb_i$ be the first problem in \foUnifPb not in \llambda and
@@ -2368,28 +2403,26 @@ Y \mapsto f~\}$.
 
 \paragraph{Example of \progBetaRH}
 We give a second look at the opening example in \cref{sec:beta}.
-\todo{this is a little more complex that the opening problem}
+% \todo{this is a little more complex that the opening problem}
 The problem is compiled into:
 %
 % make test ONLY=7003 TEX=tex
 \printAlll
-  {{{X,\lambda x.Y},
+  {{{X,\lambda x.a},
     {(X\appsep a),a}}}
-  {{{A,\lambda x.B},
-    {C,a}}}
-  {{{Y,B,0},
-    {X,A,0}}}
-  {{{\llambda,,C,(A\appsep a)}}}
+  {{{A,\lambda x.a},
+    {B,a}}}
+  {{{X,A,0}}}
+  {{{\llambda,,B,(A\appsep a)}}}
 
 % \todo{Rinominare i print dei problemi}
 
-The first unification problems is solved by the substitution
-$\sigma = \{~A \mapsto \lambda x.B~\}$. The \linkbeta becomes
-\linkbetaM{}{C}{((\lambda x.B) \appsep a)} whose \rhs can be $\beta$-reduced to
-$B$. $B$ is in \llambda and is unified with $C$. The resolution of the second
+The first unification problem is solved with the substitution
+$\sigma = \{~A \mapsto \lambda x.a~\}$. The \linkbeta becomes
+\linkbetaM{}{B}{((\lambda x.a) \appsep a)} whose \rhs can be $\beta$-reduced to
+$a$. $a$ is in \llambda and is unified with $B$. The resolution of the second
 unification problem
-gives the final substitution $\sigma = \{~A \mapsto \lambda x.B ~;~ B \mapsto C ~;~ C
-\mapsto a ~\}$ that is decompiled into $\rho = \{~ X \mapsto \lambda x.a ~;~ Y \mapsto
+confirm that $B$ equal $a$. The final substitution $\sigma = \{~A \mapsto \lambda x.a ~;~ B \mapsto a ~\}$ is decompiled into $\rho = \{~ X \mapsto \lambda x.a ~;~ Y \mapsto
 a ~\}$.
  
 \subsection{\texorpdfstring{Relaxing \fullref{def:progBetaFail}}{Relaxing progress-llam-fail}}
@@ -2478,7 +2511,7 @@ The second snippet illustrate the deduplication of \linketa. The syntax
 <<\elpiIn{N ~$\triangleright$~ G ?- P}>> denotes a $\lambda$Prolog sequent, that is a 
 goal \elpiIn{P} under a set \elpiIn{G} of hypothetical rules (introduced
 by \elpiIn{=>}) and where the program context binds (via the \elpiIn{pi}
-operator) \elpi{N} heigenvariables. Sequents are presented to
+operator) \elpiIn{N} heigenvariables. Sequents are presented to
 CHR with their higher order unification variables replaced by
 ``frozen constants'', that is $A_{xyz}$ becomes <<\elpiIn{uvar ~$f_A$~ [x,y,z]}>>
 for a fresh constant $f_A$. Frozen constants are ``defrost'' when
