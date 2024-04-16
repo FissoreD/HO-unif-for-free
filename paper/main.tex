@@ -2315,7 +2315,6 @@ the following activation rules:
   $t \appsep t_1 \ldots t_m$ $\beta$-reduces to a $t' \in \llambda$.
   \label{def:progBetaRH}
 \end{definition}
-
 % Example of this `X a = Y a'
 % \begin{definition}[\progBetaDedup]
 %   Given a \linkbeta $l_1$ and second link $l_2 \in\linkStore$, such that they
@@ -2325,9 +2324,10 @@ the following activation rules:
 % \end{definition}
 
 \begin{definition}[\progBetaFail]
-  \progress fails whenever:
-  there exists another link $l' \in \linkStore$ with same \lhs as $l$;
-  or the \lhs  of $l$ become rigid.
+  \progress fails whenever
+  there exists another link $l' \in \linkStore$ with the same \lhs % as $l$;
+  or the \lhs % of $l$
+  become rigid.
   \label{def:progBetaFail}
 \end{definition}
 
@@ -2347,8 +2347,10 @@ shall relax these failure conditions in~\cref{sec:heuristics}.
   \linkbeta $l^m$ has no more arguments and is removed from \linkStore.
   Note that at the $m^{th}$ iteration, $m$ new \linketa have been added to
   \linkStore, however, by \cref{lemma:prog-eta-terminates}, the algorithm
-  terminates. Finally \progBetaFail also guarantees termination since 
-  it makes \elpiIn{progress} immediately fails.
+  terminates. Finally \progBetaFail guarantees termination since 
+  %it makes 
+  %\elpiIn{progress}
+  it immediately fails.
 %
   % \Cref{def:progBetaRH} makes \elpiIn{progress} terminates, since it makes a
   % \linkbeta disappear from \linkStore. On the other hand, \cref{def:progBetaLL},
@@ -2398,7 +2400,7 @@ shall relax these failure conditions in~\cref{sec:heuristics}.
 
 \paragraph{Example of \progBetaLL}
 Consider the \linkbeta below:
-
+%
 % make test ONLY=7004 TEX=tex
 \printAlll
   {{{X,\lambda x.x},
