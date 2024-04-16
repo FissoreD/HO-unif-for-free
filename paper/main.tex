@@ -1837,14 +1837,16 @@ when the \lhs is assigned to a variable that is the \lhs of another
 \end{proof}
 
 \begin{lemma}
-  Given a \linketa $l$, the unification done by \progressetadedup is between
+  The unification done by \progressetadedup is between
   terms in \wellb.
   \label{lemma:unif-eta-3}
 \end{lemma}
 
 \begin{proof}
-  We unify the \rhs{} of two \linketa. Both have the
-  shape $\lambda x.t$ and by \cref{lemma:unif-eta-aux}, $\wellb(t)$.
+  Given two \linketa{}s \linketaM{\Gamma_1}{X}{\lambda x.t} and
+  \linketaM{\Gamma_2}{Y}{\lambda x.t'} 
+  the unification is performed between $t$ and $t'$. Both terms are
+  \wellb and therefore, unification is done between \wellb terms.
 \end{proof}
 
 \begin{lemma}
