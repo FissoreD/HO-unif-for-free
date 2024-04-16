@@ -418,6 +418,16 @@ To reason about unification, we provide a description of the
 \Fo{} and \Ho languages where unification variables
 are first-class terms, i.e. they have a concrete syntax as
 shown in \cref{code:common-terms}.
+Unification variables
+in \Fo{} (\elpiIn{fuva} term constructor) have no explicit scope:
+the arguments of a higher-order variable are given via the \elpiIn{fapp}
+constructor. For example the term <<\coqIn{P x}>> is represented as
+<<\elpiIn{fapp [fuva N, x]}>>, where \elpiIn{N} is the memory address
+of \elpiIn{P} and \elpiIn{x} is a bound variable.\\
+In \Ho, the representation of <<\coqIn{P x}>> is instead <<\elpiIn{uva N [x]}>>,
+since unification variables are higher-order and come equipped with an
+explicit scope.
+
 % We keep these languages
 %minimal, for example, we omit the \elpiIn{all} quantifier of CIC we used
 %in the example in Section~\ref{sec:intro} together with the type notation of
@@ -441,15 +451,6 @@ shown in \cref{code:common-terms}.
   \Description[code:common-terms]{code:common-terms}
 \end{figure}
 }
-Unification variables
-in \Fo{} (\elpiIn{fuva} term constructor) have no explicit scope:
-the arguments of a higher-order variable are given via the \elpiIn{fapp}
-constructor. For example the term <<\coqIn{P x}>> is represented as
-<<\elpiIn{fapp [fuva N, x]}>>, where \elpiIn{N} is the memory address
-of \elpiIn{P} and \elpiIn{x} is a bound variable.\\
-In \Ho, the representation of <<\coqIn{P x}>> is instead <<\elpiIn{uva N [x]}>>,
-since unification variables are higher-order and come equipped with an
-explicit scope.
 %\todo{use faddr for Fo}
 %
 %faddr and addr are memory addresses, the details are given in bla,
@@ -2537,7 +2538,7 @@ link-eta L R :- not (maybe-eta R), !, contract R S, L = S.
 \todo{improve code}
 
 \noindent
-The second snippet illustrate the deduplication of \linketa. The syntax
+The second snippet illustrates the deduplication of \linketa. The syntax
 <<\elpiIn{N ~$\triangleright$~ G ?- P}>> denotes a $\lambda$Prolog sequent, that is a 
 goal \elpiIn{P} under a set \elpiIn{G} of hypothetical rules (introduced
 by \elpiIn{=>}) and where the program context binds (via the \elpiIn{pi}
