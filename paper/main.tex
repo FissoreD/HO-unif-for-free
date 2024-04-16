@@ -1786,22 +1786,17 @@ when the \lhs is assigned to a variable that is the \lhs of another
 % \noteD[inline]{Below the proof of \cref{prop:w-preservation}, ho usato 3 lemmi ausiliari,
 % forse si può compattare in una prova più piccola?}
 \begin{lemma}
-  Given a \linketa \linketaM{\Gamma}{X}{T}, the unification done by \progressetaleft is between
+  Given a \linketa \linketaM{\Gamma}{X}{\lambda x.t}, the unification done by \progressetaleft is between
   terms in $\wellb$  
   \label{lemma:unif-eta-1}
 \end{lemma}
 
 \begin{proof}[Proof sketch]
-  Let $\sigma$ be the substitution, such that $\wellb(\sigma X)$ (since \Ue preserves \wellb),
-  By\todo{reformulate}
-  \progressetaleft, if 1) the $\sigma X$ is a name, a constant or an
-  application, then, $\lambda x.X \appsep x$ is unified with the \rhs. By
-  \cref{inv:link-eta-right} and \cref{lemma:unif-eta-aux},
-  $\rhs = \lambda x. t$ and $\wellb(t)$.
-  Otherwise, 2) $\sigma X = \lambda x.t$.
-  % \todo{what does as a functor mean?}
-  In both cases, unification is
-  performed between terms in \wellb.
+  Let $\sigma$ be the substitution, such that $\wellb(\sigma X)$ (since \Ue preserves \wellb).
+  By \cref{inv:link-eta-right}, we have $\wellb(t)$.
+  If $\sigma X = \lambda x.r$, then $r$ is unified with $t$: both terms are \wellb.
+  Otherwise, $\lambda x. X x$ is unified with $\lambda x. t$, and $X x$ and $t$
+  are both \wellb. This concludes the proof.
 \end{proof}
 
 \begin{lemma}
