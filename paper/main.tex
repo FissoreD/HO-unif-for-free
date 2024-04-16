@@ -488,9 +488,9 @@ terms in \Ho{}.
 
 \subsection{Equational theories an unification}
 
-In order to specify unification, we need to
-define the equational theory and
-substitution (unification-variable assignment).
+% In order to specify unification, we need to
+% define the equational theory and
+% substitution (unification-variable assignment).
 
 \subsubsection{Term equality: \Eo and \Ee}
 For both languages, we extend the equational theory
@@ -875,7 +875,8 @@ Proposition \ref{prop:w-preservation} is key to proving \cref{prop:simulation,pr
 Informally, it says that the problematic terms moved on the side by the compiler
 are not reintroduced by \hstep, hence \Ue{} can continue to operate properly.
 In \cref{sec:simulation,sec:eta,sec:beta}
-we describe how the compiler recognizes terms in \maybebeta, \maybeeta and
+we describe how to %the compiler
+recognize terms in \maybebeta, \maybeeta and
 \notllambda and how \progress takes care of them preserving \wellb
 and ensuring \cref{prop:simulation,prop:fidelity,prop:fidelity-recovery}.
 
@@ -1059,7 +1060,7 @@ Its main task is to beta normalize the term and map one syntax tree to
 the other.
 In order to bring back the substitution from \Ho{} to \Fo{} the compiler
 builds a ``memory map'' connecting the \Fo{} variables to the \Ho ones
-using the routine
+using %the routine
 \ref{clause:malloc}.
 
 The signature of the \elpiIn{comp} predicate below allows for the generation of
@@ -1284,11 +1285,12 @@ the previous section is not able to make the \Ho unification problem succeeds.
   {{{X,A,0}}}
   {{}}
 The unification problem $\hoUnifPb_1$ fails while trying to unify
-$A \appsep x$ and $x$, which is equivalent to \elpiIn{app [uva A [], x]}
+$A \appsep x$ and $x$, which is equivalent to <<\elpiIn{app [uva A [], x]}>>
 versus \elpiIn{x}.
 In order to exploit the higher-order unification algorithm of the meta language,
-we need to compile the \Fo{} term $X\appsep x$ into the \Ho term $A_x$,
-which is \elpiIn{uva A [x]}.
+we %need to 
+compile the \Fo{} term $X\appsep x$ into the \Ho term $A_x$.
+%,which is \elpiIn{uva A [x]}.
 
 \subsection{Compilation and decompilation}
 
@@ -1884,21 +1886,45 @@ when the \lhs is assigned to a variable that is the \lhs of another
 \end{theorem}
 
 \begin{proof}[Proof sketch]
-  We want to prove that for any $\fstep_i$, $\fstep_i$ succeeds iff $\hstep_i$
-  succeeds. An $\hstep_i$ is made by a unification $\mathcal{U}$ and a link
-  progression $\mathcal{P}$.
-  Two cases should be analyzed: 1) $\fstep_i$ succeeds, this means that $\mathcal{U}$
-  succeeds since any \maybeeta term is replaced with a fresh variable, and by
-  \cref{th:fidelity-beta}, the other subterms unify. Moreover, $\mathcal{P}$
-  succeeds, since the $\eta$-progression
-  rules simply imitate the rules~\ref{clause:eta1} and \ref{clause:eta2},
-  performing unification between $\eta$-contracted terms. 
-  If 2) $\fstep_i$ fails, either the failure is 
-  due to the unification of terms that are not in \maybeeta. In this case
-  $\mathcal{U}$ fails thanks to \cref{th:fidelity-beta}. 
-  On the other hand, the failure is
-  due to a unification over \maybeeta terms, making $\mathcal{P}$ to fail.
-\end{proof}
+  We want to prove that for any $i$, $\fstep_i$ succeeds iff $\hstep_i$
+  succeeds. An $\hstep_i$ is made by a unification
+  $u = \sigma_{i-1}\hoUnifPb_{i_l} \Ue \sigma_{i-1}\hoUnifPb_{i_r} \mapsto \sigma_i'$ and a link
+  progression $p = \progress(\linkStore_{i-1},\sigma_i') \mapsto (\linkStore_i,\sigma_i)$.
+  The interesting case is when the infolved terms are in \maybeeta.
+  wlog we assume s1 is in \maybeeta, s2 is not (if both are thanks to dedup we are back in this situation).
+  we assume s1 is compiled to X and $\linketaM{\Gamma}{X}{t1}$.
+  In all cases $X \Ue t2$ succeeds since X is a variable and
+  hence assigns t2 to X.
+  Rule \progressetaleft unify with \Ue X (hence t2) with t1, with the only
+  additional care of eta expanding t2 if needed (5.9.1).
+
+  Two cases should be analyzed: 1) $\fstep_i$ succeeds to unify 
+  $s1$ with $s2$. The interesting case is when fostep succeds by
+  finding a $\rho$ such that $\rho s1 \Eo \rho s2$ requires
+  rules~\ref{clause:eta1} and \ref{clause:eta2} at the top level,
+  and that is in exactly the cases in which T (from page 3) is
+  not a lam (see 5.9.1) compensating for the missing rules in \Ue.
+  
+  2) If $\fstep_i$ fails to unify $s1 \Uo s2$
+  it means that, after applying rules~\ref{clause:eta1} and \ref{clause:eta2}
+  and the one flam-flam we find different terms.
+  (5.9.1) only adds lambdas that are forcibly consumed by
+  lam-lam rule.
+  \end{proof}
+
+Note that \progressetadedup always unifies terms starting with exaclty one
+lambda, hence lam-lma, so we can't fail due to that lambda or succed thanks
+to that lambda. Hence it does not impact fidelity.
+
+\begin{corollary}[Properties of \Uo in $\wellb_{\beta\eta}$]\label{prop:unifetawb}
+  Given the updated compilation scheme, the \Uo of~\cref{sec:founif}
+  is a good unification (as per \cref{prop:good-unif})
+  for \Eo in the domain $\wellb_{\beta\eta}$.
+\end{corollary}
+
+Note \progressetaright is only needed in the next section where chains of links
+are added. Hence we give an example for rule \progressetaright in the next section.
+\todo{fix english}
 
 \paragraph{Example of \progressetaleft}
 
@@ -1931,8 +1957,6 @@ $\sigma = \{ A~ \mapsto C, B \mapsto D ~\}$.
 In turn, given the map \mapStore, this second assignment is decompiled to
 $\rho = \{~ X \mapsto Y ~\}$ as expected.
 
-We give an example for rule
-\progressetaright in the next section.
 
 
 %\section{Enforcing inv.: \NoCaseChange{\nameref{inv:uvaarity}}}
