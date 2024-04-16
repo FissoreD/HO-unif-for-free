@@ -1056,8 +1056,9 @@ extensions in \cref{sec:llam,sec:eta,sec:beta}.
 Its main task is to beta normalize the term and map one syntax tree to
 the other.
 In order to bring back the substitution from \Ho{} to \Fo{} the compiler
-builds a ``memory map'' connecting the kind of variables using routine
-\ref{clause:malloc}.\noteD{non mi piace}
+builds a ``memory map'' connecting the \Fo{} variables to the \Ho ones
+using the routine
+\ref{clause:malloc}.
 
 The signature of the \elpiIn{comp} predicate below allows for the generation of
 links (suspended unification problems), which play no role in this section
@@ -1071,7 +1072,7 @@ for updates to the substitution.
 \noindent
 The code above uses that possibility
 in order to allocate space for the variables, i.e. it sets their memory
-address to \elpiIn{none} (a details not worth mentioning in the
+address to \elpiIn{none} (a detail not worth mentioning in the
 previous sections).
 \todo{explain fold6}
 
@@ -1785,21 +1786,20 @@ when the \lhs is assigned to a variable that is the \lhs of another
 % \noteD[inline]{Below the proof of \cref{prop:w-preservation}, ho usato 3 lemmi ausiliari,
 % forse si può compattare in una prova più piccola?}
 \begin{lemma}
-  Given a \linketa $l$, the unification done by \progressetaleft is between
+  Given a \linketa \linketaM{\Gamma}{X}{T}, the unification done by \progressetaleft is between
   terms in $\wellb$  
   \label{lemma:unif-eta-1}
 \end{lemma}
 
 \begin{proof}[Proof sketch]
-  Let $\sigma$ be the substitution, which is  $\wellb(\sigma)$ (by
-  \todo{is w sigmaa defined?}
-  \cref{prop:w-preservation}). $\lhs \in \sigma$, therefore $\wellb(\lhs)$. By
-  \progressetaleft, if 1) the \lhs is a name, a constant or an
-  application, then, $\lambda x.\lhs \appsep x$ is unified with the \rhs. By
+  Let $\sigma$ be the substitution, such that $\wellb(\sigma X)$ (since \Ue preserves \wellb),
+  By\todo{reformulate}
+  \progressetaleft, if 1) the $\sigma X$ is a name, a constant or an
+  application, then, $\lambda x.X \appsep x$ is unified with the \rhs. By
   \cref{inv:link-eta-right} and \cref{lemma:unif-eta-aux},
   $\rhs = \lambda x. t$ and $\wellb(t)$.
-  Otherwise, 2) the \lhs has \elpiIn{lam} as functor.
-  \todo{what does as a functor mean?}
+  Otherwise, 2) $\sigma X = \lambda x.t$.
+  % \todo{what does as a functor mean?}
   In both cases, unification is
   performed between terms in \wellb.
 \end{proof}
@@ -1868,7 +1868,7 @@ when the \lhs is assigned to a variable that is the \lhs of another
 
 \begin{theorem}[Fidelity in $\wellb_{\beta \eta}$]
   % F x = z, F x y = z y
-  Given a list of unification problems \foUnifPb, if \noteD{riprendere sec 3.1}
+  Given a list of unification problems \foUnifPb, if
   $\wellb_{\beta \eta}(\foUnifPb)$ and if the 
   memory map is bijective, then
   the introduction 
@@ -1876,14 +1876,13 @@ when the \lhs is assigned to a variable that is the \lhs of another
   \footnote{This premise is fulfilled in \cref{sec:invariant1}}
   \label{lemma:fidelity-maybeeta}
 \end{theorem}
-\todo{should we introduce W/eta as prev section W/beta?}
 
 \begin{proof}[Proof sketch]
   \progressetaleft and \progressetadedup activate a \linketa when, in the
   original unification problem, a \maybeeta term is unified with respectively a
   well-behaved term or another \maybeeta term. In both cases, the links trigger
   a unification which succeeds iff the same unification in \Fo{} succeeds,
-  \todo{Fix: show that 5.7 an 5.8 compensate for missing eta rule}
+  \todo{Fix: show that 5.7 an 5.8 compensate for missing eta rule, citare regolae in =o}
   guaranteeing \cref{prop:fidelity}. \progressetaright never fails, in fact,
   this progression refines a variable to a rigid term and plays no role in 
   \cref{prop:fidelity}.
@@ -2010,16 +2009,16 @@ two arities.
 
 \begin{theorem}[Fidelity with \mapdeduplication]
   Given a list of unification problems \foUnifPb, such that 
-  $\forall t, t\in\subterm{\foUnifPb} \Rightarrow \wellb(t) \lor t \in \maybeeta$,
+  $\wellb_{\beta \eta}(\foUnifPb)$,
   if $\;\foUnifPb$ contains the same \Fo{} variable used at different arities,
   then \mapdeduplication guarantees \fullref{prop:fidelity}
 \end{theorem}
 
 \begin{proof}[Proof sketch]
   By the definition of \mapdeduplication, any two occurrencies of the same \Fo{} 
-  variables $X_1, X_2$ with different arities are compiled to two
+  variables with different arities are compiled to two
   variables $A^n$ and $C^m$ related by a chain of \linketa.
-  We show that whenever one of the two is instantiated with a rigid term the 
+  We show that whenever one of the two is instantiated with a rigid term then
   the chain becomes shorter and hence, eventually, the
   other variable is instantiated too.
   Without loss of generality we assume $m < n$ and $A$ is instantiated.
@@ -2057,12 +2056,12 @@ The unification variable $C_{yx}$ is therefore unified with $x$
 (the second variable of its scope).
 As a result $\linkStore_1$ becomes \linketaM{x}{E_x}{\lambda y.y},
 and the \rhs is no more in \maybeeta so \progressetaright fires and
-$E_x$ is unified with $\lambda y.y$, resulting in
-$\sigma = \{~ A \mapsto \lambda x.\lambda y.x ~;~ B_x \mapsto \lambda y.x ~;~ C_{yx} \mapsto x ~;~ E_x \mapsto \lambda y.y~\}$.\\
+$E_x$ is unified with $\lambda y.y$; then $\linkStore_2$ makes progress thanks to the same 
+rule giving
+$\sigma = \{~ A \mapsto \lambda x.\lambda y.x ~;~ B_x \mapsto \lambda y.x ~;~ C_{yx} \mapsto x ~;~ D \mapsto f\appsep (\lambda y.y) ~;~ E_x \mapsto \lambda y.y ~\}$.\\
 The remaining step $\hoUnifPb_2$ identifies $D$ with $F$,
 hence the resulting \Fo{} substitution is
-\todo{verificare, la vecchia soluzione era sballata}
-$\rho = \{X \mapsto \lambda x.\lambda y.y ~;~ Y \mapsto \lambda x.(f\appsep (\lambda y.y))\appsep x\}$.
+$\rho = \{X \mapsto \lambda x.\lambda y.y ~;~ Y \mapsto f\appsep (\lambda y.y)\}$.
 
 \section{Handling of \notllambda}\label{sec:beta}
 
@@ -2512,7 +2511,7 @@ The second snippet illustrate the deduplication of \linketa. The syntax
 <<\elpiIn{N ~$\triangleright$~ G ?- P}>> denotes a $\lambda$Prolog sequent, that is a 
 goal \elpiIn{P} under a set \elpiIn{G} of hypothetical rules (introduced
 by \elpiIn{=>}) and where the program context binds (via the \elpiIn{pi}
-operator) \elpi{N} heigenvariables. Sequents are presented to
+operator) \elpiIn{N} heigenvariables. Sequents are presented to
 CHR with their higher order unification variables replaced by
 ``frozen constants'', that is $A_{xyz}$ becomes <<\elpiIn{uvar ~$f_A$~ [x,y,z]}>>
 for a fresh constant $f_A$. Frozen constants are ``defrost'' when
