@@ -157,8 +157,8 @@ Elpi meta-programming language~\cite{tassi:hal-01637063},
 a dialect of $\lambda$Prolog, already used to extend
 Coq in various ways~\cite{tassi:hal-01637063,tassi:hal-01897468,gregoire:hal-03800154,newtc}.
 
-The use of meta languages facilitates the implementation of
-proof systems in two key ways. The first and most well-know one is that variable binding and
+The use of a meta language facilitates the implementation of a
+proof system in two key ways. The first and most well-know one is that variable binding and
 substitution come for free. %, exploited in all works mentioned above.
 The second one is that these meta languages come equipped with some form
 of unification, a cornerstone of proof construction and proof search.
@@ -167,10 +167,10 @@ of unification, a cornerstone of proof construction and proof search.
 %the meta language Isabelle is such a good match for HOL that it could used to
 %implement an interactive proof system for the object logic, in addition to
 %it specification.\\
-In this paper, we focus on one aspect of
-this work, precisely \emph{how to reuse the higher-order unification procedure
-of the meta language in order to simulate a higher-order logic program
-for the object language}.
+In this paper we focus on this last aspect of the implementation of
+a Prolog-like proof system, precisely \emph{how to reuse the higher-order
+unification procedure of the meta language in order to simulate a
+higher-order logic program for the object language}.
 
 We take as an example the \coqIn{Decision} and \coqIn{Finite} type classes
 from the Stdpp
@@ -380,24 +380,24 @@ address \githubUrl.
 }
 
 
-\newcommand{\unifcorrectX}[4]{
+\newcommand{\unifcorrectX}[4]{\ensuremath{
   % \forall \rho #3_1 #3_2, %
     % \{#3_1, #3_2\} \subseteq \llambda \Rightarrow %
    #4 \Rightarrow
       #3_1 #2 #3_2 \mapsto \rho
         \Rightarrow
           \rho #3_1 #1 \rho #3_2  %
-}
+}}
 \newcommand{\unifcorrect}[3]{\unifcorrectX{#1}{#2}{#3}{ \{#3_1, #3_2\} \subseteq \llambda}}
 
-\newcommand{\unifcompleteX}[4]{
+\newcommand{\unifcompleteX}[4]{\ensuremath{
   % \forall #3_1 #3_2, %
     % \{#3_1, #3_2\} \subseteq \llambda \Rightarrow %
     #4 \Rightarrow
       % \forall \rho, %
         \rho #3_1 #1 \rho #3_2  %
           \Rightarrow \exists \rho', #3_1 #2 #3_2 \mapsto \rho' \land \rho' \subseteq \rho
-}
+}}
 \newcommand{\unifcomplete}[3]{\unifcompleteX{#1}{#2}{#3}{\{#3_1, #3_2\} \subseteq \llambda}}
 
 \newcommand{\maybeeta}{\texorpdfstring{\ensuremath{\Diamond\eta}\xspace}{maybeeta}}
@@ -569,16 +569,23 @@ the initial substitution $\sigma$ is empty.
 We write \llambda as the set of terms that are in the pattern-fragment, i.e.
 every higher-order variable is applied to a list of distinct names.
 
-The meta language of choice is expected to provide 
-an implementation of \Ue that satisfies
-the following properties:
-%~\ref{prop:correct-ml} and~\ref{prop:complete-ml}.
-\begin{gather}
-  \unifcorrect{\Ee}{\Ue}{t} \label{prop:correct-ml}\\
-  \unifcomplete{\Ee}{\Ue}{t}\label{prop:complete-ml}
-\end{gather}\todo{give a name and reuse it for \Uo in next sections}
+The specification of a ``good'' unification procedure restricted
+to a domain $\mathcal{D}$ is the following:
+
+\begin{proposition}[Good unification]\label{prop:good-unif}
+A good unification $\UnifRel\;$ for equality $\EqualRel\;$ in the domain
+$\mathcal{D}$ satisfies the following properties:
+  \begin{gather}
+    \unifcorrectX{\EqualRel}{\UnifRel}{t}{\{~t_1,~ t_2~\} \subseteq \mathcal{D}}\\
+    \unifcompleteX{\EqualRel}{\UnifRel}{t}{\{~ t_1,~ t_2 ~\} \subseteq \mathcal{D}}
+  \end{gather}
+\end{proposition}  
 
 \noindent
+The meta language of choice is expected to provide 
+an implementation of \Ue that is a good unification for \Ee
+in \llambda.
+
 Even if we provide an implementation of the object-language unification
 \Uo{} in \cref{sec:founif}, our real goal is the simulation of an entire
 logic program.
@@ -1069,13 +1076,16 @@ The code above uses that possibility
 in order to allocate space for the variables, i.e. it sets their memory
 address to \elpiIn{none} (a detail not worth mentioning in the
 previous sections).
-\todo{explain fold6}
 
 \input{code/comp_lam}
 
 \noindent
 In the code above, the syntax \elpiIn{pi x y\..} is syntactic sugar for
 iterated \elpiIn{pi} abstraction, as in \elpiIn{pi x\ pi y\..}.
+The auxiliary predicate \elpiIn{fold6} folds a predicate
+with three accumulators (the memory map, the links and the substitution)
+over a lists to obtain a new list and the final values of the
+accumulators.
 
 The auxiliary function \elpiIn{close-links} tests if the bound variable
 \elpiIn{v} really occurs in the link. If it does, the link is wrapped into
@@ -1199,12 +1209,9 @@ already happens to be in \wellb.
 Later, when the compiler will enforce \cref{prop:w-enforcing}
 the proof will be adjusted to cover for the new cases.
 
-\begin{lemma}[Properties of \Uo in \wellb]\label{prop:uniffow} The following properties hold for \Uo
-  as implemented above: \todo{reuse statement from section 2.4}
-\begin{gather}
-  \unifcorrectX{\Eo}{\Uo}{t}{\wellb(\{t_1, t_2\})}\\
-  \unifcompleteX{\Eo}{\Uo}{t}{\wellb(\{t_1, t_2\})}
-\end{gather}
+\begin{lemma}[Properties of \Uo in \wellb]\label{prop:uniffow}
+  The implementation of \Uo above is a good unification (as per \cref{prop:good-unif})
+  for \Eo in the domain \wellb.
 \end{lemma}
 \begin{proof}[Proof sketch]
  In this setting, \Ee is as strong as \Eo on ground terms. What we have to show is that whenever two different \Fo{}
@@ -1316,12 +1323,10 @@ $
 $
 \end{definition}
 
-\begin{lemma}[Properties of \Uo in $\wellb_\beta$]\label{prop:uniffowb} The following properties hold for \Uo
-  where \todo{reuse 2.4}
-  \begin{gather}
-    \unifcorrectX{\Ee}{\Ue}{t}{\wellb_\beta(\{t_1, t_2\})}\\
-    \unifcompleteX{\Ee}{\Ue}{t}{\wellb_\beta(\{t_1, t_2\})}
-  \end{gather}
+\begin{lemma}[Properties of \Uo in $\wellb_\beta$]\label{prop:uniffowb}
+  Given the updated compilation scheme, the \Uo of~\cref{sec:founif}
+  is a good unification (as per \cref{prop:good-unif})
+  for \Eo in the domain $\wellb_\beta$.
 \end{lemma}
 
   \begin{proof}[Proof sketch]
