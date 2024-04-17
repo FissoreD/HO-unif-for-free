@@ -432,18 +432,6 @@ new A B C :- mem.new A B C.
     (pi x\ solve-link-abs (X x) (R' x) [x|L] H H1),
     close-links R' R.
 
-  solve-link-abs (val (link-eta (uva V S) (lam R))) [val (link-eta (uva V S) R')] T S1 S3 :-
-    filter T (not-in S) [_|_], !,
-    print "Context shrink eta for" {pplink (val (link-eta (uva V S) (lam R)))},
-    new S1 U S2, eta-expand (uva U S) R',
-    (R' ==l lam R) S2 S3.
-
-  solve-link-abs (val (link-llam (uva V S) (lam R))) [val (link-llam (uva V S) R')] T S1 S3 :-
-    filter T (not-in S) [_|_], !,
-    print "Context shrink beta for" {pplink (val (link-eta (uva V S) (lam R)))},
-    new S1 U S2, eta-expand (uva U S) R',
-    (R' ==l lam R) S2 S3.
-
   solve-link-abs (@val-link-eta A B) NewLinks _ S S1 :- !,
     print "In progress eta link for" {ho.pp A} {ho.pp B}, %HIDE
     progress-eta-link A B S S1 NewLinks,
@@ -553,6 +541,25 @@ new A B C :- mem.new A B C.
     print "OC is partial: a term is not in PF"
     occur-check-links MS.
 
+  type scope-check-aux list tm -> link -> link -> subst -> subst -> o.
+  scope-check-aux L (abs A) (abs NL) S S1 :- !,
+    (pi x\ scope-check-aux [x|L] (A x) (NL x) S S1).
+  scope-check-aux L (val (link-eta (uva V Sc) R))  (val (link-eta (uva V Sc) R'))  S1 S3 :-
+    exists (not-in Sc) L, !,
+    print "scope-check for link-eta" {pplink (val (link-eta (uva V Sc) R))}, % HIDE
+    new S1 U S2, eta-expand (uva U Sc) R',
+    (R' ==l R) S2 S3.
+  scope-check-aux L (val (link-llam (uva V Sc) R)) (val (link-llam (uva V Sc) R')) S1 S3 :-
+    exists (not-in Sc) L, !,
+    print "scope-check for link-llam" {pplink (val (link-llam (uva V Sc) R))}, % HIDE
+    new S1 U S2, (uva U Sc) = R',
+    (R' ==l R) S2 S3.
+  scope-check-aux _ A A S S.
+
+  type scope-check links -> links -> subst -> subst -> o.
+  scope-check L1 L2 S1 S2 :-
+    fold2 (scope-check-aux []) L1 L2 S1 S2.
+
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% CHECK %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -576,16 +583,21 @@ new A B C :- mem.new A B C.
     !,
     progress L L1 S S1.
 %SNIP: progress
-  progress L L2 S1 S3 :-
+  progress L L3 S S3 :-
     print "\nfixpoint iteration on:" {pplinks L}, !, % HIDE
-    progress1 L L1 S1 S2,
+    progress1 L L1 S S1,
     !, % HIDE
     if ( % HIDE
     occur-check-links L1,
     true) true (print "fail by oc in progress", fail), % HIDE
-    if (L = L1, S1 = S2)
-       (L2 = L1, S3 = S1)
-       (progress L1 L2 S2 S3).
+    !, % HIDE
+    print "Start scope check", % HIDE
+    if ( % HIDE
+    scope-check L1 L2 S1 S2
+    ) (print "Scope check ok") (print "Scope check ko", fail), %HIDE
+    if (L = L2, S = S2)
+       (L3 = L2, S3 = S2)
+       (progress L2 L3 S2 S3).
 %ENDSNIP
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

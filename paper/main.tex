@@ -1133,14 +1133,16 @@ and explain why the don't hinder termination.
 % that applies the substitution \elpiIn{S1} to all terms in \linkStore.
 
 \subsubsection{Scope check}\label{sec:sc}
-The predicate xxxx \todo{add} takes
-a link \linketaM{\Gamma}{X_{x_1\ldots x_n}}{t} and replaces it by
+The predicate \elpiIn{scope-check} walks through all links. 
+Each link of the form \linketaM{\Gamma}{X_{x_1\ldots x_n}}{t} is replaced by
 \linketaM{{x_1\ldots x_n}}{X_{x_1\ldots x_n}}{t'} whenever $\{x_1\ldots x_n\} \subset \Gamma$.
-The term $t' = \lambda x.Y_{{x_1\ldots x_n},x}$ after
-executing $\lambda x.Y_{{x_1\ldots x_n}~x} \Ue t$, that is $t'$ cannot contain
-variables in $\Gamma / \{x_1\ldots x_n\}$.
-This is key for fidelity since suspended unif problem
-must stay solvable.
+The term $t' = \lambda x.Y_{{x_1\ldots x_n},x}$ is obtained after
+executing $\lambda x.Y_{{x_1\ldots x_n}~x} \Ue t$. This unification
+ensures that $t'$ cannot contain variables in $\Gamma / \{x_1\ldots x_n\}$,
+and therefore grants fidelity.
+In fact, a link represents a suspended unification problem between a unification variable $X$
+and a ``problematic'' term $t$. This unification is possible iff 
+the free variables in $t$ are also in the scope of $X$.
 
 \subsubsection{Occur check}\label{sec:oc}
 Since compilation moves problematic terms out of the sight of \Ue{},
@@ -2069,6 +2071,7 @@ two arities.
 
 In order to grant fidelity, we add a new link progression for \linketa{}s.
 
+\begin{comment}
 \newcommand{\progressetaright}{\emph{$\eta$-progress-\rhs}\xspace}
 \begin{definition}[\progressetaright]\label{def:progressetaright} A link
 \linketaM{\Gamma}{X}{t} is removed from \linkStore when either 1)
@@ -2078,6 +2081,7 @@ first case, $X$ is unified with $t$, and in the second one, $X$ is unified with
 $t'$ (under the context $\Gamma$).
 \end{definition}
 \todo{comment this rule}
+\end{comment}
 
 \begin{theorem}[Fidelity with \mapdeduplication]
   Given a list of unification problems \foUnifPb, such that 
@@ -2135,7 +2139,9 @@ $X_1$ and $X_2$ are unified with different terms.
 If we look back the example give at the beginning of this section, we can
 deduplicate $\mapping{X}{E}{1}, \mapping{X}{C}{2}$ by removing the first mapping
 and adding the auxiliary \linketa: \linketaM{x}{E_{x}}{\lambda y.C_{x y}}.
-After deduplication the compiler output is as follows:
+
+After deduplication the compiler output is as follows:\todo{add simple example}
+\begin{comment}
 % make test ONLY=7001 TEX=tex
 \printAlll
   {{{\lambda x.\lambda y.(X\appsep y\appsep x),\lambda x.\lambda y.x},
@@ -2163,6 +2169,7 @@ $\sigma = \{~ A \mapsto \lambda x.\lambda y.x ~;~ B_x \mapsto \lambda y.x ~;~ C_
 The remaining step $\hoUnifPb_2$ identifies $D$ with $F$,
 hence the resulting \Fo{} substitution is
 $\rho = \{X \mapsto \lambda x.\lambda y.y ~;~ Y \mapsto f\appsep (\lambda y.y)\}$.
+\end{comment}
 
 \section{Handling of \notllambda}\label{sec:beta}
 
@@ -2367,7 +2374,7 @@ the following activation rules:
   (where $Y$ is a fresh variable of arity $n+1$) and link
   \linketaM{\Gamma}{X_{s_1\dots s_n}}{\lambda x.Y_{s_1\dots s_n~x}}
   is added to \linkStore.   
-
+  %
   % A link \linkbetaM{\Gamma}{T}{\rhsBeta} is removed from \linkStore, if given
   % the substitution $\sigma$, $\sigma t_1$ is a name, say $t$, such that, $t
   % \notin s_1\dots s_n$. In this case, let $Y$ a fresh variable, then
@@ -2582,7 +2589,7 @@ $X a$ to $Y$. This heuristic is used by~\cite{sozeau08}.
 %\input{code/progress_heuristic}
 %\noindent
 %Note that \elpiIn{UV} is in \llambda as well as \elpiIn{T}. 
-\vspace{-1em}
+% \vspace{-1em}
 \section{Actual implementation in Elpi}\label{sec:implementation}
 
 In this paper we did study a compiler and simulation loop on a minimal language.
