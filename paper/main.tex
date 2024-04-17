@@ -2067,14 +2067,41 @@ two arities.
   By the definition of \mapdeduplication, any two occurrencies of the same \Fo{} 
   variable used at different arities are compiled to two
   variables $A^m$ and $C^n$ related by a chain of \linketa.
-  Whenever the two variables are assigned to the non-unifiable terms,
-  the chain of \linketa is entirely waken up refining little by little
-  the intermediate variables between $A^m$ and $C^n$ leading eventually to a failure. 
-  On the other
-  hand, if the two variables still remain unifiable after their assignement, 
-  then the activation of 
-  the corresponding \linketa just refines the chain, by reducing eventually
-  its length.
+  % Attenzione a questo caso:
+  %    A =𝜂 λx.(B x)   e    x |- B x =𝜂 λx.(C x)           (from a map dedup, where A e C, sono stessa variabile con diff arities)
+  %  se (C x) è instanziato a (f (D x)) allora non c'è nessun progress:
+  %  il rhs del secondo link diventa (λx.(f (D x))) che è un maybe-eta
+%
+  Without loss of generality, we pose $m < n$. If $A^m$ is assigned to a term
+  $\lambda \vec{x}.t$ with $q$ being the length of $\vec{x}$. If $t$ is a rigid
+  term, then the chain of links between $A^m$ and $C^n$ is completely triggered
+  so that $C^n$ is assigned to $\lambda \vec{x}.t$ $\eta$-expanded $n-m$ times.
+  Note that in this case fidelity is guaranteed, since term unified to $C^n$
+  sohuld also unify with $A^m$. Otherwise, if $t$ is a variable, the chain of
+  links is shrinked by $q$. Note that if this length is bigger then $n-m$ again
+  the full chain collapse and $A^m$ and $C^n$ are agian tiny coupled. Otherwise,
+  if $q < n-m$, it means that $C^n$ can always be assigned to any term starting
+  with at least $q$ lambdas. In this second case fidelity is also guaranteed,
+  due to the constraint of the number of lambda by which $C^n$ should start.
+%
+  % not starting with $\lambda$, then the entrire chain of link is
+  % immediately waken up, assigning $C^n$ to $x_1\dots x_{n-m} \vdash t \appsep
+  % x_1\dots x_{n-m}$, which is the $t$ $\eta$-expanded $n-m$ times. Hence, $A^m$
+  % and $C^n$ are tiny coupled. If $A^m$ is assigned to a term of the form
+  % $\lambda \vec{x}.t$, then if $t$ is rigid, the chain of links between $A^m$
+  % and $C^n$ completely triggered, is shrinked by the length of $\vec{x}$. Note
+  % that if $t$ is rigid, by the previous sentence, the remi
+%
+  % If $A^m$ is instantiated, 
+%
+  % Whenever the two variables are assigned to the non-unifiable terms,
+  % the chain of \linketa is entirely waken up refining little by little
+  % the intermediate variables between $A^m$ and $C^n$ leading eventually to a failure. 
+  % On the other
+  % hand, if the two variables still remain unifiable after their assignement, 
+  % then the activation of 
+  % the corresponding \linketa just refines the chain, by reducing eventually
+  % its length.
 \end{proof}
 % \todo{Not sure I fullfy fixed the proof, but the old oen was not ok}
 

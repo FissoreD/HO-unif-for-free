@@ -666,6 +666,26 @@ macro @sokl-delay N SX SS :- @sokl-call comp.suspend-out-of-lam N SX SS.
   pr (error "unif") "λx.λy.(X x y) = f"
 ] [].
 
+% @sokl 106 [
+%   pr ok "λx.(X x) = λx.Y",
+%   pr (error "unif") "λx.λy.(X x y) = λx.(f (Z x))"
+% ] [].
+
+% @sokl 107 [
+%   pr ok "λx.(X x) = λx.Y", 
+%   pr ok "λx.λy.(X x y) = λx.λy.(f (Z x y))"
+% ] [].
+
+% @sokl 108 [
+%   pr ok "λx.(X x) = λx.Y",
+%   pr (error "unif") "λx.λy.(X x y) = λx.λy.x"
+% ] [].
+
+% @sokl 109 [
+%   pr ok "λx.(X x) = λx.Y",
+%   pr ok "λx.λy.(X x y) = λx.λy.y"
+% ] ["λx.λy.y", "λx.x"].
+
 % From the paper
 @sokl 7000 [
   pr ok "λx.(X x) = f"

@@ -235,6 +235,8 @@ namespace ho {
   ppuva.aux "5" "F" :- !.
   ppuva.aux "6" "G" :- !.
   ppuva.aux "7" "H" :- !.
+  ppuva.aux "8" "I" :- !.
+  ppuva.aux "9" "J" :- !.
   ppuva.aux N S :- S is "E" ^ N.
 
   type ppsubst subst -> list string -> o.
