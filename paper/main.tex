@@ -1755,28 +1755,28 @@ we know for sure if the term has to be $\eta$-contracted or not.
 
 \newcommand{\progressetaleft}{\emph{$\eta$-progress-\lhs}\xspace}
 \begin{definition}[\progressetaleft]\label{def:progressetaleft}
-A link \linketaM{\Gamma}{X}{T} is removed from \linkStore when
+A link \linketaM{\Gamma}{X}{t} is removed from \linkStore when
 $X$ becomes rigid. Let $y\in\Gamma$, there are two cases:
 \begin{enumerate}
   \item if $X = a$ or $X = y$ or $X = f \appsep a_1\ldots a_n$
-    we unify the $\eta$-expansion of $X$ with $T$, that is we run
-    $\lambda x.X \appsep x\Ue{} T$
-    \item if $X = \lambda x.t$ we run $X \Ue{} T$.
+    we unify the $\eta$-expansion of $X$ with $t$, that is we run
+    $\lambda x.X \appsep x\Ue{} t$
+    \item if $X = \lambda x.t$ we run $X \Ue{} t$.
 \end{enumerate}
 \end{definition}
 
-\newcommand{\progressetaright}{\emph{$\eta$-progress-\rhs}\xspace}
-\begin{definition}[\progressetaright]\label{def:progressetaright} A link
-\linketaM{\Gamma}{X}{T} is removed from \linkStore when either 1)
-$\testmaybeeta~T$ does not hold (anymore) or 2) by $\eta$-contracting $T$ to
-$T'$ where $T'$ does not start with the \elpiIn{lam} constructor. In the
-first case, $X$ is unified with $T$, and in the second one, $X$ is unified with
-$T'$ (under the context $\Gamma$).
+\newcommand{\progressetashrink}{\emph{$\eta$-progress-shrink}\xspace}
+\begin{definition}[\progressetashrink]\label{def:progressetashrink}
+Given a link \linketaM{\Gamma}{X}{t}, and let $S$ the scope of $X$
+we pose $T = S \cap \Gamma$. If $T$ is not empty,
+then the original link is replaced by a new link
+\linketaM{S}{X}{t'}, where $t'$ is a term where all the variables in $\Gamma / X$ 
+have been pruned.
 \end{definition}
 
-There is a third case in which a link is removed from \linkStore, namely
-when the \lhs is assigned to a variable that is the \lhs of another
-\linketa.
+% There is a third case in which a link is removed from \linkStore, namely
+% when the \lhs is assigned to a variable that is the \lhs of another
+% \linketa.
 
 \newcommand{\progressetadedup}{\emph{$\eta$-progress-deduplicate}\xspace}
 \begin{definition}[\progressetadedup]\label{def:progressetadedup}
@@ -1814,20 +1814,20 @@ when the \lhs is assigned to a variable that is the \lhs of another
   are both \wellb. This concludes the proof.
 \end{proof}
 
-\begin{lemma}
-  Given a \linketa \linketaM{\Gamma}{X}{\lambda x.t}, the unification done by \progressetaright is between
-  terms in \wellb.
-  \label{lemma:unif-eta-2}
-\end{lemma}
+% \begin{lemma}
+%   Given a \linketa \linketaM{\Gamma}{X}{\lambda x.t}, the unification done by \progressetaright is between
+%   terms in \wellb.
+%   \label{lemma:unif-eta-2}
+% \end{lemma}
 
-\begin{proof}[Proof sketch]
-  $X$ is variable, and, by \cref{def:progressetaright}, $\lambda x.t$ is either no more
-  a \maybeeta, i.e. it is not a $\eta$-expansion and, so, $\wellb(\lambda x.t)$, 
-  the unification is performed between $X$ and $\lambda x.t$.
-  Otherwise, $\lambda x.t$ has the shape $\lambda x.t' \appsep x$ with $x$ not free in $t'$ and
-   $\wellb(t')$. In this second case the unification is done between $X$ and $t'$.
-  In both cases, unifications are between \wellb terms.
-\end{proof}
+% \begin{proof}[Proof sketch]
+%   $X$ is variable, and, by \cref{def:progressetaright}, $\lambda x.t$ is either no more
+%   a \maybeeta, i.e. it is not a $\eta$-expansion and, so, $\wellb(\lambda x.t)$, 
+%   the unification is performed between $X$ and $\lambda x.t$.
+%   Otherwise, $\lambda x.t$ has the shape $\lambda x.t' \appsep x$ with $x$ not free in $t'$ and
+%    $\wellb(t')$. In this second case the unification is done between $X$ and $t'$.
+%   In both cases, unifications are between \wellb terms.
+% \end{proof}
 
 \begin{lemma}
   The unification done by \progressetadedup is between
@@ -1848,7 +1848,7 @@ when the \lhs is assigned to a variable that is the \lhs of another
 \end{lemma}
 
 \begin{proof}[Proof sketch]
-  By \cref{lemma:unif-eta-1,lemma:unif-eta-2,lemma:unif-eta-3}, every
+  By \cref{lemma:unif-eta-1,lemma:unif-eta-3}, every
   unification performed by the activation of a \linketa is done between
   terms in \wellb, therefore, the substitution remains \wellb.
 \end{proof}
@@ -1859,7 +1859,7 @@ when the \lhs is assigned to a variable that is the \lhs of another
 \end{lemma}
 
 \begin{proof}[Proof sketch]
-  Rules \cref{def:progressetaleft,def:progressetaright} and
+  Rules \cref{def:progressetaleft} and
   \cref{def:progressetadedup} remove one link from \linkStore, hence they
   cannot be applied indefinitely.
   Moreover each rule only relies on terminating operations such as \Ue,
@@ -1916,8 +1916,6 @@ when the \lhs is assigned to a variable that is the \lhs of another
           $X$ and $Y$, \progressetadedup is fired and $t_1$ and $t_2$ are unified.
           This unification succeeds iff $s_1 \Uo s_2$ succeeds.
   \end{itemize}
-  In this setting, \progressetaright does not play a critical role since \mapStore
-  is a bijection; it's role is to perform variable refinement, i.e. it never fails.
   % wlog we assume s1 is in \maybeeta, s2 is not (if both are thanks to dedup we are back in this situation).
   % we assume s1 is compiled to X and $\linketaM{\Gamma}{X}{t1}$.
   % In all cases $X \Ue t2$ succeeds since X is a variable and
@@ -1948,10 +1946,6 @@ when the \lhs is assigned to a variable that is the \lhs of another
   is a good unification (as per \cref{prop:good-unif})
   for \Eo in the domain $\wellb_{\beta\eta}$.
 \end{corollary}
-
-Note \progressetaright is only needed in the next section where chains of links
-are added. Hence we give an example for rule \progressetaright in the next section.
-\todo{fix english}
 
 \paragraph{Example of \progressetaleft}
 
@@ -2058,6 +2052,17 @@ two arities.
   $m_2 : X \mapsto C^n$ and $m < n$
   we remove $m_1$ from \mapStore and
   add to \linkStore the result of $\alignarity{}~m_1~m_2$.
+\end{definition}
+
+In order to grant fidelity, we add a new link progression for \linketa{}s.
+
+\newcommand{\progressetaright}{\emph{$\eta$-progress-\rhs}\xspace}
+\begin{definition}[\progressetaright]\label{def:progressetaright} A link
+\linketaM{\Gamma}{X}{t} is removed from \linkStore when either 1)
+$\testmaybeeta~t$ does not hold (anymore) or 2) by $\eta$-contracting $t$ to
+$t'$ where $t'$ does not start with the \elpiIn{lam} constructor. In the
+first case, $X$ is unified with $t$, and in the second one, $X$ is unified with
+$t'$ (under the context $\Gamma$).
 \end{definition}
 
 \begin{theorem}[Fidelity with \mapdeduplication]
