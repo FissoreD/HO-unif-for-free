@@ -427,17 +427,29 @@ new A B C :- mem.new A B C.
 
   progress-beta-link T1 T2 S S [val (link-llam T1 T2)] :- !, print "no progress β".
 
-  type solve-link-abs link -> links -> subst -> subst -> o.
-  solve-link-abs (ho.abs X) R H H1 :- 
-    (pi x\ solve-link-abs (X x) (R' x) H H1),
+  type solve-link-abs link -> links -> list tm -> subst -> subst -> o.
+  solve-link-abs (ho.abs X) R L H H1 :- 
+    (pi x\ solve-link-abs (X x) (R' x) [x|L] H H1),
     close-links R' R.
 
-  solve-link-abs (@val-link-eta A B) NewLinks S S1 :- !,
+  solve-link-abs (val (link-eta (uva V S) (lam R))) [val (link-eta (uva V S) R')] T S1 S3 :-
+    filter T (not-in S) [_|_], !,
+    print "Context shrink eta for" {pplink (val (link-eta (uva V S) (lam R)))},
+    new S1 U S2, eta-expand (uva U S) R',
+    (R' ==l lam R) S2 S3.
+
+  solve-link-abs (val (link-llam (uva V S) (lam R))) [val (link-llam (uva V S) R')] T S1 S3 :-
+    filter T (not-in S) [_|_], !,
+    print "Context shrink beta for" {pplink (val (link-eta (uva V S) (lam R)))},
+    new S1 U S2, eta-expand (uva U S) R',
+    (R' ==l lam R) S2 S3.
+
+  solve-link-abs (@val-link-eta A B) NewLinks _ S S1 :- !,
     print "In progress eta link for" {ho.pp A} {ho.pp B}, %HIDE
     progress-eta-link A B S S1 NewLinks,
     if (NewLinks = []) (print "After progress the subst is" {ho.ppsubst S1}) (print "No progress").
 
-  solve-link-abs (@val-link-llam A B) NewLinks S S1 :- !,
+  solve-link-abs (@val-link-llam A B) NewLinks _ S S1 :- !,
     print "In progress beta link for" {ho.pp A} {ho.pp B} "in" {ho.ppsubst S}, %HIDE
     progress-beta-link A B S S1 NewLinks.
 
@@ -486,7 +498,7 @@ new A B C :- mem.new A B C.
     progress1 L2 L3 S1 S2.
   progress1 [L0|L1] L3 S S2 :-
     print "considering link for progress:" {pplink L0}, % HIDE
-    solve-link-abs L0 R S S1, !,
+    solve-link-abs L0 R [] S S1, !,
     if (R = []) (print {pplink L0} "is removed") true, % HIDE
     progress1 L1 L2 S1 S2, append R L2 L3.
 %ENDSNIP

@@ -26,7 +26,8 @@ type hstep tm -> tm -> links -> links -> subst -> subst -> o.
 hstep T1 T2 L1 L2 S1 S3 :-
   (T1 ==l T2) S1 S2,
   print "## After unif subst is" {ho.ppsubst S2}, % HIDE
-  print "## Links are" {comp.pplinks L1}, % HIDE
+  comp.deref-links S2 L1 L1D, % HIDE 
+  print "## Links are" {comp.pplinks L1D}, % HIDE
   printC "solve links?", !, % HIDE
   progress L1 L2 S2 S3.
 %ENDSNIP
@@ -671,10 +672,10 @@ macro @sokl-delay N SX SS :- @sokl-call comp.suspend-out-of-lam N SX SS.
 %   pr (error "unif") "λx.λy.(X x y) = λx.(f (Z x))"
 % ] [].
 
-% @sokl 107 [
-%   pr ok "λx.(X x) = λx.Y", 
-%   pr ok "λx.λy.(X x y) = λx.λy.(f (Z x y))"
-% ] [].
+@sokl 107 [
+  pr ok "λx.(X x) = λx.Y", 
+  pr (error "unif") "λx.λy.(X x y) = λx.λy.(f (Z x y))"
+] [].
 
 % @sokl 108 [
 %   pr ok "λx.(X x) = λx.Y",
@@ -685,6 +686,38 @@ macro @sokl-delay N SX SS :- @sokl-call comp.suspend-out-of-lam N SX SS.
 %   pr ok "λx.(X x) = λx.Y",
 %   pr ok "λx.λy.(X x y) = λx.λy.y"
 % ] ["λx.λy.y", "λx.x"].
+
+@sokl 110 [
+  pr ok "λy.(f y (λx.(g (X x y)))) = λy.(f y (λx.(g Y)))" 
+] ["λx.λy.W", "W"].
+
+@sokl 111 [
+  pr (error "unif") "λy.(f (λx.(g (X x y)))) = λy.(f Y)" 
+] [].
+
+@sokl 112 [
+  pr ok "X = λx.λy.x",
+  pr ok "λx.(X x a) = λx.x"
+] ["λx.λy.x"].
+
+@sokl 113 [
+  pr ok "X = λx.λy.Y",
+  pr (error "unif") "λx.(X x a) = λx.x"
+] [].
+
+@sokl 115 [
+  pr ok "X = λx.λy.y",
+  pr (error "unif") "λx.(X x a) = λx.x"
+] [].
+
+@sokl 116 [
+  pr ok "X = λx.λy.x",
+  pr ok "λx.(X x a) = λx.x"
+] ["λx.λy.x"].
+
+@sokl 114 [
+  pr (error "unif") "λy.(f (λx.(g y (X x)))) = λy.(f Z)",
+] [].
 
 % From the paper
 @sokl 7000 [

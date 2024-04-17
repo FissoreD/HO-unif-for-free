@@ -179,7 +179,7 @@ namespace ho {
 %SNIP: move
   type move assignment -> list tm -> tm -> o.
   move (abs Bo) [H|L] R :- move (Bo H) L R.
-  move (val A)  [] A.
+  move (val A)  [] A :- !.
                         % !. % to ease traces?
   % move (val (uva N A)) L     (uva N X) :- append A L X.
   move (abs A)         []    _ :- !, fatal "Invalid move call: too few args for abs" A. % HIDE
