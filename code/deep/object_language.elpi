@@ -38,7 +38,7 @@ namespace fo {
   X ==o Y :- (var X ; var Y), fatal "flex equal". % HIDE
   fcon X ==o fcon X.
   fapp A ==o fapp B :- forall2 (==o) A B.
-  flam F ==o flam G :- pi x\ x ==o x => F x ==o G x.
+  flam F ==o flam G :- pi x\ x ==o x => F x ==o G x.     %~($\customlabel{clause:lam-lam}{\lambda\lambda}$)~
   fuva N ==o fuva N.
   flam F ==o T :-                                       %~($\customlabel{clause:eta1}{\eta_l}$)~
     pi x\ beta T [x] (T' x), x ==o x => F x ==o T' x.
