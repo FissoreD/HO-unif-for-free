@@ -1102,8 +1102,7 @@ of binders.
 \input{code/comp_close_links}
 
 \noindent
-Note that we could remove the first rule, whose sole purpose is to make
-links more readable by pruning unused context entries.
+\todo{remove pruning optimization from code above}
 
 \subsection{Execution}
 \label{sec:execution}
@@ -1133,6 +1132,16 @@ and explain why the don't hinder termination.
 % For brevity we omit the code
 % that applies the substitution \elpiIn{S1} to all terms in \linkStore.
 
+\subsubsection{Scope check}\label{sec:sc}
+The predicate xxxx \todo{add} takes
+a link \linketaM{\Gamma}{X_{x_1\ldots x_n}}{t} and replaces it by
+\linketaM{{x_1\ldots x_n}}{X_{x_1\ldots x_n}}{t'} whenever $\{x_1\ldots x_n\} \subset \Gamma$.
+The term $t' = \lambda x.Y_{{x_1\ldots x_n},x}$ after
+executing $\lambda x.Y_{{x_1\ldots x_n}~x} \Ue t$, that is $t'$ cannot contain
+variables in $\Gamma / \{x_1\ldots x_n\}$.
+This is key for fidelity since suspended unif problem
+must stay solvable.
+
 \subsubsection{Occur check}\label{sec:oc}
 Since compilation moves problematic terms out of the sight of \Ue{},
 that procedure can only perform a partial occur check. For example, the
@@ -1144,6 +1153,7 @@ $f~Y$ and that fails the occur check.
 The procedure \elpiIn{occur-check-links} is in charge of
 performing this check that is needed in order to
 guarantee \fullref{prop:fidelity}.
+
 
 \subsection{Substitution decompilation}\label{sec:decompilation}
 
@@ -1765,15 +1775,6 @@ $X$ becomes rigid. Let $y\in\Gamma$, there are two cases:
 \end{enumerate}
 \end{definition}
 
-\newcommand{\progressetashrink}{\emph{$\eta$-progress-shrink}\xspace}
-\begin{definition}[\progressetashrink]\label{def:progressetashrink}
-Given a link \linketaM{\Gamma}{X}{t}, and let $S$ the scope of $X$
-we pose $T = S \cap \Gamma$. If $T$ is not empty,
-then the original link is replaced by a new link
-\linketaM{S}{X}{t'}, where $t'$ is a term where all the variables in $\Gamma / X$ 
-have been pruned.
-\end{definition}
-
 % There is a third case in which a link is removed from \linkStore, namely
 % when the \lhs is assigned to a variable that is the \lhs of another
 % \linketa.
@@ -1898,23 +1899,33 @@ have been pruned.
   For any step $i$, we want to prove that $\fstep_i$ succeeds iff $\hstep_i$
   succeeds. A $\hstep_i$ is made by a unification $u$ and a link
   progression $p$.
-  Without loss of generality,\todo{explain why} we consider a \Fo unification problem of the form $s_1 \Uo s_2$
-  where $s_1 \in \maybeeta$, which is compiled into the \linketa $\linketaM{}{X}{\lambda x.t_1}$. 
+  Without loss of generality,\todo{explain why} we consider a
+  \Fo unification problem of the form $s_1 \Uo s_2$
+  where $s_1 \in \maybeeta$. $s_1$ is compiled to $X$ with the accessory link
+  $\linketaM{\Gamma}{X}{\lambda x.t_1}$. 
   The unification $u$ always succeeds, since $X$ is a fresh variable, we 
-  only have to treat the progression $p$.
+  only have to consider the link progression $p$.
   Two cases should be analyzed:
   \begin{itemize}
-    \item $s_2 \notin \maybeeta$, in this case, the unification problem becomes
-          $X \Ue t_2$, which assigns $X$ to $t_2$.
-          After the unification, \progressetaleft triggers the \linketa,
-          and $\lambda x.t_1$ is unified with $t_2$ (or its $\eta$-expansion when needed).
-          This unification succeeds iff $s_1$ and $s_2$ unify. \progressetaleft
-          aims essentially to transpose the two rules \ref{clause:eta1} and \ref{clause:eta2}
-          of the object language in the meta one.
+    \item $s_2 \notin \maybeeta$,
+          in this case $s_2$ is compiler to $t_2$ and $u$ assigns $t_2$ to $X$
+          and triggers \progressetaleft if $t_2$ is rigid.
+          If $s_1$ and $s_2$ unify thanks to \ref{clause:eta1} then
+          progression $p$ unifies $\lambda x.t_1$ with the $\eta$-expansion of $t_2$ namly
+          $\lambda x.t_2\appsep x$, otherwise they unify thanks to lam-lam\todo{dare nome}
+          and $p$ unifies $\lambda x.t_1$ with $t_2$. Alternatively, if $s_1$ and $s_2$ fails
+          to unify, it cannot be because of the head $\lambda$ constructors,
+          since wither lam-lam or \ref{clause:eta1} move under it and find
+          different sub terms $s_1'$ and $s_2'$. By \cref{th:fidelity-beta},
+          \Ue fails on terms $t_1'$ and $t_2'$ even if \progressetaleft
+          $\eta$-expands $t_2$.
+
+
     \item $s_2 \in \maybeeta$, in this case, the unification problem becomes $X \Ue Y$ 
           with the extra link $\linketaM{}{Y}{\lambda x.t_2}$. After the unification of 
-          $X$ and $Y$, \progressetadedup is fired and $t_1$ and $t_2$ are unified.
-          This unification succeeds iff $s_1 \Uo s_2$ succeeds.
+          $X$ and $Y$, \progressetadedup is fired and, once the $\lambda$ are crossed,
+          $t_1$ and $t_2$ are unified. 
+          This unification succeeds iff $s_1 \Uo s_2$ succeeds by \cref{th:fidelity-beta}.
   \end{itemize}
   % wlog we assume s1 is in \maybeeta, s2 is not (if both are thanks to dedup we are back in this situation).
   % we assume s1 is compiled to X and $\linketaM{\Gamma}{X}{t1}$.
@@ -1959,6 +1970,7 @@ decompilation generates $\rho = \{~ X \mapsto \lambda x. f \appsep x ~\}$, since
 $X$ is mapped to $B_x$ and $B_x$ is decompiled into $\lambda x.f \appsep x$.
 % \todo{explain why decompile does so and which eta?}
 
+\begin{comment}
 \paragraph{Example of \progressetadedup}
 
 A very basic example of \linketa deduplication, is given below:
@@ -1977,6 +1989,7 @@ By unifying the two \rhs we get
 $\sigma = \{ A~ \mapsto C, B \mapsto D ~\}$.
 In turn, given the map \mapStore, this second assignment is decompiled to
 $\rho = \{~ X \mapsto Y ~\}$ as expected.
+\end{comment}
 
 
 
@@ -2001,7 +2014,7 @@ variable $X$ is used multiple times with different arities.
   {{{\eta,,D,\lambda x.(f\appsep E_{x}\appsep x)},
     {\eta,,A,\lambda x.B_{x}},
     {\eta,x,B_{x},\lambda y.C_{y x}}}}
-
+\todo{simplify example since no prog right}
 In the unification problems \foUnifPb above, we see that $X$ is used with arity $2$ in
 $\foUnifPb_1$ and with arity $1$ in $\foUnifPb_2$. 
 In order to preserve \fullref{inv:uvaarity} the compiler
@@ -2064,6 +2077,7 @@ $t'$ where $t'$ does not start with the \elpiIn{lam} constructor. In the
 first case, $X$ is unified with $t$, and in the second one, $X$ is unified with
 $t'$ (under the context $\Gamma$).
 \end{definition}
+\todo{comment this rule}
 
 \begin{theorem}[Fidelity with \mapdeduplication]
   Given a list of unification problems \foUnifPb, such that 
@@ -2457,6 +2471,7 @@ shall relax these failure conditions in~\cref{sec:heuristics}.
   corresponding unification in \Fo{} would.
 \end{proof}
 
+\begin{comment}
 \paragraph{Example of \progBetaLL}
 Consider the \linkbeta below:
 %
@@ -2513,7 +2528,7 @@ $a$. $a$ is in \llambda and is unified with $B$. The resolution of the second
 unification problem
 confirm that $B$ equal $a$. The final substitution $\sigma = \{~A \mapsto \lambda x.a ~;~ B \mapsto a ~\}$ is decompiled into $\rho = \{~ X \mapsto \lambda x.a ~;~ Y \mapsto
 a ~\}$.
- 
+\end{comment} 
 \subsection{\texorpdfstring{Relaxing \fullref{def:progBetaFail}}{Relaxing progress-llam-fail}}
 \label{sec:heuristics}
 \newcommand{\progBetaNoLLWait}{\emph{progress-beta-\notllambda}}
@@ -2591,9 +2606,9 @@ how \linketa are suspended or make \progress.
 link-eta L R :- var L, maybe-eta R HolesInR, !,
   declare_constraint (link-eta L R) [L|HolesInR].
 link-eta L R :- not (var L), !, eta-progress-lhs L R.
-link-eta L R :- not (maybe-eta R), !, contract R S, L = S.
 \end{elpicode}
 \todo{improve code}
+%link-eta L R :- not (maybe-eta R), !, contract R S, L = S.
 
 \noindent
 The second snippet illustrates the deduplication of \linketa. The syntax
