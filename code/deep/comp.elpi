@@ -131,7 +131,7 @@ namespace comp {
 
 %SNIP: comp_close_links
   type close-links (tm -> links) -> links -> o.
-  close-links (v\[X  |L v]) [X|R] :- !, close-links L R.
+  % close-links (v\[X  |L v]) [X|R] :- !, close-links L R.
   close-links (v\[X v|L v]) [abs X|R] :- close-links L R.
   close-links (_\[]) [].
 %ENDSNIP
@@ -416,6 +416,9 @@ new A B C :- mem.new A B C.
   progress-beta-link T1 T2 S1 S2 L :- T2 = app[uva _ _|_], not (T1 = uva _ _), suspend-out-of-lam, !,
     progress-out-llambda T1 T2 S1 S2 L.
 
+  progress-beta-link (app [A|_]) (app[uva _ _|_]) _ _ _ :-
+    not (A = uva _ _), !, fail.
+
   progress-beta-link T1 (app[uva _ _ | _] as T2) H H [@val-link-llam T1 T2] :- !, print "No β progress1".
 
   progress-beta-link T1 (app [Hd | MS]) S1 S2 [] :- % Hd is rigid!
@@ -542,6 +545,8 @@ new A B C :- mem.new A B C.
     occur-check-links MS.
 
   type scope-check-aux list tm -> link -> link -> subst -> subst -> o.
+  scope-check-aux L (abs A) NL S S1 :- % This removes an abs when not needed: NL does not use x
+    (pi x\ scope-check-aux L (A x) NL S S1), !.
   scope-check-aux L (abs A) (abs NL) S S1 :- !,
     (pi x\ scope-check-aux [x|L] (A x) (NL x) S S1).
   scope-check-aux L (val (link-eta (uva V Sc) R))  (val (link-eta (uva V Sc) R'))  S1 S3 :-
