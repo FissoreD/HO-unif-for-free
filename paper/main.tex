@@ -2442,8 +2442,24 @@ the following activation rules:
   \label{def:progBetaFail}
 \end{definition}
 
-\noindent In order to accommodate for the implementation of heuristics we
-shall relax these failure conditions in~\cref{sec:heuristics}.
+We will relax this last failure condition to accommodate for the
+implementation of heuristics in~\cref{sec:heuristics}.
+
+Finally, in order to correctly correlate a variable appearing in the \lhs of a
+\linketa and in the \rhs of a \linkbeta, we should introduce the following
+\linketa progression rule.
+
+\newcommand{\progressetaright}{\emph{$\eta$-progress-\rhs}\xspace}
+\begin{definition}[\progressetaright]\label{def:progressetaright} A link
+\linketaM{\Gamma}{X}{T} is removed from \linkStore when either 1)
+$\testmaybeeta~T$ does not hold (anymore) or 2) by $\eta$-contracting $T$ to
+$T'$ where $T'$ does not start with the \elpiIn{lam} constructor. In the
+first case, $X$ is unified with $T$, and in the second one, $X$ is unified with
+$T'$ (under the context $\Gamma$).
+\end{definition}
+
+The idea behind this is to instantiate the variable of a \linketa whenever its
+\rhs is for sure a \wellb term.
 
 \begin{lemma}
   \elpiIn{progress} terminates
@@ -2458,10 +2474,12 @@ shall relax these failure conditions in~\cref{sec:heuristics}.
   \linkbeta $l^m$ has no more arguments and is removed from \linkStore.
   Note that at the $m^{th}$ iteration, $m$ new \linketa have been added to
   \linkStore, however, by \cref{lemma:prog-eta-terminates}, the algorithm
-  terminates. Finally \progBetaFail guarantees termination since 
+  terminates. \progBetaFail guarantees termination since 
   %it makes 
   %\elpiIn{progress}
-  it immediately fails.
+  it immediately fails and \progressetaright terminates since it executes 
+  terminating instructions and if its permises succeed, ther considered
+  \linketa is removed from \linkStore.
 %
   % \Cref{def:progBetaRH} makes \elpiIn{progress} terminates, since it makes a
   % \linkbeta disappear from \linkStore. On the other hand, \cref{def:progBetaLL},
@@ -2493,17 +2511,21 @@ shall relax these failure conditions in~\cref{sec:heuristics}.
 
 \begin{theorem}[Fidelity in \Fo]
   The introduction of \linkbeta guarantees \fullref{prop:fidelity-recovery}
-  if \Uo{} fails outside \llambda.
+  if \Uo{} falls outside \llambda.
 \end{theorem}
 
 \begin{proof}[Proof sketch]
-  Let $\foUnifPb_i$ be the first problem in \foUnifPb not in \llambda and
-  le $\sigma$ be the substitution obtained solving $\hoUnifPb_1\ldots\hoUnifPb_{i-1}$.
-  If $\sigma\hoUnifPb_i$ is in \llambda, then each variable that the
-  compiler used to replace a problemat term is assigned and hence
+  Let $\foUnifPb_i$ be the first problem in \foUnifPb, such that it is not in \llambda and le
+  $\sigma$ be the substitution obtained solving
+  $\hoUnifPb_1\ldots\hoUnifPb_{i-1}$. After the execution of $\hstep_{i-1}$,
+  each variable $X$ corresponding to a \maybeeta subterm in the original \Fo 
+  unification problem, is instantiated if it is known for sure
+  that $X$ is no more a \maybeeta. If $\sigma\hoUnifPb_i$ is in \llambda, then 
+  % each variable that the
+  % compiler used to replace a ``problematic'' term is assigned and hence
   by \cref{def:progBetaLL,def:progBetaRH} the associated \linkbeta
-  been solved and removed. Note that in this case all
-  calls to \Ue{} are between terms in \llambda and by \cref{lemma:fidelity-maybeeta}
+  is solved and removed. Note that, in this case, all
+  calls to \Ue{} are between terms in \llambda and by \cref{th:fidelity-beta}
   fidelity is guaranteed. If $\sigma\hoUnifPb$ is still in \notllambda,
   then by \cref{def:progBetaFail} unification fails as the
   corresponding unification in \Fo{} would.
