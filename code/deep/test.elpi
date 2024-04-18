@@ -75,7 +75,10 @@ prolog [triple (error X as E) L R|_] Links Links H H2 E :-
       printC "solve links?",
       % if solve-link has success, then the error is decompl else 
       print "Before solve links fixpoint",
-      if (comp.progress Links _ H1 H2) (X = "decompl") (X = "unif"))
+      if 
+        (if (comp.progress Links _ H1 H2) (X = "decompl") (X = "unif"))
+        true
+        (print "\nERROR:" {ho.pp L} "=" {ho.pp R} "succeeds even if it should not", fail))
      (H2 = H).
 
 type decompile-subst
@@ -389,8 +392,6 @@ macro @sokl-delay N SX SS :- @sokl-call comp.suspend-out-of-lam N SX SS.
     pr ok "λx. a = λx. (X  x  x)",
 ] ["λx. λy. a"].
 
-% TODO: se invertiamo i pb di unificazione deve andare per euristica
-% di imitazione
 @sokl 31 [
     pr ok "X = λx. λy.f",
     pr ok "λx.f = X a",
@@ -705,6 +706,10 @@ macro @sokl-delay N SX SS :- @sokl-call comp.suspend-out-of-lam N SX SS.
   pr (error "unif") "λx.(X x a) = λx.x"
 ] [].
 
+@sokl 114 [
+  pr (error "unif") "λy.(f (λx.(g y (X x)))) = λy.(f Z)",
+] [].
+
 @sokl 115 [
   pr ok "X = λx.λy.y",
   pr (error "unif") "λx.(X x a) = λx.x"
@@ -715,8 +720,42 @@ macro @sokl-delay N SX SS :- @sokl-call comp.suspend-out-of-lam N SX SS.
   pr ok "λx.(X x a) = λx.x"
 ] ["λx.λy.x"].
 
-@sokl 114 [
-  pr (error "unif") "λy.(f (λx.(g y (X x)))) = λy.(f Z)",
+@sokl 117 [
+  pr ok "λx.λy.(X x y) = Y",
+  pr ok "X = a"
+] ["a", "a"].
+
+@sokl 118 [
+  pr ok "λx.λy.(X x y) = Y",
+  pr ok "X = λx.a"
+] ["λx.a", "λx.a"].
+
+@sokl 119 [
+  pr ok "Y = λx.λy.(a x y)",
+  pr ok "X = λx.λy.(Y x y)"
+] ["a", "a"].
+
+@sokl 120 [
+  pr ok "Y = λx.λy.a",
+  pr ok "X = λx.(Y x)"
+] ["λx.λy.a", "λx.λy.a"].
+
+@sokl 121 [
+  pr ok "X = λx.(f (Y x))",
+  pr ok "Y = λx.x",
+  pr ok "X = f"
+] ["f", "λx.x"].
+
+@sokl 122 [
+  pr ok "X = f",
+  pr ok "Y = λx.(X x)",
+  pr ok "Y a = f a"
+] ["f", "f"].
+
+@sokl 123 [
+  pr ok "X = f",
+  pr ok "Y = λx.(X x)",
+  pr (error "unif") "Y a = f b"
 ] [].
 
 % From the paper
@@ -751,6 +790,11 @@ macro @sokl-delay N SX SS :- @sokl-call comp.suspend-out-of-lam N SX SS.
 @sokl 7006 [
   pr ok "λx.(f (X x) a) = λx.(f x a)"
 ] ["λx.x"].
+
+@sokl 7007 [
+  pr ok "λx.(X x) = a",
+  pr (error "unif") "X = λx.a"
+] [].
 
 % TEST NON IN PF
 @sokl 9001 [
