@@ -2666,9 +2666,9 @@ how \linketa are suspended or make \progress.
 link-eta L R :- var L, maybe-eta R HolesInR, !,
   declare_constraint (link-eta L R) [L|HolesInR].
 link-eta L R :- not (var L), !, eta-progress-lhs L R.
+link-eta L R :- not (maybe-eta R), !, contract R S, L = S.
 \end{elpicode}
-\todo{improve code}
-%link-eta L R :- not (maybe-eta R), !, contract R S, L = S.
+% \todo{improve code}
 
 \noindent
 The second snippet illustrates the deduplication of \linketa. The syntax
