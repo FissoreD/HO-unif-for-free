@@ -776,8 +776,9 @@ unification failure, i.e. by properly instantiating $F$ the term
 head constructor may become a $\lambda$, or a constant, or remain an application.
 
 \begin{definition}[\maybeeta]\label{def:maybeeta}
-  \maybeeta is the set of terms $s$ such that $\exists \rho, \rho s$
-  is an eta expansion.
+  \maybeeta is the set of terms $\lambda x.s$ such that $\exists \rho, \rho \lambda x.s$
+  is an eta expansion. % without the lambda, 5.11 is not true, that
+  % is we assume variables are in W
 \end{definition}
 
 \noindent
@@ -1565,7 +1566,7 @@ is not as trivial as it may seems. Here a few examples:
     $\lambda x. f \appsep (A \appsep x)$ & $\in\maybeeta$ & $\rho = \{~ A \mapsto \lambda x.x ~\}$ \\
     $\lambda x. f \appsep (A \appsep x) \appsep x$ & $\in\maybeeta$ & $\rho = \{~ A \mapsto \lambda x.a ~\}$\\
     $\lambda x. f \appsep x \appsep (A \appsep x)$ & $\not\in\maybeeta$ &\\
-    $\lambda x. \lambda y. f \appsep (A \appsep x) \appsep (B \appsep y \appsep x)$ & $\in\maybeeta$ & $\rho = \{~ A \mapsto \lambda x.x,~ B \mapsto \lambda y.\lambda x.y ~\}$
+    $\lambda x. \lambda y. f \appsep (A \appsep x) \appsep (B \appsep y \appsep x)$ & $\in\maybeeta$ & $\rho = \{~ A \mapsto \lambda x.x~;~ B \mapsto \lambda y.\lambda x.y ~\}$
   \end{tabular}
 \end{center}
 \vspace{4pt}
@@ -1605,7 +1606,7 @@ A $\beta$-normal term $s = \lambda x_1 \ldots x_n.t$
      (e.g. $\lambda x_1 \ldots x_n.x \appsep x_1 \ldots x_n \Eo{} x$) ;
   \item $t$ is a unification variable with scope
     $W$, and for any $v \in \{ x, x_1 \ldots x_n \}$,
-    there exists a $w_i \in W$, such that $w_i$ \reduceto{} $v$
+    there exists a $w \in W$, such that $w$ \reduceto{} $v$
     (if $n = 0$ this is equivalent to $x \in W$).
 \end{enumerate}
 \end{lemma}
@@ -1617,7 +1618,7 @@ it can only be an $\eta$-expansion of $x$, or a unification
 variable that can be assigned to $x$, or a combination of both.
 If $s$ begins with a lambda, then the lambda can only disappear by $\eta$
 contraction. In that case, the term $t$ is under the spine of binders
-$x_1\ldots x_n$, $t$ can either be $x$ applied to terms that can
+$x_1\ldots x_n$ can either be $x$ applied to terms that can
 \reduceto{} these variables (case 2), or a unification variable
 that can be assigned to that application (case 3).
 \end{proof}
@@ -1719,7 +1720,7 @@ The following rule is inserted just before rule~\ref{rule:complam} from the code
 Whenever \elpiIn{flam F} is detected to be in
 \maybeeta it is compiled to \elpiIn{lam F1} and replaced by the fresh
 variable \elpiIn{A}. This variable sees all the names free in
-\elpiIn{lam F1}. The variable is connected to \elpiIn{lam F1} via a \linketa.
+\elpiIn{lam F1} and is connected to \elpiIn{lam F1} via a \linketa.
 Invariant~\fullref{inv:linklhs} holds for this link. Moreover:
 
 \begin{corollary}
@@ -1756,14 +1757,14 @@ Invariant~\fullref{inv:linklhs} holds for this link. Moreover:
 
 \paragraph{Decompilation}
 The decompilation of a \linketa is performed by unifying
-the \lhs with the \rhs. Note that this unification never fails, since \lhs is a
+the \lhs with the \rhs. Note that this unification never fails, since the \lhs is a
 flexible term not appearing in any other \linketa
 (by \cref{def:progressetadedup}).
 
 \subsection{Progress}\label{sec:etaprogress}
 
 \linketa{}s are meant to delay the unification of ``problematic'' terms until
-we know for sure if the term has to be $\eta$-contracted or not.
+we know for sure if their head lambdas can be $\eta$-contracted or not.
 
 \newcommand{\progressetaleft}{\emph{$\eta$-progress-\lhs}\xspace}
 \begin{definition}[\progressetaleft]\label{def:progressetaleft}
@@ -1773,7 +1774,7 @@ $X$ becomes rigid. Let $y\in\Gamma$, there are two cases:
   \item if $X = a$ or $X = y$ or $X = f \appsep a_1\ldots a_n$
     we unify the $\eta$-expansion of $X$ with $t$, that is we run
     $\lambda x.X \appsep x\Ue{} t$
-    \item if $X = \lambda x.t$ we run $X \Ue{} t$.
+    \item if $X = \lambda x.s$ we run $X \Ue{} t$.
 \end{enumerate}
 \end{definition}
 
@@ -1812,9 +1813,9 @@ $X$ becomes rigid. Let $y\in\Gamma$, there are two cases:
 \begin{proof}[Proof sketch]
   Let $\sigma$ be the substitution, such that $\wellb(\sigma X)$ (since \Ue preserves \wellb).
   By \cref{inv:link-eta-right}, we have $\wellb(t)$.
-  If $\sigma X = \lambda x.r$, then $r$ is unified with $t$: both terms are \wellb.
+  If $\sigma X = \lambda x.r$, then $r$ is unified with $t$ and both terms are in \wellb.
   Otherwise, $\lambda x. X x$ is unified with $\lambda x. t$, and $X x$ and $t$
-  are both \wellb.
+  are both in \wellb.
 \end{proof}
 
 % \begin{lemma}
@@ -1853,7 +1854,7 @@ $X$ becomes rigid. Let $y\in\Gamma$, there are two cases:
 \begin{proof}[Proof sketch]
   By \cref{lemma:unif-eta-1,lemma:unif-eta-3}, every
   unification performed by the activation of a \linketa is done between
-  terms in \wellb, therefore, the substitution remains \wellb.
+  terms in \wellb.
 \end{proof}
 
 \begin{lemma}
@@ -1889,7 +1890,7 @@ $X$ becomes rigid. Let $y\in\Gamma$, there are two cases:
   memory map is bijective, then
   the introduction 
   of \linketa guarantees \fullref{prop:fidelity}.
-  \footnote{This premise is fulfilled in \cref{sec:invariant1}}
+  \footnote{The bijective property of \mapStore is proved in \cref{sec:invariant1}}
   \label{lemma:fidelity-maybeeta}
 \end{theorem}
 
@@ -1898,26 +1899,26 @@ $X$ becomes rigid. Let $y\in\Gamma$, there are two cases:
   % succeeds. A $\hstep_i$ is made by a unification
   % $u = \sigma_{i-1}\hoUnifPb_{i_l} \Ue \sigma_{i-1}\hoUnifPb_{i_r} \mapsto \sigma_i'$ and a link
   % progression $p = \progress(\linkStore_{i-1},\sigma_i') \mapsto (\linkStore_i,\sigma_i)$.
-  For any step $i$, we want to prove that $\fstep_i$ succeeds iff $\hstep_i$
-  succeeds. A $\hstep_i$ is made by a unification $u$ and a link
+  We want to prove that \fstep succeeds iff \hstep
+  succeeds, where \hstep is made by a unification step $u$ and a link
   progression $p$.
-  Without loss of generality,\todo{explain why} we consider a
+  Without loss of generality we consider a
   \Fo unification problem of the form $s_1 \Uo s_2$
-  where $s_1 \in \maybeeta$. $s_1$ is compiled to $X$ with the accessory link
+  where $s_1 \in \maybeeta$ and is compiled to a variable $X$ with the accessory link
   $\linketaM{\Gamma}{X}{\lambda x.t_1}$. 
   The unification $u$ always succeeds, since $X$ is a fresh variable, we 
   only have to consider the link progression $p$.
   Two cases should be analyzed:
   \begin{itemize}
     \item $s_2 \notin \maybeeta$,
-          in this case $s_2$ is compiler to $t_2$ and $u$ assigns $t_2$ to $X$
+          in this case $s_2$ is compilet to $t_2$ and the unification step $u$ assigns $t_2$ to $X$
           and triggers \progressetaleft if $t_2$ is rigid.
           If $s_1$ and $s_2$ unify thanks to \ref{clause:eta1} then
           progression $p$ unifies $\lambda x.t_1$ with the $\eta$-expansion of $t_2$ namly
-          $\lambda x.t_2\appsep x$, otherwise they unify thanks to \cref{clause:lam-lam}
-          and $p$ unifies $\lambda x.t_1$ with $t_2$. Alternatively, if $s_1$ and $s_2$ fails
+          $\lambda x.t_2\appsep x$, otherwise they unify thanks to \cref{clause:lam-lam}\todo{name}
+          and the link progress $p$ unifies $\lambda x.t_1$ with $t_2$.\\ Alternatively, if $s_1$ and $s_2$ fail
           to unify, it cannot be because of the head $\lambda$ constructors,
-          since wither lam-lam or \ref{clause:eta1} move under it and find
+          since with \cref{lam-lam}\todo{name} or \ref{clause:eta1} move under it and find
           different sub terms $s_1'$ and $s_2'$. By \cref{th:fidelity-beta},
           \Ue fails on terms $t_1'$ and $t_2'$ even if \progressetaleft
           $\eta$-expands $t_2$.
@@ -1999,10 +2000,13 @@ $\rho = \{~ X \mapsto Y ~\}$ as expected.
 \section{Making \mapStore a bijection}
 \label{sec:invariant1}
 
-In \cref{sec:grounwork}, we introduced the definition of memory map \mapStore.
-This map allows to decompile the \Ho substitution to the object language.
-Given the higher-order nature of Coq the same unification
-variable $X$ can be used multiple times with different arities.
+We want to allow for partial application of functions.
+As a consequence
+the same unification variable $X$ can be used multiple times
+with different arities.
+Then it is the case the
+memory map \mapStore generated by the compiler is not
+a bijection. For example:
 \begin{comment}
 %
 % make test ONLY=7001 TEX=tex
@@ -2028,16 +2032,17 @@ variable $X$ can be used multiple times with different arities.
     {X,B,1}}}
   {{{\eta,,A,\lambda x.B_{x}}}}
 % \todo{simplify example since no prog right}
-In the unification problems \foUnifPb above, we see that $X$ is used with arity $1$ in
+in the unification problems \foUnifPb above, $X$ is used with arity $1$ in
 $\foUnifPb_1$ and with arity $0$ in $\foUnifPb_2$. 
 In order to preserve \fullref{inv:uvaarity} the compiler
 did generate two entries in \mapStore for $X$, namely $B$ and $C$. 
 However, there is no connection between these two variables
 and any incompatible assignements to them would not be detected, breaking,
-in turn \cref{prop:fidelity}. This incompatibility will only be detected during the
+in turn \cref{prop:fidelity}. 
+% This incompatibility will only be detected during the
 decompilation phase.
-To address this issue, we post-processing the compiler's output we want to
-ensure the follwoing property:
+To address this issue, we post-process the compiler's output
+to ensure the follwoing property:
 
 \begin{proposition}[\mapStore is a bijection]
   After compilation, for each \Fo{} variable $X$ in \foUnifPb{} and for each \Ho{}
@@ -2048,7 +2053,8 @@ ensure the follwoing property:
 \noindent
 Note that the execution in \Ho{} may require allocating new variables as
 explained in~\cref{sec:decompilation}. The property above does not
-concern these.
+concern these variables since they are fresh and have no corresponding
+variable in \Fo.
 
 The core procedure of this post-processing step is \emph{align-arity} that
 is iterated by \elpiIn{map-deduplication}:
