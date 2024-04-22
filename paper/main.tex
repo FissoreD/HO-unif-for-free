@@ -2765,7 +2765,7 @@ manipulate terms that are not known in advance
 without relying on introspection primitives such as Prolog's
 \texttt{functor} and \texttt{arg}. In this context, constants need to live in
 an open world, akin to the \elpiIn{string} data type used in the preceding
-examples, they cannot be symbols of the ML.
+examples, they cannot be symbols of the meta language.
 
 In the literature we could find a related encoding of the Calculus of
 Constructions (CC)~\cite{felty93lics}. The goal of that work is to exhibit
@@ -2775,47 +2775,55 @@ programs) with the one of CC. The encoding is hence tailored
 toward a different goal, for example it utilizes three relations to represent the
 equational theory of CC, and that choice alone makes things harder for us.
 Section 6 contains a discussion about the use of the
-unification procedure of the ML in presence of non ground goals, but
-the authors do not aim at exploiting it to the degree we want.\todo{sucks}
+unification procedure of the meta language in presence of non ground goals, but
+the authors are not interested in exploiting a decidable fragment of
+higher-order unification but are reather leaning towards an interactive
+system where explicit
+control is given the user.
 
 Another work that is, somewhat surprisingly, only superficially related to ours is the
 type-class engine built in Isabelle's meta language. In~\cite{wenzel97}
 classes identify (simple) types, they are not higher order predicates
 as in Coq, hence the solver does not require a higher-order unification
-procedure.
-
+procedure.\\
+~\\
 \emph{The approach presented in this paper}
-provides a third option that addresses all the concerns
-mentioned earlier. It capitalizes on the benefit of not requiring to fully
-implement
-the unification algorithm of the object language. Instead, it employs the
-unification capabilities of the meta language, facilitated by the various links
-%we establish
-to manage ``problematic'' subterms. As a result of this choice our encoding takes
-advantage of indexing data structures and mode analysis for clause filtering.
+%provides a third option that 
+addresses all the concerns
+mentioned earlier. It takes advantage of the
+unification capabilities of the meta language
+at the price of handling ``problematic'' sub terms on
+the side.\\
+As a result %of this choice 
+our encoding takes
+advantage of indexing data structures and
+mode analysis for clause filtering.
 It it worth mentioning that we only replace terms with variables only
 when it is strictly needed, leaving the rest of the term structure intact
 and hence indexable by the meta language logic programming engine.
+Some preliminary benchmarks on the Stdpp
+library~\cite{JUNG_KREBBERS_JOURDAN_BIZJAK_BIRKEDAL_DREYER_2018} show
+encouraging results: our type-class solver has some
+overhead on small goal but is consistently faster than
+the Coq one starting from goals made of XXX nodes.\\
+\todo{D: how many?}
+Our approach is flexible enough to accommodate different strategies
+and heuristics to handle terms outside the pattern fragment.
 Moreover, the unification process we obtain is ready to take
 advantage of potential improvements to the programming engine,
-such as tabled search, and apply forms of static analysis for
-the meta language, such as determinacy, to the object language.
-\todo{mention preliminar experiment show that our prolog is 2x faster than the Coq one} 
-Finally, our approach is flexible enough to accommodate different strategies
-and heuristics to handle terms outside the pattern fragment, and
-it is not tightly coupled with Coq.
+such as tabled search. Finally, our shallow encoding can
+enable to apply forms of static analysis for
+the meta language, such as determinacy, also to the object language.
 
-We considered mechanizing our results with Abella~\cite{gacek2008abella}, especially in the early phases.
-Unfortunately we could not. One reason
-is that eliminating the cut operator, although possible, has a high cost in
-verbosity.
-% he same for the \elpiIn{name}
-%\todo{is it sill described?} predicate.
-Another problem is that the logic of Abella does not let one quantify over
-predicates and combinators like \elpiIn{forall} are used pervasively in our
-code.
-\todo{finish}
-
+We considered mechanizing our results with Abella~\cite{gacek2008abella},
+especially in the early phase of this work, but unfortunately we could not.
+The main reason is that the logic of Abella does not let one quantify over
+predicates nor user the cut operator. Eliminating cut or
+combinators like \elpiIn{map} is surely possible, but 
+has a high cost in verbosity given how pervasively they are used.
+Moreover, and more importantly, it creates a distance
+between the verified and the actual code, which we found to
+hinder our exploratory phase.
 
 % ---
 
