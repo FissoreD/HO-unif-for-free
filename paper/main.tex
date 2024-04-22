@@ -2333,11 +2333,10 @@ has the following property:
 
 \subsection{Compilation and decompilation}
 
-For the detection of \notllambda it
-is sufficient to identify applications with a flexible head and arguments that
-are not in distinct names. The following rule for \notllambda compilation
-is inserted  just before rule~\ref{rule:compapp}.
-
+By inserting this rule
+before rule~\ref{rule:compapp}.
+we identify terms \notllambda, i.e. flexible applications with arguments that
+are not distinct names:
 
 \input{code/comp_beta}
 
@@ -2420,8 +2419,8 @@ If any \linkbeta remains in \linkStore, decompilation fails.
 % \newcommand{\progBetaDedup}{\emph{progress-\llambda-dedup}\xspace}
 \newcommand{\progBetaFail}{\emph{\llambda-progress-fail}\xspace}
 
-Given a \linkbeta $l$ of the form \linkbetaM{\Gamma}{T}{\rhsBeta}, we provide
-the following activation rules:
+%We add the followins rules to \elpiIn{progress1}.
+Let $l$ be a \linkbeta of the form \linkbetaM{\Gamma}{T}{\rhsBeta}
 
 \begin{definition}[\progBetaLL]
   Let $\sigma$ be a substitution such that $\sigma t_1$ is a name $s$
@@ -2469,8 +2468,9 @@ the following activation rules:
   \label{def:progBetaFail}
 \end{definition}
 
-We will relax this last failure condition to accommodate for the
-implementation of heuristics in~\cref{sec:heuristics}.
+We relax this condition and accommodate for
+% the implementation of 
+heuristics in~\ref{sec:heuristics}.
 
 Finally, in order to correctly correlate a variable appearing in the \lhs of a
 \linketa and in the \rhs of a \linkbeta, we should introduce the following
@@ -2693,9 +2693,9 @@ how \linketa are suspended or make \progress.
 link-eta L R :- var L, maybe-eta R HolesInR, !,
   declare_constraint (link-eta L R) [L|HolesInR].
 link-eta L R :- not (var L), !, eta-progress-lhs L R.
+link-eta L R :- not (maybe-eta R), !, contract R S, L = S.
 \end{elpicode}
-% \todo{improve code}
-% link-eta L R :- not (maybe-eta R), !, contract R S, L = S.
+\todo{check progress-rhs is back}
 
 \noindent
 The second snippet illustrates the deduplication of \linketa. The syntax
@@ -2730,25 +2730,28 @@ heigenvariables \elpiIn{N1}.
 \noindent
 \section{Related work and conclusion}
 
-Different strategies can be used to unify terms of the object language.
-% in the meta langauge. 
+Object-language terms can be unified using
+different strategies.
+
 The first approach that comes to mind consist in implementing \Uo as a
-regular routine in the ML, i.e. write rules as follows:
+regular routine, i.e. write rules as follows
 
 \begin{elpicode}
-  decision X :- X ~\Uo~(all A x\ app [P, x]), finite A,
+  decision X :- unify X (all A x\ app [P, x]), finite A,
     pi x\ decision (app [P, x]).
 \end{elpicode}
 
 \noindent
+where \elpiIn{unify} is a regular predicate.
 This method fails to take advantage of the logic
-programming engine provided by the ML, as it degrades indexing by
-eliminating all data from rule heads. Additionally,
-implementing a unification procedure in the ML is likely to be significantly
+programming engine provided by the meta language since
+it removes all data from rule's heads and makes
+indexing degrade. Additionally,
+implementing a unification procedure in the meta language is likely to be significantly
 slower compared to the built-in one.
 
 Another possibility is to avoid having application and abstraction nodes
-in the syntax tree, and use the ones of the ML, as in:
+in the syntax tree, and use the meta language ones, as in:
 
 \begin{elpicode}
 decision (all A x\ P x) :- finite A, pi x\ decision (P x).
@@ -2757,15 +2760,17 @@ decision (all A x\ P x) :- finite A, pi x\ decision (P x).
 \noindent
 However, this encoding has two big limitations. First it is
 not always feasible to adopt it for Coq due to the fact that the type system
-of the ML is too limited to accommodate for that one the object language,
+of the meta language is too limited to accommodate for that one the object language,
 e.g. Coq can typecheck variadic functions~\cite{cpdt}. \\
-Second, the encoding of Coq terms provided by Elpi is primarily utilized for meta
-programming, in order to extend the Coq system. Consequently, it must be able to
+Second, the encoding of Coq terms provided by Elpi is primarily used for meta
+programming, i.e. to extend the Coq system. Consequently, it must be able to
 manipulate terms that are not known in advance
 without relying on introspection primitives such as Prolog's
-\texttt{functor} and \texttt{arg}. In this context, constants need to live in
-an open world, akin to the \elpiIn{string} data type used in the preceding
-examples, they cannot be symbols of the meta language.
+\texttt{functor/3} and \texttt{arg/3}. To avoid that constants 
+cannot be symbols of the meta language, but must rather
+live in
+an open world, akin to the \elpiIn{string} data type used in the \elpiIn{con}
+constructor.
 
 In the literature we could find a related encoding of the Calculus of
 Constructions (CC)~\cite{felty93lics}. The goal of that work is to exhibit
@@ -2792,19 +2797,19 @@ procedure.\\
 addresses all the concerns
 mentioned earlier. It takes advantage of the
 unification capabilities of the meta language
-at the price of handling ``problematic'' sub terms on
-the side.\\
+at the price of handling problematic sub terms on
+the side.
 As a result %of this choice 
 our encoding takes
 advantage of indexing data structures and
 mode analysis for clause filtering.
-It it worth mentioning that we only replace terms with variables only
+It is worth mentioning that we only replace terms with variables only
 when it is strictly needed, leaving the rest of the term structure intact
-and hence indexable by the meta language logic programming engine.
+and hence indexable. % by the meta language logic programming engine.
 Some preliminary benchmarks on the Stdpp
 library~\cite{JUNG_KREBBERS_JOURDAN_BIZJAK_BIRKEDAL_DREYER_2018} show
 encouraging results: our type-class solver has some
-overhead on small goal but is consistently faster than
+overhead on small goals but is consistently faster than
 the Coq one starting from goals made of XXX nodes.\\
 \todo{D: how many?}
 Our approach is flexible enough to accommodate different strategies
