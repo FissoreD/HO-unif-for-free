@@ -1169,22 +1169,23 @@ This operation is possible thanks to \fullref{inv:linklhs},
 which ensures that no link causes an occur-check~(\ref{sec:oc})
 and the fact that \linkStore is duplicate-free (see \cref{sec:invariant1}).
 
-The second step involves allocating new variables in the
-memory of \Fo{}. This technicality is required because some
-higher-order unifications may require pruning a variable. For example,
+The second step allocates
+in the memory of \Fo{}
+new variables used to implement the pruning of higher-order variables. 
+For example,
 $F\appsep x\appsep y = F\appsep x\appsep z$ requires allocating a 
 variable $G$ in order to express the assignment $F_{ab} \mapsto G_a$.
 
-The final step is to decompile each assignment.
-Decompiling a term is straightforward since \mapStore is a bijection.
-The only complex part concerns the \elpiIn{abs} node. In our simple setting,
-the \elpiIn{flam} node carries no additional information (other than the function body),
-so each \elpiIn{abs} node can be trivially converted to a \elpiIn{flam} one.
-However, in the case of Coq, where lambdas carry the type of the bound variable, one
-must store this information somewhere. Note that this information is similar
-to the arity of variables; that in Coq, unification variables have a
-(function) type, and this type can be used to annotate the lambdas
-needed to express their assignment.
+The final step is to decompile each assignment. The \elpiIn{val}
+node carries a term that easy to decompile since \mapStore is a bijection.
+Since the \elpiIn{flam} node
+carries no additional information (other than the function body),
+each \elpiIn{abs} node can be decompiled to a \elpiIn{flam} one.
+
+However, if the \elpiIn{flam} node was carrying more information,
+as is the case for Coq where it holds the type of the bound variable,
+one would need to store this piece of information in the memory map,
+were we store the arity (that is a very simple function type).
 
 \begin{proposition}[Compilation round trip]\label{prop:comprt}
   % \elpiIn{compile F T [] M [] L [] S} then 
@@ -1196,11 +1197,11 @@ needed to express their assignment.
   $\rho X \Eo \rho s$.
 \end{proposition}
 
-\noindent
-The statement above roughly states that the translation from
-\Fo{} to \Ho is not lossy, it can be reversed. The statement
-is made convoluted by the fact that we hid the procedure to
-decompile a term in favor of the one to decompile substitutions.
+% \noindent
+% The statement above roughly states that the translation from
+% \Fo{} to \Ho is not lossy, it can be reversed. The statement
+% is made convoluted by the fact that we hid the procedure to
+% decompile a term in favor of the one to decompile substitutions.
 We omit to sketch the proof of this property for brevity.
 
 % \noteD{Should also decompile links\dots}
@@ -1225,12 +1226,15 @@ variables have an empty scope).
 Still, we can prove that \Uo is a good
 ``first-order'' unification algorithm if the input
 already happens to be in \wellb.
-Later, when the compiler will enforce \cref{prop:w-enforcing}
-the proof will be adjusted to cover for the new cases.
+Later, when the compiler will unsure \fullref{prop:w-enforcing}
+and
+the proof will be refined to cover for the new cases.
 
 \begin{lemma}[Properties of \Uo in \wellb]\label{prop:uniffow}
-  The implementation of \Uo above is a good unification (as per \cref{prop:good-unif})
-  for \Eo in the domain \wellb.
+  The implementation of \Uo above is a good unification
+  for \Eo
+  (as per \cref{prop:good-unif})
+  in the domain \wellb.
 \end{lemma}
 \begin{proof}[Proof sketch]
  In this setting, \Ee is as strong as \Eo on ground terms. What we have to show is that whenever two different \Fo{}
@@ -1244,18 +1248,19 @@ $\sigma$ is decompiled to $\rho = \{ X \mapsto s\}$ by \cref{prop:comprt}.
 \end{proof}
 
 \begin{theorem}[Fidelity in \wellb] \Fullref{prop:simulation} and
-\fullref{prop:fidelity} hold if $\;\wellb{(\foUnifPb)}$.
+\fullref{prop:fidelity} hold if $\;\wellb{(\foUnifPb)}$. \label{thm:fidfow}
 \end{theorem}
 \begin{proof}[Proof sketch]
-Trivial since \elpiIn{progress1} is a no-op and \fstep and \hstep are the same,
-and by \cref{prop:uniffow} \Ue is equivalent to \Uo.
+Since \elpiIn{progress1} is a no-op then \fstep and \hstep are the same.
+By \cref{prop:uniffow}, \Ue is equivalent to \Uo in \wellb.
 \end{proof}
 
 \subsection{Notational conventions}
 
-In the following sections, we adopt this notation discuss the compiler's
-output: \foUnifPb represents the input set of problems that compiled to
-\hoUnifPb with memory mapping \mapStore and links \linkStore. For example:
+In the following sections we use the following notation for input and output
+of the compiler. \foUnifPb represents the input unification problems in \Fo{}
+while \hoUnifPb their corresponding compiled version with memory mapping
+\mapStore and links \linkStore. For example:
 %
 \printAlll
   {{{p_1,p_2},{p_3,p_4}}}
@@ -1263,9 +1268,30 @@ output: \foUnifPb represents the input set of problems that compiled to
   {{{X_1,A_1,{{x}}},{X_2,A_2,{{y}}}}}
   {{{\eta,\Gamma,a,b}}}
 
+  \noindent
 We index each sub-problem, sub-mapping, and sub-link with its position
 starting from $1$ and counting from left to right, top to bottom.
 For example, $\hoUnifPb_2$ corresponds to the \Ho problem $t_3 \Ue t_4$.
+
+As we deal with each category of problematic terms we
+weaken the assumptions of~\cref{thm:fidfow} using the following
+definitions:
+
+\begin{definition}[$\wellb_\beta$]
+  $
+  \wellb_\beta(X) \Leftrightarrow \forall t \in \subterm{X}, t \not\in (\maybeeta{} ~\cup~ \notllambda{})
+  $
+  \end{definition}
+  
+\begin{definition}[$\wellb_{\beta \eta}$]
+  $
+  \wellb_{\beta \eta}(X) \Leftrightarrow \forall t \in \subterm{X}, t \not\in \notllambda{}
+  $
+\end{definition}
+  
+  
+
+
 %The compiled version of each $\foUnifPb_i$ is represented by $\hoUnifPb_i$.
 
 % \subsection{Limitations of by this basic scheme}
@@ -1291,10 +1317,12 @@ For example, $\hoUnifPb_2$ corresponds to the \Ho problem $t_3 \Ue t_4$.
   
 \section{Handling of \maybebeta}\label{sec:llam}
 
-In order to make \Uo higher-order, we need to
-take care of terms in \maybebeta.
-In the example below, we can see that the basic compilation given in 
-the previous section is not able to make the \Ho unification problem succeeds.
+% In order to make \Uo higher-order, we need to
+% take care of terms in \maybebeta.
+% In the example below, we can see that
+The basic compiler given in 
+the previous section is unable to make the following
+higher-order unification problem succeed.
 %
 % make test ONLY=7006 TEX=tex
 \printAlllSingle
@@ -1330,18 +1358,18 @@ grants this property.
 % section~\ref{sec:problem-statement}. The reason is that the algorithm folds
 % over a term, updating a substitution while it traverses it.\noteE[inline]{explain better}
 
-\paragraph{Decompilation} Since no link is created by the compilation of 
-\maybebeta terms, no modification to the \elpiIn{commit-link}
-is needed.
+\paragraph{Decompilation}
+No change
+to \elpiIn{commit-link}
+since no link is added.
+% by the compilation of 
+%\maybebeta terms, no modification to the \elpiIn{commit-link}
+%is needed.
 
-\paragraph{Progress} Similarly to decompilation, since no link is produced,
-no modification to the \elpiIn{progress} predicate is needed.
-
-\begin{definition}[$\wellb_\beta$]
-$
-\wellb_\beta(X) \Leftrightarrow \forall t \in \subterm{X}, t \not\in (\maybeeta{} ~\cup~ \notllambda{})
-$
-\end{definition}
+\paragraph{Progress}
+No change to \elpiIn{progress} since no link is added.
+% Similarly to decompilation, since no link is produced,
+% no modification to the \elpiIn{progress} predicate is needed.
 
 \begin{lemma}[Properties of \Uo in $\wellb_\beta$]\label{prop:uniffowb}
   Given the updated compilation scheme, the \Uo of~\cref{sec:founif}
@@ -1505,6 +1533,9 @@ $x$ does not occur free in $t$, and conversely, $t$ is the $\eta$-contraction of
 $\lambda x. t \appsep x$. The equational theory of \Fo{} identifies these terms,
 but the current compilation scheme does not,
 as shown by the following example:
+while $\lambda x.X \appsep x \Uo{} f$ does admit the solution
+$\rho = \{~ X \mapsto f ~\}$, the corresponding problem in
+\hoUnifPb does not.
 %
 \printAlll
   {{{\lambda x. X \appsep x, f}}}
@@ -1513,12 +1544,8 @@ as shown by the following example:
   {{}}
 
 \noindent
-While $\lambda x.X \appsep x \Uo{} f$ does admit the solution
-$\rho = \{~ X \mapsto f ~\}$, the corresponding problem in
-\hoUnifPb does not:
-\elpiIn{lam x\ uva A [x]} and
-\elpiIn{con"f"} start with different, rigid, term constructors hence
-\Ue{} fails.
+The reason is that \elpiIn{lam x\ uva A [x]} and
+\elpiIn{con"f"} start with different, rigid, term constructors.
 
 In order to guarantee \cref{prop:simulation}, we detect
 lambda abstractions that can disappear by $\eta$-contraction
@@ -1739,12 +1766,6 @@ Invariant~\fullref{inv:linklhs} holds for this link. Moreover:
   $\testmaybeeta{}~\lambda x.\lambda y.t$ does not hold either, contradicting
   the assumption that the rule was applied.
 \end{proof}
-
-\begin{definition}[$\wellb_{\beta \eta}$]
-  $
-  \wellb_{\beta \eta}(X) \Leftrightarrow \forall t \in \subterm{X}, t \not\in \notllambda{}
-  $
-\end{definition}
 
 \begin{lemma}[$\wellb$-partial-enforcement]\label{lem:w-enforcement-maybeeta}
   $\forall s, \C{s}{t}{m}{l}$, if $\:\wellb_{\beta \eta}(s)$  then $\:\wellb(t)$.

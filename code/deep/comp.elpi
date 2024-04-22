@@ -600,8 +600,7 @@ new A B C :- mem.new A B C.
     if ( % HIDE
     scope-check L1 L2 S1 S2
     ) (print "Scope check ok") (print "Scope check ko", fail), %HIDE
-    if (L = L2, S = S2)
-       (L3 = L2, S3 = S2)
+    if (L = L2, S = S2) (L3 = L2, S3 = S2)
        (progress L2 L3 S2 S3).
 %ENDSNIP
 
