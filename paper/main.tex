@@ -578,7 +578,7 @@ The specification of a ``good'' unification procedure restricted
 to a domain $\mathcal{D}$ is the following:
 
 \begin{proposition}[Good unification]\label{prop:good-unif}
-A good unification $\UnifRel\;$ for equality $\EqualRel\;$ in the domain
+A good unification $\UnifRel\;$ for equality $\;\EqualRel\;$ in the domain
 $\mathcal{D}$ satisfies the following properties:\noteD{use $\sigma$, not $\rho$}
   \begin{gather}
     \unifcorrectX{\EqualRel}{\UnifRel}{t}{\{~t_1,~ t_2~\} \subseteq \mathcal{D}}\\
@@ -772,8 +772,8 @@ and all problematic terms are characterized by some ``uncertainty''.
 An example of a \maybebeta{} term is the application $F \appsep x$.
 This term is problematic since the application node of 
 its syntax tree cannot be used to justify a
-unification failure, i.e. by properly instantiating $F$, the term\noteD{or a name}
-head constructor may become a $\lambda$, or a constant, or remain an application.
+unification failure, i.e. by properly instantiating $F$, the term
+head constructor may become a $\lambda$, or a constant, or a name, or remain an application.
 
 \begin{definition}[\maybeeta]\label{def:maybeeta}
   \maybeeta is the set of terms $\lambda x.s$ such that $\exists \rho, \rho \lambda x.s$
@@ -785,7 +785,7 @@ head constructor may become a $\lambda$, or a constant, or remain an application
 An example of a term $s$ in \maybeeta{} is
 $\lambda x.\lambda y.F \appsep y \appsep x$
 since the substitution
-$\rho = \{ F \mapsto \lambda a.\lambda b.f \appsep b \appsep a\}$\noteD{a,b are reserved for constants}
+$\rho = \{ F \mapsto \lambda x.\lambda y.f \appsep y \appsep x\}$
 makes $\rho s = \lambda x.\lambda y.f \appsep x \appsep y$,
 which is the eta long form of $f$. This term is problematic since
 its leading $\lambda$ abstraction cannot justify a
@@ -1243,8 +1243,9 @@ terms can be made equal by a substitution $\rho$ (plus the \ref{clause:beta1}
 and \ref{clause:beta2} if needed), we can produce this $\rho$ by finding
 a $\sigma$ via \Ue{} on the corresponding \Ho terms and by decompiling it.
 If we look at the syntax of \Fo{}, terms the only interesting case is
-\elpiIn{fuva X ~\Uo~s}. In this case, after compilation, we have
-$Y \Ue t$\noteD{shouldn't be uva Y [] \Ue t} that succeeds with $\sigma = \{ Y \mapsto t\}$ and
+<<\elpiIn{fuva X ~\Uo~s}>>. In this case, after compilation, we have
+<<\elpiIn{uva Y [] ~\Ue~t}>>
+that succeeds with $\sigma = \{ Y \mapsto t\}$ and
 $\sigma$ is decompiled to $\rho = \{ X \mapsto s\}$ by \cref{prop:comprt}.
 \end{proof}
 
@@ -2691,13 +2692,11 @@ For brevity we only provide two pseaudo-code snippets. The first one depicts
 how \linketa are suspended or make \progress.
 
 \begin{elpicode}
-link-eta L R :- var L, maybe-eta R HolesInR, !,
-  declare_constraint (link-eta L R) [L|HolesInR].
+link-eta L R :- var L, maybe-eta R, !,
+  declare_constraint (link-eta L R) [L,R].
 link-eta L R :- not (var L), !, eta-progress-lhs L R.
 link-eta L R :- not (maybe-eta R), !, contract R S, L = S.
 \end{elpicode}
-\todo{check progress-rhs is back}
-\noteD{first rule is wrong, since maybe-eta is 1-argument pred}
 
 \noindent
 The second snippet illustrates the deduplication of \linketa. The syntax
