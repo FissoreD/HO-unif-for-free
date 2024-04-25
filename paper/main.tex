@@ -627,9 +627,11 @@ logic program execution.
 \newcommand{\stepHD}[6]{\ensuremath{%
 #3 #1_{#2_l} \Ue #3 #1_{#2_r} \mapsto #4 \land \progress(#6,#4) \mapsto (#6',#5)}}
 \newcommand{\runF}[3]{\ensuremath{\frun(#1,#2) \mapsto #3_{#2}}}
+\newcommand{\runFx}[3]{\ensuremath{\frun(#1,#2) \mapsto #3}}
 \newcommand{\runFD}[2]{\ensuremath{%
 \bigwedge_{p = 1}^{#2} \stepF{#1}{p}{\rho_{p-1}}{\rho_{p}}}}
 \newcommand{\runH}[3]{\ensuremath{\hrun(#1,#2) \mapsto #3_{#2}}}
+\newcommand{\runHx}[3]{\ensuremath{\hrun(#1,#2) \mapsto #3}}
 \newcommand{\runHD}[3]{\ensuremath{%
 \bigwedge_{p = 1}^{#2} \stepH{#1}{p}{\sigma_{p-1}}{#3_{p-1}}{\sigma_{p}}{#3_p}}}
 \newcommand{\deff}{\ensuremath{\stackrel{{\scriptscriptstyle def}}{=\!=\!\!\!=}}}
@@ -686,14 +688,15 @@ We claim:
 \begin{proposition}[Run equivalence]\label{prop:simulation}
 $\forall \foUnifPb, \forall \mathcal{N},$ if $~\foUnifPb \subseteq \llambda$
 $$
-  \runF{\foUnifPb}{\mathcal{N}}{\rho}
-  \Leftrightarrow
-  \runH{\foUnifPb}{\mathcal{N}}{\rho}
+  \runFx{\foUnifPb}{\mathcal{N}}{\rho} \land
+  \runHx{\foUnifPb}{\mathcal{N}}{\rho'}
+  \Rightarrow
+  \forall s \in \foUnifPb, \rho s \Eo \rho' s
 $$
 \end{proposition}
 
 \noindent
-That is, the two executions give the same result if all terms in
+That is, the two executions give equivalent results if all terms in
 \foUnifPb are in the pattern fragment. Moreover:
 
 \begin{proposition}[Simulation fidelity]\label{prop:fidelity}
