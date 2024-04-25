@@ -39,10 +39,10 @@
 \newcommand{\Eo}{\ensuremath{\EqualRel_o}\xspace}
 \newcommand{\nEo}{\ensuremath{\nEqualRel_o}\xspace}
 
-\newcommand{\Ue}{\ensuremath{\UnifRel_\lambda}\xspace}
-\newcommand{\nUe}{\ensuremath{\nUnifRel_\lambda}\xspace}
-\newcommand{\Ee}{\ensuremath{\EqualRel_\lambda}\xspace}
-\newcommand{\nEe}{\ensuremath{\nEqualRel_\lambda}\xspace}
+\newcommand{\Ue}{\ensuremath{\UnifRel_m}\xspace}
+\newcommand{\nUe}{\ensuremath{\nUnifRel_m}\xspace}
+\newcommand{\Ee}{\ensuremath{\EqualRel_m}\xspace}
+\newcommand{\nEe}{\ensuremath{\nEqualRel_m}\xspace}
 \newcommand{\llambda}{\ensuremath{\mathcal{L}}\xspace}
 
 \newcommand{\linkMacro}[1]{\ensuremath{#1}\texttt{-link}\xspace}
@@ -52,8 +52,8 @@
 
 %\newcommand{\Fo}{\texorpdfstring{\ensuremath{\mathcal{F}_{\!o}\xspace}}{Fo}} % space non va
 %\newcommand{\Ho}{\texorpdfstring{\ensuremath{\mathcal{H}_o}\xspace}{Ho}}
-\newcommand{\Fo}{\texorpdfstring{\ensuremath{\mathcal{F}\xspace}}{F}} % space non va
-\newcommand{\Ho}{\texorpdfstring{\ensuremath{\mathcal{H}}\xspace}{H}}
+\newcommand{\Fo}{\texorpdfstring{\ensuremath{\mathcal{O}\xspace}}{O}} % space non va
+\newcommand{\Ho}{\texorpdfstring{\ensuremath{\mathcal{M}}\xspace}{M}}
 
 \newcommand*{\eqtau}{\ensuremath{\mathrel{\overset{\mathrm{\tau}}{=}}}}
 
@@ -67,7 +67,7 @@
 \newcommand{\linkStore}{\texorpdfstring{\ensuremath{\mathbb{L}}\xspace}{L}}
 \newcommand{\mapStore}{\texorpdfstring{\ensuremath{\mathbb{M}}\xspace}{M}}
 \newcommand{\foUnifPb}{\ensuremath{\mathbb{P}}\xspace}
-\newcommand{\hoUnifPb}{\ensuremath{\mathbb{T}}\xspace}
+\newcommand{\hoUnifPb}{\ensuremath{\mathbb{Q}}\xspace}
 
 \include{pb_printer}
 
@@ -412,8 +412,8 @@ address \githubUrl.
 Even if we encountered the problem working on Coq's Calculus of Inductive
 Constructions, we devise
 a minimal setting to ease its study. In this setting, we have
-a \Fo{} language (for first order) with a rich equational
-theory and a \Ho{} meta language with a simpler one.
+a (first order) language \Fo{} with a rich equational
+theory and a \Ho{} language with a simpler one.
 
 
 \subsection{Preliminaries: \Fo{} and \Ho{}}
@@ -597,7 +597,7 @@ logic program.
 
 \subsection{The problem: logic-program simulation}
 We represent a logic program \emph{run} in \Fo{} as
-a sequence of \emph{steps} of length $\mathcal{N}$.
+a sequence of \emph{steps} of length $n$.
 At each step $p$ we unify two terms, $\foUnifPb_{p_l}$ and
 $\foUnifPb_{p_r}$, taken from the list of all unification
 problems \foUnifPb.
@@ -610,16 +610,16 @@ problems \foUnifPb.
 % where at least one run does not end in a failure. }
 The composition of these steps starting from the
 empty substitution $\rho_0$ produces the final
-substitution $\rho_\mathcal{N}$, which is the result of the
+substitution $\rho_n$, which is the result of the
 logic program execution.
 %
 \newcommand{\C}[4]{\ensuremath{\langle #1 \rangle}\mapsto(#2,#3,#4)}
 \newcommand{\D}[4]{\ensuremath{\langle #1,#2,#3 \rangle^{-1}\mapsto #4}}
 \newcommand{\progress}{\ensuremath{\mathrm{progress}}\xspace}
-\newcommand{\fstep}{\ensuremath{\mathrm{fstep}}\xspace}
-\newcommand{\hstep}{\ensuremath{\mathrm{hstep}}\xspace}
-\newcommand{\frun}{\ensuremath{\mathrm{frun}}\xspace}
-\newcommand{\hrun}{\ensuremath{\mathrm{hrun}}\xspace}
+\newcommand{\fstep}{\ensuremath{\mathrm{ostep}}\xspace}
+\newcommand{\hstep}{\ensuremath{\mathrm{mstep}}\xspace}
+\newcommand{\frun}{\ensuremath{\mathrm{orun}}\xspace}
+\newcommand{\hrun}{\ensuremath{\mathrm{mrun}}\xspace}
 \newcommand{\stepF}[4]{\ensuremath{\fstep(#1,#2,#3) \mapsto #4}}
 \newcommand{\stepFD}[4]{%
 \ensuremath{#3 #1_{#2_l} \Uo #3 #1_{#2_r} \mapsto #4}}
@@ -641,9 +641,9 @@ $$
 \stepF{\foUnifPb}{p}{\rho}{\rho'}
 \deff
 \stepFD{\foUnifPb}{p}{\rho}{\rho'}\vspace{2pt}\\
-\runF{\foUnifPb}{\mathcal{N}}{\rho}
+\runF{\foUnifPb}{n}{\rho}
 \deff
-\runFD{\foUnifPb}{\mathcal{N}}
+\runFD{\foUnifPb}{n}
 \end{array}
 $$
 
@@ -667,10 +667,10 @@ $$
 \begin{array}{l}
 \stepH{\hoUnifPb}{p}{\sigma}{\linkStore}{\sigma''}{\linkStore'} \deff\vspace{2pt}\\
   \qquad\stepHD{\hoUnifPb}{p}{\sigma}{\sigma'}{\sigma''}{\linkStore}\vspace{2pt}\\
-  \runH{\foUnifPb}{\mathcal{N}}{\rho} \deff \vspace{2pt}\\
+  \runH{\foUnifPb}{n}{\rho} \deff \vspace{2pt}\\
   \qquad \hoUnifPb \times \mapStore \times \linkStore_0 = \{ (t,m,l) | s \in \foUnifPb, \C{s}{t}{m}{l} \}\vspace{2pt}\\
-  \qquad \runHD{\hoUnifPb}{\mathcal{N}}{\linkStore}\vspace{2pt}\\
-  \qquad \D{\sigma_{\mathcal{N}}}{\mapStore}{\linkStore_{\mathcal{N}}}{\rho_{\mathcal{N}}}
+  \qquad \runHD{\hoUnifPb}{n}{\linkStore}\vspace{2pt}\\
+  \qquad \D{\sigma_{n}}{\mapStore}{\linkStore_{n}}{\rho_{n}}
 \end{array}
 $$
 
@@ -686,10 +686,10 @@ finally decompiles the solution.
 We claim:
 
 \begin{proposition}[Run equivalence]\label{prop:simulation}
-$\forall \foUnifPb, \forall \mathcal{N},$ if $~\foUnifPb \subseteq \llambda$
+$\forall \foUnifPb, \forall n,$ if $~\foUnifPb \subseteq \llambda$
 $$
-  \runFx{\foUnifPb}{\mathcal{N}}{\rho} \land
-  \runHx{\foUnifPb}{\mathcal{N}}{\rho'}
+  \runFx{\foUnifPb}{n}{\rho} \land
+  \runHx{\foUnifPb}{n}{\rho'}
   \Rightarrow
   \forall s \in \foUnifPb, \rho s \Eo \rho' s
 $$
@@ -701,7 +701,7 @@ That is, the two executions give equivalent results if all terms in
 
 \begin{proposition}[Simulation fidelity]\label{prop:fidelity}
 In the context of$\;$ \hrun, if $~\foUnifPb \subseteq \llambda$ we have that
-$\forall p \in 1 \ldots \mathcal{N},$
+$\forall p \in 1 \ldots n,$
 $$
 \stepF{\foUnifPb}{p}{\rho_{p-1}}{\rho_p}
 \Leftrightarrow
