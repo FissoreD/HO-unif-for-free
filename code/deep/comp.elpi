@@ -32,9 +32,9 @@ namespace comp {
   kind baselink type.
   type link-eta  tm -> tm -> baselink.
   type link-llam tm -> tm -> baselink.
-  typeabbrev link (inctx baselink).
-  typeabbrev links (list link).
+  typeabbrev links (list (inctx baselink)).
 %ENDSNIP
+  typeabbrev link (inctx baselink).
 
   macro @val-link-eta T1 T2 :- ho.val (link-eta T1 T2).
   macro @val-link-llam T1 T2 :- ho.val (link-llam T1 T2).

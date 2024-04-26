@@ -754,20 +754,6 @@ logic program that either fails at some point, or succeeds. A computation that
 succeeds by backtracking, exploring multiple branches, could be
 modeled as a set of runs with (possibly non-empty) common prefixes.
 
-In \cref{sec:llam,sec:eta,sec:beta,sec:invariant1}, we will ensure
-\Cref{prop:fidelity}, since we consider this property quite important. Our aim
-is to guarantee that the success of \hstep coincides with the success of \fstep
-at each step $p$, regardless of any newly introduced modifications in our
-unification process. We postpone the discussion of \Cref{prop:fidelity-recovery}
-to \cref{sec:beta}, where we delve into unifications involving terms outside
-\llambda. Moreover, we reserve the proof of \Cref{prop:simulation} only in
-\cref{sec:llam}, due to the absence of links. In the other sections, we omit the
-proof of this latter property due to space constraints. However, the underlying
-idea remain constant: link activation refines $\sigma$ so that if $\rho_i
-\foUnifPb_{i_l} \Uo \sigma_i \foUnifPb_{i_r}$ then $\sigma_i \hoUnifPb_{i_l} \Ue
-\sigma_i \hoUnifPb_{i_r}$. Finally, \D{\sigma_n}{\mapStore}{\linkStore_n}{\rho}
-and $\rho$ is equivalent to the substitution returned by $\frun(\foUnifPb,n)$.
-
 \subsection{The solution (in a nutshell)}
 \label{sec:nutshell}
 A term $s$ is compiled to a term $t$ where every
@@ -903,6 +889,18 @@ recognize terms in \maybebeta, \maybeeta and
 \notllambda and how \progress takes care of them preserving \wellb
 and ensuring \cref{prop:simulation,prop:fidelity,prop:fidelity-recovery}.
 
+We prove \fullref{prop:fidelity} in
+\cref{sec:eta,sec:beta,sec:invariant1}
+and \fullref{prop:simulation} only in \cref{sec:llam},
+where links are not present yet.
+In order to prove \cref{prop:simulation} in the presence of links
+one needs to refine \cref{prop:fidelity} by relating the two
+substitutions: they are equivalent only by using decompilation to 
+take into account terms in \linkStore.
+Then, by induction
+on the number of steps, \ref{prop:fidelity} implies \Cref{prop:simulation}.
+We discuss \fullref{prop:fidelity-recovery} in \cref{sec:beta}.
+
 % Note that proposition \ref{prop:w-preservation} does not hold for \hrun as a whole
 % since decompilation can introduce (actually restore) problematic terms.
 
@@ -1024,8 +1022,9 @@ If the left-hand side is assigned during a step, then
 the link is considered for progress and possibly eliminated.
 This is discussed in \cref{sec:eta} and \cref{sec:beta}.
 
-When detailing examples, we represent links as equations between two
-terms under a context.
+In the examples we represent links as equations
+%between two terms
+under a context.
 The equality sign is subscripted with the
 kind of \elpiIn{baselink}. For example $\linkbetaM{x}{A_x}{F_x~a}$ corresponds to:
 \begin{elpicode}
