@@ -499,8 +499,8 @@ terms in \Ho{}.
 
 \subsubsection{Term equality: \Eo and \Ee}
 For both languages, we extend the equational theory
-over ground terms to the full language by adding the reflexivity for
-unification variables (a variable is equal to itself).
+over ground terms to the full language by adding reflexivity for
+unification variables, i.e. a unification variable is equal to itself.
 
 The first four rules are common to both equalities
 and define the usual congruence over terms. Since
@@ -518,10 +518,11 @@ In addition to that, \Eo has rules for $\eta$ and $\beta$-equivalence.
 \end{elpicode}
 
 \noindent
-Note that the symbol \elpiIn{|} separates the head of a list from the tail,
+Note that the symbol \elpiIn{|} separates the head of a list from the tail;
 that \elpiIn{forall2} applies a binary predicate to two lists (of same
-length). Finally \elpiIn{=>} is $\lambda$Prolog syntax to augment the
-current program with an extra rule, and both procedures use it to
+length); and that \elpiIn{=>} is $\lambda$Prolog syntax for
+implication an is used to augment the
+current program with an extra rule. Both procedures use implication to
 assume that the fresh nominal constants introduces by \elpiIn{pi} are
 equal to themselves.
 
@@ -530,7 +531,7 @@ weaker \Ee is, and to identify the four rules that need special
 treatment in the implementation of \Uo.
 For brevity, we omit the code of \elpiIn{beta}:
 it is sufficient to know that <<\elpiIn{beta F L R}>> computes in \elpiIn{R} the
-weak head normal form of <<\elpiIn{app [F|L]}>>.
+weak-head normal form of <<\elpiIn{fapp [F|L]}>>.
 
 \paragraph{Substitution: $\rho s$ and $\sigma t$}
 
@@ -572,7 +573,7 @@ the initial substitution $\sigma$ is empty.
 % Note that if $\sigma t_1 \Ue \sigma t_2 \mapsto \sigma'$ then
 % the domains of $\sigma$ and $\sigma'$ are disjoint.
 We write \llambda as the set of terms that are in the pattern-fragment, i.e.
-every higher-order variable is applied to a list of distinct names.
+every unification variable is applied to a list of distinct names.
 
 The specification of a ``good'' unification procedure restricted
 to a domain $\mathcal{D}$ is the following:
@@ -592,13 +593,13 @@ an implementation of \Ue that is a good unification for \Ee
 in \llambda.
 
 Even if we provide an implementation of the object-language unification
-\Uo{} in \cref{sec:founif}, our real goal is the simulation of an entire
-logic program.
+\Uo{} in \cref{sec:founif}, our real goal is to simulate the execution of
+an entire logic-program.
 
 \subsection{The problem: logic-program simulation}
 We represent a logic program \emph{run} in \Fo{} as
-a sequence of \emph{steps} of length $n$.
-At each step $p$ we unify two terms, $\foUnifPb_{p_l}$ and
+a sequence of $n$ \emph{steps}. Each step consists in
+unifying two terms, $\foUnifPb_{p_l}$ and
 $\foUnifPb_{p_r}$, taken from the list of all unification
 problems \foUnifPb.
 % \footnote{If the same rule is used multiple times in a run we
@@ -648,8 +649,9 @@ $$
 $$
 
 \noindent
-In order to simulate a \Fo{} logic program in \Ho{}, we compile
-each \Fo{} term $s$ in \foUnifPb to a \Ho{} term $t$.
+In order to simulate a logic program we start by compiling
+\foUnifPb to \hoUnifPb, i.e.
+each \Fo{}-term $s \in \foUnifPb$ is translated to a \Ho{}-term $t \in \hoUnifPb$.
 We write this translation as $\C{s}{t}{m}{l}$. The implementation of the compiler
 is detailed in \cref{sec:simulation,sec:eta,sec:beta}, here we just point
 out that it additionally produces a variable map $m$ and a list of links $l$.
@@ -657,10 +659,10 @@ The variable map connects unification variables in \Ho to variables
 in \Fo{} and is used to ``decompile'' the assignment,
 $\D{\sigma}{m}{l}{\rho}$. Links are an accessory piece of information whose
 description is deferred to \cref{sec:nutshell}.
-We write $\foUnifPb_p = \{~ \foUnifPb_{p_l}, \foUnifPb_{p_r} ~\}$
+We write $\foUnifPb_p = \{~ \foUnifPb_{p_l},\, \foUnifPb_{p_r} ~\}$
 and $s \in \foUnifPb \Leftrightarrow \exists p, s \in \foUnifPb_p$.
 
-We simulate each run in \Fo{} with a run in \Ho as follows:
+Then we simulate each run in \Fo{} with a run in \Ho as follows:
 %
 %Note that $\sigma_0$ is the empty substitution.
 $$
@@ -677,11 +679,11 @@ $$
 \noindent
 By analogy with \foUnifPb, we write $\hoUnifPb_{p_l}$ and $\hoUnifPb_{p_r}$
 for the two \Ho{} terms being unified at step $p$, and we write $\hoUnifPb_p$
-for the set $\{~ \hoUnifPb_{p_l}, \hoUnifPb_{p_r} ~\}$.\\
-\hstep{} is made of two sub-steps: a call to the meta language
+for the set $\{~ \hoUnifPb_{p_l},\, \hoUnifPb_{p_r} ~\}$.\\
+The \hstep{} procedure is made of two sub-steps: a call to the meta-language
 unification and a check for \progress{} on the set of links, that intuitively
 will compensate for the weaker equational theory honored by \Ue.
-\hrun{} compiles all terms in \foUnifPb{}, then executes each step, and
+Procedure \hrun{} compiles all terms in \foUnifPb{}, then executes each step, and
 finally decompiles the solution.
 We claim:
 
@@ -728,7 +730,8 @@ $$
 \stepH{\hoUnifPb}{p}{\sigma_{p-1}}{\linkStore_{p-1}}{\sigma_{p}}{\linkStore_p}
 $$
 \end{proposition}
-  
+
+\noindent
 In other words, if the two terms involved in a step
 re-enter \llambda, then \hstep and \fstep are again related, even if
 $\foUnifPb \not\subseteq \llambda$ and hence \cref{prop:fidelity} does not apply.
@@ -752,14 +755,14 @@ since it plays a very minor role, orthogonal to higher-order unification.
 We point out that each \emph{run} corresponds to a (proof search) branch in the
 logic program that either fails at some point, or succeeds. A computation that
 succeeds by backtracking, exploring multiple branches, could be
-modeled as a set of runs with (possibly non-empty) common prefixes.
+modeled as a set of runs with a (possibly non-empty) common prefix.
 
 \subsection{The solution (in a nutshell)}
 \label{sec:nutshell}
 A term $s$ is compiled to a term $t$ where every
-``problematic'' subterm $p$ is replaced by a fresh unification variable $h$
+``problematic'' subterm $e$ is replaced by a fresh unification variable $h$
 with an accessory \emph{link} that represents a suspended unification problem
-$h \Ue p$. As a result, \Ue is ``well behaved'' on $t$, in the sense that
+$h \Ue e$. As a result, \Ue is ``well behaved'' on $t$, in the sense that
 it does not contradict \Eo as it would otherwise do on the
 ``problematic'' sub-terms.\\
 We now define ``problematic'' and ``well behaved'' more formally
@@ -790,7 +793,7 @@ $\lambda x.\lambda y.F \appsep y \appsep x$
 since the substitution
 $\rho = \{ F \mapsto \lambda x.\lambda y.f \appsep y \appsep x\}$
 makes $\rho s = \lambda x.\lambda y.f \appsep x \appsep y$,
-which is the eta long form of $f$. This term is problematic since
+which is the eta-long form of $f$. This term is problematic since
 its leading $\lambda$ abstraction cannot justify a
 unification failure against a constant $f$.
 
@@ -802,8 +805,8 @@ unification failure against a constant $f$.
 \noindent
 These terms are problematic for the very same reason terms in \maybebeta are,
 but they cannot be handled directly by the unification of the meta language, which
-is only required to handle terms in \llambda. Still, there exists a
-substitution $\rho$ such that $\rho s \in \llambda$.
+is only required to handle terms in \llambda. Still, for a $s \in \notllambda$
+there may exist a substitution $\rho$ such that $\rho s \in \llambda$.
 
 % An example of $t$ in \notllambda{} is $F \appsep a$ for a constant $a$.
 % Note however tha
@@ -812,7 +815,7 @@ substitution $\rho$ such that $\rho s \in \llambda$.
 % \todo{said before}
 
 \newcommand{\subterm}[1]{\ensuremath{\mathcal{P}(#1)}}
-We write $\subterm{t}$ the set of sub-terms of $t$, and
+We write $\subterm{t}$ for the set of sub-terms of $t$, and
 %\begin{definition}[Subterms \subterm{t}] The set of sub terms of $t$ is the
 %  largest set $\subterm{t}$ that can be obtained by the following rules.
 %$$
@@ -828,7 +831,7 @@ we write $\subterm{X} = \bigcup_{t\in X} \subterm{t}$ when $X$ is a set of terms
 
 \newcommand{\wellb}{\ensuremath{\mathcal{W}}\xspace}
 \begin{definition}[Well behaved set]
-Given a set of terms $X \subseteq \Ho{}$,
+Given a set of terms $X$, % \subseteq \Ho{}$,
 $$
 \wellb(X) \Leftrightarrow \forall t \in \subterm{X},
 t \not\in (\maybebeta{} ~\cup~ \maybeeta{} ~\cup~ \notllambda{})
@@ -858,12 +861,12 @@ We claim our compiler validates the following properties:
 \noindent
 In other words the compiler outputs terms in \wellb, even if its
 input is not. And if two terms can unify in the source language
-then these terms also unify in the target language. 
+then their images also unify in the target language. 
 Note that the property holds for any substitution, $\rho$ could be given by an
 oracle and/or not necessarily be a most general one: when applied to terms in \wellb,
-\Ue{} does not contradict \Eo. Also note that a compiler that
+\Ue{} does not contradict \Eo. Note that a compiler that
 translate all terms to unification variables would satisfy this
-property, but wound fail to verify \cref{prop:fidelity}.
+property, but wound certainly fail to verify \fullref{prop:fidelity}.
 
 \begin{proposition}[\wellb{}-preservation]\label{prop:w-preservation}
 $\forall \hoUnifPb, \forall \linkStore, \forall p, \forall \sigma, \forall \sigma'$
@@ -895,10 +898,10 @@ and \fullref{prop:simulation} only in \cref{sec:llam},
 where links are not present yet.
 In order to prove \cref{prop:simulation} in the presence of links
 one needs to refine \cref{prop:fidelity} by relating the two
-substitutions: they are equivalent only by using decompilation to 
+substitutions $\rho_p$ and $\sigma_p$: they are equivalent only by using decompilation to 
 take into account terms in \linkStore.
 Then, by induction
-on the number of steps, \ref{prop:fidelity} implies \Cref{prop:simulation}.
+on the number of steps, \cref{prop:fidelity} implies \cref{prop:simulation}.
 We discuss \fullref{prop:fidelity-recovery} in \cref{sec:beta}.
 
 % Note that proposition \ref{prop:w-preservation} does not hold for \hrun as a whole
