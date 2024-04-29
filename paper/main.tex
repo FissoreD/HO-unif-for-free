@@ -350,18 +350,17 @@ P = lam A x\ app [con"nfact", x, con"3"]
 This simple example is sufficient to show that the encoding we seek
 is not trivial and does not only concern the head of rules, but the entire sequence
 of unification problems that constitute the execution of a logic program.
+
 In fact
 the solution for \elpiIn{P} above generates a
 (Coq) $\beta$-redex in the second premise (the predicate
 under the \elpiIn{pi w\ }\hspace{-0.4em}).
 % We show below the premise before and
 % after the instantiation of \elpiIn{P}:
-
 % \begin{elpicode}
 % decision (app [                   P                  , w])
 % decision (app [lam A (a\ app [con"nfact", a, con"3"]), w])
 % \end{elpicode}
-
 % \noindent
 In turn, this redex prevents rule \ref{clause:r2} from backchaining properly since
 the following unification problem has no solution:
@@ -389,9 +388,9 @@ simulate a higher-order logic program in Coq using the unification of Elpi.
 In this paper we identify a minimal language \Fo{} in which the problems
 sketched in the introduction can be formally described.
 We detail an encoding of a logic program in \Fo{} to a strongly related
-logic program in \Ho (the language of the meta language) and we show that
+logic program in \Ho, the language of the meta language, and we show that
 the higher-order unification procedure of the meta language \Ue{} can be
-efficiently used to simulate a higher-order unification procedure \Uo for
+used to simulate a higher-order unification procedure \Uo for
 the object language that features $\eta\beta$-conversion. We show how \Uo
 can be extended with heuristics to deal with problems outside the pattern
 fragment.\\
