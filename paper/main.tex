@@ -2724,20 +2724,20 @@ $X a$ to $Y$. This heuristic is used by~\cite{sozeau08}.
 % \vspace{-1em}
 \section{Actual implementation in Elpi}\label{sec:implementation}
 
-In this paper we did study a compiler and simulation loop on a minimal language.
+In this paper we did study a compiler and a simulation loop on a minimal language.
 The actual implementation uses the Coq-Elpi meta language to both compile
 the sequence of problems (the rules) and execute them, that is Elpi
 plays the role of \Ho{} as well.
 
 The main difference is that we cannot implement \hrun since it comes as part of
 the runtime of the programming language. In particular the runtime iterates
-\Ue, but \hstep also needs to check for \progress. Luckily Elpi extends~\cite{TASSI_2019}
-$\lambda$Prolog with syntactic constraints (suspended goals) and
-Constraint Handling Rules (CHR)~\cite{fruehwirth2017constraint} to operate on them.
+\Ue, but \hstep also needs to check links for \progress. Luckily Elpi extends
+$\lambda$Prolog with constraints (suspended goals) and
+Constraint Handling Rules (CHR) to operate on them~\cite{TASSI_2019,fruehwirth2017constraint}.
 An important design choice is that constraints are suspended on a user
-computed list of unification variables, and are resumed as soon as one of them
-is assigned, before any other existing goal is considered. In turn this
-property enables a timely activation of links that grants~\fullref{prop:fidelity}.
+computed list of unification variables, and are resumed \emph{as soon as one of them
+is assigned}, before any other existing goal is considered. In turn this
+property allows for a timely activation of links that grants~\fullref{prop:fidelity}.
 For brevity we only provide two pseaudo-code snippets. The first one depicts
 how \linketa are suspended or make \progress.
 
@@ -2745,7 +2745,7 @@ how \linketa are suspended or make \progress.
 link-eta L R :- var L, maybe-eta R, !,
   declare_constraint (link-eta L R) [L,R].
 link-eta L R :- not (var L), !, eta-progress-lhs L R.
-link-eta L R :- not (maybe-eta R), !, contract R S, L = S.
+link-eta L R :- not (maybe-eta R), !, eta-progress-rhs L R.
 \end{elpicode}
 
 \noindent
