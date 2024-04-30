@@ -2854,32 +2854,36 @@ As a result %of this choice
 our encoding takes
 advantage of indexing data structures and
 mode analysis for clause filtering.
-It is worth mentioning that we only replace terms with variables only
+It is worth mentioning that we replace terms with variables only
 when it is strictly needed, leaving the rest of the term structure intact
 and hence indexable. % by the meta language logic programming engine.
 Some preliminary benchmarks on the Stdpp
 library~\cite{JUNG_KREBBERS_JOURDAN_BIZJAK_BIRKEDAL_DREYER_2018} show
 encouraging results: our type-class solver has some
 overhead on small goals but is consistently faster than
-the Coq one starting from goals made of XXX nodes.\\
+the Coq one starting from goals made of XXX nodes.
 \todo{D: how many?}
-Our approach is flexible enough to accommodate different strategies
+Moreover our approach is flexible enough to accommodate different strategies
 and heuristics to handle terms outside the pattern fragment.
-Moreover, the unification process we obtain is ready to take
-advantage of potential improvements to the programming engine,
-such as tabled search. Finally, our shallow encoding can
-enable to apply forms of static analysis for
-the meta language, such as determinacy, also to the object language.
+Finally, our encoding is sufficiently shallow to: 1)
+allow to lift forms of static analysis for
+the meta language, such as determinacy, also to the object
+language; 2) take advantage of future improvements to the
+logic-programming engine of Elpi, such as tabled search.
 
 We considered mechanizing our results with Abella~\cite{gacek2008abella},
 especially in the early phase of this work, but unfortunately we could not.
 The main reason is that the logic of Abella does not let one quantify over
-predicates nor user the cut operator. Eliminating cut or
-combinators like \elpiIn{map} is surely possible, but 
+predicates nor use the cut operator. Eliminating cut or
+higher order
+combinators like \elpiIn{map} or \elpiIn{forall2} is surely
+possible, but 
 has a high cost in verbosity given how pervasively they are used.
 Moreover, and more importantly, it creates a distance
 between the verified and the actual code, which we found to
-hinder our exploratory phase.
+hinder our exploration. We did, however, establish a
+test suite with about a hundred cases.
+It is available at \githubUrl.
 
 % ---
 
