@@ -188,7 +188,7 @@ Type-class solvers are unification based proof search procedures
 reminiscent of Prolog, which back-chain lemmas taken
 from a database of ``type-class instances''. Given this
 analogy with Logic Programming we want to leverage the
-Elpi meta-programming language~\cite{tassi:hal-01637063},
+Elpi meta programming language~\cite{tassi:hal-01637063},
 a dialect of $\lambda$Prolog, already used to extend
 Coq in various ways~\cite{tassi:hal-01637063,tassi:hal-01897468,gregoire:hal-03800154,newtc}.
 
@@ -241,12 +241,13 @@ about the $\forall$ quantifier), and then solves the premises with
 rules 1 and 2 respectively.
 Note that rule 3 features a second-order parameter \coqIn{P} that represents
 a function of type \coqIn{A ~$\to$~ Prop} (a 1-argument predicate over \coqIn{A}).
-The solver has to infer a value for \coqIn{P} by unifying the conclusion
+The solver infers a value for \coqIn{P} by unifying the conclusion
 of rule 3 with the goal, and in particular, it has to solve the unification
 problem \coqIn{P x = nfact x 3}. This higher-order problem falls in the so-called 
-pattern fragment and admits a unique
-solution $\customlabel{solution:intro}{\rho}$ that assigns
-the term \elpiIn{~$\lambda$~x.nfact x 3} to \coqIn{P}.
+pattern fragment and admits a unique solution:
+\begin{elpicode}
+P = ~$\lambda$~x.nfact x 3                                       ~\customlabel{solution:intro}{(\rho)}~
+\end{elpicode}
 In the rest of this paper, we refer to the pattern fragment as
 \llambda~\cite{miller92jsc}.
 
@@ -293,7 +294,7 @@ decision (all A x\ app [P, x]) :- finite A,           ~\customlabel{clause:r3}{(
 Unfortunately this encoding of rule \ref{clause:r3} does not work
 since it uses the predicate \coqIn{P} as a first order term: for the meta
 language its type is \elpiIn{tm}. If we try to back-chain the rule
-\ref{clause:r3} on the encoding of the goal \ref{goal:g} given below
+\ref{clause:r3} on the encoding of the goal \ref{goal:g} given here
 
 \begin{elpicode}
 decision (all (app [con"fin", con"7"]) x\              ~\customlabel{goal:g}{(g)}~
@@ -379,7 +380,7 @@ The equational theory of the meta-language Elpi encompasses
 $\eta\beta$-equivalence and its unification procedure can solve higher-order
 problems in the pattern fragment. Although 
 the equational theory of Coq is much richer, for efficiency and predictability
-reasons, automatic proof search procedures typically employ a unification
+reasons automatic proof search procedures typically employ a unification
 procedure that only captures a $\eta\beta$-equivalence and only operates
 in \llambda. The similarity is striking, but one needs to exercise some caution in order to
 simulate a higher-order logic program in Coq using the unification of Elpi.
@@ -448,17 +449,17 @@ theory and a \Ho{} language with a simpler one.
 
 \subsection{Preliminaries: \Fo{} and \Ho{}}
 
-To reason about unification, we provide a description of the
+In order to reason about unification we provide a description of the
 \Fo{} and \Ho languages where unification variables
 are first-class terms, i.e. they have a concrete syntax as
 shown in \cref{code:common-terms}.
 Unification variables
 in \Fo{} (\elpiIn{fuva} term constructor) have no explicit scope:
-the arguments of a higher-order variable are given via the \elpiIn{fapp}
+the ``arguments'' of a higher-order variable are given via the \elpiIn{fapp}
 constructor. For example the term <<\coqIn{P x}>> is represented as
 <<\elpiIn{fapp [fuva N, x]}>>, where \elpiIn{N} is the memory address
-of \elpiIn{P} and \elpiIn{x} is a bound variable.\\
-In \Ho, the representation of <<\coqIn{P x}>> is instead <<\elpiIn{uva N [x]}>>,
+of \elpiIn{P} and \elpiIn{x} is a bound variable.
+In \Ho{} the representation of <<\coqIn{P x}>> is instead <<\elpiIn{uva N [x]}>>,
 since unification variables are higher-order and come equipped with an
 explicit scope.
 %
@@ -530,7 +531,8 @@ terms in \Ho{}.
 \subsubsection{Term equality: \Eo and \Ee}
 For both languages, we extend the equational theory
 over ground terms to the full language by adding reflexivity for
-unification variables, i.e. a unification variable is equal to itself.
+unification variables, i.e. a unification variable is equal to itself
+but different to any other term.
 
 The first four rules are common to both equalities
 and define the usual congruence over terms. Since
@@ -549,9 +551,9 @@ In addition to that, \Eo has rules for $\eta$ and $\beta$-equivalence.
 
 \noindent
 Note that the symbol \elpiIn{|} separates the head of a list from the tail;
-that \elpiIn{forall2} applies a binary predicate to two lists (of same
+that \elpiIn{forall2} applies a binary predicate to two lists (of equal
 length); and that \elpiIn{=>} is $\lambda$Prolog syntax for
-implication an is used to augment the
+implication and is used to augment the
 current program with an extra rule. Both procedures use implication to
 assume that the fresh nominal constants introduces by \elpiIn{pi} are
 equal to themselves.
