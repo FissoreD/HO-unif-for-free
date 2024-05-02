@@ -630,10 +630,12 @@ an entire logic-program.
 
 \subsection{The problem: logic-program simulation}
 We represent a logic program \emph{run} in \Fo{} as
-a sequence of $n$ \emph{steps}. Each step consists in
+a sequence of $n$ \emph{steps}. Each step $p$ consists in
 unifying two terms, $\foUnifPb_{p_l}$ and
 $\foUnifPb_{p_r}$, taken from the list of all unification
 problems \foUnifPb.
+We write $\foUnifPb_p = \{~ \foUnifPb_{p_l},\, \foUnifPb_{p_r} ~\}$
+and $s \in \foUnifPb \Leftrightarrow \exists p, s \in \foUnifPb_p$.
 % \footnote{If the same rule is used multiple times in a run we
 % consider as many copies as needed of the terms composing the
 % rules, with fresh unification variables each time. Also, we do not
@@ -649,10 +651,10 @@ logic program execution.
 \newcommand{\C}[4]{\ensuremath{\langle #1 \rangle}\mapsto(#2,#3,#4)}
 \newcommand{\D}[4]{\ensuremath{\langle #1,#2,#3 \rangle^{-1}\mapsto #4}}
 \newcommand{\progress}{\ensuremath{\mathrm{progress}}\xspace}
-\newcommand{\fstep}{\ensuremath{\mathrm{ostep}}\xspace}
-\newcommand{\hstep}{\ensuremath{\mathrm{mstep}}\xspace}
-\newcommand{\frun}{\ensuremath{\mathrm{orun}}\xspace}
-\newcommand{\hrun}{\ensuremath{\mathrm{mrun}}\xspace}
+\newcommand{\fstep}{\ensuremath{{\mathrm{step}}_o}\xspace}
+\newcommand{\hstep}{\ensuremath{{\mathrm{step}}_m}\xspace}
+\newcommand{\frun}{\ensuremath{{\mathrm{run}}_o}\xspace}
+\newcommand{\hrun}{\ensuremath{{\mathrm{run}}_m}\xspace}
 \newcommand{\stepF}[4]{\ensuremath{\fstep(#1,#2,#3) \mapsto #4}}
 \newcommand{\stepFD}[4]{%
 \ensuremath{#3 #1_{#2_l} \Uo #3 #1_{#2_r} \mapsto #4}}
@@ -688,11 +690,9 @@ We write this translation as $\C{s}{t}{m}{l}$. The implementation of the compile
 is detailed in \cref{sec:simulation,sec:eta,sec:beta}, here we just point
 out that it additionally produces a variable map $m$ and a list of links $l$.
 The variable map connects unification variables in \Ho to variables
-in \Fo{} and is used to ``decompile'' the assignment,
+in \Fo{} and is used to ``decompile'' the substitution, that is written
 $\D{\sigma}{m}{l}{\rho}$. Links are an accessory piece of information whose
 description is deferred to \cref{sec:nutshell}.
-We write $\foUnifPb_p = \{~ \foUnifPb_{p_l},\, \foUnifPb_{p_r} ~\}$
-and $s \in \foUnifPb \Leftrightarrow \exists p, s \in \foUnifPb_p$.
 
 Then we simulate each run in \Fo{} with a run in \Ho as follows:
 %
@@ -754,8 +754,8 @@ We also claim that \hrun handles terms outside \llambda in the following sense:
 
 \begin{proposition}[Fidelity recovery]\label{prop:fidelity-recovery} 
 In the context of \hrun, if 
-$\rho_{p-1} \foUnifPb_{p} \in \llambda$ 
-(even if $\;\foUnifPb_{p} \not\in \llambda$)
+$\rho_{p-1} \foUnifPb_{p} \subseteq \llambda$ 
+(even if $\;\foUnifPb_{p} \not\subseteq \llambda$)
 then
 $$
 \stepF{\foUnifPb}{p}{\rho_{p-1}}{\rho_p} \Leftrightarrow
@@ -782,7 +782,7 @@ unifiers, namely $\sigma_1 = \{~ F \mapsto \lambda x.x ~\}$ and
 $\sigma_2 = \{~ F \mapsto \lambda x.a ~\}$. The first problem picks $\sigma_2$,
 making the second problem re-enter \llambda.
 
-\paragraph{Backtracking} We omit it from our model of a logic-program execution
+\paragraph{Backtracking} We omit it from our model of logic-program execution
 since it plays a very minor role, orthogonal to higher-order unification.
 We point out that each \emph{run} corresponds to a (proof search) branch in the
 logic program that either fails at some point, or succeeds. A computation that
@@ -797,12 +797,12 @@ with an accessory \emph{link} that represents a suspended unification problem
 $h \Ue e$. As a result, \Ue is ``well behaved'' on $t$, in the sense that
 it does not contradict \Eo as it would otherwise do on the
 ``problematic'' sub-terms.\\
-We now define ``problematic'' and ``well behaved'' more formally
+We now define ``problematic'' and ``well behaved'' more formally.
 We use the $\Diamond$ symbol since it stands for ``possibly'' in modal logic
-and all problematic terms are characterized by some ``uncertainty''.
+and all problematic terms are characterized by some uncertainty.
 
 \begin{definition}[\maybebeta]\label{def:maybebeta}
-  \maybebeta is the set of terms of the form $X \appsep x_1 \ldots x_n$
+  \maybebeta is the set of terms of the form $F \appsep x_1 \ldots x_n$
   such that $x_1 \ldots x_n$ are distinct names (of bound variables).
 \end{definition}
 
@@ -830,7 +830,7 @@ its leading $\lambda$ abstraction cannot justify a
 unification failure against a constant $f$.
 
 \begin{definition}[\notllambda]\label{def:notllambda}
-  \notllambda is the set of terms of the form $X \appsep t_1 \ldots t_n$
+  \notllambda is the set of terms of the form $F \appsep t_1 \ldots t_n$
   such that $t_1 \ldots t_n$ are not distinct names.
 \end{definition}
 
@@ -891,14 +891,15 @@ We claim our compiler validates the following properties:
 \end{proposition}
 
 \noindent
-In other words the compiler outputs terms in \wellb, even if its
-input is not. And if two terms can unify in the source language
-then their images also unify in the target language. 
-Note that the property holds for any substitution, $\rho$ could be given by an
-oracle and/or not necessarily be a most general one: when applied to terms in \wellb,
-\Ue{} does not contradict \Eo. Note that a compiler that
+In other words the compiler outputs terms in \wellb even if its
+input is not. And if two terms can be unified in the source language
+then their images can also be unified in the target language. 
+Note that the property holds for any substitution, not necessarily a most
+general one: when applied to terms in \wellb
+the meta-language unification 
+\Ue{} agrees with the object-language equality \Eo. Note that a compiler that
 translate all terms to unification variables would satisfy this
-property, but wound certainly fail to verify \fullref{prop:fidelity}.
+property, but wound certainly fail to verify \cref{prop:fidelity}.
 
 \begin{proposition}[\wellb{}-preservation]\label{prop:w-preservation}
 $\forall \hoUnifPb, \forall \linkStore, \forall p, \forall \sigma, \forall \sigma'$
@@ -918,11 +919,11 @@ $$
 Proposition \ref{prop:w-preservation} is key to proving \cref{prop:simulation,prop:fidelity}.
 Informally, it says that the problematic terms moved on the side by the compiler
 are not reintroduced by \hstep, hence \Ue{} can continue to operate properly.
-In \cref{sec:simulation,sec:eta,sec:beta}
+In \cref{sec:llam,sec:eta,sec:beta}
 we describe how to %the compiler
 recognize terms in \maybebeta, \maybeeta and
-\notllambda and how \progress takes care of them preserving \wellb
-and ensuring \cref{prop:simulation,prop:fidelity,prop:fidelity-recovery}.
+\notllambda and how \progress takes care of links and how it preserves \wellb
+and ensures \cref{prop:simulation,prop:fidelity,prop:fidelity-recovery}.
 
 We prove \fullref{prop:fidelity} in
 \cref{sec:eta,sec:beta,sec:invariant1}
@@ -1185,16 +1186,20 @@ and explain why the don't hinder termination.
 % that applies the substitution \elpiIn{S1} to all terms in \linkStore.
 
 \subsubsection{Scope check}\label{sec:sc}
-The predicate \elpiIn{scope-check} walks through all links. 
-Each link of the form \linketaM{\Gamma}{X_{x_1\ldots x_n}}{t} is replaced by
+The predicate \elpiIn{scope-check} 
+replaces each
+link of the form \linketaM{\Gamma}{X_{x_1\ldots x_n}}{t} with
+a link
 \linketaM{{x_1\ldots x_n}}{X_{x_1\ldots x_n}}{t'} whenever $\{x_1\ldots x_n\} \subset \Gamma$.
 The term $t' = \lambda x.Y_{{x_1\ldots x_n},x}$ is obtained after
-executing $\lambda x.Y_{{x_1\ldots x_n}~x} \Ue t$. This unification
+executing $\lambda x.Y_{{x_1\ldots x_n}~x} \Ue t$ using a fresh $Y$.
+This unification
 ensures that $t'$ cannot contain variables in $\Gamma / \{x_1\ldots x_n\}$,
-and therefore grants fidelity.
-In fact, a link represents a suspended unification problem between a unification variable $X$
-and a ``problematic'' term $t$. This unification is possible iff 
-the free variables in $t$ are also in the scope of $X$.
+and if it fails then \progress hence \hstep fails.
+In turn this grants fidelity in the case where the \lhs of an \linketa
+is pruned of a name that occurs (rigidly) in $t$:
+links represent suspended unification problems
+\emph{that may succeed}.
 
 \subsubsection{Occur check}\label{sec:oc}
 Since compilation moves problematic terms out of the sight of \Ue{},
@@ -1202,9 +1207,7 @@ that procedure can only perform a partial occur check. For example, the
 unification problem $X \Ue f~Y$ cannot generate a cyclic substitution alone,
 but should be disallowed if $\linkStore$ contains a link like
 $\linketaM{}{Y}{\lambda z.X_z}$: we don't know yet if $Y$ will feature
-a lambda in head position, but we surely know it contains $X$, hence,
-% $f~Y$ and 
-that fails the occur check.
+a lambda in head position, but we surely know it contains $X$.
 The procedure \elpiIn{occur-check-links} is in charge of
 performing this check that is needed in order to
 guarantee \fullref{prop:fidelity}.
@@ -1278,23 +1281,23 @@ variables have an empty scope).
 Still, we can prove that \Uo is a good
 ``first-order'' unification algorithm if the input
 already happens to be in \wellb.
-Later, when the compiler will unsure \fullref{prop:w-enforcing}
+Later, when the compiler will ensure \fullref{prop:w-enforcing}
 and
 the proof will be refined to cover for the new cases.
 
-\begin{lemma}[Properties of \Uo in \wellb]\label{prop:uniffow}
+\begin{theorem}[Properties of \Uo in \wellb]\label{prop:uniffow}
   The implementation of \Uo above is a good unification
   for \Eo
   (as per \cref{prop:good-unif})
   in the domain \wellb.
-\end{lemma}
+\end{theorem}
 \begin{proof}[Proof sketch]
-In this setting, \Ee is as strong as \Eo on ground terms and reflexivity for
-unification variables. What we have to show is that whenever two different \Fo{}
-terms can be made equal by a substitution $\rho$ (plus the \ref{clause:beta1}
-and \ref{clause:beta2} if needed), we can produce this $\rho$ by finding
+In this setting, \Ee is as strong as \Eo on ground terms.
+What we have to show is that whenever two different \Fo{}
+terms can be made equal by a substitution $\rho$,
+we can produce this $\rho$ by finding
 a $\sigma$ via \Ue{} on the corresponding \Ho terms and by decompiling it.
-If we look at the syntax of \Fo{}, terms the only interesting case is
+If we look at the syntax of \Fo{}, the only interesting case is
 <<\elpiIn{fuva X ~\Uo~s}>>. In this case, after compilation, we have
 <<\elpiIn{uva Y [] ~\Ue~t}>>
 that succeeds with $\sigma = \{ Y \mapsto t\}$ and
@@ -2598,7 +2601,8 @@ The idea behind this is to instantiate the variable of a \linketa whenever its
 \begin{proof}[Proof sketch]
   Let $\foUnifPb_i$ be the first problem in \foUnifPb, such that it is not in \llambda and le
   $\sigma$ be the substitution obtained solving
-  $\hoUnifPb_1\ldots\hoUnifPb_{i-1}$. After the execution of $\hstep_{i-1}$,
+  $\hoUnifPb_1\ldots\hoUnifPb_{i-1}$. After the execution of \hstep
+  for the $i-1$ time,
   each variable $X$ corresponding to a \maybeeta subterm in the original \Fo 
   unification problem, is instantiated if it is known for sure
   that $X$ is no more a \maybeeta. If $\sigma\hoUnifPb_i$ is in \llambda, then 
