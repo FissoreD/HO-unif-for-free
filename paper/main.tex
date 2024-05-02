@@ -2742,10 +2742,9 @@ For brevity we only provide two pseaudo-code snippets. The first one depicts
 how \linketa are suspended or make \progress.
 
 \begin{elpicode}
-link-eta L R :- var L, maybe-eta R, !,
-  declare_constraint (link-eta L R) [L,R].
 link-eta L R :- not (var L), !, eta-progress-lhs L R.
 link-eta L R :- not (maybe-eta R), !, eta-progress-rhs L R.
+link-eta L R :- declare_constraint (link-eta L R) [L,R].
 \end{elpicode}
 
 \noindent
