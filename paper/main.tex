@@ -1581,7 +1581,7 @@ In other word the compiler eliminates all subterms that are in \maybebeta.
 \section{Handling of \maybeeta}\label{sec:eta}
 A term 
 $\lambda x. t \appsep x$ is said to be the $\eta$-expansion of $t$ if
-$x$ does not occur free in $t$, and conversely, $t$ is the $\eta$-contraction of
+$x$ does not occur free in $t$, and conversely we say that $t$ is the $\eta$-contraction of
 $\lambda x. t \appsep x$. The equational theory of \Fo{} identifies these terms,
 but the current compilation scheme does not,
 as shown by the following example:
