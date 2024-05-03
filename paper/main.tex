@@ -2121,19 +2121,18 @@ and any incompatible assignements to them would not be detected,
 in turn breaking \cref{prop:fidelity}. 
 % This incompatibility will only be detected during the
 % decompilation phase.
-To address this issue, we post-process the compiler's output
+To address this issue, we post-process \mapStore
 to ensure the following property:
 
 \begin{proposition}[\mapStore is a bijection]
   After compilation, for each \Fo{}-variable $X$ in \foUnifPb{} and for each
   \Ho{}-variable $A$ in \hoUnifPb{} there is exactly one entry $X \mapsto A^n$
-  (for an arity $n$).
+  in \mapStore.
 \end{proposition}
 
 \noindent
-Note that the execution in \Ho{} may require allocating new variables as
-explained in~\cref{sec:decompilation}. The property above does not
-concern these variables since they are fresh and have no corresponding
+Note that running \Ue{} may require allocating new variables in \Ho{} as
+explained in~\cref{sec:decompilation}. The property above ignores these variables since they are fresh and have no corresponding
 variable in \Fo.
 
 The core procedure of this post-processing step is \emph{align-arity} that
@@ -2184,33 +2183,33 @@ $t'$ (under the context $\Gamma$).
 \begin{theorem}[Fidelity with \mapdeduplication]
   Given a list of unification problems \foUnifPb, such that 
   $\wellb_{\beta \eta}(\foUnifPb)$,
-  if $\ \foUnifPb$ contains the same \Fo{} variable used at different arities,
+  if $\ \foUnifPb$ contains the same \Fo{}-variable used at different arities,
   then \mapdeduplication guarantees \fullref{prop:fidelity}
 \end{theorem}
 
-\def\chain{\ensuremath{\mathcal{C}}\xspace}
+\def\chain{\ensuremath{\vec{c}}\xspace}
 
 \begin{proof}[Proof sketch]
-  Let $X$ a \Fo variable appearing in two different subterms $s_1$ and $s_2$. in
-  $s_1$, $X$ is applied to the list of terms $x_1\dots x_m$ and, in $s_2$, it is
-  applied to $y_1\dots y_n$. Here, $m < n$. By \mapdeduplication, the
-  compilation genereates two distinct \Ho variables for $X$, say $A$ and $C$,
-  related by a chain \chain of \linketa{}s, with length $n - m$. We prove that
+  Let $X$ be a \Fo{}-variable appearing in two different subterms $s_1$ and $s_2$.
+  In $s_1$ variable $X$ is applied to the list of terms $x_1\dots x_m$ while, in $s_2$,
+  it is applied to $y_1\dots y_n$. Without loss of generality we take $m < n$.
+  After \mapdeduplication we have two distinct \Ho{}-variables for $X$, say $A$ and $C$,
+  related by a chain \chain of \linketa{}s of length $n - m$. We prove that
   if $A$ and $C$ are assigned respectively to the \wellb terms $\lambda x_1\dots
   x_p.t_1$ and $\lambda x_1\dots x_q.t_2$, then a unification failure occurs iff
-  these terms fails to unify. By \progressetaleft, the assignment of $A$
+  these terms fails to unify.\todo{a unification fails if they fail to unify is a tautology, to be clarified} By \progressetaleft, the assignment of $A$
   activates $p$ links of \chain. In particular, when $p \geq n$, then the entire
   chain collapses and unification is performed between $\lambda x_n\dots
   x_p.t_1$ and $\lambda x_1\dots x_q.t_2$. By \cref{th:fidelity-beta} and since
-  we work with \wellb terms, this unification succeeds iff it does in \Fo. If,
-  otherwise, $p < n$, then two cases should be considered: $t_1$ is a rigid
-  term, then, $t_2$ must be an eta expansion of $t_1$, implying $q = 0$. If it
-  is not the case, then the successive progressions made by \progressetaleft
-  would eventually cause a failure. If, on the other hand, $t_1$ is a
-  unification variable, \elpiIn{scope-check} guarantees that $t_2$ does not use
+  we work with \wellb terms, this unification succeeds iff it does in \Fo.
+  Otherwise if $p < n$ then we have to consider two cases. 1) If $t_1$ is a rigid
+  term then $t_2$ must be the $\eta$-expansion of $t_1$, implying $q = 0$. If it
+  is not the case, then \progressetaleft
+  would eventually cause a failure. 2) If $t_1$ is a
+  unification variable then \elpiIn{scope-check} guarantees that $t_2$ does not use
   $x_1\dots x_p$ as free variables, causing otherwise a unification failure.
   After this check, $m - n - p$ links of \chain remain suspended, as we expect:
-  decompilation is charged wake all links in \linkStore and eventually relate
+  decompilation is charged to wake all links in \linkStore and eventually relate
   $t_1$ with $t_2$.
   %
   % Attenzione a questo caso:
@@ -2280,8 +2279,8 @@ in favour of the auxiliary \linketa \linketaM{}{C}{\lambda x.B_{x}}.
 The resolution of $\hoUnifPb_1$ assignes $a$ to $A$. This wakes up
 $\linkStore_2$ by \progressetaleft, assigning <<$a \appsep x$>> to $B_x$.
 The resolution of $\hoUnifPb_2$ instantiates $C$ to $\lambda x.a$, which, in
-turn triggers $\linkStore_1$ by \progressetaleft. This link perfroms
-$\lambda x.a \Ue \lambda x.(a \appsep x)$, which, as expected, fails.
+turn triggers $\linkStore_1$ by \progressetaleft. In turn, this performs
+$\lambda x.a \Ue \lambda x.(a \appsep x)$ that fails as expected.
 
 \begin{comment}
 % make test ONLY=7001 TEX=tex
@@ -2374,13 +2373,15 @@ this choice makes $\foUnifPb_2 \subseteq \llambda$:
 \noindent
 In order to support this scenario we have to improve a little our compiler
 and \progress routines.
-In particular $\hoUnifPb_1$ generates $\sigma = \{ A
-\mapsto \lambda x. a\}$ making $\sigma\hoUnifPb_2$ equal to
+In particular $\hoUnifPb_1$ generates $\sigma = \{~ A
+\mapsto \lambda x. a ~\}$ making $\sigma\hoUnifPb_2$ equal to
 $(\lambda x. a) \appsep a \Ue a$ that \Ue{} cannot solve since it
 lacks rules \ref{clause:beta1} and \ref{clause:beta2}.
 
-To address this problem the compiler must recognize and replace
-\notllambda terms with fresh variables and generate a new kind of links
+To address this problem the compiler must recognize
+\notllambda terms
+and replace them
+with fresh variables and generate a new kind of links
 that we call \linkbeta.
 
 In addition to \fullref{inv:linklhs}, the term on the \rhs of a \linkbeta
@@ -2547,13 +2548,13 @@ Let $l$ be a \linkbeta of the form \linkbetaM{\Gamma}{T}{\rhsBeta}
 % \end{definition}
 
 \begin{definition}[\progBetaFail]
-  \progress fails whenever:
-  \begin{enumerate}
+  \progress fails when either
+  \begin{itemize}
   \item
   there exists another link $l' \in \linkStore$ with the same \lhs as $l$; or
   \item the \lhs of $l$
   become rigid.
-  \end{enumerate}
+  \end{itemize}
   \label{def:progBetaFail}
 \end{definition}
 \noindent
@@ -2571,8 +2572,8 @@ we introduce the following
 \begin{definition}[\progressetaright]\label{def:progressetaright} A link
 \linketaM{\Gamma}{X}{T} is removed from \linkStore when either 
 \begin{itemize}
-  \item $\testmaybeeta~T$ does not hold (anymore). In this case $X$ is unified
-        with $T$
+  \item $\testmaybeeta~T$ does not hold (anymore), in this case $X$ is unified
+        with $T$; or
   \item $T$ $\eta$-contracts to a term $T'$ not starting with the \elpiIn{lam}
         constructor. In this case $X$ is unified with $T'$
 \end{itemize}
@@ -2636,13 +2637,13 @@ whenever its \rhs is for sure a \wellb term.
 \end{theorem}
 
 \begin{proof}[Proof sketch]
-  Let $\foUnifPb_i$ be the first problem in \foUnifPb, such that it is not in \llambda and le
+  Let $\foUnifPb_i$ be the first problem in \foUnifPb{} such that it is not in \llambda and let
   $\sigma$ be the substitution obtained solving
   $\hoUnifPb_1\ldots\hoUnifPb_{i-1}$. After the execution of \hstep
   for the $i-1$ time,
   each variable $X$ corresponding to a \maybeeta subterm in the original \Fo 
-  unification problem, is instantiated if it is known for sure
-  that $X$ is no more a \maybeeta. If $\sigma\hoUnifPb_i$ is in \llambda, then 
+  unification problem, is instantiated iff it is known for sure
+  that $X$ is no more in \maybeeta. If $\sigma\hoUnifPb_i$ is in \llambda, then 
   % each variable that the
   % compiler used to replace a ``problematic'' term is assigned and hence
   by \cref{def:progBetaLL,def:progBetaRH} the associated \linkbeta
