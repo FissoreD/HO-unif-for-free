@@ -2179,7 +2179,6 @@ $t'$ where $t'$ does not start with the \elpiIn{lam} constructor. In the
 first case, $X$ is unified with $t$, and in the second one, $X$ is unified with
 $t'$ (under the context $\Gamma$).
 \end{definition}
-\todo{comment this rule}
 \end{comment}
 
 \begin{theorem}[Fidelity with \mapdeduplication]
@@ -2587,21 +2586,22 @@ whenever its \rhs is for sure a \wellb term.
 \end{lemma}
 
 \begin{proof}[Proof sketch]
-  Let $l$ a \linkbeta in the store \linkStore. If $l$ is activated by
-  \progBetaRH{}, then it disappears from \linkStore and \elpiIn{progress}
-  terminates. Otherwise, the \rhs of $l$ is made by a variable applied to $m$
-  arguments. At each activation of \progBetaLL, $l$ is replaced by a new
-  \linkbeta $l^1$ having $m-1$ arguments. At the $m^{th}$ iteration, the
-  \linkbeta $l^m$ has no more arguments and is removed from \linkStore.
-  Note that at the $m^{th}$ iteration, $m$ new \linketa have been added to
-  \linkStore, however, by \cref{lemma:prog-eta-terminates}, the algorithm
-  terminates. \progBetaFail guarantees termination since 
-  %it makes 
-  %\elpiIn{progress}
-  it immediately fails and \progressetaright terminates since it performs 
+  Let $l = \linkbetaM{\Gamma}{T}{\rhsBeta}$ a \linkbeta in the store \linkStore.
+  The progression made by \progBetaRH{} terminates: $l$ is removed from
+  \linkStore after having performed terminating instructions. If $l$ is not
+  activated by \progBetaRH, then $X$ is a variables. The activation
+  of \progBetaLL replaces $l$ with the new \linkbeta 
+  $\linkbetaM{\Gamma}{T}{Y_{s_1\dots s_n~s}\appsep t_2\dots t_m}$.
+  This progression can be triggered at most $m$ times, since at each time
+  the number of terms applied to $X$ decreases. In the end $l_m$
+  will be removed from \linkStore after the unification between \lhs with \rhs.
+  We also note that each \progBetaLL generates a \linketa, yet, according to
+  \cref{lemma:prog-eta-terminates}, this does not affect termination. 
+  \progBetaFail terminates since it stop progression with failure.
+  Finally, \progressetaright performs 
   terminating operations and, if its permises succeed, the considered
-  \linketa is removed from \linkStore.\todo{unclear}
-%
+  \linketa is removed from \linkStore, ensuring termination.
+  %
   % \Cref{def:progBetaRH} makes \elpiIn{progress} terminates, since it makes a
   % \linkbeta disappear from \linkStore. On the other hand, \cref{def:progBetaLL},
   % creates each time a new \linketa and replace the old \linkbeta with a new one.
