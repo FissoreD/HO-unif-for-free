@@ -2570,15 +2570,16 @@ we introduce the following
 
 \newcommand{\progressetaright}{\emph{$\eta$-progress-\rhs}\xspace}
 \begin{definition}[\progressetaright]\label{def:progressetaright} A link
-\linketaM{\Gamma}{X}{T} is removed from \linkStore when either 1)
-$\testmaybeeta~T$ does not hold (anymore) or 2) by $\eta$-contracting $T$ to
-$T'$ where $T'$ does not start with the \elpiIn{lam} constructor. In the
-first case, $X$ is unified with $T$, and in the second one, $X$ is unified with
-$T'$ (under the context $\Gamma$).
+\linketaM{\Gamma}{X}{T} is removed from \linkStore when either 
+\begin{itemize}
+  \item $\testmaybeeta~T$ does not hold (anymore). In this case $X$ is unified
+        with $T$
+  \item $T$ $\eta$-contracts to a term $T'$ not starting with the \elpiIn{lam}
+        constructor. In this case $X$ is unified with $T'$
+\end{itemize}
 \end{definition}
-\todo{reformulate, maybe with itemize, too messy}
 
-The idea behind this rule is to instantiate the variable of a \linketa
+The idea behind this rule is to instantiate the \lhs variable of a \linketa
 whenever its \rhs is for sure a \wellb term.
 
 \begin{lemma}
