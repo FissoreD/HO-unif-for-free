@@ -52,7 +52,7 @@
 
 %\newcommand{\Fo}{\texorpdfstring{\ensuremath{\mathcal{F}_{\!o}\xspace}}{Fo}} % space non va
 %\newcommand{\Ho}{\texorpdfstring{\ensuremath{\mathcal{H}_o}\xspace}{Ho}}
-\newcommand{\Fo}{\texorpdfstring{\ensuremath{\mathcal{O}\xspace}}{O}} % space non va
+\newcommand{\Fo}{\texorpdfstring{\ensuremath{\mathcal{O}}\xspace}{O}}
 \newcommand{\Ho}{\texorpdfstring{\ensuremath{\mathcal{M}}\xspace}{M}}
 
 \newcommand*{\eqtau}{\ensuremath{\mathrel{\overset{\mathrm{\tau}}{=}}}}
@@ -2185,32 +2185,55 @@ $t'$ (under the context $\Gamma$).
 \begin{theorem}[Fidelity with \mapdeduplication]
   Given a list of unification problems \foUnifPb, such that 
   $\wellb_{\beta \eta}(\foUnifPb)$,
-  if $\;\foUnifPb$ contains the same \Fo{} variable used at different arities,
+  if $\ \foUnifPb$ contains the same \Fo{} variable used at different arities,
   then \mapdeduplication guarantees \fullref{prop:fidelity}
 \end{theorem}
 
+\def\chain{\ensuremath{\mathcal{C}}\xspace}
+
 \begin{proof}[Proof sketch]
-  By the definition of \mapdeduplication, any two occurrencies of the same \Fo{} 
-  variable used at different arities are compiled to two
-  variables $A^m$ and $C^n$ related by a chain of \linketa.
+  Let $X$ a \Fo variable appearing in two different subterms $s_1$ and $s_2$. in
+  $s_1$, $X$ is applied to the list of terms $x_1\dots x_m$ and, in $s_2$, it is
+  applied to $y_1\dots y_n$. Here, $m < n$. By \mapdeduplication, the
+  compilation genereates two distinct \Ho variables for $X$, say $A$ and $C$,
+  related by a chain \chain of \linketa{}s, with length $n - m$. We prove that
+  if $A$ and $C$ are assigned respectively to the \wellb terms $\lambda x_1\dots
+  x_p.t_1$ and $\lambda x_1\dots x_q.t_2$, then a unification failure occurs iff
+  these terms fails to unify. By \progressetaleft, the assignment of $A$
+  activates $p$ links of \chain. In particular, when $p \geq n$, then the entire
+  chain collapses and unification is performed between $\lambda x_n\dots
+  x_p.t_1$ and $\lambda x_1\dots x_q.t_2$. By \cref{th:fidelity-beta} and since
+  we work with \wellb terms, this unification succeeds iff it does in \Fo. If,
+  otherwise, $p < n$, then two cases should be considered: $t_1$ is a rigid
+  term, then, $t_2$ must be an eta expansion of $t_1$, implying $q = 0$. If it
+  is not the case, then the successive progressions made by \progressetaleft
+  would eventually cause a failure. If, on the other hand, $t_1$ is a
+  unification variable, \elpiIn{scope-check} guarantees that $t_2$ does not use
+  $x_1\dots x_p$ as free variables, causing otherwise a unification failure.
+  After this check, $m - n - p$ links of \chain remain suspended, as we expect:
+  decompilation is charged wake all links in \linkStore and eventually relate
+  $t_1$ with $t_2$.
+  %
   % Attenzione a questo caso:
   %    A =𝜂 λx.(B x)   e    x |- B x =𝜂 λx.(C x)           (from a map dedup, where A e C, sono stessa variabile con diff arities)
   %  se (C x) è instanziato a (f (D x)) allora non c'è nessun progress:
   %  il rhs del secondo link diventa (λx.(f (D x))) che è un maybe-eta
-%
-  Without loss of generality, we pose $m < n$. If $A^m$ is assigned to a term
-  $\lambda \vec{x}.t$ with $q$ being the length of $\vec{x}$. If $t$ is a rigid
-  term, then the chain of links between $A^m$ and $C^n$ is completely triggered
-  so that $C^n$ is assigned to $\lambda \vec{x}.t$ $\eta$-expanded $n-m$ times.
-  Note that in this case fidelity is guaranteed, since the term unified with $C^n$
-  sohuld also unify with $A^m$. Otherwise, if $t$ is a variable, the chain of
-  links is shrinked by $q$. Note that if this length is bigger then $n-m$
-  the full chain collapse. % and $A^m$ and $C^n$ are agian tiny coupled. 
-  Otherwise,
-  if $q < n-m$, it means that $C^n$ can always be assigned to any term starting
-  with at least $q$ lambdas. In this second case fidelity is also guaranteed,
-  due to the constraint of the number of lambda by which $C^n$ should start.
-%
+  % 
+  % Nella nuova versione sottintendo questo caso: p = 0 e t_1 è flessibile
+  %
+  % Without loss of generality, we pose $m < n$. If $A^m$ is assigned to a term
+  % $\lambda \vec{x}.t$ with $q$ being the length of $\vec{x}$. If $t$ is a rigid
+  % term, then the chain of links between $A^m$ and $C^n$ is completely triggered
+  % so that $C^n$ is assigned to $\lambda \vec{x}.t$ $\eta$-expanded $n-m$ times.
+  % Note that in this case fidelity is guaranteed, since the term unified with $C^n$
+  % sohuld also unify with $A^m$. Otherwise, if $t$ is a variable, the chain of
+  % links is shrinked by $q$. Note that if this length is bigger then $n-m$
+  % the full chain collapse. % and $A^m$ and $C^n$ are agian tiny coupled. 
+  % Otherwise,
+  % if $q < n-m$, it means that $C^n$ can always be assigned to any term starting
+  % with at least $q$ lambdas. In this second case fidelity is also guaranteed,
+  % due to the constraint of the number of lambda by which $C^n$ should start.
+  %
   % not starting with $\lambda$, then the entrire chain of link is
   % immediately waken up, assigning $C^n$ to $x_1\dots x_{n-m} \vdash t \appsep
   % x_1\dots x_{n-m}$, which is the $t$ $\eta$-expanded $n-m$ times. Hence, $A^m$
@@ -2218,9 +2241,9 @@ $t'$ (under the context $\Gamma$).
   % $\lambda \vec{x}.t$, then if $t$ is rigid, the chain of links between $A^m$
   % and $C^n$ completely triggered, is shrinked by the length of $\vec{x}$. Note
   % that if $t$ is rigid, by the previous sentence, the remi
-%
+  %
   % If $A^m$ is instantiated, 
-%
+  %
   % Whenever the two variables are assigned to the non-unifiable terms,
   % the chain of \linketa is entirely waken up refining little by little
   % the intermediate variables between $A^m$ and $C^n$ leading eventually to a failure. 
@@ -2230,13 +2253,13 @@ $t'$ (under the context $\Gamma$).
   % the corresponding \linketa just refines the chain, by reducing eventually
   % its length.
 \end{proof}
-\todo{this proof is still unreadable}
+
+% \todo{this proof is still unreadable}
 % \todo{Not sure I fullfy fixed the proof, but the old oen was not ok}
 
-\noindent
-Note that shortening the chain of links allows unification to fail if
-$X_1$ and $X_2$ are unified with different terms.
-\todo{what are these X1 and X2?}
+% Note that shortening the chain of links allows unification to fail if
+% $X_1$ and $X_2$ are unified with different terms.
+% \todo{what are these X1 and X2?}
 
 \paragraph{Example of \mapdeduplication}
 If we take back the example give at the beginning of this section,
