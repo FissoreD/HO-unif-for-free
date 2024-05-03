@@ -2196,8 +2196,8 @@ $t'$ (under the context $\Gamma$).
   After \mapdeduplication we have two distinct \Ho{}-variables for $X$, say $A$ and $C$,
   related by a chain \chain of \linketa{}s of length $n - m$. We prove that
   if $A$ and $C$ are assigned respectively to the \wellb terms $\lambda x_1\dots
-  x_p.t_1$ and $\lambda x_1\dots x_q.t_2$, then a unification failure occurs iff
-  these terms fails to unify.\todo{a unification fails if they fail to unify is a tautology, to be clarified} By \progressetaleft, the assignment of $A$
+  x_p.t_1$ and $\lambda x_1\dots x_q.t_2$, then a failure occurs iff
+  these terms do not unify. By \progressetaleft, the assignment of $A$
   activates $p$ links of \chain. In particular, when $p \geq n$, then the entire
   chain collapses and unification is performed between $\lambda x_n\dots
   x_p.t_1$ and $\lambda x_1\dots x_q.t_2$. By \cref{th:fidelity-beta} and since
