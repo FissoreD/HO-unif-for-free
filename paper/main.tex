@@ -255,7 +255,7 @@ In order to implement such a search in Elpi, we shall describe the encoding
 of Coq terms and then the encoding of instances as rules.
 Elpi comes equipped with
 an Higher-Order Abstract Syntax (HOAS~\cite{10.1145/53990.54010}) datatype of
-terms, called \elpiIn{tm}, that includes (among others) the following
+Coq terms, called \elpiIn{tm}, that includes (among others) the following
 constructors:
 
 \begin{elpicode}
@@ -734,7 +734,7 @@ That is, the two executions give equivalent results if all terms in
 \foUnifPb are in the pattern fragment. Moreover:
 
 \begin{proposition}[Simulation fidelity]\label{prop:fidelity}
-In the context of$\;$ \hrun, if $~\foUnifPb \subseteq \llambda$ we have that
+In the context of  \frun and \hrun, if $~\foUnifPb \subseteq \llambda$ we have that
 $\forall p \in 1 \ldots n,$
 $$
 \stepF{\foUnifPb}{p}{\rho_{p-1}}{\rho_p}
@@ -753,7 +753,7 @@ to debug a logic program in \Fo{} by looking at its execution trace in
 We also claim that \hrun handles terms outside \llambda in the following sense:
 
 \begin{proposition}[Fidelity recovery]\label{prop:fidelity-recovery} 
-In the context of \hrun, if 
+In the context of \frun and \hrun, if 
 $\rho_{p-1} \foUnifPb_{p} \subseteq \llambda$ 
 (even if $\;\foUnifPb_{p} \not\subseteq \llambda$)
 then
@@ -814,7 +814,7 @@ unification failure, i.e. by properly instantiating $F$, the term
 head constructor may become a $\lambda$, or a constant, or a name, or remain an application.
 
 \begin{definition}[\maybeeta]\label{def:maybeeta}
-  \maybeeta is the set of terms $\lambda x.s$ such that $\exists \rho, \rho \lambda x.s$
+  \maybeeta is the set of terms $\lambda x.s$ such that $\exists \rho, \rho (\lambda x.s)$
   is an eta expansion. % without the lambda, 5.11 is not true, that
   % is we assume variables are in W
 \end{definition}
@@ -824,7 +824,7 @@ An example of a term $s$ in \maybeeta{} is
 $\lambda x.\lambda y.F \appsep y \appsep x$
 since the substitution
 $\rho = \{ F \mapsto \lambda x.\lambda y.f \appsep y \appsep x\}$
-makes $\rho s = \lambda x.\lambda y.f \appsep x \appsep y$,
+makes $\rho s \Eo{} \lambda x.\lambda y.f \appsep x \appsep y$,
 which is the eta-long form of $f$. This term is problematic since
 its leading $\lambda$ abstraction cannot justify a
 unification failure against a constant $f$.
@@ -970,7 +970,7 @@ its \elpiIn{abs} binding constructor.
 \input{code/ho_subst}
 
 \noindent
-A solution to a \Fo{} variable is a plain term, that is, \elpiIn{fsubst}
+A solution to a \Fo{} variable is, instead, a plain term, that is, \elpiIn{fsubst}
 is an abbreviation for \elpiIn{mem to}.
 %We call \elpiIn{fsubst} the memory of \Fo{}, while we call \elpiIn{subst}
 %the one of \Ho.
@@ -1011,7 +1011,7 @@ approximation, and then ensures the mapping are bijective by introducing
 % to a \elpiIn{uva} (as per \cref{sec:simulation,sec:beta}),
 % preventing nested applications to materialize.
 % \input{code/fderef}
-It is worth examining the code of \elpiIn{deref}, which
+It is worth examining the code of \elpiIn{deref}, that
 applies the substitution to a \Ho{} term. Notice how assignments are moved
 to the current scope, i.e. the \elpiIn{abs}-bound variables are renamed
 with the names in the scope of the unification variable occurrence.
@@ -1112,25 +1112,24 @@ abs x\ val (link-llam (uva A [x]) (app[uva F [x],con "a"]))
 \subsection{Compilation}
 \label{sec:compilation}
 
-The simple compiler described in this section serves as a basis for the
+The simple compiler described in this section serves as a base for the
 extensions in \cref{sec:llam,sec:eta,sec:beta}.
 Its main task is to beta normalize the term and map one syntax tree to
 the other.
 In order to bring back the substitution from \Ho{} to \Fo{} the compiler
-builds a ``memory map'' connecting the \Fo{} variables to the \Ho ones
-using %the routine
-\ref{clause:malloc}.
+builds a ``memory map'' connecting the \Fo{} variables to the \Ho ones.
+% using the routine \ref{clause:malloc}.
 
 The signature of the \elpiIn{comp} predicate below allows for the generation of
 links (suspended unification problems), which plays no role in this section
 but plays a major role in \cref{sec:llam,sec:eta,sec:beta}.
-With respect to \cref{sec:problem-statement}, the signature also allows
-for updates to the substitution.
 
 \input{code/comp_base}
 \input{code/compile.tex}
 
 \noindent
+With respect to \cref{sec:problem-statement}, the signature also allows
+for updates to the substitution.
 The code above uses that possibility
 in order to allocate space for the variables, i.e. it sets their memory
 address to \elpiIn{none} (a detail not worth mentioning in the
@@ -1160,7 +1159,7 @@ of binders.
 \subsection{Execution}
 \label{sec:execution}
 
-A step in \Ho consists of unifying two terms and reconsidering all
+A step in \Ho consists in unifying two terms and reconsidering all
 links for progress. If either of these tasks fails, we consider the entire step to
 fail. It is at this granularity that we can relate steps in the
 two languages.
@@ -1181,7 +1180,7 @@ can update the substitution, which may then enable another link to progress.
 In the base compilation scheme, \elpiIn{progress1} is the identity function
 on both the links and the substitution, so the fixpoint trivially terminates.
 Sections \ref{sec:eta} and \ref{sec:beta} add rules to \elpiIn{progress1}
-and explain why the don't hinder termination.
+and explain why the do not hinder termination.
 % For brevity we omit the code
 % that applies the substitution \elpiIn{S1} to all terms in \linkStore.
 
@@ -1191,7 +1190,7 @@ replaces each
 link of the form \linketaM{\Gamma}{X_{x_1\ldots x_n}}{t} with
 a link
 \linketaM{{x_1\ldots x_n}}{X_{x_1\ldots x_n}}{t'} whenever $\{x_1\ldots x_n\} \subset \Gamma$.
-The term $t' = \lambda x.Y_{{x_1\ldots x_n},x}$ is obtained after
+The term $t' = \lambda x.Y_{{x_1\ldots x_n}~x}$ is obtained after
 executing $\lambda x.Y_{{x_1\ldots x_n}~x} \Ue t$ using a fresh $Y$.
 This unification
 ensures that $t'$ cannot contain variables in $\Gamma / \{x_1\ldots x_n\}$,
@@ -1221,7 +1220,7 @@ First and foremost, problematic terms stored in
 \linkStore have to be moved back into the game:
 a suspended link must be turned into a valid assignment.
 This operation is possible thanks to \fullref{inv:linklhs},
-which ensures that no link causes an occur-check~(\ref{sec:oc})
+and that no link causes an occur-check~(\ref{sec:oc})
 and the fact that \linkStore is duplicate-free (see \cref{sec:invariant1}).
 
 The second step allocates
@@ -1281,8 +1280,7 @@ variables have an empty scope).
 Still, we can prove that \Uo is a good
 ``first-order'' unification algorithm if the input
 already happens to be in \wellb.
-Later, when the compiler will ensure \fullref{prop:w-enforcing}
-and
+Later, when the compiler will ensure \fullref{prop:w-enforcing},
 the proof will be refined to cover for the new cases.
 
 \begin{theorem}[Properties of \Uo in \wellb]\label{prop:uniffow}
@@ -1322,7 +1320,7 @@ while \hoUnifPb their corresponding compiled version with memory mapping
 \printAlll
   {{{p_1,p_2},{p_3,p_4}}}
   {{{t_1,t_2},{t_3,t_4}}}
-  {{{X_1,A_1,{{x}}},{X_2,A_2,{{y}}}}}
+  {{{X_1,A_1,{{n}}},{X_2,A_2,{{m}}}}}
   {{{\eta,\Gamma,a,b}}}
 
   \noindent
@@ -1441,7 +1439,7 @@ No change to \elpiIn{progress} since no link is added.
   the \Ho problem is $Y_{\vec{w}} \Ue t$ that succeeds with
    $\sigma = \{ Y_{\vec{y}} \mapsto t[\vec{w}/\vec{y}]\}$, which in turn
    is decompiled to $\rho = \{ Y \mapsto \lambda \vec{y}.s[\vec{w}/\vec{y}]\}$.
-   Thanks to \ref{clause:beta1}
+   Thanks to \ref{clause:beta1} we have
    $(\lambda \vec{y}.s[\vec{w}/\vec{y}])~\vec{w} \Eo s$.
   \end{proof}
   
@@ -1455,13 +1453,13 @@ No change to \elpiIn{progress} since no link is added.
 %   \todo{finish/maybe W enforcement is not needed here}
 % \end{proof}
 \noindent
-In other word the compiler eliminates all subterms that are in \maybebeta.
+In other words the compiler eliminates all subterms that are in \maybebeta.
 
 \begin{theorem}[Fidelity in $\wellb_\beta$] \Fullref{prop:simulation} and
 \fullref{prop:fidelity} hold if $\;\wellb_\beta(\foUnifPb)$.
 \label{th:fidelity-beta}
 \end{theorem}
-\begin{proof}[Proof sketch] Thanks to \cref{lem:w-enforcement-maybebeta}
+\begin{proof}[Proof sketch] Thanks to \cref{lem:w-enforcement-maybebeta},
   \Ue is as powerful as \Uo in $\wellb_\beta$, as well as in \wellb by
   \cref{thm:fidfow}.
 \end{proof}
@@ -1601,8 +1599,8 @@ $\rho = \{~ X \mapsto f ~\}$, the corresponding problem in
   {{}}
 
 \noindent
-The reason is that \elpiIn{lam x\ uva A [x]} and
-\elpiIn{con"f"} start with different, rigid, term constructors.
+The reason is that <<\elpiIn{lam x\ uva A [x]}>> and
+<<\elpiIn{con"f"}>> start with different term constructors.
 
 In order to guarantee \cref{prop:simulation}, we detect
 lambda abstractions that can disappear by $\eta$-contraction
@@ -1625,7 +1623,7 @@ while the right-hand side is a term in \maybeeta that has the following property
 \begin{invariant}[\linketa \rhs]
   The \rhs of any \linketa %in \linkStore 
   has the shape $\lambda x.t$
-  and $t$ is \wellb. 
+  and $t$ is in \wellb. 
   %where $t_x$ is a \maybeeta term and $x$ is free in $t$.
   \label{inv:link-eta-right}
 \end{invariant}
@@ -1696,9 +1694,11 @@ A $\beta$-normal term $s = \lambda x_1 \ldots x_n.t$
 \end{enumerate}
 \end{lemma}
 \begin{proof}[Proof sketch]
-Since our terms are in $\beta$-normal form there is only
-one rule that can play a role (namely \ref{clause:eta1}),
-hence if the term $s$ is not exactly $x$ (case 1)
+Since our terms are in $\beta$-normal form the only
+rule that can play a role is \ref{clause:eta1}, and note that
+that rule uses \elpiIn{beta} to add an argument to an
+application or to the scope of a variable.
+If the term $s$ is not exactly $x$ (case 1)
 it can only be an $\eta$-expansion of $x$, or a unification
 variable that can be assigned to $x$, or a combination of both.
 If $s$ begins with a lambda, then the lambda can only disappear by $\eta$
@@ -1722,7 +1722,7 @@ that can be assigned to the application $x \appsep x_1 \ldots x_n$ (case 3).
 In other words, $x$ \occursrigid in $t$ if it occurs in $t$
 outside of the scope of a unification variable $X$; otherwise, an instantiation
 of $X$ can make $x$ disappears from $t$.
-Moreover, note that $\eta$-contracting $t$ cannot make $x$ disappear, since
+Note that $\eta$-contracting $t$ cannot make $x$ disappear, since
 $x$ is not a locally bound variable inside $t$.
 
 We can now describe the implementation of \maybeeta detection:
@@ -1733,12 +1733,12 @@ We can now describe the implementation of \maybeeta detection:
   $s = \lambda x_1 \ldots x_n.t$, \testmaybeeta{} $s$ holds if any
   of the following holds:
   \begin{enumerate}
-    \item $t$ is a constant or a name applied to the arguments
+    \item $t$ is a constant $c$ or a name $y$ applied to the arguments
       $l_1 \ldots l_m$ such that 
       $m \geq n$ and for every $i$ such that $m - n < i \leq m$
       the term  $l_i$
       \reduceto{} $x_i$, and
-      no $x_i$ \occursrigid{} in $l_1 \ldots l_{m-n}$;
+      no $x_i$ \occursrigid{} in $l_1 \ldots l_{m-n} ~ y$;
     \item $t$ is a
       unification variable with scope $W$ and
       for each $x_i$ there exists a $w_j \in W$ such that $w_j$
@@ -1843,12 +1843,12 @@ flexible term not appearing in any other \linketa
 \subsection{Progress}\label{sec:etaprogress}
 
 \linketa{}s are meant to delay the unification of ``problematic'' terms until
-we know for sure if their head lambdas can be $\eta$-contracted or not.
+we know for sure if their head lambdas can be $\eta$-contracted.
 
 \newcommand{\progressetaleft}{\emph{$\eta$-progress-\lhs}\xspace}
 \begin{definition}[\progressetaleft]\label{def:progressetaleft}
 A link \linketaM{\Gamma}{X}{t} is removed from \linkStore when
-$X$ becomes rigid. Let $y\in\Gamma$, there are two cases:
+$X$ becomes rigid. Let $y\in\Gamma$. There are two cases:
 \begin{enumerate}
   \item if $X = a$ or $X = y$ or $X = f \appsep a_1\ldots a_n$
     we unify the $\eta$-expansion of $X$ with $t$, that is we run
@@ -1884,7 +1884,7 @@ $X$ becomes rigid. Let $y\in\Gamma$, there are two cases:
 % forse si può compattare in una prova più piccola?}
 \begin{lemma}
   Given a \linketa \linketaM{\Gamma}{X}{\lambda x.t}, the unification done by \progressetaleft is between
-  terms in $\wellb$  
+  terms in \wellb.
   \label{lemma:unif-eta-1}
 \end{lemma}
 
@@ -1892,7 +1892,7 @@ $X$ becomes rigid. Let $y\in\Gamma$, there are two cases:
   Let $\sigma$ be a substitution such that $\wellb(\sigma X)$ (since \Ue preserves \wellb).
   By \cref{inv:link-eta-right}, we have $\wellb(t)$.
   If $\sigma X = \lambda x.r$, then $r$ is unified with $t$ and both terms are in \wellb.
-  Otherwise, $\lambda x. X x$ is unified with $\lambda x. t$, and $X x$ and $t$
+  Otherwise, $\lambda x. X\appsep x$ is unified with $\lambda x. t$, and $X\appsep x$ and $t$
   are both in \wellb.
 \end{proof}
 
@@ -1921,7 +1921,7 @@ $X$ becomes rigid. Let $y\in\Gamma$, there are two cases:
   Given two \linketa{}s \linketaM{\Gamma_1}{X}{\lambda x.t} and
   \linketaM{\Gamma_2}{Y}{\lambda x.t'} 
   the unification is performed between $t$ and $t'$.
-  By \cref{lem:w-enforcement-maybeeta} both terms are
+  By \cref{lem:w-enforcement-maybeeta} both terms are in
   \wellb.
 \end{proof}
 
@@ -1932,7 +1932,7 @@ $X$ becomes rigid. Let $y\in\Gamma$, there are two cases:
 
 \begin{proof}[Proof sketch]
   By \cref{lemma:unif-eta-1,lemma:unif-eta-3}, every
-  unification performed by the activation of a \linketa is done between
+  unification performed by the activation of a \linketa is between
   terms in \wellb.
 \end{proof}
 
@@ -1969,7 +1969,7 @@ $X$ becomes rigid. Let $y\in\Gamma$, there are two cases:
   memory map is bijective then
   the introduction 
   of \linketa guarantees \fullref{prop:fidelity}.
-  \footnote{The bijective property of \mapStore is proved in \cref{sec:invariant1}}
+  %\footnote{The bijective property of \mapStore is proved in \cref{sec:invariant1}}
   \label{lemma:fidelity-maybeeta}
 \end{theorem}
 
@@ -1989,25 +1989,27 @@ $X$ becomes rigid. Let $y\in\Gamma$, there are two cases:
   only have to consider the link progression $p$.
   Two cases should be analyzed:
   \begin{itemize}
-    \item $s_2 \notin \maybeeta$,
-          in this case $s_2$ is compiled to $t_2$ and the unification step $u$ assigns $t_2$ to $X$
-          and triggers \progressetaleft.
-          If $s_1$ and $s_2$ unify thanks to \ref{clause:eta1} then
-          progression $p$ unifies $\lambda x.t_1$ with the $\eta$-expansion of $t_2$ namly
-          $\lambda x.t_2\appsep x$, otherwise they unify thanks to rule \ref{clause:lam-lam}
-          and the link progress $p$ unifies $\lambda x.t_1$ with $t_2$.\\ Alternatively, if $s_1$ and $s_2$ fail
-          to unify, it cannot be because of the $\lambda$ constructor in the head of $t_1$,
-          since rule \ref{clause:lam-lam} or rule \ref{clause:eta1} try to unify under it, eventually finding two
-          different subterms $s_1'$ and $s_2'$. By \cref{th:fidelity-beta},
-          \Ue fails on terms $t_1'$ and $t_2'$ even if \progressetaleft
-          $\eta$-expands $t_2$.
-
-
     \item $s_2 \in \maybeeta$, in this case, the unification problem becomes $X \Ue Y$ 
           with the extra link $\linketaM{}{Y}{\lambda x.t_2}$. After the unification of 
           $X$ and $Y$, \progressetadedup is fired and, once the lambdas are crossed,
           $t_1$ and $t_2$ are unified. 
           This unification succeeds iff $s_1 \Uo s_2$ succeeds by \cref{th:fidelity-beta}.
+
+
+    \item $s_2 \notin \maybeeta$,
+          in this case $s_2$ is compiled to $t_2$ and the unification step $u$ assigns $t_2$ to $X$
+          and triggers \progressetaleft.
+          If $s_1$ and $s_2$ are equal thanks to \ref{clause:eta1} then
+          progression $p$ unifies $\lambda x.t_1$ with the $\eta$-expansion of $t_2$ namly
+          $\lambda x.t_2\appsep x$, otherwise they are equal thanks to rule \ref{clause:lam-lam}
+          and the link progress $p$ unifies $\lambda x.t_1$ with $t_2$.
+          Alternatively, if $s_1$ are different $s_2$
+          it cannot be because of the $\lambda$ constructor in the head of $t_1$,
+          since rule \ref{clause:lam-lam} or rule \ref{clause:eta1} move under it, eventually finding two
+          different subterms $s_1'$ and $s_2'$. By \cref{th:fidelity-beta},
+          \Ue fails on terms $t_1'$ and $t_2'$ even if \progressetaleft
+          $\eta$-expands $t_2$.
+
   \end{itemize}
   % wlog we assume s1 is in \maybeeta, s2 is not (if both are thanks to dedup we are back in this situation).
   % we assume s1 is compiled to X and $\linketaM{\Gamma}{X}{t1}$.
@@ -2035,7 +2037,7 @@ $X$ becomes rigid. Let $y\in\Gamma$, there are two cases:
 % to that lambda. Hence it does not impact fidelity.
 
 \begin{corollary}[Properties of \Uo in $\wellb_{\beta\eta}$]\label{prop:unifetawb}
-  Given the updated compilation scheme, the \Uo of~\cref{sec:founif}
+  Given the updated compilation scheme, procedure \Uo of~\cref{sec:founif}
   is a good unification (as per \cref{prop:good-unif})
   for \Eo in the domain $\wellb_{\beta\eta}$.
 \end{corollary}
@@ -2047,9 +2049,9 @@ $\sigma = \{~ A \mapsto f ~\}$, triggers \progressetaleft since the link
 becomes \linketaM{}{f}{\lambda x.B_{x}} and the \lhs is a constant.
 This rule runs $\lambda x.f \appsep x \Ue{} \lambda x.B_{x}$,
 resulting in $\sigma = \{~ A \mapsto f ~;~ B_{x} \mapsto f ~\}$.
-Since $X$ is mapped to $B_x$ and $B_x$ is decompiled into $\lambda x.f \appsep x$,
+Since $X$ is mapped to $B$ and $B_x$ is decompiled into $\lambda x.f \appsep x$,
 by the definition of \linketa decompilation
-$\sigma$ is decompiled to $\rho = \{~ X \mapsto \lambda x. f \appsep x ~\}$,
+$\sigma$ is decompiled to $\rho = \{~ X \mapsto \lambda x. f \appsep x ~\}$.
 
 % \todo{explain why decompile does so and which eta?}
 
@@ -2104,9 +2106,9 @@ a bijection. For example:
 \end{comment}
 % make test ONLY=7007 TEX=tex
 \printAlll
-  {{{\lambda x.(X\appsep x),a},
+  {{{\lambda x.(X\appsep x),f},
     {X,\lambda x.a}}}
-  {{{A,a},
+  {{{A,f},
     {C,\lambda x.a}}}
   {{{X,C,0},
     {X,B,1}}}
@@ -2136,7 +2138,7 @@ explained in~\cref{sec:decompilation}. The property above ignores these variable
 variable in \Fo.
 
 The core procedure of this post-processing step is \emph{align-arity} that
-is iterated by \elpiIn{map-deduplication}:
+is iterated by \emph{map-deduplication}:
 
 \newcommand{\alignarity}{\emph{align-arity}}
 \begin{definition}[\alignarity] Given two mappings
@@ -2265,9 +2267,9 @@ If we take back the example given at the beginning of this section,
 % 
 % make test ONLY=7007 TEX=tex
 \printAlll
-  {{{\lambda x.(X\appsep x),a},
+  {{{\lambda x.(X\appsep x),f},
     {X,\lambda x.a}}}
-  {{{A,a},
+  {{{A,f},
     {C,\lambda x.a}}}
   {{{X,B,1}}}
   {{{\eta,,C,\lambda x.B_{x}},
@@ -2277,10 +2279,10 @@ If we take back the example given at the beginning of this section,
 Note that $\mapping{X}{C}{0}$ desappears from \mapStore
 in favour of the auxiliary \linketa \linketaM{}{C}{\lambda x.B_{x}}.
 The resolution of $\hoUnifPb_1$ assignes $a$ to $A$. This wakes up
-$\linkStore_2$ by \progressetaleft, assigning <<$a \appsep x$>> to $B_x$.
+$\linkStore_2$ by \progressetaleft, assigning <<$f \appsep x$>> to $B_x$.
 The resolution of $\hoUnifPb_2$ instantiates $C$ to $\lambda x.a$, which, in
 turn triggers $\linkStore_1$ by \progressetaleft. In turn, this performs
-$\lambda x.a \Ue \lambda x.(a \appsep x)$ that fails as expected.
+$\lambda x.a \Ue \lambda x.(f \appsep x)$ that fails as expected.
 
 \begin{comment}
 % make test ONLY=7001 TEX=tex
@@ -2437,7 +2439,7 @@ in scope all names in \elpiIn{Pf1} (the compilation of \elpiIn{Pf}).
 The variable \elpiIn{B}, returned as the compiled term, is a fresh variable
 having in scope all the free variables occurring in \elpiIn{Pf1} and
 \elpiIn{Extra1} (the compilation of \elpiIn{Extra}).
-This construction enforces \cref{inv:beta-rhs}.
+This construction enforces \fullref{inv:beta-rhs}.
 
 % In the following, we pose $X_{s_1\dots s_n}$ to represent a variable $X$ with
 % the list of distinct names $s_1\dots s_n$ as scope. Moreover, $X_{s_1\dots
@@ -2647,11 +2649,11 @@ whenever its \rhs is for sure a \wellb term.
   % each variable that the
   % compiler used to replace a ``problematic'' term is assigned and hence
   by \cref{def:progBetaLL,def:progBetaRH} the associated \linkbeta
-  is solved and removed. Note that, in this case, all
+  is solved and removed. In this case, all
   calls to \Ue{} are between terms in \llambda and by \cref{th:fidelity-beta}
   fidelity is guaranteed. If $\sigma\hoUnifPb$ is still in \notllambda,
   then by \cref{def:progBetaFail} unification fails as the
-  corresponding unification in \Fo{} would.
+  corresponding unification in \Fo{} would (it is called outside its domain).
 \end{proof}
 
 \begin{comment}
@@ -2774,7 +2776,7 @@ The actual implementation uses the Coq-Elpi meta language to both compile
 the sequence of problems (the rules) and execute them, that is Elpi
 plays the role of \Ho{} as well.
 
-The main difference is that we cannot implement \hrun since it comes as part of
+The main difference is that we cannot implement \hrun since it is
 the runtime of the programming language. In particular the runtime iterates
 \Ue, but \hstep also needs to check links for \progress. Luckily Elpi extends
 $\lambda$Prolog with constraints (suspended goals) and
@@ -2797,7 +2799,7 @@ The second snippet illustrates the deduplication of \linketa. The syntax
 <<\elpiIn{N ~$\triangleright$~ G ?- P}>> denotes a $\lambda$Prolog sequent, that is a 
 goal \elpiIn{P} under a set \elpiIn{G} of hypothetical rules (introduced
 by \elpiIn{=>}) and where the program context binds (via the \elpiIn{pi}
-operator) \elpiIn{N} heigenvariables. Sequents are presented to
+operator) heigenvariables in \elpiIn{N}. Sequents are presented to
 CHR with their higher order unification variables replaced by
 ``frozen constants'', that is $A_{xyz}$ becomes <<\elpiIn{uvar ~$f_A$~ [x,y,z]}>>
 for a fresh constant $f_A$. Frozen constants are ``defrost'' when
@@ -2814,7 +2816,7 @@ they are part of a new goal (see \cite[section 4.3]{TASSI_2019}).
 The first directive matches a constraint
 whose \lhs is a variable \elpiIn{X}; the second mathes and removes
 a constraint on the same variable; the third
-relocates \elpiIn{T2} and the latter crafs the new goal that unifies
+relocates \elpiIn{T2} and the latter crafts the new goal that unifies
 \elpiIn{T1} with \elpiIn{T2'} under \elpiIn{G1} and the set of
 heigenvariables \elpiIn{N1}.
 
@@ -2843,7 +2845,7 @@ programming engine provided by the meta language since
 it removes all data from rule's heads and makes
 indexing degrade. Additionally,
 implementing a unification procedure in the meta language is likely to be significantly
-slower compared to the built-in one.
+slower compared to the built-in one on the common domain of first order terms.
 
 Another possibility is to avoid having application and abstraction nodes
 in the syntax tree, and use the meta language ones, as in:
@@ -2855,7 +2857,7 @@ decision (all A x\ P x) :- finite A, pi x\ decision (P x).
 \noindent
 However, this encoding has two big limitations. First it is
 not always feasible to adopt it for Coq due to the fact that the type system
-of the meta language is too limited to accommodate for that one the object language,
+of the meta language is too limited to accommodate for the one the object language,
 e.g. Coq can typecheck variadic functions~\cite{cpdt}. \\
 Second, the encoding of Coq terms provided by Elpi is primarily used for meta
 programming, i.e. to extend the Coq system. Consequently, it must be able to
