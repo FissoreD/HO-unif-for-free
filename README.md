@@ -15,11 +15,11 @@ The updated PDF of the paper is: [here](https://github.com/FissoreD/paper-ho/blo
 
 Name: https://ppdp2024.github.io/
 
-|          | Deadline |
-| -------- | -------- |
-| Abstract | 06 May   |
-| Paper    | 13 May   |
-| Talk     | 9-11 Sep |
+|          | Old Deadline | New Deadline |
+| -------- | ------------ | ------------ |
+| Abstract | ~~06 May~~   | 15 May       |
+| Paper    | ~~13 May~~   | 22 May       |
+| Talk     | 9-11 Sep     | 9-11 Sep     |
 
 <!-- Acmart report format: [here](https://ctan.math.illinois.edu/macros/latex/contrib/acmart/acmguide.pdf) -->
 
