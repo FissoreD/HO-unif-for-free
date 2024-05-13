@@ -122,7 +122,7 @@ same-sols A B :- halt "INVALID SOL" {fo.ppsubst A} " =/= " {fo.ppsubst B}.
 type check-sol option (list fo.fm) -> fo.fsubst -> o.
 check-sol none _. 
 check-sol (some Sol) L :-
-  std.map Sol (x\r\ if (x = fo.fcon "_") (r = none) (r = some x)) L1,
+  std.map Sol (x\r\ if (x = fo.o-con "_") (r = none) (r = some x)) L1,
   same-sols L L1. 
 
 type do-read o.

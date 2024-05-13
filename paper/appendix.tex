@@ -184,13 +184,13 @@ Explain builtin name (can be implemented by loading name after each pi)
     mem.unset? VM H, decompl-subst Map Tl H F F2.
 
   type tm->fm map -> ho.tm -> fo.fm -> o.
-  tm->fm _ (ho.con C)  (fo.fcon C).
-  tm->fm L (ho.lam B1) (fo.flam B2) :- 
+  tm->fm _ (ho.con C)  (fo.o-con C).
+  tm->fm L (ho.lam B1) (fo.o-lam B2) :- 
     pi x y\ tm->fm _ x y => tm->fm L (B1 x) (B2 y).
   tm->fm L (ho.app L1) T :- map (tm->fm L) L1 [Hd|Tl], 
     fo.mk-app Hd Tl T.
   tm->fm L (ho.uva VM TL) T :- mem L (mapping (fv VO) (hv VM _)), 
-    map (tm->fm L) TL T1, fo.mk-app (fo.fuva VO) T1 T.
+    map (tm->fm L) TL T1, fo.mk-app (fo.o-uva VO) T1 T.
 
   type add-new-map-aux ho.subst -> list ho.tm -> map -> 
         map ->  fo.fsubst -> fo.fsubst -> o.

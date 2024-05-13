@@ -454,10 +454,10 @@ In order to reason about unification we provide a description of the
 are first-class terms, i.e. they have a concrete syntax as
 shown in \cref{code:common-terms}.
 Unification variables
-in \Fo{} (\elpiIn{fuva} term constructor) have no explicit scope:
-the ``arguments'' of a higher-order variable are given via the \elpiIn{fapp}
+in \Fo{} (\elpiIn{o-uva} term constructor) have no explicit scope:
+the ``arguments'' of a higher-order variable are given via the \elpiIn{o-app}
 constructor. For example the term <<\coqIn{P x}>> is represented as
-<<\elpiIn{fapp [fuva N, x]}>>, where \elpiIn{N} is the memory address
+<<\elpiIn{o-app [o-uva N, x]}>>, where \elpiIn{N} is the memory address
 of \elpiIn{P} and \elpiIn{x} is a bound variable.
 In \Ho{} the representation of <<\coqIn{P x}>> is instead <<\elpiIn{uva N [x]}>>,
 since unification variables are higher-order and come equipped with an
@@ -563,7 +563,7 @@ weaker \Ee is, and to identify the four rules that need special
 treatment in the implementation of \Uo.
 For brevity, we omit the code of \elpiIn{beta}:
 it is sufficient to know that <<\elpiIn{beta F L R}>> computes in \elpiIn{R} the
-weak-head normal form of <<\elpiIn{fapp [F|L]}>>.
+weak-head normal form of <<\elpiIn{o-app [F|L]}>>.
 
 \paragraph{Substitution: $\rho s$ and $\sigma t$}
 
@@ -1004,10 +1004,10 @@ approximation, and then ensures the mapping are bijective by introducing
 % to memory cells that are set with their values, and has a corresponding
 % operation in \Ho, namely \elpiIn{deref}. On the contrary \elpiIn{napp}
 % has no corresponding operation in \Ho, and only ensures that
-% terms of the form <<\elpiIn{fapp[fapp L1|L2]}>> are replaced by
-% <<\elpiIn{fapp L3}>> where \elpiIn{L3} is the concatenation of \elpiIn{L1}
+% terms of the form <<\elpiIn{o-app[o-app L1|L2]}>> are replaced by
+% <<\elpiIn{o-app L3}>> where \elpiIn{L3} is the concatenation of \elpiIn{L1}
 % and \elpiIn{L2}. The reasons for this asymmetry is
-% that an \elpiIn{fapp} node with a flexible head is always mapped
+% that an \elpiIn{o-app} node with a flexible head is always mapped
 % to a \elpiIn{uva} (as per \cref{sec:simulation,sec:beta}),
 % preventing nested applications to materialize.
 % \input{code/fderef}
@@ -1233,11 +1233,11 @@ variable $G$ in order to express the assignment $F_{ab} \mapsto G_a$.
 
 The final step is to decompile each assignment. The \elpiIn{val}
 node carries a term that is easy to decompile since \mapStore is a bijection.
-Since the \elpiIn{flam} node
+Since the \elpiIn{o-lam} node
 carries no additional information (other than the function body),
-each \elpiIn{abs} node can be decompiled to a \elpiIn{flam} one.
+each \elpiIn{abs} node can be decompiled to a \elpiIn{o-lam} one.
 
-However, if the \elpiIn{flam} node was carrying more information,
+However, if the \elpiIn{o-lam} node was carrying more information,
 as is the case for Coq where it holds the type of the bound variable,
 one would need to store this piece of information in the memory map,
 were we store the arity (that is a very simple function type).
@@ -1298,7 +1298,7 @@ terms can be made equal by a substitution $\rho$,
 we can produce this $\rho$ by finding
 a $\sigma$ via \Ue{} on the corresponding \Ho terms and by decompiling it.
 If we look at the syntax of \Fo{}, the only interesting case is
-<<\elpiIn{fuva X ~\Uo~s}>>. In this case, after compilation, we have
+<<\elpiIn{o-uva X ~\Uo~s}>>. In this case, after compilation, we have
 <<\elpiIn{uva Y [] ~\Ue~t}>>
 that succeeds with $\sigma = \{ Y \mapsto t\}$ and
 $\sigma$ is decompiled to $\rho = \{ X \mapsto s\}$ by \cref{prop:comprt}.
@@ -1436,7 +1436,7 @@ No change to \elpiIn{progress} since no link is added.
 
   \begin{proof}[Proof sketch]
   If we look at the \Fo{} terms, there is one more interesting case,
-  namely \elpiIn{fapp[fuva X|W] ~\Uo~s} when \elpiIn{W}
+  namely \elpiIn{o-app[o-uva X|W] ~\Uo~s} when \elpiIn{W}
   are distinct names compiled to $\vec{w}$. In this case
   the \Ho problem is $Y_{\vec{w}} \Ue t$ that succeeds with
    $\sigma = \{ Y_{\vec{y}} \mapsto t[\vec{w}/\vec{y}]\}$, which in turn
@@ -1450,7 +1450,7 @@ No change to \elpiIn{progress} since no link is added.
 \end{lemma}
 % \begin{proof}[Proof sketch]
 %   problematic terms are mapped to uva by comp,
-%   the problematic fapp node is gone.
+%   the problematic o-app node is gone.
 %   if F x = t then  F = lam x.t[]
 %   \todo{finish/maybe W enforcement is not needed here}
 % \end{proof}
@@ -1471,26 +1471,26 @@ In other word the compiler eliminates all subterms that are in \maybebeta.
 % OK
 
 % \begin{elpicode}
-% Terms [ flam x\ fapp[fcon"g",fapp[fuva z, x]]
-%       , flam x\ fapp[fcon"g", fcon"a"] ]
+% Terms [ o-lam x\ o-app[o-con"g",o-app[o-uva z, x]]
+%       , o-lam x\ o-app[o-con"g", o-con"a"] ]
 % Problems = [ pr z (s z) ] % $\lambda x.g (F x) = \lambda x.g a$
 % lam x\ app[con"g",uva z [x]] ~\Uo~lam x\ app[con"g", con"a"]
 % link z z (s z)
 % HS = [some (abs x\con"a")]
-% S = [some (flam x\fcon a)]
+% S = [some (o-lam x\o-con a)]
 % \end{elpicode}
 
 % KO
 
 % \begin{elpicode}
-%   Terms [ flam x\ fapp[fcon"g",fapp[fuva z, x]]
-%   , flam x\ fapp[fcon"g", fcon"a"] ]
+%   Terms [ o-lam x\ o-app[o-con"g",o-app[o-uva z, x]]
+%   , o-lam x\ o-app[o-con"g", o-con"a"] ]
 % Problems = [ pr 0 1   % $A = \lambda x.x$
 %            , pr 2 3 ] % $A a = a$
 % lam x\ app[con"g",uva z [x]] ~\Uo~lam x\ app[con"g", con"a"]
 % link z z (s z)
 % HS = [some (abs x\con"a")]
-% S = [some (flam x\fcon a)]
+% S = [some (o-lam x\o-con a)]
 % lam x\ app[f, app[X, x]] = Y,
 %   lam x\ x) = X.
 % \end{elpicode}
@@ -1802,7 +1802,7 @@ The following rule is inserted just before rule~\ref{rule:complam} from the code
 \input{code/comp_eta}
 
 \noindent
-Whenever \elpiIn{flam F} is detected to be in
+Whenever \elpiIn{o-lam F} is detected to be in
 \maybeeta it is compiled to \elpiIn{lam F1} and replaced by the fresh
 variable \elpiIn{A}. This variable sees all the names free in
 \elpiIn{lam F1} and is connected to \elpiIn{lam F1} via a \linketa.
@@ -2025,7 +2025,7 @@ $X$ becomes rigid. Let $y\in\Gamma$, there are two cases:
   % 
   % 2) If $\fstep_i$ fails to unify $s1 \Uo s2$
   % it means that, after applying rules~\ref{clause:eta1} and \ref{clause:eta2}
-  % and the one flam-flam we find different terms.
+  % and the one o-lam-o-lam we find different terms.
   % (5.9.1) only adds lambdas that are forcibly consumed by
   % lam-lam rule.
 \end{proof}
@@ -2453,7 +2453,7 @@ This construction enforces \cref{inv:beta-rhs}.
 % \begin{comment}
 % \begin{proof}[Proof sketch]
 %   Assume we have a \linkbeta, by contradiction, if $m = 0$, then the original
-%   \Fo{} term has the shape \elpiIn{fapp[fuva M | Ag]} where \elpiIn{Ag} is a
+%   \Fo{} term has the shape \elpiIn{o-app[o-uva M | Ag]} where \elpiIn{Ag} is a
 %   list of distinct names (i.e. the list \elpiIn{Extra} is empty). This case is
 %   however captured by rule~\ref{rule:complam} (from \cref{sec:compilation}) and
 %   no \linkbeta is produced which contradicts our initial assumption.
@@ -2469,7 +2469,7 @@ This construction enforces \cref{inv:beta-rhs}.
 % \begin{comment}
 % \begin{proof}[Proof sketch]
 %   By construction, the lists $s_1\dots s_n$ and $t_1\dots t_m$ are built by splitting
-%   the list \elpiIn{Ag} from the original term \elpiIn{fapp [fuva A|Ag]}.
+%   the list \elpiIn{Ag} from the original term \elpiIn{o-app [o-uva A|Ag]}.
 %   $s_1\dots s_n$ is the longest prefix of the compiled terms in \elpiIn{Ag} which is
 %   in \llambda. Therefore, by definition of \llambda, $t_1$ must appear  
 %   in $s_1\dots s_n$, otherwise $s_1\dots s_n$ is not the longest prefix in

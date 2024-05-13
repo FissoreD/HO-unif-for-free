@@ -5,7 +5,7 @@ typeabbrev addr mem.addr.
 typeabbrev addr mem.addr.
 
 namespace comp {
-  shorten fo.{ (==o), flam, fapp, fcon, fuva , eta-contract , beta, beta-normal }.
+  shorten fo.{ (==o), o-lam, o-app, o-con, o-uva , eta-contract , beta, beta-normal }.
   shorten ho.{ (==l), lam, app, con, uva , abs , val , deref-assmt }.
   shorten mem.{ set? , unset? , assign }.
   typeabbrev fm fo.fm.
@@ -58,19 +58,19 @@ namespace comp {
   %       while: `f (A x) a` may not use x, since A can reduce to a constant
   type occurs-rigidly fm -> fm -> o.
   occurs-rigidly N N.
-  occurs-rigidly _ (fapp [fuva _|_]) :- !, fail.
-  occurs-rigidly N (fapp L) :- exists (occurs-rigidly N) L.
-  occurs-rigidly N (flam B) :- pi x\ occurs-rigidly N (B x).
+  occurs-rigidly _ (o-app [o-uva _|_]) :- !, fail.
+  occurs-rigidly N (o-app L) :- exists (occurs-rigidly N) L.
+  occurs-rigidly N (o-lam B) :- pi x\ occurs-rigidly N (B x).
 
   % [reducible-to L N T] it ∃𝜎, 𝜎t = n
   type reducible-to list fm -> fm -> fm -> o.
   reducible-to _ N N :- !.
-  reducible-to L N (fapp[fuva _|Args]) :- !, 
+  reducible-to L N (o-app[o-uva _|Args]) :- !, 
     % Head is flex -> if N is in Args, we can have eta
     forall1 (x\ exists (reducible-to [] x) Args) [N|L]. 
-  reducible-to L N (flam B) :- !, 
+  reducible-to L N (o-lam B) :- !, 
     pi x\ reducible-to [x | L] N (B x).
-  reducible-to L N (fapp [N|Args]) :-
+  reducible-to L N (o-app [N|Args]) :-
     % Head is rigid -> to be an eta we consider also L
     last-n {len L} Args R,
     forall2 (reducible-to []) R {rev L}.
@@ -80,11 +80,11 @@ namespace comp {
   %  - T = uva seing N (N is also the last of L)
   %  - T = app L such that the last args of L are maybe-eta wrt L
   type maybe-eta fm -> list fm -> o.                  % label: rule:maybeeta cnt: \maybeeta
-  maybe-eta (fapp[fuva _|Args]) L :- !,
+  maybe-eta (o-app[o-uva _|Args]) L :- !,
     % Head is flex -> if N is in Args, we can have eta 
     forall1 (x\ exists (reducible-to [] x) Args) L, !. 
-  maybe-eta (flam B) L :- !, pi x\ maybe-eta (B x) [x | L].
-  maybe-eta (fapp [T|Args]) L :- (name T; T = fcon _),
+  maybe-eta (o-lam B) L :- !, pi x\ maybe-eta (B x) [x | L].
+  maybe-eta (o-app [T|Args]) L :- (name T; T = o-con _),
     % Head is rigid -> to be an eta we consider also L
     split-last-n {len L} Args First Last,
     % forall1 (x\ forall1 (y\ not (occurs-rigidly x y)) First) L,
@@ -118,7 +118,7 @@ namespace comp {
     get-scope-aux T ScopeDuplicata,
     undup ScopeDuplicata Scope.
   type rigid fm -> o.
-  rigid X :- not (X = fuva _).
+  rigid X :- not (X = o-uva _).
 
 %SNIP: comp_lam
   type comp-lam (fm -> fm) -> (tm -> tm) -> 
@@ -138,31 +138,31 @@ namespace comp {
 %SNIP: comp_base
   type comp fm -> tm -> mmap -> mmap -> links -> links ->
     subst -> subst -> o.
-  comp (fcon C) (con C) M M L L S S.
+  comp (o-con C) (con C) M M L L S S.
 %ENDSNIP
 %SNIP: comp_eta
-  comp (flam F) (uva A Scope) M1 M2 L1 L3 S1 S3 :-
-    maybe-eta (flam F) [], !,
+  comp (o-lam F) (uva A Scope) M1 M2 L1 L3 S1 S3 :-
+    maybe-eta (o-lam F) [], !,
       alloc S1 A S2,
       comp-lam F F1 M1 M2 L1 L2 S2 S3,
       get-scope (lam F1) Scope, 
       L3 = [val (link-eta (uva A Scope) (lam F1)) | L2].
 %ENDSNIP
 %SNIP: comp_base
-  comp (flam F) (lam F1) M1 M2 L1 L2 S1 S2 :-            % label: rule:complam cnt: \ensuremath{c_\lambda}
+  comp (o-lam F) (lam F1) M1 M2 L1 L2 S1 S2 :-            % label: rule:complam cnt: \ensuremath{c_\lambda}
     comp-lam F F1 M1 M2 L1 L2 S1 S2.
-  comp (fuva A) (uva B []) M1 M2 L L S1 S2 :- 
+  comp (o-uva A) (uva B []) M1 M2 L L S1 S2 :- 
     m-alloc (fv A) (hv B (arity z)) M1 M2 S1 S2.
 %ENDSNIP
 %SNIP: comp_base_beta
-  comp (fapp [fuva A|Ag]) (uva B Ag1) M1 M2 L L S1 S2 :-
+  comp (o-app [o-uva A|Ag]) (uva B Ag1) M1 M2 L L S1 S2 :-
     pattern-fragment Ag, !,
       fold6 comp Ag Ag1 M1 M1 L L S1 S1,
       len Ag Arity, 
       m-alloc (fv A) (hv B (arity Arity)) M1 M2 S1 S2.
 %ENDSNIP
 %SNIP: comp_beta
-  comp (fapp [fuva A|Ag]) (uva B Scope) M1 M3 L1 L3 S1 S4 :- !,
+  comp (o-app [o-uva A|Ag]) (uva B Scope) M1 M3 L1 L3 S1 S4 :- !,
     pattern-fragment-prefix Ag Pf Extra, alloc S1 B S2,
     len Pf Ar, m-alloc (fv A) (hv C (arity Ar)) M1 M2 S2 S3,
     fold6 comp Pf    Pf1    M2 M2 L1 L1 S3 S3,
@@ -172,7 +172,7 @@ namespace comp {
     L3 = [val (link-llam (uva B Scope) Beta) | L2].
 %ENDSNIP
 %SNIP: comp_base
-  comp (fapp A) (app A1) M1 M2 L1 L2 S1 S2 :-            % label: rule:compapp cnt: \ensuremath{c_@}
+  comp (o-app A) (app A1) M1 M2 L1 L2 S1 S2 :-            % label: rule:compapp cnt: \ensuremath{c_@}
     fold6 comp A A1 M1 M2 L1 L2 S1 S2.
 %ENDSNIP
 
@@ -652,15 +652,15 @@ new A B C :- mem.new A B C.
 
 %SNIP: decomp
   type decomp mmap -> tm -> fm -> o.
-  decomp _ (con C)  (fcon C).
-  decomp M (app A) (fapp B) :- map (decomp M) A B.
+  decomp _ (con C)  (o-con C).
+  decomp M (app A) (o-app B) :- map (decomp M) A B.
    % [H|Ag], beta H Ag R.
-  decomp M (lam F) (flam G) :- 
+  decomp M (lam F) (o-lam G) :- 
     pi x y\ (pi M\ decomp M x y) => decomp M (F x) (G y).
   decomp M (uva Hv Ag) R :-
     mem M (fv Fv <-> hv Hv _), 
     map (decomp M) Ag Bg,
-    beta (fuva Fv) Bg R.
+    beta (o-uva Fv) Bg R.
   decomp M H _ :- halt "Fail in decomp" {ppmappings M} {ho.pp H}. % HIDE
 %ENDSNIP
 
