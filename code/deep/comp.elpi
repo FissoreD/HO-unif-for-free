@@ -17,12 +17,12 @@ namespace comp {
   kind arity type.
   type arity nat -> arity.
 %SNIP: comp_base_types
-  kind fvariable type.
-  type fv addr -> fvariable.
-  kind hvariable type.
-  type hv addr -> arity -> hvariable.
+  kind ovariable type.
+  type fv addr -> ovariable.
+  kind mvariable type.
+  type hv addr -> arity -> mvariable.
   kind mapping type.
-  type (<->) fvariable -> hvariable -> mapping.
+  type (<->) ovariable -> mvariable -> mapping.
   typeabbrev mmap (list mapping).
 %ENDSNIP
 
@@ -273,7 +273,7 @@ namespace comp {
 
 
 %SNIP: alloc_mapping
-  type m-alloc fvariable -> hvariable -> mmap -> mmap -> 
+  type m-alloc ovariable -> mvariable -> mmap -> mmap -> 
     subst -> subst -> o.                            %~\customlabel{clause:malloc}{(malloc)}~
   m-alloc Fv Hv M M S S :- mem M (Fv <-> Hv), !.
   m-alloc Fv Hv M [Fv <-> Hv|M] S S1 :- Hv = hv N _, new S N S1.

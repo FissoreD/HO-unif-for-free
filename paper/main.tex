@@ -980,7 +980,7 @@ The compiler establishes a mapping between variables of the two languages.
 \input{code/comp_base_types}
 
 \noindent
-Each \elpiIn{hvariable} is stored in the mapping together with
+Each \elpiIn{mvariable} is stored in the mapping together with
 its arity (a number) so that the code of \ref{clause:malloc} below can preserve:
 
 \begin{invariant}[Unification-variable arity]\label{inv:uvaarity}
@@ -992,7 +992,7 @@ its arity (a number) so that the code of \ref{clause:malloc} below can preserve:
 \input{code/alloc_mapping}
 
 \noindent
-When a single \elpiIn{fvariable} occurs multiple times with different numbers
+When a single \elpiIn{ovariable} occurs multiple times with different numbers
 of arguments, the compiler generates multiple mappings for it, on a first
 approximation, and then ensures the mapping are bijective by introducing
 \linketa; this detail is discussed in section \ref{sec:invariant1}.
