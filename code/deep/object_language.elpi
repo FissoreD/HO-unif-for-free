@@ -34,18 +34,18 @@ namespace fo {
 
 
 %SNIP: feq
-  type (==o) to -> to -> o.                                %~($\customlabel{pred:fequal}{\Eo}$)~
+  type (==o) to -> to -> o.                              %~($\customlabel{pred:fequal}{\Eo}$)~
   X ==o Y :- (var X ; var Y), fatal "flex equal". % HIDE
   o-con X ==o o-con X.
   o-app A ==o o-app B :- forall2 (==o) A B.
-  o-lam F ==o o-lam G :- pi x\ x ==o x => F x ==o G x.      %~($\customlabel{clause:lam-lam}{\lambda\lambda}$)~
+  o-lam F ==o o-lam G :- pi x\ x ==o x => F x ==o G x.    %~($\customlabel{clause:lam-lam}{\lambda\lambda}$)~
   o-uva N ==o o-uva N.
-  o-lam F ==o T :-                                         %~($\customlabel{clause:eta1}{\eta_l}$)~
+  o-lam F ==o T :-                                       %~($\customlabel{clause:eta1}{\eta_l}$)~
     pi x\ beta T [x] (T' x), x ==o x => F x ==o T' x.
-  T ==o o-lam F :-                                         %~($\customlabel{clause:eta2}{\eta_r}$)~
+  T ==o o-lam F :-                                       %~($\customlabel{clause:eta2}{\eta_r}$)~
     pi x\ beta T [x] (T' x), x ==o x => T' x ==o F x.
-  o-app [o-lam X | L] ==o T :- beta (o-lam X) L R, R ==o T. %~($\customlabel{clause:beta1}{\beta_l}$)~
-  T ==o o-app [o-lam X | L] :- beta (o-lam X) L R, T ==o R. %~($\customlabel{clause:beta2}{\beta_r}$)~
+  o-app [o-lam X|L] ==o T :- beta (o-lam X) L R, R ==o T. %~($\customlabel{clause:beta1}{\beta_l}$)~
+  T ==o o-app [o-lam X|L] :- beta (o-lam X) L R, T ==o R. %~($\customlabel{clause:beta2}{\beta_r}$)~
 %ENDSNIP
 
   % [extend-subst T S S'] forall o-uva N in T, extends S with none at pos N
