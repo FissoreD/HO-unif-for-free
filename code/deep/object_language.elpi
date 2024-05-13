@@ -5,19 +5,19 @@ namespace fo {
 %BEGIN
 
 %SNIP: fo_tm
-  kind fm type.
-  type o-app list fm -> fm.
-  type o-lam (fm -> fm) -> fm.
-  type o-con string -> fm.
-  type o-uva addr -> fm.
+  kind to type.
+  type o-app list to -> to.
+  type o-lam (to -> to) -> to.
+  type o-con string -> to.
+  type o-uva addr -> to.
 %ENDSNIP
 
 %SNIP: fo_subst
-  typeabbrev fsubst (mem fm).
+  typeabbrev fsubst (mem to).
 %ENDSNIP
 
 %SNIP: fderef
-  type fder fsubst -> fm -> fm -> o.
+  type fder fsubst -> to -> to -> o.
   fder S X _ :- (var S; var X), fatal "flex fder". % HIDE
   fder _ (o-con C) (o-con C).
   fder S (o-app A) (o-app B) :- map (fder S) A B.
@@ -28,21 +28,21 @@ namespace fo {
   fder S (o-uva N) (o-uva N) :- unset? N S.
 % fder _ N N :- name N.
 
-  type fderef fsubst -> fm -> fm -> o.                 %~($\customlabel{pred:fder}{\rho s}$)~
+  type fderef fsubst -> to -> to -> o.                 %~($\customlabel{pred:fder}{\rho s}$)~
   fderef S T T2 :- fder S T T1, napp T1 T2.
 %ENDSNIP
 
 
 %SNIP: feq
-  type (==o) fm -> fm -> o.                             %~($\customlabel{pred:fequal}{\Eo}$)~
+  type (==o) to -> to -> o.                                %~($\customlabel{pred:fequal}{\Eo}$)~
   X ==o Y :- (var X ; var Y), fatal "flex equal". % HIDE
   o-con X ==o o-con X.
   o-app A ==o o-app B :- forall2 (==o) A B.
-  o-lam F ==o o-lam G :- pi x\ x ==o x => F x ==o G x.     %~($\customlabel{clause:lam-lam}{\lambda\lambda}$)~
+  o-lam F ==o o-lam G :- pi x\ x ==o x => F x ==o G x.      %~($\customlabel{clause:lam-lam}{\lambda\lambda}$)~
   o-uva N ==o o-uva N.
-  o-lam F ==o T :-                                       %~($\customlabel{clause:eta1}{\eta_l}$)~
+  o-lam F ==o T :-                                         %~($\customlabel{clause:eta1}{\eta_l}$)~
     pi x\ beta T [x] (T' x), x ==o x => F x ==o T' x.
-  T ==o o-lam F :-                                       %~($\customlabel{clause:eta2}{\eta_r}$)~
+  T ==o o-lam F :-                                         %~($\customlabel{clause:eta2}{\eta_r}$)~
     pi x\ beta T [x] (T' x), x ==o x => T' x ==o F x.
   o-app [o-lam X | L] ==o T :- beta (o-lam X) L R, R ==o T. %~($\customlabel{clause:beta1}{\beta_l}$)~
   T ==o o-app [o-lam X | L] :- beta (o-lam X) L R, T ==o R. %~($\customlabel{clause:beta2}{\beta_r}$)~
@@ -50,7 +50,7 @@ namespace fo {
 
   % [extend-subst T S S'] forall o-uva N in T, extends S with none at pos N
   % this is used only in test to build the subst-map before running it
-  type extend-subst fm -> fsubst -> fsubst -> o.
+  type extend-subst to -> fsubst -> fsubst -> o.
   extend-subst (o-uva N) S S' :- mem.alloc N S S'.
   extend-subst (o-lam F) S S' :-
     pi x\ (pi S\extend-subst x S S) => extend-subst (F x) S S'.
@@ -58,7 +58,7 @@ namespace fo {
   extend-subst (o-app L) S S1 :- fold extend-subst L S S1.
 
 %SNIP: beta_fo
-  type beta fm -> list fm -> fm -> o.
+  type beta to -> list to -> to -> o.
   beta A [] A.
   beta (o-lam Bo) [H | L] R :- napp (Bo H) F, beta F L R.
   beta (o-app A) L (o-app X) :- append A L X.
@@ -66,7 +66,7 @@ namespace fo {
   beta (o-con H) L (o-app [o-con H | L]).
   beta N L (o-app [N | L]) :- name N.
 
-  type napp fm -> fm -> o.
+  type napp to -> to -> o.
   napp (o-con C) (o-con C).
   napp (o-uva A) (o-uva A).
   napp (o-lam F) (o-lam G) :- pi x\ napp (F x) (G x).
@@ -76,7 +76,7 @@ namespace fo {
   napp N N :- name N.
 %ENDSNIP
 
-  type beta-normal fm -> fm -> o.
+  type beta-normal to -> to -> o.
   beta-normal (uvar _ _) _ :- halt "Passed uvar to beta-normal".
   beta-normal A A :- name A.
   beta-normal (o-con A) (o-con A).
@@ -88,10 +88,10 @@ namespace fo {
   beta-normal (o-app L) (o-app L1) :-
     map beta-normal L L1.
 
-  type mk-app fm -> list fm -> fm -> o.
+  type mk-app to -> list to -> to -> o.
   mk-app T L S :- beta T L S.
 
-  type eta-contract fm -> fm -> o.
+  type eta-contract to -> to -> o.
   eta-contract X _ :- var X, halt "Eta-contract first args is flexible". % HIDE
   eta-contract (o-con X) (o-con X).
   eta-contract (o-app L) (o-app L1) :- map eta-contract L L1.
@@ -101,7 +101,7 @@ namespace fo {
   eta-contract (o-uva X) (o-uva X).
   eta-contract X X :- name X.
 
-  type eta-contract-aux list fm -> fm -> fm -> o.
+  type eta-contract-aux list to -> to -> to -> o.
   eta-contract-aux L (o-lam F) T :- 
     pi x\ eta-contract-aux [x|L] (F x) T. % also checks H Prefix does not see x
   eta-contract-aux L (o-app [H|Args]) T :- 
@@ -134,7 +134,7 @@ namespace fo {
   appsep "\\appsep " :- tex, !.
   appsep " ".
 
-  type pp fm -> string -> o.
+  type pp to -> string -> o.
   % pp T S :- tex, !, 
   %   std.any->string T S1, 
   %   pp-var-clean S1 S2,
@@ -143,7 +143,7 @@ namespace fo {
   %   rex.replace "o-con \(.\)" "o-con\"\1\"" S4 S.
   pp T S :- pp1 @binder-names T S.
 
-  type pp1 list string -> fm -> string -> o.
+  type pp1 list string -> to -> string -> o.
   pp1 _ X "_" :- var X, !.
   pp1 XS (o-app L) S :- !, std.string.concat {appsep} {std.map L (pp1 XS)} X, S is "(" ^ X ^ ")".
   pp1 _ (o-con S) S :- !.
@@ -166,18 +166,18 @@ namespace fo {
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PARSER %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  type parse string -> fm -> o.
+  type parse string -> to -> o.
   parse S T :- rex.split "" S L, utf8-norm L L1, if (parse-aux L1 T) true (halt "Error parse" S).
 
-  type parse-aux list string -> fm -> o.
+  type parse-aux list string -> to -> o.
   parse-aux L1 T :- ll L1 [] T, !.
   parse-aux L1 T :- llapp L1 [] [] A, T = o-app A, !.
   parse-aux L1 _ :- std.string.concat "" L1 S, halt "parse error:" S. 
 
-  type parse-eq string -> fm -> fm -> o.
+  type parse-eq string -> to -> to -> o.
   parse-eq S A B  :- rex.split "" S L, utf8-norm L L1, if (parse-eq-aux L1 A B) true (halt "Error parse-eq" S).
 
-  type parse-eq-aux list string -> fm -> fm -> o.
+  type parse-eq-aux list string -> to -> to -> o.
   parse-eq-aux L1 A B :-
     llapp L1 L2 [] AA, if (AA = [A]) true (A = o-app AA), !,
     ee L2 L3,
@@ -187,7 +187,7 @@ namespace fo {
   ee ["="|L] L.
   ee [" "|L] L1 :- ee L L1.
 
-  type ll list string -> list string -> fm -> o.
+  type ll list string -> list string -> to -> o.
   ll [C|L] L (o-con C) :- rex.match "[a-z]" C.
   ll ["_"|L] L (o-con "_").
   ll ["C",N|L] L (o-uva (mem.addr R)) :- rex.match "[0-9]" N, N' is string_to_int N, int->nat N' R. 
@@ -201,7 +201,7 @@ namespace fo {
   ll ["λ",V,"."|L] L1 (o-lam X) :- pi x\ (pi L\ ll [V|L] L x :- !) => ll L L1 (X x).
   ll [" "|L] L1 X :- ll L L1 X.
 
-  type llapp list string -> list string -> list fm -> list fm -> o.
+  type llapp list string -> list string -> list to -> list to -> o.
   llapp [")"|L] L A RA :- !, rev A RA.
   llapp L L2 A B :- ll L L1 X, !, llapp L1 L2 [X|A] B.
   llapp L L A RA :- rev A RA.

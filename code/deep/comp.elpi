@@ -8,7 +8,7 @@ namespace comp {
   shorten fo.{ (==o), o-lam, o-app, o-con, o-uva , eta-contract , beta, beta-normal }.
   shorten ho.{ (==l), lam, app, con, uva , abs , val , deref-assmt }.
   shorten mem.{ set? , unset? , assign }.
-  typeabbrev fm fo.fm.
+  typeabbrev to fo.to.
   typeabbrev tm ho.tm.
   typeabbrev subst ho.subst.
   typeabbrev fsubst fo.fsubst.
@@ -56,14 +56,14 @@ namespace comp {
   % a term use a binder B if there exists a sub-term which `surely` reduce to B
   % for example: `f (g x) a` use the binder x
   %       while: `f (A x) a` may not use x, since A can reduce to a constant
-  type occurs-rigidly fm -> fm -> o.
+  type occurs-rigidly to -> to -> o.
   occurs-rigidly N N.
   occurs-rigidly _ (o-app [o-uva _|_]) :- !, fail.
   occurs-rigidly N (o-app L) :- exists (occurs-rigidly N) L.
   occurs-rigidly N (o-lam B) :- pi x\ occurs-rigidly N (B x).
 
   % [reducible-to L N T] it ∃𝜎, 𝜎t = n
-  type reducible-to list fm -> fm -> fm -> o.
+  type reducible-to list to -> to -> to -> o.
   reducible-to _ N N :- !.
   reducible-to L N (o-app[o-uva _|Args]) :- !, 
     % Head is flex -> if N is in Args, we can have eta
@@ -79,7 +79,7 @@ namespace comp {
   % succeeds if T could be an eta expansion, possible cases:
   %  - T = uva seing N (N is also the last of L)
   %  - T = app L such that the last args of L are maybe-eta wrt L
-  type maybe-eta fm -> list fm -> o.                  % label: rule:maybeeta cnt: \maybeeta
+  type maybe-eta to -> list to -> o.                  % label: rule:maybeeta cnt: \maybeeta
   maybe-eta (o-app[o-uva _|Args]) L :- !,
     % Head is flex -> if N is in Args, we can have eta 
     forall1 (x\ exists (reducible-to [] x) Args) L, !. 
@@ -117,11 +117,11 @@ namespace comp {
   get-scope T Scope :-
     get-scope-aux T ScopeDuplicata,
     undup ScopeDuplicata Scope.
-  type rigid fm -> o.
+  type rigid to -> o.
   rigid X :- not (X = o-uva _).
 
 %SNIP: comp_lam
-  type comp-lam (fm -> fm) -> (tm -> tm) -> 
+  type comp-lam (to -> to) -> (tm -> tm) -> 
     mmap -> mmap -> links -> links -> subst -> subst -> o.
   comp-lam F G M1 M2 L1 L3 S1 S2 :-
     pi x y\ (pi M L S\ comp x y M M L L S S) =>         % label: rule:complamh cnt: \ensuremath{H_\lambda}
@@ -136,7 +136,7 @@ namespace comp {
   close-links (_\[]) [].
 %ENDSNIP
 %SNIP: comp_base
-  type comp fm -> tm -> mmap -> mmap -> links -> links ->
+  type comp to -> tm -> mmap -> mmap -> links -> links ->
     subst -> subst -> o.
   comp (o-con C) (con C) M M L L S S.
 %ENDSNIP
@@ -180,7 +180,7 @@ namespace comp {
   alloc S N S1 :- mem.new S N S1.
 
   type compile-terms-diagnostic 
-    triple diagnostic fm fm -> 
+    triple diagnostic to to -> 
     triple diagnostic tm tm -> 
     mmap -> mmap -> 
     links -> links -> 
@@ -192,7 +192,7 @@ namespace comp {
     comp FO2' HO2 M2 M3 L2 L3 S2 S3.
 
   type compile-terms 
-    list (triple diagnostic fm fm) -> 
+    list (triple diagnostic to to) -> 
     list (triple diagnostic tm tm) -> 
     mmap -> links -> subst -> o.
   compile-terms T H M L S :- 
@@ -651,7 +651,7 @@ new A B C :- mem.new A B C.
 %ENDSNIP
 
 %SNIP: decomp
-  type decomp mmap -> tm -> fm -> o.
+  type decomp mmap -> tm -> to -> o.
   decomp _ (con C)  (o-con C).
   decomp M (app A) (o-app B) :- map (decomp M) A B.
    % [H|Ag], beta H Ag R.

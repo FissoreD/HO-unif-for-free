@@ -5,7 +5,7 @@ macro @read :- input_line std_in _.
 shorten ho.{(==l)}.
 shorten fo.{(==o), beta-normal}.
 typeabbrev tm ho.tm.
-typeabbrev fm fo.fm.
+typeabbrev to fo.to.
 typeabbrev subst ho.subst.
 typeabbrev fsubst fo.fsubst.
 typeabbrev links comp.links.
@@ -33,14 +33,14 @@ hstep T1 T2 L1 L2 S1 S3 :-
 %ENDSNIP
 
 %SNIP: compile
-type compile fm -> tm -> mmap -> mmap ->  links -> links -> 
+type compile to -> tm -> mmap -> mmap ->  links -> links -> 
   subst -> subst -> o.
 compile F G M1 M2 L1 L2 S1 S2 :-
   beta-normal F F', comp F' G M1 M2 L1 L2 S1 S2.
 %ENDSNIP
 
 %SNIP: unif_fo
-type (===o) fm -> fm -> fsubst -> o.
+type (===o) to -> to -> fsubst -> o.
 (A ===o B) F :-
   compile A A' [] M1 [] L1 [] S1,
   compile B B' M1 M2 L1 L2 S1 S2,
@@ -92,14 +92,14 @@ decompile-subst Mappings Links H F F1 :-
   comp.decompile Mappings Links H F F1.
 decompile-subst _ _ _ _ _ :- !, print "Fail decompl-subst", fail.
 
-type build-fo-subst list (triple diagnostic fo.fm fo.fm) -> fo.fsubst -> fo.fsubst -> o.
+type build-fo-subst list (triple diagnostic fo.to fo.to) -> fo.fsubst -> fo.fsubst -> o.
 build-fo-subst [] L L.
 build-fo-subst [triple _ L R | TL] A D :-
   fo.extend-subst L A B, fo.extend-subst R B C,
   build-fo-subst TL C D.
 
 type validate-solution 
-  list (triple diagnostic fo.fm fo.fm) ->
+  list (triple diagnostic fo.to fo.to) ->
   fo.fsubst ->
   o.
 validate-solution [] _.
@@ -110,7 +110,7 @@ validate-solution [triple ok L R|Goals] FS :-
   validate-solution Goals FS].
 validate-solution [triple (error _) _ _|_] _.
 
-type same-sols list (option fo.fm) -> list (option fo.fm) -> o.
+type same-sols list (option fo.to) -> list (option fo.to) -> o.
 same-sols [] [].
 same-sols [none|L] [none|M] :- !, same-sols L M.
 same-sols [some A|L] [some A'|M] :- A ==o A', !, same-sols L M.
@@ -119,7 +119,7 @@ same-sols L [] :- if (forall1 ((=) none) L) true (halt "Invalid solution:" {fo.p
 same-sols A B :- halt "INVALID SOL" {fo.ppsubst A} " =/= " {fo.ppsubst B}.
 
 
-type check-sol option (list fo.fm) -> fo.fsubst -> o.
+type check-sol option (list fo.to) -> fo.fsubst -> o.
 check-sol none _. 
 check-sol (some Sol) L :-
   std.map Sol (x\r\ if (x = fo.o-con "_") (r = none) (r = some x)) L1,
@@ -132,7 +132,7 @@ do-read.
 type printC string -> o.
 printC A :- X = "@@@@@@@@@@@@@@@@@@@@@@@@@", print X A X, (not do-read; @read), !.
 
-type ptest test fo.fm -> string -> o.
+type ptest test fo.to -> string -> o.
 ptest (test _ (pr Pbs (some Sol))) S :-
   std.map Pbs (pppbsc fo.pp) S1,
   fo.ppsubst {std.map Sol (x\r\ r = some x)} S2,
@@ -146,7 +146,7 @@ pppbsc F (triple _ A B) S :- tex, !, F A AS, F B BS, S is "{" ^ AS ^ "," ^ BS ^ 
 pppbsc F (triple ok A B) S :- F A AS, F B BS, S is AS ^ " == " ^ BS.
 pppbsc F (triple (error _) A B) S :- F A AS, F B BS, S is AS ^ " =/= " ^ BS.
 
-type print-compil-result list (diagn fo.fm) -> list (diagn ho.tm) -> comp.links -> comp.mmap -> o.
+type print-compil-result list (diagn fo.to) -> list (diagn ho.tm) -> comp.links -> comp.mmap -> o.
 print-compil-result C P L M :- tex, !, 
   Sep = "\n  ", Sep1 is "," ^ Sep ^ "  ",
   std.string.concat Sep1 {std.map C (pppbsc fo.pp)} Cpp,
@@ -163,7 +163,7 @@ print-compil-result _ P L M :-
   print "## After compilation the links are" {comp.pplinks L},
   print "## After compilation the mappings are" {comp.ppmappings M}.
 
-type xtest o -> test fo.fm -> o.
+type xtest o -> test fo.to -> o.
 xtest Mode (test N (pr LR Sol) as Test) :- Mode => std.do![
   print "## Test" N ":" {ptest Test},
   printC "run test?",
@@ -190,7 +190,7 @@ xtest Mode (test N (pr LR Sol) as Test) :- Mode => std.do![
 
 ].
 
-type parse-triple pair diagnostic string -> triple diagnostic fo.fm fo.fm -> o.
+type parse-triple pair diagnostic string -> triple diagnostic fo.to fo.to -> o.
 parse-triple (pr D S) (triple D A B) :- parse-eq S A B.
 
 macro @sok N SE SS :- (declare-test (xtest true) ptest (test N (pr [triple ok X Y] (some S))) :- parse-eq SE X Y, std.map SS parse S).

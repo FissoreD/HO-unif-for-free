@@ -177,20 +177,20 @@ Explain builtin name (can be implemented by loading name after each pi)
   decompl-subst Map [mapping (fv VO) (hv VM _)|Tl] H F F2 :- 
     mem.set? VM H T, !, 
     ho.deref-assmt H T TTT,
-    abs->lam TTT T', tm->fm Map T' T1, 
+    abs->lam TTT T', tm->to Map T' T1, 
     fo.eta-contract T1 T2, mem.assign VO F T2 F1,
     decompl-subst Map Tl H F1 F2. 
   decompl-subst Map [mapping _ (hv VM _)|Tl] H F F2 :- 
     mem.unset? VM H, decompl-subst Map Tl H F F2.
 
-  type tm->fm map -> ho.tm -> fo.fm -> o.
-  tm->fm _ (ho.con C)  (fo.o-con C).
-  tm->fm L (ho.lam B1) (fo.o-lam B2) :- 
-    pi x y\ tm->fm _ x y => tm->fm L (B1 x) (B2 y).
-  tm->fm L (ho.app L1) T :- map (tm->fm L) L1 [Hd|Tl], 
+  type tm->to map -> ho.tm -> fo.to -> o.
+  tm->to _ (ho.con C)  (fo.o-con C).
+  tm->to L (ho.lam B1) (fo.o-lam B2) :- 
+    pi x y\ tm->to _ x y => tm->to L (B1 x) (B2 y).
+  tm->to L (ho.app L1) T :- map (tm->to L) L1 [Hd|Tl], 
     fo.mk-app Hd Tl T.
-  tm->fm L (ho.uva VM TL) T :- mem L (mapping (fv VO) (hv VM _)), 
-    map (tm->fm L) TL T1, fo.mk-app (fo.o-uva VO) T1 T.
+  tm->to L (ho.uva VM TL) T :- mem L (mapping (fv VO) (hv VM _)), 
+    map (tm->to L) TL T1, fo.mk-app (fo.o-uva VO) T1 T.
 
   type add-new-map-aux ho.subst -> list ho.tm -> map -> 
         map ->  fo.fsubst -> fo.fsubst -> o.
