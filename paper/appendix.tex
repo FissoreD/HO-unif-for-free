@@ -174,13 +174,13 @@ Explain builtin name (can be implemented by loading name after each pi)
     fo.fsubst -> fo.fsubst -> o.
   decompl-subst _ [A|_] _ _ _ :- fail.
   decompl-subst _ [] _ F F.
-  decompl-subst Map [mapping (fv VO) (hv VM _)|Tl] H F F2 :- 
+  decompl-subst Map [mapping (ov VO) (mv VM _)|Tl] H F F2 :- 
     mem.set? VM H T, !, 
     ho.deref-assmt H T TTT,
     abs->lam TTT T', tm->to Map T' T1, 
     fo.eta-contract T1 T2, mem.assign VO F T2 F1,
     decompl-subst Map Tl H F1 F2. 
-  decompl-subst Map [mapping _ (hv VM _)|Tl] H F F2 :- 
+  decompl-subst Map [mapping _ (mv VM _)|Tl] H F F2 :- 
     mem.unset? VM H, decompl-subst Map Tl H F F2.
 
   type tm->to map -> ho.tm -> fo.to -> o.
@@ -189,7 +189,7 @@ Explain builtin name (can be implemented by loading name after each pi)
     pi x y\ tm->to _ x y => tm->to L (B1 x) (B2 y).
   tm->to L (ho.app L1) T :- map (tm->to L) L1 [Hd|Tl], 
     fo.mk-app Hd Tl T.
-  tm->to L (ho.uva VM TL) T :- mem L (mapping (fv VO) (hv VM _)), 
+  tm->to L (ho.uva VM TL) T :- mem L (mapping (ov VO) (mv VM _)), 
     map (tm->to L) TL T1, fo.mk-app (fo.o-uva VO) T1 T.
 
   type add-new-map-aux ho.subst -> list ho.tm -> map -> 
@@ -202,10 +202,10 @@ Explain builtin name (can be implemented by loading name after each pi)
   type add-new-map ho.subst -> ho.tm -> map -> 
       map ->  fo.fsubst -> fo.fsubst -> o.
   add-new-map _ (ho.uva N _) Map [] F1 F1 :- 
-    mem Map (mapping _ (hv N _)), !.
+    mem Map (mapping _ (mv N _)), !.
   add-new-map H (ho.uva N L) Map [Map1 | MapL] F1 F3 :-
     mem.new F1 M F2,
-    len L Arity, Map1 = mapping (fv M) (hv N (arity Arity)),
+    len L Arity, Map1 = mapping (ov M) (mv N (arity Arity)),
     add-new-map H (ho.app L) [Map1 | Map] MapL F2 F3.
   add-new-map H (ho.lam B) Map NewMap F1 F2 :- 
     pi x\ add-new-map H (B x) Map NewMap F1 F2.
