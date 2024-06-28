@@ -72,6 +72,15 @@ The main reason why we did focus on contraction is that it is what the user
 wants to see and typically writes when declaring type class instances. Eg
 "Decidable prime" and not "Decidable (fun x => prime x)".
 
+On the other hand, we think it is possible to produce "eta-expanded" solutions
+by slightly modifying our decompilation procedure: note that the substitution we
+provide to the object language is produced at the very end of the unification
+procedure. Therefore, let `MV` and `OV` a mapping of a meta variable and an
+object variable. If in the meta-substitution sigma, we assign a term `T` to
+`MV`, then when we translate the `T` for `OV`, we can, at first, get the type of
+`OV`, say `a -> b -> c`. If `T` is like `lambda x. f x x` then we can decompile
+it into `lambda y z x.(f x x) z y` 
+
 DAVIDE CHECK THIS: ma dove è che contraiamo? si può fare (b) facilmente? Serve chiamare coq.typecheck?
 
 > In terms of related work, I might point out the paper
