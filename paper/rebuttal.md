@@ -11,16 +11,13 @@ interest of the reviewers.
 > the work done in computing complete normal forms would be wasted.  Is
 > there any evidence of that justification?
 
-According to our experience, that is specific to the use of LP in the context
-of Coq, delaying substitution (esp beta reduction) was not a crucial advantage.
-An early prototype of Elpi did implement an explicit substitution calculus
-but we could not observe a considerable gain (enough to justify its complexity).
-Our intuition is that, in Coq, long reductions are not made of beta steps,
-but rather fixpoint unfolding and ML-like pattern matching (interleaved with
-betas). So just delaying beta, and sharing beta-normal forms, is not enough to
-increase the performance in this context.
-
 We hope to have correctly understood the question.
+
+In our experience type-class search does not exhibit much backtracking,
+especially if the rules are indexed properly, deep enough to find the
+discriminating term constructor. It is out of scope for this paper, but
+another aspect we are investigating is a functionality/determinacy analysis
+since many type classes happen to be functions.
 
 > It might interest the reader to explain what features of lambda Prolog
 > that are not in Prolog remain in your specification.  For example,
@@ -36,7 +33,9 @@ We absolutely need:
 CHR rules, or a reified main loop (scheduling of goals), is needed only to
 guarantee fidelity, that amounts at failing as soon as possible.
 This may or may not be needed, depending on the use case.
-It surely is in ours.
+It surely is needed for our use case.
+
+We will try to make these points clear in the conclusion.
 
 ----------------------- REVIEW 2 ---------------------
 > "our real goal is to simulate the execution of an entire logic-program."
@@ -73,15 +72,10 @@ wants to see and typically writes when declaring type class instances. Eg
 "Decidable prime" and not "Decidable (fun x => prime x)".
 
 On the other hand, we think it is possible to produce "eta-expanded" solutions
-by slightly modifying our decompilation procedure: note that the substitution we
-provide to the object language is produced at the very end of the unification
-procedure. Therefore, let `MV` and `OV` a mapping of a meta variable and an
-object variable. If in the meta-substitution sigma, we assign a term `T` to
-`MV`, then when we translate the `T` for `OV`, we can, at first, get the type of
-`OV`, say `a -> b -> c`. If `T` is like `lambda x. f x x` then we can decompile
-it into `lambda y z x.(f x x) z y` 
-
-DAVIDE CHECK THIS: ma dove è che contraiamo? si può fare (b) facilmente? Serve chiamare coq.typecheck?
+by slightly modifying our decompilation procedure that is run at the very end
+in order to produce the substitution for the object language.
+Since Coq-Elpi runs withing Coq we could invoke Coq's type checker and use
+the type to perform eta expansion.
 
 > In terms of related work, I might point out the paper
 > "Higher-Order Logic Programming as Constraint Logic Programming" by
@@ -90,5 +84,6 @@ DAVIDE CHECK THIS: ma dove è che contraiamo? si può fare (b) facilmente? Serve
 > are postponed, and how other constraint domains are integrated (Chapters 5.5 and 6),
 > although not at the level of generality as CHR.
 
-We sincerely thank the reviewer for this pointer.
+We sincerely thank the reviewer for these pointers, we will integrate them in
+the last section.
 
