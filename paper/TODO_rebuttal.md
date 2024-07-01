@@ -16,8 +16,8 @@
    switch this order from the normal?
    > Comment: We use beta-eta since we treat beta before eta in the paper
 - [ ] line 70: "for the Coq's system" - rewrite
-- [ ] line 112: The reference for pattern unification is not [11] but
-   Miller's 1991 paper in the J. of Logic and Computation.
+- [x] line 112: The reference for pattern unification is not [11] but
+   Miller's 1991 paper in the J. of Logic and Computation. (cf 827b11dd2df213b9f446b77434fef8cb6591f00b)
 - [ ] line 247: Using "subscript" as a verb is odd.  Revise that
    sentence.
 - [ ] line 240: Definition 2.6 asks that a term is an eta expansion.
