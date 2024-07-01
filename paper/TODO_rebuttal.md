@@ -14,6 +14,7 @@
 - [ ] line 26: This is the first time I've seen the "\beta\eta"
    conversion written as "\eta\beta$.  Is there a good reason to
    switch this order from the normal?
+   > Comment: We use beta-eta since we treat beta before eta in the paper
 - [ ] line 70: "for the Coq's system" - rewrite
 - [ ] line 112: The reference for pattern unification is not [11] but
    Miller's 1991 paper in the J. of Logic and Computation.
