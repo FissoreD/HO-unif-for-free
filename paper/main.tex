@@ -974,14 +974,15 @@ A solution to a \Fo{} variable is, instead, a plain term, that is, \elpiIn{fsubs
 is an abbreviation for \elpiIn{mem to}.
 %We call \elpiIn{fsubst} the memory of \Fo{}, while we call \elpiIn{subst}
 %the one of \Ho.
-
+%
 The compiler establishes a mapping between variables of the two languages.
 
 \input{code/comp_base_types}
 
 \noindent
 Each \elpiIn{mvariable} is stored in the mapping together with
-its arity (a number) so that the code of \ref{clause:malloc} below can preserve:
+its arity (a number) so that the code of \ref{clause:malloc} below can preserve
+the following property:
 
 \begin{invariant}[Unification-variable arity]\label{inv:uvaarity}
   Each variable \elpiIn{A}
