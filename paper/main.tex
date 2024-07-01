@@ -225,7 +225,7 @@ its domain is finite and if the predicate is decidable.
 Instance fin_fin: ~$\forall$~n, Finite (fin n).             (* r1 *)
 Instance nfact_dec: ~$\forall$~n nf, Decision (nfact n nf). (* r2 *)
 Instance forall_dec: ~$\forall$~A P, Finite A ~$\to$~            (* r3 *)
-  ~$\forall$~x:A, Decision (P x) ~$\to$~ Decision (~$\forall$~x:A, P x).
+  ~($\forall$~x:A, Decision (P x)) ~$\to$~ Decision (~$\forall$~x:A, P x).
 \end{coqcode}
 
 \noindent Given this database, a type-class solver is expected to
