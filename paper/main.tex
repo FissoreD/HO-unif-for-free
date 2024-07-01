@@ -2781,10 +2781,12 @@ the runtime of the programming language. In particular the runtime iterates
 \Ue, but \hstep also needs to check links for \progress. Luckily Elpi extends
 $\lambda$Prolog with constraints (suspended goals) and
 Constraint Handling Rules (CHR) to operate on them~\cite{TASSI_2019,fruehwirth2017constraint}.
-An important design choice is that constraints are suspended on a user
-computed list of unification variables, and are resumed \emph{as soon as one of them
-is assigned}, before any other existing goal is considered. In turn this
-property allows for a timely activation of links that grants~\fullref{prop:fidelity}.
+Similarly to \cite{pfenning1993}, a constraint is a delayed unification problems
+suspended on a list of variables and is resumed \emph{as soon as one of these variable
+is assigned}, before any other existing goal is considered. We point out that
+we extend \cite{pfenning1993}, since we delay not only \notllambda unification problems, 
+but also those problems that are still in \maybeeta.  
+In turn link activation grants~\fullref{prop:fidelity}.
 For brevity we only provide two pseaudo-code snippets. The first one depicts
 how \linketa are suspended or make \progress.
 
