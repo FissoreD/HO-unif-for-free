@@ -814,7 +814,7 @@ head constructor may become a $\lambda$, or a constant, or a name, or remain an 
 
 \begin{definition}[\maybeeta]\label{def:maybeeta}
   \maybeeta is the set of terms $\lambda x.s$ such that $\exists \rho, \rho (\lambda x.s)$
-  is an $\eta$-expansion. % without the lambda, 5.11 is not true, that
+  is an $\eta$-redex. % without the lambda, 5.11 is not true, that
   % is we assume variables are in W
 \end{definition}
 
@@ -1583,7 +1583,7 @@ In other words the compiler eliminates all subterms that are in \maybebeta.
 
 \section{Handling of \maybeeta}\label{sec:eta}
 A term 
-$\lambda x. t \appsep x$ is said to be the $\eta$-expansion of $t$ if
+$\lambda x. t \appsep x$ is said to be the $\eta$-redex of $t$ if
 $x$ does not occur free in $t$, and conversely we say that $t$ is the $\eta$-contraction of
 $\lambda x. t \appsep x$. The equational theory of \Fo{} identifies these terms,
 but the current compilation scheme does not,
@@ -1639,7 +1639,7 @@ predicate defined in \cref{sec:execution}.
 
 When compiling a term $t$, we need to determine if any
 subterm $s \in \subterm{t}$ that is of the form $\lambda x. r$
-can be an $\eta$-expansion, i.e. if
+can be an $\eta$-redex, i.e. if
 there exists a substitution $\rho$ such that $\rho (\lambda x.r) \Eo s$.
 The detection of lambda abstractions that can ``disappear''
 is not as trivial as it may seems. Here a few examples:
@@ -1661,15 +1661,15 @@ is not as trivial as it may seems. Here a few examples:
 % for $A_x$ such that $A_x$ reduces to $x$ and $x$ is not free in the subterm $f \appsep x$.
 \noindent
 The first two examples are easy, and show how a unification variable can expose
-or erase a variable in its scope, turning the resulting term into an $\eta$-expansion or not.\\
+or erase a variable in its scope, turning the resulting term into an $\eta$-redex or not.\\
 The third example shows that when a variable occurs outside the scope of a unification
-variable, it cannot be erased and can hence prevent a term from being an $\eta$-expansion.\\
+variable, it cannot be erased and can hence prevent a term from being an $\eta$-redex.\\
 The last example shows the recursive nature of the check we need to implement.
 The term starts with a spine of two lambdas, hence the whole term
 is in \maybeeta iff the inner term $\lambda y.f\appsep (A \appsep x) \appsep (B \appsep y \appsep x)$
 is in \maybeeta itself. If it is, it could $\eta$-contract to
 $f \appsep (A \appsep x)$ making $\lambda x.f \appsep (A \appsep x)$ a potential
-$\eta$-expansion.\\
+$\eta$-redex.\\
 We can now detail how \maybeeta terms are detected.
 
 \newcommand{\reduceto}{\emph{may-contract-to}}
@@ -1699,7 +1699,7 @@ rule that can play a role is \ref{clause:eta1}, and note that
 that rule uses \elpiIn{beta} to add an argument to an
 application or to the scope of a variable.
 If the term $s$ is not exactly $x$ (case 1)
-it can only be an $\eta$-expansion of $x$, or a unification
+it can only be an $\eta$-redex of $x$, or a unification
 variable that can be assigned to $x$, or a combination of both.
 If $s$ begins with a lambda, then the lambda can only disappear by $\eta$
 contraction. In that case, the term $t$ under the spine of binders
@@ -1759,7 +1759,7 @@ Remark that the converse of \cref{lem:maybeeta} does not hold:
 there exists a term $t$ satisfying the criteria (1) of
 \cref{def:testmaybeeta} that is not in $\maybeeta$, i.e.
 there exists no substitution $\rho$ such that $\rho t$ is an
-$\eta$-expansion. A simple counter example is
+$\eta$-redex. A simple counter example is
 $\lambda x. f \appsep (A \appsep x) \appsep (A \appsep x)$
 since $x$ does not \occurrigid{} in the first argument
 of $f$,
@@ -1851,7 +1851,7 @@ A link \linketaM{\Gamma}{X}{t} is removed from \linkStore when
 $X$ becomes rigid. Let $y\in\Gamma$. There are two cases:
 \begin{enumerate}
   \item if $X = a$ or $X = y$ or $X = f \appsep a_1\ldots a_n$
-    we unify the $\eta$-expansion of $X$ with $t$, that is we run
+    we unify the $\eta$-redex of $X$ with $t$, that is we run
     $\lambda x.X \appsep x\Ue{} t$
     \item if $X = \lambda x.s$ we run $X \Ue{} t$.
 \end{enumerate}
@@ -1904,7 +1904,7 @@ $X$ becomes rigid. Let $y\in\Gamma$. There are two cases:
 
 % \begin{proof}[Proof sketch]
 %   $X$ is variable, and, by \cref{def:progressetaright}, $\lambda x.t$ is either no more
-%   a \maybeeta, i.e. it is not a $\eta$-expansion and, so, $\wellb(\lambda x.t)$, 
+%   a \maybeeta, i.e. it is not a $\eta$-redex and, so, $\wellb(\lambda x.t)$, 
 %   the unification is performed between $X$ and $\lambda x.t$.
 %   Otherwise, $\lambda x.t$ has the shape $\lambda x.t' \appsep x$ with $x$ not free in $t'$ and
 %    $\wellb(t')$. In this second case the unification is done between $X$ and $t'$.
@@ -1946,7 +1946,7 @@ $X$ becomes rigid. Let $y\in\Gamma$. There are two cases:
   \ref{def:progressetadedup} remove one link from \linkStore, hence they
   cannot be applied indefinitely.
   Moreover each rule only relies on terminating operations such as \Ue,
-  $\eta$-contraction, $\eta$-expansion, relocation (a recursive copy of a
+  $\eta$-contraction, $\eta$-redex, relocation (a recursive copy of a
   finite term).
   % The addition of rules for \elpiIn{progres1} complicates the function
   % \elpiIn{progress}. We can note, however, that they do not prevent the
@@ -2000,7 +2000,7 @@ $X$ becomes rigid. Let $y\in\Gamma$. There are two cases:
           in this case $s_2$ is compiled to $t_2$ and the unification step $u$ assigns $t_2$ to $X$
           and triggers \progressetaleft.
           If $s_1$ and $s_2$ are equal thanks to \ref{clause:eta1} then
-          progression $p$ unifies $\lambda x.t_1$ with the $\eta$-expansion of $t_2$ namly
+          progression $p$ unifies $\lambda x.t_1$ with the $\eta$-redex of $t_2$ namly
           $\lambda x.t_2\appsep x$, otherwise they are equal thanks to rule \ref{clause:lam-lam}
           and the link progress $p$ unifies $\lambda x.t_1$ with $t_2$.
           Alternatively, if $s_1$ are different $s_2$
@@ -2205,7 +2205,7 @@ $t'$ (under the context $\Gamma$).
   x_p.t_1$ and $\lambda x_1\dots x_q.t_2$. By \cref{th:fidelity-beta} and since
   we work with \wellb terms, this unification succeeds iff it does in \Fo.
   Otherwise if $p < n$ then we have to consider two cases. 1) If $t_1$ is a rigid
-  term then $t_2$ must be the $\eta$-expansion of $t_1$, implying $q = 0$. If it
+  term then $t_2$ must be the $\eta$-redex of $t_1$, implying $q = 0$. If it
   is not the case, then \progressetaleft
   would eventually cause a failure. 2) If $t_1$ is a
   unification variable then \elpiIn{scope-check} guarantees that $t_2$ does not use
@@ -2345,7 +2345,7 @@ this choice makes $\foUnifPb_2 \subseteq \llambda$:
 
 % On
 % the other hand, we also point out that the \maybeeta detection spot out
-% potential $\eta$-expansion for terms that are not in \llambda. For example,
+% potential $\eta$-redex for terms that are not in \llambda. For example,
 % $\lambda x.F \appsep G_x$ is considered as \maybeeta, since we have the
 % application of term whose argument can reduce to $x$.
 
