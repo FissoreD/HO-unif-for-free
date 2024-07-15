@@ -130,12 +130,12 @@
   but that restricts \Ue to first-order unification problems only.
   We refer to this basic encoding as \Fo.
   
-  In this paper we propose to translate \Fo{} unification problems
-  into an alternative encoding called \Ho, from which we derive \Uo,
+  In this paper we translate unification problems in \Fo{} 
+  to an alternative encoding called \Ho, from which we derive \Uo,
   the higher-order unification procedure of \Fo{}. \Uo
   honours $\beta\eta$-equivalence for terms
-  within the pattern fragment, and allows the use for 
-  heuristics when unification is performed with terms outside the pattern fragment.
+  within the pattern fragment, and allows for the use of
+  heuristics when the terms fall outside the pattern fragment.
   Moreover, as \Uo{} delegates most of the work to \Ue,
   it can be used to efficiently simulate a logic program in \Fo{} by
   taking advantage of
@@ -143,36 +143,6 @@
 
 \end{abstract}
 
-\begin{comment}
-Specifying and implementing a proof system from scratch requires significant
-effort. Logical Frameworks and Higher Order Logic Programming Languages provide
-dedicated, high-level meta languages to facilitate this task in two ways: 1)
-variable binding and substitution are for free when meta language binders
-represent object logic ones; 2) proof construction, and
-proof search, are greatly simplified by leveraging the unification procedure
-provided by the meta language. Notable examples of meta languages are Elf,
-Twelf, $\lambda$Prolog, Beluga, Abella and Isabelle which have been used to
-implement or specify many formal systems such as First Order Logic, Set Theory,
-Higher Order Logic, and the Calculus of Constructions.
-
-The object logic we are interested in is Coq's type theory. We aim to develop a
-higher-order unification-based proof search procedure using the meta language
-Elpi, a dialect of $\lambda$Prolog. Elpi's equational theory includes
-$\beta\eta$-equivalence and features a higher-order unification procedure \Ue
-for the pattern fragment. Elpi offers an encoding of Coq terms that is suitable
-for meta programming but that restricts \Ue to first-order unification problems
-only. We refer to this basic encoding as \Fo.
-
-In this paper we propose a more well-behaved encoding called \Ho, and show how
-to translate unification problems from \Fo{} to corresponding ones in \Ho.
-Consequently, we derive \Uo{}, the higher-order unification procedure of \Fo{}
-that honours $\beta\eta$-equivalence (for Coq functions), addresses problems
-within the pattern fragment, and allows for the use of heuristics to deal with
-problems outside the pattern fragment. Moreover, as \Uo{} delegates most of the
-work to \Ue, it can be used to efficiently simulate a logic program in \Fo{} by
-taking advantage of unification-related optimizations of the meta language, such
-as clause indexing.
-\end{comment}
 
 \keywords{Logic Programming, Meta-Programming, Higher-Order Unification}
 
@@ -2781,12 +2751,12 @@ the runtime of the programming language. In particular the runtime iterates
 \Ue, but \hstep also needs to check links for \progress. Luckily Elpi extends
 $\lambda$Prolog with constraints (suspended goals) and
 Constraint Handling Rules (CHR) to operate on them~\cite{TASSI_2019,fruehwirth2017constraint}.
-Similarly to \cite{pfenning1993}, a constraint is a delayed unification problems
-suspended on a list of variables and is resumed \emph{as soon as one of these variable
-is assigned}, before any other existing goal is considered. We point out that
-we extend \cite{pfenning1993}, since we delay not only \notllambda unification problems, 
-but also those problems that are still in \maybeeta.  
+Similarly to \cite{pfenning1993} a constraint is a goal % unification problems
+suspended on a list of variables that is resumed \emph{as soon as one of these variable
+is assigned}, before any other existing goal is considered. 
 In turn link activation grants~\fullref{prop:fidelity}.
+We point out that \cite{pfenning1993} delays \notllambda unification problems
+while we also delay problems that are in \maybeeta.
 For brevity we only provide two pseaudo-code snippets. The first one depicts
 how \linketa are suspended or make \progress.
 
