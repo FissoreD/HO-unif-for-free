@@ -1,0 +1,89 @@
+\usepackage[textsize=tiny]{todonotes}
+\setlength{\marginparwidth}{2cm}
+
+\usepackage[newfloat,outputdir=.aux]{minted}
+
+\@ifpackageloaded{hyperref}{}{\usepackage{hyperref}} % ifpackageloaded to avoid issues in beamer
+
+\hypersetup{colorlinks,citecolor=red,linkcolor=blue!60!green,urlcolor=blue}
+
+\usepackage{xspace}
+\usepackage[]{biblatex}
+\usepackage[]{amssymb}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{cleveref}
+\usepackage{subcaption}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% THEOREMS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \theoremstyle{definition}
+% \newtheorem{example}{Example}
+% \newtheorem{theorem}{Theorem}
+\ifcsmacro{definition}{}{
+  \let\enddefinition\undefined%
+  \newtheorem{definition}{Definition}[section]
+}
+
+% \newtheorem{notation}{Notation}
+% \newtheorem{lemma}{Lemma}
+
+% \theoremstyle{remark}
+% \newtheorem*{remark}{Remark}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% INLINE COMMANDS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\elpiIn}[1]{\mintinline[fontsize=\small,escapeinside=~~]{elpi.py:ElpiLexer -x}{#1}}
+\newcommand{\elpiInFN}[1]{\mintinline[fontsize=\footnotesize,escapeinside=~~]{elpi.py:ElpiLexer -x}{#1}}
+\newcommand{\coqIn}[1]{\mintinline[fontsize=\small,escapeinside=~~]{coq}{#1}}
+\newcommand{\textIn}[1]{\mintinline[escapeinside=~~]{text}{#1}}
+
+\newcommand{\elpiInEq}[2][]{
+  \begin{equation}
+    \texttt{\elpiIn{#2}}
+    \label{#1}
+  \end{equation}
+}
+
+\newcommand{\elpiInEqq}[2][]{
+  \begin{equation*}
+    \texttt{\elpiIn{#2}}
+    \label{#1}
+  \end{equation*}
+}
+
+\newcommand{\coqInEq}[2][]{
+  \begin{equation}
+    \texttt{\coqIn{#2}}
+    \label{#1}
+  \end{equation}
+}
+
+\newenvironment{coqcode}{%
+  \vspace{0.2em}%
+  \VerbatimEnvironment
+  \begin{minted}[fontsize=\small,autogobble,escapeinside=~~,mathescape=true,frame=leftline,framerule=0pt,framesep=1em]{coq}%
+}{%
+  \end{minted}%
+  \vspace{0.2em}%
+}
+
+\newenvironment{elpicode}{%
+  \vspace{0.2em}%
+  \VerbatimEnvironment
+  \begin{minted}[fontsize=\small,autogobble,escapeinside=~~,mathescape=true,frame=leftline,framerule=0pt,framesep=1em]{\elpiLexer}%
+}{%
+  \end{minted}%
+  \vspace{0.2em}%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% OTHER
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand*{\eqdef}{\ensuremath{\mathrel{\overset{\mathrm{def}}{=}}}}
+
+\newcommand{\mysep}{\begin{center}\line(1,0){40}\end{center}}
+
+\newcommand{\elpiLexer}{elpi.py:ElpiLexer -x}
