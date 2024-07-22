@@ -1,0 +1,57 @@
+\documentclass{pres}
+
+\usepackage{macros}
+\addbibresource{./bib.bib}
+
+\setbeamerfont{title}{}
+\setbeamerfont{subtitle}{parent={normal text},size=\small,shape=\itshape}
+
+\author{Fissore Davide \& Enrico Tassi} 
+\title{
+  Higher-Order unification for free
+}
+\subtitle{Reusing the meta-language unification for the object language}
+
+
+\newcommand{\cuts}{\textit{cuts}\xspace}
+\newcommand{\cut}{\textit{cut}\xspace}
+
+\newcommand{\sepFrame}[1]{
+  \section{#1}
+  \begin{frame}
+    \centering
+    {\usebeamerfont*{frametitle}\usebeamercolor[fg]{frametitle} #1}
+  \end{frame}
+}
+
+\newcommand{\subsepFrame}[1]{
+  \subsection{#1}
+  \begin{frame}
+    \centering
+    {\usebeamerfont*{frametitle}\usebeamercolor[fg]{frametitle} #1}
+  \end{frame}
+}
+
+% \institute{Université Côte d'Azur}
+\date{June 13, 2024}
+
+\begin{document}
+
+  \begin{frame}
+    \titlepage
+  \end{frame}
+
+  \begin{frame}
+  
+    \tableofcontents
+  
+  \end{frame}
+
+  \sepFrame{Context}
+  \sepFrame{Problem statement}
+  \sepFrame{Compilation and simulation}
+  \sepFrame{Links}
+  \sepFrame{Conclusion}
+
+
+\end{document}

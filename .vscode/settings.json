@@ -33,7 +33,16 @@
     ],
     "latex-workshop.latex.recipes": [
         {
-            "name": "pdflatex -> biber -> pdflatex*2",
+            "name": "pdflatex for pres",
+            "tools": [
+                "pdflatex",
+                "biber",
+                "pdflatex",
+                "pdflatex"
+            ]
+        },
+        {
+            "name": "pdflatex for paper",
             "tools": [
                 "gentex",
                 "pdflatex",
@@ -42,5 +51,6 @@
                 "pdflatex"
             ]
         }
-    ]
+    ],
+    "latex-workshop.latex.recipe.default": "lastUsed"
 }

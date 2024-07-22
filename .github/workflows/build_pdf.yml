@@ -6,8 +6,8 @@ on:
       - '**.bib'
       - '**.sty'
       - '**/build_pdf.yml'
-    branches:
-      - main
+    # branches:
+    #   - main
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -18,11 +18,20 @@ jobs:
       - name: Set up Git repository
         uses: actions/checkout@v3
       
+      - run: mkdir pdf
+
       - name: Install tex
         run: sudo apt-get update && sudo apt-get install texlive-full python3-pygments
-      
-      - name: Make pdf from tex
-        run: cd paper && make && cd .. && mkdir pdf && cp paper/.aux/main.pdf ./pdf
+
+
+      - name: Make paper
+        run: cd paper && make && cd .. && cp paper/.aux/main.pdf ./pdf
+
+      - name: Make presentation
+        run: cd pres && make && cd .. && cp pres/.aux/pres.pdf ./pdf
+
+      - name: Move in pdf folder
+        run: find -wholename '**/.aux/*.pdf' -exec cp "{}" pdf \;
 
       # Push to branch
       - name: Push to pdf branch
