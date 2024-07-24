@@ -1,0 +1,11 @@
+\begin{elpicode}
+  type deref subst -> tm -> tm -> o.                   ~($\customlabel{pred:deref}{\sigma t}$)~
+  deref _ (con C) (con C).
+  deref S (app A) (app B) :- map (deref S) A B.
+  deref S (lam F) (lam G) :-
+    pi x\ deref S x x => deref S (F x) (G x).
+  deref S (uva N L) R :- set? N S A,
+    move A L T, deref S T R.
+  deref S (uva N A) (uva N B) :- unset? N S,
+    map (deref S) A B.
+\end{elpicode}

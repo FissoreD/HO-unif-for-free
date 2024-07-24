@@ -1,0 +1,6 @@
+  comp (o-lam F) (uva A Scope) M1 M2 L1 L3 S1 S3 :-
+    maybe-eta (o-lam F) [], !,
+      alloc S1 A S2,
+      comp-lam F F1 M1 M2 L1 L2 S2 S3,
+      get-scope (lam F1) Scope, 
+      L3 = [val (link-eta (uva A Scope) (lam F1)) | L2].

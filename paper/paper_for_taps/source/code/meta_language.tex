@@ -1,0 +1,154 @@
+\begin{elpicode}
+
+  kind inctx type -> type.                              ~($\customlabel{data:inctx}{\cdot\vdash\cdot}$)~
+  type abs (tm -> inctx A) -> inctx A.
+  type val A -> inctx A.
+  typeabbrev assignment (inctx tm).
+  typeabbrev subst (mem assignment).
+
+  kind tm  type.
+  type app list tm -> tm.
+  type lam (tm -> tm) -> tm.
+  type con string -> tm.
+  type uva addr -> list tm -> tm.
+
+  ~\PYG{k+kd}{type} \PYG{n+nf}{(\Ue)} \PYG{k+kt}{tm -> tm -> subst -> subst -> o}~.
+  (con C ~$\Ue$~ con C) S S.
+  (app L1 ~$\Ue$~ app L2) S S1 :- fold2 (~$\Ue$~) L1 L2 S S1.
+  (lam F1 ~$\Ue$~ lam F2) S S1 :- 
+    pi x\ (pi S\ (x ~$\Ue$~ x) S S) => (F1 x ~$\Ue$~ F2 x) S S1.
+  (uva N Args ~$\Ue$~ T) S S1 :- 
+    set? N S F,!, move F Args T1, (T1 ~$\Ue$~ T) S S1.
+  (T ~$\Ue$~ uva N Args) S S1 :- 
+    set? N S F,!, move F Args T1, (T ~$\Ue$~ T1) S S1.
+  (uva M A1 ~$\Ue$~ uva N A2) S1 S2 :- !, 
+    pattern-fragment A1, pattern-fragment A2, 
+    prune! M A1 N A2 S1 S2.
+  (uva N Args ~$\Ue$~ T) S S1 :- not_occ N S T, pattern-fragment Args, 
+    bind T Args T1, assign N S T1 S1.
+  (T ~$\Ue$~ uva N Args) S S1 :- not_occ N S T, pattern-fragment Args, 
+    bind T Args T1, assign N S T1 S1.
+
+  type prune! addr -> list tm -> addr -> 
+              list tm -> subst -> subst -> o.
+  /* no pruning needed */               
+  prune! N A  N A  S S :- !.
+  prune! M A  N A  S1 S2 :- !, bind (uva M A) A Ass, 
+    assign N S1 Ass S2.
+  /* prune different arguments */
+  prune! N A1 N A2 S1 S3 :- !,
+    new S1 W S2, prune-same-variable W A1 A2 [] Ass,
+    assign N S2 Ass S3.
+  /* prune to the intersection of scopes */
+  prune! N A1 M A2 S1 S4 :- !,
+    new S1 W S2, prune-diff-variables W A1 A2 Ass1 Ass2, 
+    assign N S2 Ass1 S3,
+    assign M S3 Ass2 S4. 
+
+  type prune-same-variable addr -> list tm -> list tm -> 
+                            list tm -> assignment -> o.
+  prune-same-variable N [] [] ACC (val (uva N Args)) :- 
+    rev ACC Args.
+  prune-same-variable N [X|XS] [X|YS] ACC (abs F) :- 
+    pi x\ prune-same-variable N XS YS [x|ACC] (F x).
+  prune-same-variable N [_|XS] [_|YS] ACC (abs F) :- 
+    pi x\ prune-same-variable N XS YS ACC (F x).
+
+  type permute list nat -> list tm -> list tm -> o.
+  permute [] _ [].
+  permute [P|PS] Args [T|TS] :-
+    nth P Args T,
+    permute PS Args TS.
+
+  type build-perm-assign addr -> list tm -> list bool -> 
+                      list nat -> assignment -> o.
+  build-perm-assign N ArgsR [] Perm (val (uva N PermutedArgs)) :- 
+    rev ArgsR Args, permute Perm Args PermutedArgs.
+  build-perm-assign N Acc [tt|L] Perm (abs T) :- 
+    pi x\ build-perm-assign N [x|Acc] L Perm (T x).
+  build-perm-assign N Acc [ff|L] Perm (abs T) :- 
+    pi x\ build-perm-assign N Acc L Perm (T x).
+
+  type keep list A -> A -> bool -> o.
+  keep L A tt :- mem L A, !.
+  keep _ _ ff.
+
+  type prune-diff-variables addr -> list tm -> list tm -> 
+                            assignment -> assignment -> o.
+  prune-diff-variables N Args1 Args2 Ass1 Ass2 :-
+    map (keep Args2) Args1 Bits1, 
+    map (keep Args1) Args2 Bits2,
+    filter Args1 (mem Args2) ToKeep1,
+    filter Args2 (mem Args1) ToKeep2,
+    map (index ToKeep1) ToKeep1 IdPerm,
+    map (index ToKeep1) ToKeep2 Perm21,
+    build-perm-assign N [] Bits1 IdPerm Ass1,
+    build-perm-assign N [] Bits2 Perm21 Ass2.
+
+  type beta tm -> list tm -> tm -> o.
+  beta A [] A :- !.
+  beta (lam Bo) [H | L] R :- beta (Bo H) L R1, beta-aux R1 R.
+  beta (app A) L (app X) :- append A L X.
+  beta (con H) L (app [con H | L]).
+  beta X L (app[X|L]) :- name X.
+
+  type beta-aux tm -> tm -> o.
+  beta-aux (app [HD|TL]) R :- !, beta HD TL R.
+  beta-aux A A. 
+
+  /* occur check for N before crossing a functor */
+  type not_occ  addr -> subst -> tm -> o.
+  not_occ N S (uva M Args) :- set? M S F, 
+    move F Args T, not_occ N S T.
+  not_occ N S (uva M Args) :- unset? M S, not (M = N),
+    forall1 (not_occ_aux N S) Args.
+  not_occ _ _ (con _).
+  not_occ N S (app L) :- not_occ_aux N S (app L).
+  /* Note: lam is a functor for the meta language! */
+  not_occ N S (lam L) :- pi x\ not_occ_aux N S (L x).
+  not_occ _ _ X :- name X.
+  /* finding N is ok */
+  not_occ N _ (uva N _).
+
+  /* occur check for X after crossing a functor */
+  type not_occ_aux addr -> subst -> tm -> o.
+  not_occ_aux N S (uva M _) :- unset? M S, not (N = M).
+  not_occ_aux N S (uva M Args) :- set? M S F, 
+    move F Args T, not_occ_aux N S T.
+  not_occ_aux N S (app L) :- forall1 (not_occ_aux N S) L.
+  not_occ_aux N S (lam F) :- pi x\ not_occ_aux N S (F x).
+  not_occ_aux _ _ (con _).
+  not_occ_aux _ _ X :- name X.
+  /* finding N is ko, hence no rule */
+  
+  /* copy T T' vails if T contains a free variable, i.e. it
+     performs scope checking for bind */
+  type copy tm -> tm -> o.
+  copy (con C)   (con C).
+  copy (app L)   (app L') :- map copy L L'.
+  copy (lam T)   (lam T') :- pi x\ copy x x => copy (T x) (T' x).
+  copy (uva A L) (uva A L') :- map copy L L'.
+
+  type bind tm -> list tm -> assignment -> o.
+  bind T [] (val T') :- copy T T'.
+  bind T [X | TL] (abs T') :- pi x\ copy X x => bind T TL (T' x).
+
+  type deref subst -> tm -> tm -> o.                   ~($\customlabel{pred:deref}{\sigma t}$)~
+  deref _ (con C) (con C).
+  deref S (app A) (app B) :- map (deref S) A B.
+  deref S (lam F) (lam G) :-
+    pi x\ deref S x x => deref S (F x) (G x).
+  deref S (uva N L) R :- set? N S A,
+    move A L T, deref S T R.
+  deref S (uva N A) (uva N B) :- unset? N S,
+    map (deref S) A B.
+
+  type move assignment -> list tm -> tm -> o.
+  move (abs Bo) [H|L] R :- move (Bo H) L R.
+  move (val A)  [] A :- !.
+
+
+  type deref-assmt subst -> assignment -> assignment -> o.
+  deref-assmt S (abs T) (abs R) :- pi x\ deref-assmt S (T x) (R x).
+  deref-assmt S (val T) (val R) :- deref S T R.
+\end{elpicode}

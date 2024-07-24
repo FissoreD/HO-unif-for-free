@@ -1,0 +1,12 @@
+\begin{elpicode}
+  type decompm mmap -> mmap -> subst -> fsubst -> fsubst -> o.
+  decompm _ [] _ F F.
+  decompm M [ov V <-> mv H _|MS] S F1 F3 :- set? H S A,
+    deref-assmt S A A1,
+    abs->lam A1 T, decomp M T T1, 
+    %eta-contract T1 T2, % "nice to our users, not really needed"
+    assign V F1 T1 F2,
+    decompm M MS S F2 F3. 
+  decompm M [_ <-> mv H _|MS] S F1 F2 :- unset? H S,
+    decompm M MS S F1 F2.
+\end{elpicode}

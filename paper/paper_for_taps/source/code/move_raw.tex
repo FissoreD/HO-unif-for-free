@@ -1,0 +1,4 @@
+  type move assignment -> list tm -> tm -> o.
+  move (abs Bo) [H|L] R :- move (Bo H) L R.
+  move (val A)  [] A :- !.
+

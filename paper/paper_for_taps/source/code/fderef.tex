@@ -1,0 +1,12 @@
+\begin{elpicode}
+  type fder fsubst -> to -> to -> o.
+  fder _ (o-con C) (o-con C).
+  fder S (o-app A) (o-app B) :- map (fder S) A B.
+  fder S (o-lam F) (o-lam G) :-
+    pi x\ fder S x x => fder S (F x) (G x).
+  fder S (o-uva N) R :- set? N S T, fder S T R.
+  fder S (o-uva N) (o-uva N) :- unset? N S.
+
+  type fderef fsubst -> to -> to -> o.                 ~($\customlabel{pred:fder}{\rho s}$)~
+  fderef S T T2 :- fder S T T1, napp T1 T2.
+\end{elpicode}

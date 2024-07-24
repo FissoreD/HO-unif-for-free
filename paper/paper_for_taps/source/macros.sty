@@ -1,0 +1,108 @@
+\newcommand{\hoareTriple}[3]{
+  \{#1\}\ #2\ \{#3\}
+}
+
+\newcommand\sepimp{\mathrel{-\mkern-6mu*}}
+
+\newcommand*{\eqdef}{\ensuremath{\mathrel{\overset{\mathrm{def}}{=}}}}
+
+\def\prop{\texttt{Prop}}
+
+% Guillemots for maths
+\def\gl{\text{``}}
+\def\gr{\text{''}}
+\newcommand{\guillemot}[1]{\gl #1 \gr}
+
+% after usepackage{minted}
+\newcommand{\elpiIn}[1]{\mintinline[fontsize=\small,escapeinside=~~]{elpi.py:ElpiLexer -x}{#1}}
+\newcommand{\elpiInFN}[1]{\mintinline[fontsize=\footnotesize,escapeinside=~~]{elpi.py:ElpiLexer -x}{#1}}
+\newcommand{\coqIn}[1]{\mintinline[fontsize=\small,escapeinside=~~]{coq}{#1}}
+\newcommand{\textIn}[1]{\mintinline[escapeinside=~~]{text}{#1}}
+
+\newcommand{\elpiInEq}[2][]{
+  \begin{equation}
+    \texttt{\elpiIn{#2}}
+    \label{#1}
+  \end{equation}
+}
+
+\newcommand{\elpiInEqq}[2][]{
+  \begin{equation*}
+    \texttt{\elpiIn{#2}}
+    \label{#1}
+  \end{equation*}
+}
+
+\newcommand{\coqInEq}[2][]{
+  \begin{equation}
+    \texttt{\coqIn{#2}}
+    \label{#1}
+  \end{equation}
+}
+
+% \newminted{coq}{escapeinside=||}
+% \newminted{elpi}{escapeinside=||}
+
+\newcommand{\inputrawelpicode}[1]{%
+\inputminted[fontsize=\small,autogobble,escapeinside=~~,mathescape=true,frame=leftline,framerule=0pt,framesep=0em]{elpi.py:ElpiLexer -x}{#1_raw.tex}%
+}
+
+\newenvironment{elpicode}{%
+  \vspace{0.2em}%
+  \VerbatimEnvironment
+    \begin{minted}[fontsize=\small,autogobble,escapeinside=~~,mathescape=true,frame=leftline,framerule=0pt,framesep=1em]{elpi.py:ElpiLexer -x}%
+}{%
+  \end{minted}%
+  \vspace{0.2em}%
+}
+\newenvironment{elpicodetab}{%
+  \VerbatimEnvironment
+    \begin{minted}[fontsize=\small,autogobble,escapeinside=~~,mathescape=true,frame=leftline,framerule=0pt,framesep=0em]{elpi.py:ElpiLexer -x}%
+}{%
+  \end{minted}%
+  \vspace{0.2em}%
+}
+
+\newenvironment{textcode}{%
+  \vspace{0.2em}%
+  \VerbatimEnvironment
+  \begin{minted}[breaklines,fontsize=\small,autogobble,escapeinside=~~,mathescape=true,frame=leftline,framerule=0pt,framesep=1em]{text}%
+}{%
+  \end{minted}%
+  \vspace{0.2em}%
+}
+
+\newenvironment{coqcode}{%
+  \vspace{0.2em}%
+  \VerbatimEnvironment
+    \begin{minted}[fontsize=\small,autogobble,escapeinside=~~,mathescape=true,frame=leftline,framerule=0pt,framesep=1em]{coq}%
+}{%
+  \end{minted}%
+  \vspace{0.2em}%
+}
+
+
+% from amsmath and pifont
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%
+
+\newcommand{\proglang}[1]{\texttt{#1}\xspace}
+\newcommand{\pl}[1]{\proglang{#1}}
+
+\def\old{\noindent\hrulefill OLD \noindent\hrulefill}
+
+\makeatletter
+\newcommand{\customlabel}[2]{%
+   \protected@write \@auxout {}{\string \newlabel {#1}{{\ensuremath{#2}}{\thepage}{#2}{#1}{}} }%
+   \hypertarget{#1}{\ensuremath{#2}}
+}
+\makeatother
+
+\newcounter{llength}
+\newcommand{\listlength}[1]{
+  \setcounter{llength}{0}%
+  \foreach \i in #1 {\stepcounter{llength}}%
+}
+
+\newcommand*{\fullref}[1]{\cref{#1} (\textsc{\nameref{#1}})}
+\newcommand*{\Fullref}[1]{\Cref{#1} (\textsc{\nameref{#1}})}

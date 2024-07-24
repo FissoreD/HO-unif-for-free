@@ -1,0 +1,16 @@
+  type beta to -> list to -> to -> o.
+  beta A [] A.
+  beta (o-lam Bo) [H | L] R :- napp (Bo H) F, beta F L R.
+  beta (o-app A) L (o-app X) :- append A L X.
+  beta (o-uva N) L (o-app [o-uva N | L]).
+  beta (o-con H) L (o-app [o-con H | L]).
+  beta N L (o-app [N | L]) :- name N.
+
+  type napp to -> to -> o.
+  napp (o-con C) (o-con C).
+  napp (o-uva A) (o-uva A).
+  napp (o-lam F) (o-lam G) :- pi x\ napp (F x) (G x).
+  napp (o-app [o-app L1 |L2]) T :- !,
+    append L1 L2 L3, napp (o-app L3) T.
+  napp (o-app L) (o-app L1) :- map napp L L1.
+  napp N N :- name N.

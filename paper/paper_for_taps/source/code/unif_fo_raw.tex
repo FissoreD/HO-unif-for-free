@@ -1,0 +1,6 @@
+~\PYG{k+kd}{type} \PYG{n+nf}{(\Uo)} \PYG{k+kt}{to -> to -> fsubst -> o}~.
+(A ~$\Uo$~ B) F :-
+  compile A A' [] M1 [] L1 [] S1,
+  compile B B' M1 M2 L1 L2 S1 S2,
+  hstep A' B' L2 L3 S2 S3,
+  decompile M2 L3 S3 [] F.
