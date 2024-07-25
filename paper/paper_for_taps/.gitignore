@@ -1,0 +1,11 @@
+!pdf/*.pdf
+
+source/_minted-main
+source/main.bcf
+source/main.out
+source/main.pyg
+source/main.run.xml
+source/main.bbl
+source/main.blg
+source/main.fls
+source/main.synctex.gz
