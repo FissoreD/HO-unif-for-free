@@ -6,11 +6,261 @@
     Bib\TeX}}}
 \addbibresource{bib.bib}
 
-\usepackage{myTools}
-\usepackage{macros}
+\usepackage[newfloat]{minted}
+\usepackage{xspace}
+\usepackage{cleveref}
+\usepackage{calc}
+\usepackage{tikz}
 \usepackage{enumitem}
 \usepackage{intcalc}
 \usepackage{nameref}
+
+\newcommand{\hoareTriple}[3]{
+  \{#1\}\ #2\ \{#3\}
+}
+
+\newcommand\sepimp{\mathrel{-\mkern-6mu*}}
+
+\newcommand*{\eqdef}{\ensuremath{\mathrel{\overset{\mathrm{def}}{=}}}}
+
+\def\prop{\texttt{Prop}}
+
+% Guillemots for maths
+\def\gl{\text{``}}
+\def\gr{\text{''}}
+\newcommand{\guillemot}[1]{\gl #1 \gr}
+
+% after usepackage{minted}
+\newcommand{\elpiIn}[1]{\mintinline[fontsize=\small,escapeinside=~~]{elpi.py:ElpiLexer -x}{#1}}
+\newcommand{\elpiInFN}[1]{\mintinline[fontsize=\footnotesize,escapeinside=~~]{elpi.py:ElpiLexer -x}{#1}}
+\newcommand{\coqIn}[1]{\mintinline[fontsize=\small,escapeinside=~~]{coq}{#1}}
+\newcommand{\textIn}[1]{\mintinline[escapeinside=~~]{text}{#1}}
+
+\newcommand{\elpiInEq}[2][]{
+  \begin{equation}
+    \texttt{\elpiIn{#2}}
+    \label{#1}
+  \end{equation}
+}
+
+\newcommand{\elpiInEqq}[2][]{
+  \begin{equation*}
+    \texttt{\elpiIn{#2}}
+    \label{#1}
+  \end{equation*}
+}
+
+\newcommand{\coqInEq}[2][]{
+  \begin{equation}
+    \texttt{\coqIn{#2}}
+    \label{#1}
+  \end{equation}
+}
+
+% \newminted{coq}{escapeinside=||}
+% \newminted{elpi}{escapeinside=||}
+
+\newcommand{\inputrawelpicode}[1]{%
+\inputminted[fontsize=\small,autogobble,escapeinside=~~,mathescape=true,frame=leftline,framerule=0pt,framesep=0em]{elpi.py:ElpiLexer -x}{#1_raw.tex}%
+}
+
+\newenvironment{elpicode}{%
+  \vspace{0.2em}%
+  \VerbatimEnvironment
+    \begin{minted}[fontsize=\small,autogobble,escapeinside=~~,mathescape=true,frame=leftline,framerule=0pt,framesep=1em]{elpi.py:ElpiLexer -x}%
+}{%
+  \end{minted}%
+  \vspace{0.2em}%
+}
+\newenvironment{elpicodetab}{%
+  \VerbatimEnvironment
+    \begin{minted}[fontsize=\small,autogobble,escapeinside=~~,mathescape=true,frame=leftline,framerule=0pt,framesep=0em]{elpi.py:ElpiLexer -x}%
+}{%
+  \end{minted}%
+  \vspace{0.2em}%
+}
+
+\newenvironment{textcode}{%
+  \vspace{0.2em}%
+  \VerbatimEnvironment
+  \begin{minted}[breaklines,fontsize=\small,autogobble,escapeinside=~~,mathescape=true,frame=leftline,framerule=0pt,framesep=1em]{text}%
+}{%
+  \end{minted}%
+  \vspace{0.2em}%
+}
+
+\newenvironment{coqcode}{%
+  \vspace{0.2em}%
+  \VerbatimEnvironment
+    \begin{minted}[fontsize=\small,autogobble,escapeinside=~~,mathescape=true,frame=leftline,framerule=0pt,framesep=1em]{coq}%
+}{%
+  \end{minted}%
+  \vspace{0.2em}%
+}
+
+
+% from amsmath and pifont
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%
+
+\newcommand{\proglang}[1]{\texttt{#1}\xspace}
+\newcommand{\pl}[1]{\proglang{#1}}
+
+\def\old{\noindent\hrulefill OLD \noindent\hrulefill}
+
+\makeatletter
+\newcommand{\customlabel}[2]{%
+   \protected@write \@auxout {}{\string \newlabel {#1}{{\ensuremath{#2}}{\thepage}{#2}{#1}{}} }%
+   \hypertarget{#1}{\ensuremath{#2}}
+}
+\makeatother
+
+\newcounter{llength}
+\newcommand{\listlength}[1]{
+  \setcounter{llength}{0}%
+  \foreach \i in #1 {\stepcounter{llength}}%
+}
+
+\newcommand*{\fullref}[1]{\cref{#1} (\textsc{\nameref{#1}})}
+\newcommand*{\Fullref}[1]{\Cref{#1} (\textsc{\nameref{#1}})}
+
+
+\makeatletter
+\newcommand{\addXdef}[2]{\protected@xdef#1{#1 #2}}
+
+\newcommand{\nth}[3]{
+  \foreach \x [count=\k] in #2 {\ifnum\k=#3 \addXdef{#1}{\x} \fi}
+}
+
+% takes a unif symbol (\Ue or \Uo) and a list of pairs: (lhs, rhs) of unif pb
+\newcommand{\printPb}[2]{
+  \listlength{#2}
+  \def\tableData{}% empty table
+  \foreach \x [count=\i] in #2
+    {
+      \foreach \y [count=\j] in \x {
+        \ifthenelse{\isodd{\j}}
+          {\addXdef{\tableData}{\y & #1 &}}
+          {\addXdef{\tableData}{\y}}
+      } 
+      \ifthenelse{\equal{\i}{2}}{}{
+        \ifthenelse{\equal{\i}{\thellength}}{}{\addXdef{\tableData}{&\quad}}
+      }
+    }
+  \tableData
+}
+
+% Takes a list of triple: coq-var, elpi-var, arity
+\newcommand{\printMap}[1]{
+  \def\tableData{}% empty table
+
+  \newcommand{\printMapAux}[1]{
+    \nth{\tableData}{##1}{1} \addXdef{\tableData}{\mapsto} 
+    \nth{\tableData}{##1}{2} \addXdef{\tableData}{^} \nth{\tableData}{##1}{3}}
+
+  \listlength{#1}
+  \foreach \x [count=\i] in #1
+    {
+      \printMapAux{\x}
+      \ifthenelse{\equal{\thellength}{\i}}{}{
+        \ifthenelse{\equal{\intcalcMod{\i}{3}}{0}}
+        {\addXdef{\tableData}{\\}}
+        {\addXdef{\tableData}{&\quad}}
+        }
+    }
+  \ensuremath{
+    \begin{array}{ccc}
+      \tableData
+    \end{array}
+  }
+}
+
+% Take a list of triple for eta-links: (link-type, ctx, lhs, rhs), link-type is \eta or \beta
+\newcommand{\printLink}[1]{
+  \listlength{#1}
+  \def\tableData{}% empty table
+
+  \newcommand{\printLinkAux}[1]{
+    \nth{\tableData}{##1}{2} \addXdef{\tableData}{\vdash&} 
+    \nth{\tableData}{##1}{3} \addXdef{\tableData}{&=_}
+    \nth{\tableData}{##1}{1} \addXdef{\tableData}{&} 
+    \nth{\tableData}{##1}{4}
+  }
+
+  \foreach \x [count=\i] in #1
+    {
+      \printLinkAux{\x}
+      \ifthenelse{\equal{\thellength}{\i}}{}{
+        \ifthenelse{\isodd{\i}}
+          {\addXdef{\tableData}{&\quad}}
+          {\addXdef{\tableData}{\\}}
+      }
+    }
+  \ensuremath{
+    \begin{array}{rcclrccl}
+      \tableData
+    \end{array}
+  }
+}
+
+\newcommand{\putBigPar}[2]{
+  \listlength{#1}
+  \ifthenelse{\thellength>#2}{\Big}{}
+}
+
+\newcommand{\hideEmpty}[2]{
+  \ifthenelse{\equal{#1}{{}}}{}{#2}
+}
+
+% Input is: 
+%   P = a list of pairs for FoUnifPb    (leftPb, rightPb)
+%   T = a list of pairs for HoUnifPb    (leftPb, rightPb)
+%   M = a list of triples for mappings  (FoVar, HoVar, Arity)
+%   L = a list of 4-uplet for links     (link-type, ctx, lhs, rhs)
+% T, M, L can be empty
+% Note: this macro is used when the length of P > 1
+\newcommand{\printAlll}[4]{
+  \arraycolsep=2pt
+  $$
+  \begin{array}{rrclrcll}
+    \foUnifPb = \{ & \printPb{\Uo}{#1} &\}
+    \hideEmpty{#2}{\\
+      \hoUnifPb = \{ & \printPb{\Ue}{#2} &\}
+    }
+    \hideEmpty{#3}{\\
+      \mapStore = \putBigPar{#3}{3}\{ & \multicolumn{7}{l}{
+        \printMap{#3} ~\putBigPar{#3}{3}\}
+    }}
+    \hideEmpty{#4}{\\
+      \linkStore = \putBigPar{#4}{2}\{ & \multicolumn{7}{l}{
+        \printLink{#4} ~\putBigPar{#4}{2}\}
+    }}
+  \end{array}
+  $$
+}
+
+% Same as printAlll, but the length of P is 1, the if then else
+% seems not to work on the fst parameter of multicolumn
+\newcommand{\printAlllSingle}[4]{
+  \arraycolsep=2pt
+  $$
+  \begin{array}{rrcll}
+    \foUnifPb = \{ & \printPb{\Uo}{#1} &\}
+    \hideEmpty{#2}{\\
+      \hoUnifPb = \{ & \printPb{\Ue}{#2} &\}
+    }
+    \hideEmpty{#3}{\\
+      \mapStore = \putBigPar{#3}{3}\{ & \multicolumn{4}{l}{
+        \printMap{#3} ~\putBigPar{#3}{3}\}
+    }}
+    \hideEmpty{#4}{\\
+      \linkStore = \putBigPar{#4}{2}\{ & \multicolumn{4}{l}{
+        \printLink{#4} ~\putBigPar{#4}{2}\}
+    }}
+  \end{array}
+  $$
+}
+\makeatother
 
 % TODO: set this fields
 %\setcopyright{cc}
@@ -78,8 +328,6 @@
 \newcommand{\mapStore}{\texorpdfstring{\ensuremath{\mathbb{M}}\xspace}{M}}
 \newcommand{\foUnifPb}{\ensuremath{\mathbb{P}}\xspace}
 \newcommand{\hoUnifPb}{\ensuremath{\mathbb{Q}}\xspace}
-
-\usepackage{pb_printer}
 
 \begin{document}
 
