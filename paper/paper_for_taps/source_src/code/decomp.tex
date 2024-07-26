@@ -1,0 +1,11 @@
+\begin{elpicode}
+  type decomp mmap -> tm -> to -> o.
+  decomp _ (con C)  (o-con C).
+  decomp M (app A) (o-app B) :- map (decomp M) A B.
+  decomp M (lam F) (o-lam G) :- 
+    pi x y\ (pi M\ decomp M x y) => decomp M (F x) (G y).
+  decomp M (uva Mv Ag) R :-
+    mem M (ov Ov <-> mv Mv _), 
+    map (decomp M) Ag Bg,
+    beta (o-uva Ov) Bg R.
+\end{elpicode}

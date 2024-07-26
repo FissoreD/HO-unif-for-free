@@ -1,0 +1,5 @@
+\begin{elpicode}
+  type close-links (tm -> links) -> links -> o.
+  close-links (v\[X v|L v]) [abs X|R] :- close-links L R.
+  close-links (_\[]) [].
+\end{elpicode}

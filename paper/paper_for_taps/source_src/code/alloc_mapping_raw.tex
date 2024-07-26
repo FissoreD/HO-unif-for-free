@@ -1,0 +1,4 @@
+  type m-alloc ovariable -> mvariable -> mmap -> mmap -> 
+    subst -> subst -> o.                            ~\customlabel{clause:malloc}{(malloc)}~
+  m-alloc Ov Mv M M S S :- mem M (Ov <-> Mv), !.
+  m-alloc Ov Mv M [Ov <-> Mv|M] S S1 :- Mv = mv N _, new S N S1.

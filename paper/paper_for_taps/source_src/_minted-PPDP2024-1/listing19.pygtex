@@ -1,0 +1,6 @@
+\begin{Verbatim}[commandchars=\\\{\},codes={\catcode`\$=3\catcode`\^=7\catcode`\_=8\relax}]
+\PYG{k+kd}{type}\PYG{+w}{ }\PYG{n+nf}{lam}\PYG{+w}{  }\PYG{k+kt}{tm}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{(}\PYG{k+kt}{tm}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{tm}\PYG{k+kt}{)}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{tm}.\PYG{+w}{     }\PYG{c}{\PYGZpc{} lambda abstraction}
+\PYG{k+kd}{type}\PYG{+w}{ }\PYG{n+nf}{app}\PYG{+w}{  }\PYG{k+kt}{list}\PYG{+w}{ }\PYG{k+kt}{tm}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{tm}.\PYG{+w}{              }\PYG{c}{\PYGZpc{} n\PYGZhy{}ary application}
+\PYG{k+kd}{type}\PYG{+w}{ }\PYG{n+nf}{all}\PYG{+w}{  }\PYG{k+kt}{tm}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{(}\PYG{k+kt}{tm}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{tm}\PYG{k+kt}{)}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{tm}.\PYG{+w}{     }\PYG{c}{\PYGZpc{} forall quantifier}
+\PYG{k+kd}{type}\PYG{+w}{ }\PYG{n+nf}{con}\PYG{+w}{  }\PYG{k+kt}{string}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{tm}.\PYG{+w}{               }\PYG{c}{\PYGZpc{} constants}
+\end{Verbatim}

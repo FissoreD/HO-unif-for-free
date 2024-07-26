@@ -1,0 +1,5 @@
+\begin{Verbatim}[commandchars=\\\{\},codes={\catcode`\$=3\catcode`\^=7\catcode`\_=8\relax}]
+link\PYGZhy{}eta\PYG{+w}{ }\PYG{n+nv}{L}\PYG{+w}{ }\PYG{n+nv}{R}\PYG{+w}{ }\PYG{k+kd}{:\PYGZhy{}}\PYG{+w}{ }not\PYG{+w}{ }(var\PYG{+w}{ }\PYG{n+nv}{L}\PYG{p}{)}\PYG{k+kd}{,}\PYG{+w}{ }\PYG{k+kd}{!}\PYG{k+kd}{,}\PYG{+w}{ }eta\PYGZhy{}progress\PYGZhy{}lhs\PYG{+w}{ }\PYG{n+nv}{L}\PYG{+w}{ }\PYG{n+nv}{R}\PYG{o}{.}
+link\PYGZhy{}eta\PYG{+w}{ }\PYG{n+nv}{L}\PYG{+w}{ }\PYG{n+nv}{R}\PYG{+w}{ }\PYG{k+kd}{:\PYGZhy{}}\PYG{+w}{ }not\PYG{+w}{ }(maybe\PYGZhy{}eta\PYG{+w}{ }\PYG{n+nv}{R}\PYG{p}{)}\PYG{k+kd}{,}\PYG{+w}{ }\PYG{k+kd}{!}\PYG{k+kd}{,}\PYG{+w}{ }eta\PYGZhy{}progress\PYGZhy{}rhs\PYG{+w}{ }\PYG{n+nv}{L}\PYG{+w}{ }\PYG{n+nv}{R}\PYG{o}{.}
+link\PYGZhy{}eta\PYG{+w}{ }\PYG{n+nv}{L}\PYG{+w}{ }\PYG{n+nv}{R}\PYG{+w}{ }\PYG{k+kd}{:\PYGZhy{}}\PYG{+w}{ }declare\PYGZus{}constraint\PYG{+w}{ }(link\PYGZhy{}eta\PYG{+w}{ }\PYG{n+nv}{L}\PYG{+w}{ }\PYG{n+nv}{R}\PYG{p}{)}\PYG{+w}{ }\PYG{k+kd}{[}\PYG{n+nv}{L}\PYG{k+kd}{,}\PYG{n+nv}{R}\PYG{k+kd}{]}\PYG{o}{.}
+\end{Verbatim}

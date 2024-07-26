@@ -1,0 +1,3 @@
+\begin{Verbatim}[commandchars=\\\{\},codes={\catcode`\$=3\catcode`\^=7\catcode`\_=8\relax}]
+\PYG{k+kd}{uvar}\PYG{+w}{ }\PYG{esc}{$f_A$}\PYG{+w}{ }\PYG{k+kd}{[}x\PYG{k+kd}{,}y\PYG{k+kd}{,}z\PYG{k+kd}{]}
+\end{Verbatim}

@@ -1,0 +1,6 @@
+\begin{Verbatim}[commandchars=\\\{\},codes={\catcode`\$=3\catcode`\^=7\catcode`\_=8\relax}]
+finite\PYG{+w}{   }(app\PYG{+w}{ }\PYG{k+kd}{[}con\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{fin}\PYG{l+s+s2}{\PYGZdq{}}\PYG{k+kd}{,}\PYG{+w}{ }\PYG{n+nv}{N}\PYG{k+kd}{]}\PYG{p}{)}\PYG{o}{.}\PYG{+w}{                         }\PYG{esc}{\customlabel{clause:r1}{(r1)}}
+decision\PYG{+w}{ }(app\PYG{+w}{ }\PYG{k+kd}{[}con\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{nfact}\PYG{l+s+s2}{\PYGZdq{}}\PYG{k+kd}{,}\PYG{+w}{ }\PYG{n+nv}{N}\PYG{k+kd}{,}\PYG{+w}{ }\PYG{n+nv}{NF}\PYG{k+kd}{]}\PYG{p}{)}\PYG{o}{.}\PYG{+w}{                   }\PYG{esc}{\customlabel{clause:r2}{(r2)}}
+decision\PYG{+w}{ }(all\PYG{+w}{ }\PYG{n+nv}{A}\PYG{+w}{ }\PYG{n+nv}{x\PYGZbs{}}\PYG{+w}{ }app\PYG{+w}{ }\PYG{k+kd}{[}\PYG{n+nv}{P}\PYG{k+kd}{,}\PYG{+w}{ }x\PYG{k+kd}{]}\PYG{p}{)}\PYG{+w}{ }\PYG{k+kd}{:\PYGZhy{}}\PYG{+w}{ }finite\PYG{+w}{ }\PYG{n+nv}{A}\PYG{k+kd}{,}\PYG{+w}{           }\PYG{esc}{\customlabel{clause:r3}{(r3)}}
+\PYG{+w}{  }\PYG{k+kd}{pi}\PYG{+w}{ }\PYG{n+nv}{w}\PYGZbs{}\PYG{+w}{ }decision\PYG{+w}{ }(app\PYG{+w}{ }\PYG{k+kd}{[}\PYG{n+nv}{P}\PYG{k+kd}{,}\PYG{+w}{ }w\PYG{k+kd}{]}\PYG{p}{)}\PYG{o}{.}
+\end{Verbatim}

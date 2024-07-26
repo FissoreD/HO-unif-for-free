@@ -1,0 +1,5 @@
+type pattern-fragment-prefix-aux list A -> list A -> list A -> list A -> o.
+pattern-fragment-prefix-aux [] _ [] [].
+pattern-fragment-prefix-aux [X | L] ACC [X | PF] NPF :- name X, not-in ACC X, !, 
+  pattern-fragment-prefix-aux L [X | ACC] PF NPF.
+pattern-fragment-prefix-aux L _ [] L.

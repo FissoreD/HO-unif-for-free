@@ -1,0 +1,9 @@
+  type comp to -> tm -> mmap -> mmap -> links -> links ->
+    subst -> subst -> o.
+  comp (o-con C) (con C) M M L L S S.
+  comp (o-lam F) (lam F1) M1 M2 L1 L2 S1 S2 :-            ~\customlabel{rule:complam}{(\ensuremath{c_\lambda})}~
+    comp-lam F F1 M1 M2 L1 L2 S1 S2.
+  comp (o-uva A) (uva B []) M1 M2 L L S1 S2 :- 
+    m-alloc (ov A) (mv B (arity z)) M1 M2 S1 S2.
+  comp (o-app A) (app A1) M1 M2 L1 L2 S1 S2 :-            ~\customlabel{rule:compapp}{(\ensuremath{c_@})}~
+    fold6 comp A A1 M1 M2 L1 L2 S1 S2.

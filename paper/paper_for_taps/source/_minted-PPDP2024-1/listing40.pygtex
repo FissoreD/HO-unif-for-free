@@ -1,0 +1,4 @@
+\begin{Verbatim}[commandchars=\\\{\},codes={\catcode`\$=3\catcode`\^=7\catcode`\_=8\relax}]
+app\PYG{+w}{ }\PYG{k+kd}{[}con\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{nfact}\PYG{l+s+s2}{\PYGZdq{}}\PYG{k+kd}{,}\PYG{+w}{ }x\PYG{k+kd}{,}\PYG{+w}{ }con\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{3}\PYG{l+s+s2}{\PYGZdq{}}\PYG{k+kd}{]}\PYG{+w}{ }\PYG{k+kd}{=}\PYG{+w}{ }\PYG{n+nv}{Pm}\PYG{+w}{ }x\PYG{+w}{                    }\PYG{esc}{\customlabel{problem:pa}{(p')}}
+\PYG{n+nv}{Pm}\PYG{+w}{ }\PYG{k+kd}{=}\PYG{+w}{ }\PYG{n+nv}{x\PYGZbs{}}\PYG{+w}{ }app\PYG{+w}{ }\PYG{k+kd}{[}con\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{nfact}\PYG{l+s+s2}{\PYGZdq{}}\PYG{k+kd}{,}\PYG{+w}{ }x\PYG{k+kd}{,}\PYG{+w}{ }con\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{3}\PYG{l+s+s2}{\PYGZdq{}}\PYG{k+kd}{]}\PYG{+w}{                   }\PYG{esc}{\customlabel{solution:pm}{(\sigma)}}
+\end{Verbatim}

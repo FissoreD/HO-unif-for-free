@@ -1,0 +1,13 @@
+\begin{elpicode}
+  ~\PYG{k+kd}{type} \PYG{n+nf}{(\Eo)} \PYG{k+kt}{to -> to -> o}~.                              ~($\customlabel{pred:fequal}{\Eo}$)~
+  o-con X ~$\Eo$~ o-con X.
+  o-app A ~$\Eo$~ o-app B :- forall2 (~$\Eo$~) A B.
+  o-lam F ~$\Eo$~ o-lam G :- pi x\ x ~$\Eo$~ x => F x ~$\Eo$~ G x.    ~($\customlabel{clause:lam-lam}{\lambda\lambda}$)~
+  o-uva N ~$\Eo$~ o-uva N.
+  o-lam F ~$\Eo$~ T :-                                       ~($\customlabel{clause:eta1}{\eta_l}$)~
+    pi x\ beta T [x] (T' x), x ~$\Eo$~ x => F x ~$\Eo$~ T' x.
+  T ~$\Eo$~ o-lam F :-                                       ~($\customlabel{clause:eta2}{\eta_r}$)~
+    pi x\ beta T [x] (T' x), x ~$\Eo$~ x => T' x ~$\Eo$~ F x.
+  o-app [o-lam X|L] ~$\Eo$~ T :- beta (o-lam X) L R, R ~$\Eo$~ T. ~($\customlabel{clause:beta1}{\beta_l}$)~
+  T ~$\Eo$~ o-app [o-lam X|L] :- beta (o-lam X) L R, T ~$\Eo$~ R. ~($\customlabel{clause:beta2}{\beta_r}$)~
+\end{elpicode}

@@ -1,14 +1,15 @@
-LATEX = pdflatex --shell-escape -synctex=1 -file-line-error -recorder
+LATEX = pdflatex
 BIBER = biber
+FILENAME = PPDP2024-1
 
 main:
 	echo "---------------- 0 --------------------" && \
-	${LATEX} main.tex -interaction=nonstopmode && \
+	${LATEX} ${FILENAME}.tex && \
 	echo "---------------- 1 --------------------" && \
-	${BIBER} main && \
+	${BIBER} ${FILENAME} && \
 	echo "---------------- 2 --------------------" && \
-	${LATEX} main.tex -f && \
+	${LATEX} ${FILENAME}.tex && \
 	echo "---------------- 3 --------------------" && \
-	${LATEX} main.tex
+	${LATEX} ${FILENAME}.tex
 
 .PHONY: main

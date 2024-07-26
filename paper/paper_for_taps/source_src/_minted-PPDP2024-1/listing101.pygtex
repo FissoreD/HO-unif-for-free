@@ -1,0 +1,6 @@
+\begin{Verbatim}[commandchars=\\\{\},codes={\catcode`\$=3\catcode`\^=7\catcode`\_=8\relax}]
+\PYG{k+kd}{kind}\PYG{+w}{ }\PYG{n+nf}{baselink}\PYG{+w}{ }\PYG{k+kt}{type}.
+\PYG{k+kd}{type}\PYG{+w}{ }\PYG{n+nf}{link\PYGZhy{}eta}\PYG{+w}{  }\PYG{k+kt}{tm}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{tm}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{baselink}.
+\PYG{k+kd}{type}\PYG{+w}{ }\PYG{n+nf}{link\PYGZhy{}llam}\PYG{+w}{ }\PYG{k+kt}{tm}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{tm}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{baselink}.
+\PYG{k+kd}{typeabbrev}\PYG{+w}{ }\PYG{n+nf}{links}\PYG{+w}{ }\PYG{k+kt}{(}\PYG{k+kt}{list}\PYG{+w}{ }\PYG{k+kt}{(}\PYG{k+kt}{inctx}\PYG{+w}{ }\PYG{k+kt}{baselink}\PYG{k+kt}{)}\PYG{k+kt}{)}.
+\end{Verbatim}

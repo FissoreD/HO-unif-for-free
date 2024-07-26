@@ -1,0 +1,26 @@
+\begin{elpicode}
+  type occurs-rigidly to -> to -> o.
+  occurs-rigidly N N.
+  occurs-rigidly _ (o-app [o-uva _|_]) :- !, fail.
+  occurs-rigidly N (o-app L) :- exists (occurs-rigidly N) L.
+  occurs-rigidly N (o-lam B) :- pi x\ occurs-rigidly N (B x).
+
+  type reducible-to list to -> to -> to -> o.
+  reducible-to _ N N :- !.
+  reducible-to L N (o-app[o-uva _|Args]) :- !, 
+    forall1 (x\ exists (reducible-to [] x) Args) [N|L]. 
+  reducible-to L N (o-lam B) :- !, 
+    pi x\ reducible-to [x | L] N (B x).
+  reducible-to L N (o-app [N|Args]) :-
+    last-n {len L} Args R,
+    forall2 (reducible-to []) R {rev L}.
+
+  type maybe-eta to -> list to -> o.                  ~\customlabel{rule:maybeeta}{(\maybeeta)}~
+  maybe-eta (o-app[o-uva _|Args]) L :- !,
+    forall1 (x\ exists (reducible-to [] x) Args) L, !. 
+  maybe-eta (o-lam B) L :- !, pi x\ maybe-eta (B x) [x | L].
+  maybe-eta (o-app [T|Args]) L :- (name T; T = o-con _),
+    split-last-n {len L} Args First Last,
+    none (x\ exists (y\ occurs-rigidly x y) First) L,
+    forall2 (reducible-to []) {rev L} Last.
+\end{elpicode}

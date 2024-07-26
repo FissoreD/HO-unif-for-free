@@ -1,0 +1,9 @@
+\begin{Verbatim}[commandchars=\\\{\},codes={\catcode`\$=3\catcode`\^=7\catcode`\_=8\relax}]
+\PYG{k+kd}{type}\PYG{+w}{ }\PYG{n+nf}{progress}\PYG{+w}{ }\PYG{k+kt}{links}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{links}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{subst}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{subst}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{o}.
+progress\PYG{+w}{ }\PYG{n+nv}{L}\PYG{+w}{ }\PYG{n+nv}{L3}\PYG{+w}{ }\PYG{n+nv}{S}\PYG{+w}{ }\PYG{n+nv}{S3}\PYG{+w}{ }\PYG{k+kd}{:\PYGZhy{}}
+\PYG{+w}{  }progress1\PYG{+w}{ }\PYG{n+nv}{L}\PYG{+w}{ }\PYG{n+nv}{L1}\PYG{+w}{ }\PYG{n+nv}{S}\PYG{+w}{ }\PYG{n+nv}{S1}\PYG{k+kd}{,}
+\PYG{+w}{  }occur\PYGZhy{}check\PYGZhy{}links\PYG{+w}{ }\PYG{n+nv}{L1}\PYG{k+kd}{,}
+\PYG{+w}{  }scope\PYGZhy{}check\PYG{+w}{ }\PYG{n+nv}{L1}\PYG{+w}{ }\PYG{n+nv}{L2}\PYG{+w}{ }\PYG{n+nv}{S1}\PYG{+w}{ }\PYG{n+nv}{S2}
+\PYG{+w}{  }if\PYG{+w}{ }(\PYG{n+nv}{L}\PYG{+w}{ }\PYG{k+kd}{=}\PYG{+w}{ }\PYG{n+nv}{L2}\PYG{k+kd}{,}\PYG{+w}{ }\PYG{n+nv}{S}\PYG{+w}{ }\PYG{k+kd}{=}\PYG{+w}{ }\PYG{n+nv}{S2}\PYG{p}{)}\PYG{+w}{ }(\PYG{n+nv}{L3}\PYG{+w}{ }\PYG{k+kd}{=}\PYG{+w}{ }\PYG{n+nv}{L2}\PYG{k+kd}{,}\PYG{+w}{ }\PYG{n+nv}{S3}\PYG{+w}{ }\PYG{k+kd}{=}\PYG{+w}{ }\PYG{n+nv}{S2}\PYG{p}{)}
+\PYG{+w}{     }(progress\PYG{+w}{ }\PYG{n+nv}{L2}\PYG{+w}{ }\PYG{n+nv}{L3}\PYG{+w}{ }\PYG{n+nv}{S2}\PYG{+w}{ }\PYG{n+nv}{S3}\PYG{p}{)}\PYG{o}{.}
+\end{Verbatim}

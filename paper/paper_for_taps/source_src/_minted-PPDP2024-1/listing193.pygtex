@@ -1,0 +1,6 @@
+\begin{Verbatim}[commandchars=\\\{\},codes={\catcode`\$=3\catcode`\^=7\catcode`\_=8\relax}]
+rule\PYG{+w}{ }(\PYG{n+nv}{N1}\PYG{+w}{ }\PYG{esc}{$\triangleright$}\PYG{+w}{ }\PYG{n+nv}{G1}\PYG{+w}{ }\PYG{k+kd}{?\PYGZhy{}}\PYG{+w}{ }link\PYGZhy{}eta\PYG{+w}{ }\PYG{p}{(}\PYG{k+kd}{uvar}\PYG{+w}{ }\PYG{n+nv}{X}\PYG{+w}{ }\PYG{n+nv}{LX1}\PYG{p}{)}\PYG{+w}{ }\PYG{n+nv}{T1}\PYG{p}{)}\PYG{+w}{   }\PYG{c}{\PYGZpc{} match}
+\PYG{+w}{  }\PYG{k+kd}{/}\PYG{+w}{  }(\PYG{n+nv}{N2}\PYG{+w}{ }\PYG{esc}{$\triangleright$}\PYG{+w}{ }\PYG{n+nv}{G2}\PYG{+w}{ }\PYG{k+kd}{?\PYGZhy{}}\PYG{+w}{ }link\PYGZhy{}eta\PYG{+w}{ }\PYG{p}{(}\PYG{k+kd}{uvar}\PYG{+w}{ }\PYG{n+nv}{X}\PYG{+w}{ }\PYG{n+nv}{LX2}\PYG{p}{)}\PYG{+w}{ }\PYG{n+nv}{T2}\PYG{p}{)}\PYG{+w}{   }\PYG{c}{\PYGZpc{} remove}
+\PYG{+w}{  }\PYG{k+kd}{|}\PYG{+w}{  }(relocate\PYG{+w}{ }\PYG{n+nv}{LX1}\PYG{+w}{ }\PYG{n+nv}{LX2}\PYG{+w}{ }\PYG{n+nv}{T2}\PYG{+w}{ }\PYG{n+nv}{T2\PYGZsq{}}\PYG{p}{)}\PYG{+w}{               }\PYG{c}{\PYGZpc{} condition}
+\PYG{+w}{ }\PYG{k+kd}{\PYGZlt{}=\PYGZgt{}}\PYG{+w}{ }(\PYG{n+nv}{N1}\PYG{+w}{ }\PYG{esc}{$\triangleright$}\PYG{+w}{ }\PYG{n+nv}{G1}\PYG{+w}{ }\PYG{k+kd}{?\PYGZhy{}}\PYG{+w}{ }\PYG{n+nv}{T1}\PYG{+w}{ }\PYG{k+kd}{=}\PYG{+w}{ }\PYG{n+nv}{T2\PYGZsq{}}\PYG{p}{)}\PYG{o}{.}\PYG{+w}{                  }\PYG{c}{\PYGZpc{} new goal}
+\end{Verbatim}

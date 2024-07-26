@@ -1,0 +1,5 @@
+  comp (o-app [o-uva A|Ag]) (uva B Ag1) M1 M2 L L S1 S2 :-
+    pattern-fragment Ag, !,
+      fold6 comp Ag Ag1 M1 M1 L L S1 S1,
+      len Ag Arity, 
+      m-alloc (ov A) (mv B (arity Arity)) M1 M2 S1 S2.

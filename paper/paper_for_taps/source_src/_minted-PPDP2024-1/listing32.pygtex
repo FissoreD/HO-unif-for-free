@@ -1,0 +1,4 @@
+\begin{Verbatim}[commandchars=\\\{\},codes={\catcode`\$=3\catcode`\^=7\catcode`\_=8\relax}]
+decision\PYG{+w}{ }(all\PYG{+w}{ }\PYG{p}{(}app\PYG{+w}{ }\PYG{k+kd}{[}con\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{fin}\PYG{l+s+s2}{\PYGZdq{}}\PYG{k+kd}{,}\PYG{+w}{ }con\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{7}\PYG{l+s+s2}{\PYGZdq{}}\PYG{k+kd}{]}\PYG{p}{)}\PYG{+w}{ }\PYG{n+nv}{x\PYGZbs{}}\PYG{+w}{              }\PYG{esc}{\customlabel{goal:g}{(g)}}
+\PYG{+w}{  }app\PYG{+w}{ }\PYG{k+kd}{[}con\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{nfact}\PYG{l+s+s2}{\PYGZdq{}}\PYG{k+kd}{,}\PYG{+w}{ }x\PYG{k+kd}{,}\PYG{+w}{ }con\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{3}\PYG{l+s+s2}{\PYGZdq{}}\PYG{k+kd}{]}\PYG{p}{)}\PYG{o}{.}
+\end{Verbatim}

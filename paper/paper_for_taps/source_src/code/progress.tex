@@ -1,0 +1,9 @@
+\begin{elpicode}
+  type progress links -> links -> subst -> subst -> o.
+  progress L L3 S S3 :-
+    progress1 L L1 S S1,
+    occur-check-links L1,
+    scope-check L1 L2 S1 S2
+    if (L = L2, S = S2) (L3 = L2, S3 = S2)
+       (progress L2 L3 S2 S3).
+\end{elpicode}

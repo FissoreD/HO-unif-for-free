@@ -1,0 +1,8 @@
+\begin{elpicode}
+  type decompile mmap -> links -> subst ->
+    fsubst -> fsubst -> o.
+  decompile M1 L S F1 F3 :- 
+    commit-links L S S1,
+    complete-mapping S1 S1 M1 M2 F1 F2,
+    decompm M2 M2 S1 F2 F3.
+\end{elpicode}

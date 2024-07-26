@@ -1,0 +1,8 @@
+\begin{Verbatim}[commandchars=\\\{\},codes={\catcode`\$=3\catcode`\^=7\catcode`\_=8\relax}]
+comp\PYG{+w}{ }(o\PYGZhy{}lam\PYG{+w}{ }\PYG{n+nv}{F}\PYG{p}{)}\PYG{+w}{ }(uva\PYG{+w}{ }\PYG{n+nv}{A}\PYG{+w}{ }\PYG{n+nv}{Scope}\PYG{p}{)}\PYG{+w}{ }\PYG{n+nv}{M1}\PYG{+w}{ }\PYG{n+nv}{M2}\PYG{+w}{ }\PYG{n+nv}{L1}\PYG{+w}{ }\PYG{n+nv}{L3}\PYG{+w}{ }\PYG{n+nv}{S1}\PYG{+w}{ }\PYG{n+nv}{S3}\PYG{+w}{ }\PYG{k+kd}{:\PYGZhy{}}
+\PYG{+w}{  }maybe\PYGZhy{}eta\PYG{+w}{ }(o\PYGZhy{}lam\PYG{+w}{ }\PYG{n+nv}{F}\PYG{p}{)}\PYG{+w}{ }\PYG{k+kd}{[]}\PYG{k+kd}{,}\PYG{+w}{ }\PYG{k+kd}{!}\PYG{k+kd}{,}
+\PYG{+w}{    }alloc\PYG{+w}{ }\PYG{n+nv}{S1}\PYG{+w}{ }\PYG{n+nv}{A}\PYG{+w}{ }\PYG{n+nv}{S2}\PYG{k+kd}{,}
+\PYG{+w}{    }comp\PYGZhy{}lam\PYG{+w}{ }\PYG{n+nv}{F}\PYG{+w}{ }\PYG{n+nv}{F1}\PYG{+w}{ }\PYG{n+nv}{M1}\PYG{+w}{ }\PYG{n+nv}{M2}\PYG{+w}{ }\PYG{n+nv}{L1}\PYG{+w}{ }\PYG{n+nv}{L2}\PYG{+w}{ }\PYG{n+nv}{S2}\PYG{+w}{ }\PYG{n+nv}{S3}\PYG{k+kd}{,}
+\PYG{+w}{    }get\PYGZhy{}scope\PYG{+w}{ }(lam\PYG{+w}{ }\PYG{n+nv}{F1}\PYG{p}{)}\PYG{+w}{ }\PYG{n+nv}{Scope}\PYG{k+kd}{,}
+\PYG{+w}{    }\PYG{n+nv}{L3}\PYG{+w}{ }\PYG{k+kd}{=}\PYG{+w}{ }\PYG{k+kd}{[}val\PYG{+w}{ }(link\PYGZhy{}eta\PYG{+w}{ }\PYG{p}{(}uva\PYG{+w}{ }\PYG{n+nv}{A}\PYG{+w}{ }\PYG{n+nv}{Scope}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{(}lam\PYG{+w}{ }\PYG{n+nv}{F1}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{k+kd}{|}\PYG{+w}{ }\PYG{n+nv}{L2}\PYG{k+kd}{]}\PYG{o}{.}
+\end{Verbatim}

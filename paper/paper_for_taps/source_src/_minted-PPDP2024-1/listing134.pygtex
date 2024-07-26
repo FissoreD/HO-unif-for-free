@@ -1,0 +1,8 @@
+\begin{Verbatim}[commandchars=\\\{\},codes={\catcode`\$=3\catcode`\^=7\catcode`\_=8\relax}]
+\PYG{esc}{\PYG{k+kd}{type} \PYG{n+nf}{(\Uo)} \PYG{k+kt}{to -> to -> fsubst -> o}}\PYG{o}{.}
+(\PYG{n+nv}{A}\PYG{+w}{ }\PYG{esc}{$\Uo$}\PYG{+w}{ }\PYG{n+nv}{B}\PYG{p}{)}\PYG{+w}{ }\PYG{n+nv}{F}\PYG{+w}{ }\PYG{k+kd}{:\PYGZhy{}}
+\PYG{+w}{  }compile\PYG{+w}{ }\PYG{n+nv}{A}\PYG{+w}{ }\PYG{n+nv}{A\PYGZsq{}}\PYG{+w}{ }\PYG{k+kd}{[]}\PYG{+w}{ }\PYG{n+nv}{M1}\PYG{+w}{ }\PYG{k+kd}{[]}\PYG{+w}{ }\PYG{n+nv}{L1}\PYG{+w}{ }\PYG{k+kd}{[]}\PYG{+w}{ }\PYG{n+nv}{S1}\PYG{k+kd}{,}
+\PYG{+w}{  }compile\PYG{+w}{ }\PYG{n+nv}{B}\PYG{+w}{ }\PYG{n+nv}{B\PYGZsq{}}\PYG{+w}{ }\PYG{n+nv}{M1}\PYG{+w}{ }\PYG{n+nv}{M2}\PYG{+w}{ }\PYG{n+nv}{L1}\PYG{+w}{ }\PYG{n+nv}{L2}\PYG{+w}{ }\PYG{n+nv}{S1}\PYG{+w}{ }\PYG{n+nv}{S2}\PYG{k+kd}{,}
+\PYG{+w}{  }hstep\PYG{+w}{ }\PYG{n+nv}{A\PYGZsq{}}\PYG{+w}{ }\PYG{n+nv}{B\PYGZsq{}}\PYG{+w}{ }\PYG{n+nv}{L2}\PYG{+w}{ }\PYG{n+nv}{L3}\PYG{+w}{ }\PYG{n+nv}{S2}\PYG{+w}{ }\PYG{n+nv}{S3}\PYG{k+kd}{,}
+\PYG{+w}{  }decompile\PYG{+w}{ }\PYG{n+nv}{M2}\PYG{+w}{ }\PYG{n+nv}{L3}\PYG{+w}{ }\PYG{n+nv}{S3}\PYG{+w}{ }\PYG{k+kd}{[]}\PYG{+w}{ }\PYG{n+nv}{F}\PYG{o}{.}
+\end{Verbatim}

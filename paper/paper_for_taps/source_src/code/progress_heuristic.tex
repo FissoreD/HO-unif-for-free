@@ -1,0 +1,7 @@
+\begin{elpicode}
+  type app-align-heuristic tm -> tm -> subst -> subst -> o.
+  app-align-heuristic (app [HD|L1]) (app [UV|L2]) S1 S2 :-
+    append Prefix L2 L1,
+    ho.beta HD Prefix T,
+    (UV ~$\Ue$~ T) S1 S2.
+\end{elpicode}

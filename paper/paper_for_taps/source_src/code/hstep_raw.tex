@@ -1,0 +1,4 @@
+type hstep tm -> tm -> links -> links -> subst -> subst -> o.
+hstep T1 T2 L1 L2 S1 S3 :-
+  (T1 ~$\Ue$~ T2) S1 S2,
+  progress L1 L2 S2 S3.

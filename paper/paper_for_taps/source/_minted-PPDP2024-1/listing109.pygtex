@@ -1,0 +1,6 @@
+\begin{Verbatim}[commandchars=\\\{\},codes={\catcode`\$=3\catcode`\^=7\catcode`\_=8\relax}]
+\PYG{k+kd}{type}\PYG{+w}{ }\PYG{n+nf}{compile}\PYG{+w}{ }\PYG{k+kt}{to}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{tm}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{mmap}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{mmap}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{  }\PYG{k+kt}{links}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{links}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}
+\PYG{+w}{  }\PYG{k+kt}{subst}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{subst}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{o}.
+compile\PYG{+w}{ }\PYG{n+nv}{F}\PYG{+w}{ }\PYG{n+nv}{G}\PYG{+w}{ }\PYG{n+nv}{M1}\PYG{+w}{ }\PYG{n+nv}{M2}\PYG{+w}{ }\PYG{n+nv}{L1}\PYG{+w}{ }\PYG{n+nv}{L2}\PYG{+w}{ }\PYG{n+nv}{S1}\PYG{+w}{ }\PYG{n+nv}{S2}\PYG{+w}{ }\PYG{k+kd}{:\PYGZhy{}}
+\PYG{+w}{  }beta\PYGZhy{}normal\PYG{+w}{ }\PYG{n+nv}{F}\PYG{+w}{ }\PYG{n+nv}{F\PYGZsq{}}\PYG{k+kd}{,}\PYG{+w}{ }comp\PYG{+w}{ }\PYG{n+nv}{F\PYGZsq{}}\PYG{+w}{ }\PYG{n+nv}{G}\PYG{+w}{ }\PYG{n+nv}{M1}\PYG{+w}{ }\PYG{n+nv}{M2}\PYG{+w}{ }\PYG{n+nv}{L1}\PYG{+w}{ }\PYG{n+nv}{L2}\PYG{+w}{ }\PYG{n+nv}{S1}\PYG{+w}{ }\PYG{n+nv}{S2}\PYG{o}{.}
+\end{Verbatim}

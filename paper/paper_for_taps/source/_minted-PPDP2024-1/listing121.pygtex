@@ -1,0 +1,6 @@
+\begin{Verbatim}[commandchars=\\\{\},codes={\catcode`\$=3\catcode`\^=7\catcode`\_=8\relax}]
+\PYG{k+kd}{type}\PYG{+w}{ }\PYG{n+nf}{hstep}\PYG{+w}{ }\PYG{k+kt}{tm}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{tm}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{links}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{links}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{subst}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{subst}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{o}.
+hstep\PYG{+w}{ }\PYG{n+nv}{T1}\PYG{+w}{ }\PYG{n+nv}{T2}\PYG{+w}{ }\PYG{n+nv}{L1}\PYG{+w}{ }\PYG{n+nv}{L2}\PYG{+w}{ }\PYG{n+nv}{S1}\PYG{+w}{ }\PYG{n+nv}{S3}\PYG{+w}{ }\PYG{k+kd}{:\PYGZhy{}}
+\PYG{+w}{  }(\PYG{n+nv}{T1}\PYG{+w}{ }\PYG{esc}{$\Ue$}\PYG{+w}{ }\PYG{n+nv}{T2}\PYG{p}{)}\PYG{+w}{ }\PYG{n+nv}{S1}\PYG{+w}{ }\PYG{n+nv}{S2}\PYG{k+kd}{,}
+\PYG{+w}{  }progress\PYG{+w}{ }\PYG{n+nv}{L1}\PYG{+w}{ }\PYG{n+nv}{L2}\PYG{+w}{ }\PYG{n+nv}{S2}\PYG{+w}{ }\PYG{n+nv}{S3}\PYG{o}{.}
+\end{Verbatim}

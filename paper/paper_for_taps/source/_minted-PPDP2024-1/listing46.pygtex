@@ -1,0 +1,4 @@
+\begin{Verbatim}[commandchars=\\\{\},codes={\catcode`\$=3\catcode`\^=7\catcode`\_=8\relax}]
+app\PYG{+w}{ }\PYG{k+kd}{[}\PYG{+w}{ }lam\PYG{+w}{ }\PYG{n+nv}{A}\PYG{+w}{ }(\PYG{n+nv}{a\PYGZbs{}}\PYG{+w}{ }app\PYG{+w}{ }\PYG{k+kd}{[}con\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{nfact}\PYG{l+s+s2}{\PYGZdq{}}\PYG{k+kd}{,}\PYG{+w}{ }a\PYG{k+kd}{,}\PYG{+w}{ }con\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{3}\PYG{l+s+s2}{\PYGZdq{}}\PYG{k+kd}{]}\PYG{p}{)}\PYG{+w}{ }\PYG{k+kd}{,}\PYG{+w}{ }x\PYG{k+kd}{]}\PYG{+w}{ }\PYG{k+kd}{=}
+app\PYG{+w}{ }\PYG{k+kd}{[}\PYG{+w}{ }con\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{nfact}\PYG{l+s+s2}{\PYGZdq{}}\PYG{+w}{                             }\PYG{k+kd}{,}\PYG{+w}{ }\PYG{n+nv}{N}\PYG{k+kd}{,}\PYG{+w}{ }\PYG{n+nv}{NF}\PYG{k+kd}{]}
+\end{Verbatim}

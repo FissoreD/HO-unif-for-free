@@ -1,0 +1,6 @@
+\begin{Verbatim}[commandchars=\\\{\},codes={\catcode`\$=3\catcode`\^=7\catcode`\_=8\relax}]
+\PYG{k+kn}{Instance} \PYG{n}{fin\PYGZus{}fin}\PYG{o}{:} \PYG{esc}{$\forall$}\PYG{n}{n}\PYG{o}{,} \PYG{n}{Finite} \PYG{o}{(}\PYG{n}{fin} \PYG{n}{n}\PYG{o}{)}\PYG{o}{.}             \PYG{c}{(*}\PYG{c}{ r1 }\PYG{c}{*)}
+\PYG{k+kn}{Instance} \PYG{n}{nfact\PYGZus{}dec}\PYG{o}{:} \PYG{esc}{$\forall$}\PYG{n}{n} \PYG{n}{nf}\PYG{o}{,} \PYG{n}{Decision} \PYG{o}{(}\PYG{n}{nfact} \PYG{n}{n} \PYG{n}{nf}\PYG{o}{)}\PYG{o}{.} \PYG{c}{(*}\PYG{c}{ r2 }\PYG{c}{*)}
+\PYG{k+kn}{Instance} \PYG{n}{forall\PYGZus{}dec}\PYG{o}{:} \PYG{esc}{$\forall$}\PYG{n}{A} \PYG{n}{P}\PYG{o}{,} \PYG{n}{Finite} \PYG{n}{A} \PYG{esc}{$\to$}            \PYG{c}{(*}\PYG{c}{ r3 }\PYG{c}{*)}
+  \PYG{esc}{($\forall$}\PYG{n}{x}\PYG{o}{:}\PYG{n}{A}\PYG{o}{,} \PYG{n}{Decision} \PYG{o}{(}\PYG{n}{P} \PYG{n}{x}\PYG{o}{)}\PYG{o}{)} \PYG{esc}{$\to$} \PYG{n}{Decision} \PYG{o}{(}\PYG{esc}{$\forall$}\PYG{n}{x}\PYG{o}{:}\PYG{n}{A}\PYG{o}{,} \PYG{n}{P} \PYG{n}{x}\PYG{o}{)}\PYG{o}{.}
+\end{Verbatim}

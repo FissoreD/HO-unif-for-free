@@ -1,0 +1,7 @@
+\begin{Verbatim}[commandchars=\\\{\},codes={\catcode`\$=3\catcode`\^=7\catcode`\_=8\relax}]
+\PYG{esc}{\PYG{k+kd}{type} \PYG{n+nf}{(\Ee)} \PYG{k+kt}{tm -> tm -> o}}\PYG{o}{.}
+con\PYG{+w}{ }\PYG{n+nv}{C}\PYG{+w}{ }\PYG{esc}{\Ee}con\PYG{+w}{ }\PYG{n+nv}{C}\PYG{o}{.}
+app\PYG{+w}{ }\PYG{n+nv}{A}\PYG{+w}{ }\PYG{esc}{\Ee}app\PYG{+w}{ }\PYG{n+nv}{B}\PYG{+w}{ }\PYG{k+kd}{:\PYGZhy{}}\PYG{+w}{ }forall2\PYG{+w}{ }\PYG{esc}{(\Ee)}\PYG{+w}{ }\PYG{n+nv}{A}\PYG{+w}{ }\PYG{n+nv}{B}\PYG{o}{.}
+lam\PYG{+w}{ }\PYG{n+nv}{F}\PYG{+w}{ }\PYG{esc}{\Ee}lam\PYG{+w}{ }\PYG{n+nv}{G}\PYG{+w}{ }\PYG{k+kd}{:\PYGZhy{}}\PYG{+w}{ }\PYG{k+kd}{pi}\PYG{+w}{ }\PYG{n+nv}{x}\PYGZbs{}\PYG{+w}{ }x\PYG{+w}{ }\PYG{esc}{\Ee}x\PYG{+w}{ }\PYG{k+kd}{=\PYGZgt{}}\PYG{+w}{ }\PYG{n+nv}{F}\PYG{+w}{ }x\PYG{+w}{ }\PYG{esc}{\Ee}\PYG{n+nv}{G}\PYG{+w}{ }x\PYG{o}{.}
+uva\PYG{+w}{ }\PYG{n+nv}{N}\PYG{+w}{ }\PYG{n+nv}{A}\PYG{+w}{ }\PYG{esc}{\Ee}uva\PYG{+w}{ }\PYG{n+nv}{N}\PYG{+w}{ }\PYG{n+nv}{B}\PYG{+w}{ }\PYG{k+kd}{:\PYGZhy{}}\PYG{+w}{ }forall2\PYG{+w}{ }\PYG{esc}{(\Ee)}\PYG{+w}{ }\PYG{n+nv}{A}\PYG{+w}{ }\PYG{n+nv}{B}\PYG{o}{.}
+\end{Verbatim}

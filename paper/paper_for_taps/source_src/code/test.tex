@@ -1,0 +1,20 @@
+\begin{elpicode}
+
+type hstep tm -> tm -> links -> links -> subst -> subst -> o.
+hstep T1 T2 L1 L2 S1 S3 :-
+  (T1 ~$\Ue$~ T2) S1 S2,
+  progress L1 L2 S2 S3.
+
+type compile to -> tm -> mmap -> mmap ->  links -> links -> 
+  subst -> subst -> o.
+compile F G M1 M2 L1 L2 S1 S2 :-
+  beta-normal F F', comp F' G M1 M2 L1 L2 S1 S2.
+
+~\PYG{k+kd}{type} \PYG{n+nf}{(\Uo)} \PYG{k+kt}{to -> to -> fsubst -> o}~.
+(A ~$\Uo$~ B) F :-
+  compile A A' [] M1 [] L1 [] S1,
+  compile B B' M1 M2 L1 L2 S1 S2,
+  hstep A' B' L2 L3 S2 S3,
+  decompile M2 L3 S3 [] F.
+
+\end{elpicode}

@@ -1,0 +1,5 @@
+\begin{Verbatim}[commandchars=\\\{\},codes={\catcode`\$=3\catcode`\^=7\catcode`\_=8\relax}]
+\PYG{k+kd}{type}\PYG{+w}{ }\PYG{n+nf}{move}\PYG{+w}{ }\PYG{k+kt}{assignment}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{list}\PYG{+w}{ }\PYG{k+kt}{tm}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{tm}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{o}.
+move\PYG{+w}{ }(abs\PYG{+w}{ }\PYG{n+nv}{Bo}\PYG{p}{)}\PYG{+w}{ }\PYG{k+kd}{[}\PYG{n+nv}{H}\PYG{k+kd}{|}\PYG{n+nv}{L}\PYG{k+kd}{]}\PYG{+w}{ }\PYG{n+nv}{R}\PYG{+w}{ }\PYG{k+kd}{:\PYGZhy{}}\PYG{+w}{ }move\PYG{+w}{ }(\PYG{n+nv}{Bo}\PYG{+w}{ }\PYG{n+nv}{H}\PYG{p}{)}\PYG{+w}{ }\PYG{n+nv}{L}\PYG{+w}{ }\PYG{n+nv}{R}\PYG{o}{.}
+move\PYG{+w}{ }(val\PYG{+w}{ }\PYG{n+nv}{A}\PYG{p}{)}\PYG{+w}{  }\PYG{k+kd}{[]}\PYG{+w}{ }\PYG{n+nv}{A}\PYG{+w}{ }\PYG{k+kd}{:\PYGZhy{}}\PYG{+w}{ }\PYG{k+kd}{!}\PYG{o}{.}
+\end{Verbatim}

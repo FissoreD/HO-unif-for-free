@@ -1,0 +1,8 @@
+  type progress1 links -> links -> subst -> subst -> o.
+  progress1 [] [] X X.
+  progress1 [A|L1] [A|L3] S S2 :- take-link A L1 B L2, !,
+    same-link A B S S1, 
+    progress1 L2 L3 S1 S2.
+  progress1 [L0|L1] L3 S S2 :-
+    solve-link-abs L0 R [] S S1, !,
+    progress1 L1 L2 S1 S2, append R L2 L3.

@@ -1,0 +1,5 @@
+\begin{Verbatim}[commandchars=\\\{\},codes={\catcode`\$=3\catcode`\^=7\catcode`\_=8\relax}]
+\PYG{k+kd}{type}\PYG{+w}{ }\PYG{n+nf}{close\PYGZhy{}links}\PYG{+w}{ }\PYG{k+kt}{(}\PYG{k+kt}{tm}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{links}\PYG{k+kt}{)}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{links}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{o}.
+close\PYGZhy{}links\PYG{+w}{ }(\PYG{n+nv}{v\PYGZbs{}}\PYG{k+kd}{[}\PYG{n+nv}{X}\PYG{+w}{ }v\PYG{k+kd}{|}\PYG{n+nv}{L}\PYG{+w}{ }v\PYG{k+kd}{]}\PYG{p}{)}\PYG{+w}{ }\PYG{k+kd}{[}abs\PYG{+w}{ }\PYG{n+nv}{X}\PYG{k+kd}{|}\PYG{n+nv}{R}\PYG{k+kd}{]}\PYG{+w}{ }\PYG{k+kd}{:\PYGZhy{}}\PYG{+w}{ }close\PYGZhy{}links\PYG{+w}{ }\PYG{n+nv}{L}\PYG{+w}{ }\PYG{n+nv}{R}\PYG{o}{.}
+close\PYGZhy{}links\PYG{+w}{ }(\PYG{n+nv}{\PYGZus{}\PYGZbs{}}\PYG{k+kd}{[]}\PYG{p}{)}\PYG{+w}{ }\PYG{k+kd}{[]}\PYG{o}{.}
+\end{Verbatim}

@@ -1,0 +1,11 @@
+\begin{Verbatim}[commandchars=\\\{\},codes={\catcode`\$=3\catcode`\^=7\catcode`\_=8\relax}]
+\PYG{k+kd}{type}\PYG{+w}{ }\PYG{n+nf}{deref}\PYG{+w}{ }\PYG{k+kt}{subst}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{tm}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{tm}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{o}.\PYG{+w}{                   }\PYG{esc}{($\customlabel{pred:deref}{\sigma t}$)}
+deref\PYG{+w}{ }\PYG{n+nv}{\PYGZus{}}\PYG{+w}{ }(con\PYG{+w}{ }\PYG{n+nv}{C}\PYG{p}{)}\PYG{+w}{ }(con\PYG{+w}{ }\PYG{n+nv}{C}\PYG{p}{)}\PYG{o}{.}
+deref\PYG{+w}{ }\PYG{n+nv}{S}\PYG{+w}{ }(app\PYG{+w}{ }\PYG{n+nv}{A}\PYG{p}{)}\PYG{+w}{ }(app\PYG{+w}{ }\PYG{n+nv}{B}\PYG{p}{)}\PYG{+w}{ }\PYG{k+kd}{:\PYGZhy{}}\PYG{+w}{ }map\PYG{+w}{ }(deref\PYG{+w}{ }\PYG{n+nv}{S}\PYG{p}{)}\PYG{+w}{ }\PYG{n+nv}{A}\PYG{+w}{ }\PYG{n+nv}{B}\PYG{o}{.}
+deref\PYG{+w}{ }\PYG{n+nv}{S}\PYG{+w}{ }(lam\PYG{+w}{ }\PYG{n+nv}{F}\PYG{p}{)}\PYG{+w}{ }(lam\PYG{+w}{ }\PYG{n+nv}{G}\PYG{p}{)}\PYG{+w}{ }\PYG{k+kd}{:\PYGZhy{}}
+\PYG{+w}{  }\PYG{k+kd}{pi}\PYG{+w}{ }\PYG{n+nv}{x}\PYGZbs{}\PYG{+w}{ }deref\PYG{+w}{ }\PYG{n+nv}{S}\PYG{+w}{ }x\PYG{+w}{ }x\PYG{+w}{ }\PYG{k+kd}{=\PYGZgt{}}\PYG{+w}{ }deref\PYG{+w}{ }\PYG{n+nv}{S}\PYG{+w}{ }(\PYG{n+nv}{F}\PYG{+w}{ }x\PYG{p}{)}\PYG{+w}{ }(\PYG{n+nv}{G}\PYG{+w}{ }x\PYG{p}{)}\PYG{o}{.}
+deref\PYG{+w}{ }\PYG{n+nv}{S}\PYG{+w}{ }(uva\PYG{+w}{ }\PYG{n+nv}{N}\PYG{+w}{ }\PYG{n+nv}{L}\PYG{p}{)}\PYG{+w}{ }\PYG{n+nv}{R}\PYG{+w}{ }\PYG{k+kd}{:\PYGZhy{}}\PYG{+w}{ }set?\PYG{+w}{ }\PYG{n+nv}{N}\PYG{+w}{ }\PYG{n+nv}{S}\PYG{+w}{ }\PYG{n+nv}{A}\PYG{k+kd}{,}
+\PYG{+w}{  }move\PYG{+w}{ }\PYG{n+nv}{A}\PYG{+w}{ }\PYG{n+nv}{L}\PYG{+w}{ }\PYG{n+nv}{T}\PYG{k+kd}{,}\PYG{+w}{ }deref\PYG{+w}{ }\PYG{n+nv}{S}\PYG{+w}{ }\PYG{n+nv}{T}\PYG{+w}{ }\PYG{n+nv}{R}\PYG{o}{.}
+deref\PYG{+w}{ }\PYG{n+nv}{S}\PYG{+w}{ }(uva\PYG{+w}{ }\PYG{n+nv}{N}\PYG{+w}{ }\PYG{n+nv}{A}\PYG{p}{)}\PYG{+w}{ }(uva\PYG{+w}{ }\PYG{n+nv}{N}\PYG{+w}{ }\PYG{n+nv}{B}\PYG{p}{)}\PYG{+w}{ }\PYG{k+kd}{:\PYGZhy{}}\PYG{+w}{ }unset?\PYG{+w}{ }\PYG{n+nv}{N}\PYG{+w}{ }\PYG{n+nv}{S}\PYG{k+kd}{,}
+\PYG{+w}{  }map\PYG{+w}{ }(deref\PYG{+w}{ }\PYG{n+nv}{S}\PYG{p}{)}\PYG{+w}{ }\PYG{n+nv}{A}\PYG{+w}{ }\PYG{n+nv}{B}\PYG{o}{.}
+\end{Verbatim}

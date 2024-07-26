@@ -1,0 +1,7 @@
+\begin{Verbatim}[commandchars=\\\{\},codes={\catcode`\$=3\catcode`\^=7\catcode`\_=8\relax}]
+\PYG{k+kd}{kind}\PYG{+w}{ }\PYG{n+nf}{inctx}\PYG{+w}{ }\PYG{k+kt}{type}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{type}.\PYG{+w}{                              }\PYG{esc}{($\customlabel{data:inctx}{\cdot\vdash\cdot}$)}
+\PYG{k+kd}{type}\PYG{+w}{ }\PYG{n+nf}{abs}\PYG{+w}{ }\PYG{k+kt}{(}\PYG{k+kt}{tm}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{inctx}\PYG{+w}{ }\PYG{k+kt}{A}\PYG{k+kt}{)}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{inctx}\PYG{+w}{ }\PYG{k+kt}{A}.
+\PYG{k+kd}{type}\PYG{+w}{ }\PYG{n+nf}{val}\PYG{+w}{ }\PYG{k+kt}{A}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{inctx}\PYG{+w}{ }\PYG{k+kt}{A}.
+\PYG{k+kd}{typeabbrev}\PYG{+w}{ }\PYG{n+nf}{assignment}\PYG{+w}{ }\PYG{k+kt}{(}\PYG{k+kt}{inctx}\PYG{+w}{ }\PYG{k+kt}{tm}\PYG{k+kt}{)}.
+\PYG{k+kd}{typeabbrev}\PYG{+w}{ }\PYG{n+nf}{subst}\PYG{+w}{ }\PYG{k+kt}{(}\PYG{k+kt}{mem}\PYG{+w}{ }\PYG{k+kt}{assignment}\PYG{k+kt}{)}.
+\end{Verbatim}

@@ -1,0 +1,9 @@
+\begin{Verbatim}[commandchars=\\\{\},codes={\catcode`\$=3\catcode`\^=7\catcode`\_=8\relax}]
+\PYG{k+kd}{kind}\PYG{+w}{ }\PYG{n+nf}{ovariable}\PYG{+w}{ }\PYG{k+kt}{type}.
+\PYG{k+kd}{type}\PYG{+w}{ }\PYG{n+nf}{ov}\PYG{+w}{ }\PYG{k+kt}{addr}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{ovariable}.
+\PYG{k+kd}{kind}\PYG{+w}{ }\PYG{n+nf}{mvariable}\PYG{+w}{ }\PYG{k+kt}{type}.
+\PYG{k+kd}{type}\PYG{+w}{ }\PYG{n+nf}{mv}\PYG{+w}{ }\PYG{k+kt}{addr}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{arity}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{mvariable}.
+\PYG{k+kd}{kind}\PYG{+w}{ }\PYG{n+nf}{mapping}\PYG{+w}{ }\PYG{k+kt}{type}.
+\PYG{esc}{\PYG{k+kd}{type} \PYG{n+nf}{(<->)} \PYG{k+kt}{ovariable -> mvariable -> mapping}}\PYG{o}{.}
+\PYG{k+kd}{typeabbrev}\PYG{+w}{ }\PYG{n+nf}{mmap}\PYG{+w}{ }\PYG{k+kt}{(}\PYG{k+kt}{list}\PYG{+w}{ }\PYG{k+kt}{mapping}\PYG{k+kt}{)}.
+\end{Verbatim}

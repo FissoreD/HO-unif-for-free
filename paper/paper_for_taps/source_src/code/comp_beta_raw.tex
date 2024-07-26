@@ -1,0 +1,8 @@
+  comp (o-app [o-uva A|Ag]) (uva B Sc) M1 M3 L1 L3 S1 S4 :- !,
+    pattern-fragment-prefix Ag Pf Extra, alloc S1 B S2,
+    len Pf Ar, m-alloc (ov A) (mv C (arity Ar)) M1 M2 S2 S3,
+    fold6 comp Pf    Pf1    M2 M2 L1 L1 S3 S3,
+    fold6 comp Extra Extra1 M2 M3 L1 L2 S3 S4,
+    Beta = app [uva C Pf1 | Extra1],
+    get-scope Beta Sc, 
+    L3 = [val (link-llam (uva B Sc) Beta) | L2].

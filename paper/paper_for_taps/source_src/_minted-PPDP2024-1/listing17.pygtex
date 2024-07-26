@@ -1,0 +1,3 @@
+\begin{Verbatim}[commandchars=\\\{\},codes={\catcode`\$=3\catcode`\^=7\catcode`\_=8\relax}]
+\PYG{n+nv}{P}\PYG{+w}{ }\PYG{k+kd}{=}\PYG{+w}{ }\PYG{esc}{$\lambda$}x.nfact\PYG{+w}{ }x\PYG{+w}{ }\PYG{l+m+mi}{3}\PYG{+w}{                                       }\PYG{esc}{\customlabel{solution:intro}{(\rho)}}
+\end{Verbatim}

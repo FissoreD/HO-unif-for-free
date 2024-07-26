@@ -1,0 +1,7 @@
+\begin{Verbatim}[commandchars=\\\{\},codes={\catcode`\$=3\catcode`\^=7\catcode`\_=8\relax}]
+\PYG{k+kd}{typeabbrev}\PYG{+w}{ }\PYG{n+nf}{(mem A)}\PYG{+w}{ }\PYG{k+kt}{(}\PYG{k+kt}{list}\PYG{+w}{ }\PYG{k+kt}{(}\PYG{k+kt}{option}\PYG{+w}{ }\PYG{k+kt}{A}\PYG{k+kt}{)}\PYG{k+kt}{)}.
+\PYG{k+kd}{type}\PYG{+w}{ }\PYG{n+nf}{set?}\PYG{+w}{ }\PYG{k+kt}{addr}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{mem}\PYG{+w}{ }\PYG{k+kt}{A}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{A}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{o}.
+\PYG{k+kd}{type}\PYG{+w}{ }\PYG{n+nf}{unset?}\PYG{+w}{ }\PYG{k+kt}{addr}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{mem}\PYG{+w}{ }\PYG{k+kt}{A}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{o}.
+\PYG{k+kd}{type}\PYG{+w}{ }\PYG{n+nf}{assign}\PYG{+w}{ }\PYG{k+kt}{addr}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{mem}\PYG{+w}{ }\PYG{k+kt}{A}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{A}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{mem}\PYG{+w}{ }\PYG{k+kt}{A}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{o}.
+\PYG{k+kd}{type}\PYG{+w}{ }\PYG{n+nf}{new}\PYG{+w}{ }\PYG{k+kt}{mem}\PYG{+w}{ }\PYG{k+kt}{A}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{addr}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{mem}\PYG{+w}{ }\PYG{k+kt}{A}\PYG{+w}{ }\PYG{k+kt}{\PYGZhy{}\PYGZgt{}}\PYG{+w}{ }\PYG{k+kt}{o}.
+\end{Verbatim}

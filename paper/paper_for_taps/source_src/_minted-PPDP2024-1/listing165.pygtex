@@ -1,0 +1,3 @@
+\begin{Verbatim}[commandchars=\\\{\},codes={\catcode`\$=3\catcode`\^=7\catcode`\_=8\relax}]
+\PYG{k+kd}{[}s\PYG{esc}{$_1$}\PYG{k+kd}{,}\PYG{+w}{ }\PYG{esc}{$\ldots $}\PYG{k+kd}{,}\PYG{+w}{ }s\PYG{esc}{$_n$}\PYG{k+kd}{]}
+\end{Verbatim}

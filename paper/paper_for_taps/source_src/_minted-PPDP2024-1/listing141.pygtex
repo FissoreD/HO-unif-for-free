@@ -1,0 +1,7 @@
+\begin{Verbatim}[commandchars=\\\{\},codes={\catcode`\$=3\catcode`\^=7\catcode`\_=8\relax}]
+comp\PYG{+w}{ }(o\PYGZhy{}app\PYG{+w}{ }\PYG{k+kd}{[}o\PYGZhy{}uva\PYG{+w}{ }\PYG{n+nv}{A}\PYG{k+kd}{|}\PYG{n+nv}{Ag}\PYG{k+kd}{]}\PYG{p}{)}\PYG{+w}{ }(uva\PYG{+w}{ }\PYG{n+nv}{B}\PYG{+w}{ }\PYG{n+nv}{Ag1}\PYG{p}{)}\PYG{+w}{ }\PYG{n+nv}{M1}\PYG{+w}{ }\PYG{n+nv}{M2}\PYG{+w}{ }\PYG{n+nv}{L}\PYG{+w}{ }\PYG{n+nv}{L}\PYG{+w}{ }\PYG{n+nv}{S1}\PYG{+w}{ }\PYG{n+nv}{S2}\PYG{+w}{ }\PYG{k+kd}{:\PYGZhy{}}
+\PYG{+w}{  }pattern\PYGZhy{}fragment\PYG{+w}{ }\PYG{n+nv}{Ag}\PYG{k+kd}{,}\PYG{+w}{ }\PYG{k+kd}{!}\PYG{k+kd}{,}
+\PYG{+w}{    }fold6\PYG{+w}{ }comp\PYG{+w}{ }\PYG{n+nv}{Ag}\PYG{+w}{ }\PYG{n+nv}{Ag1}\PYG{+w}{ }\PYG{n+nv}{M1}\PYG{+w}{ }\PYG{n+nv}{M1}\PYG{+w}{ }\PYG{n+nv}{L}\PYG{+w}{ }\PYG{n+nv}{L}\PYG{+w}{ }\PYG{n+nv}{S1}\PYG{+w}{ }\PYG{n+nv}{S1}\PYG{k+kd}{,}
+\PYG{+w}{    }len\PYG{+w}{ }\PYG{n+nv}{Ag}\PYG{+w}{ }\PYG{n+nv}{Arity}\PYG{k+kd}{,}
+\PYG{+w}{    }m\PYGZhy{}alloc\PYG{+w}{ }(ov\PYG{+w}{ }\PYG{n+nv}{A}\PYG{p}{)}\PYG{+w}{ }(mv\PYG{+w}{ }\PYG{n+nv}{B}\PYG{+w}{ }\PYG{p}{(}arity\PYG{+w}{ }\PYG{n+nv}{Arity}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{n+nv}{M1}\PYG{+w}{ }\PYG{n+nv}{M2}\PYG{+w}{ }\PYG{n+nv}{S1}\PYG{+w}{ }\PYG{n+nv}{S2}\PYG{o}{.}
+\end{Verbatim}

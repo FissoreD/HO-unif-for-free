@@ -1,0 +1,186 @@
+\begin{elpicode}
+  kind arity type.
+  type arity nat -> arity.
+  kind ovariable type.
+  type ov addr -> ovariable.
+  kind mvariable type.
+  type mv addr -> arity -> mvariable.
+  kind mapping type.
+  ~\PYG{k+kd}{type} \PYG{n+nf}{(<->)} \PYG{k+kt}{ovariable -> mvariable -> mapping}~.
+  typeabbrev mmap (list mapping).
+
+  typeabbrev scope (list tm).
+  typeabbrev inctx ho.inctx.
+  kind baselink type.
+  type link-eta  tm -> tm -> baselink.
+  type link-llam tm -> tm -> baselink.
+  typeabbrev links (list (inctx baselink)).
+  typeabbrev link (inctx baselink).
+
+  macro @val-link-eta T1 T2 :- ho.val (link-eta T1 T2).
+  macro @val-link-llam T1 T2 :- ho.val (link-llam T1 T2).
+
+
+  type get-lhs link -> tm -> o.
+  get-lhs (val (link-llam A _)) A.
+  get-lhs (val (link-eta A _)) A.
+
+  type get-rhs link -> tm -> o.
+  get-rhs (val (link-llam _ A)) A.
+  get-rhs (val (link-eta _ A)) A.
+
+
+  type occurs-rigidly to -> to -> o.
+  occurs-rigidly N N.
+  occurs-rigidly _ (o-app [o-uva _|_]) :- !, fail.
+  occurs-rigidly N (o-app L) :- exists (occurs-rigidly N) L.
+  occurs-rigidly N (o-lam B) :- pi x\ occurs-rigidly N (B x).
+
+  type reducible-to list to -> to -> to -> o.
+  reducible-to _ N N :- !.
+  reducible-to L N (o-app[o-uva _|Args]) :- !, 
+    forall1 (x\ exists (reducible-to [] x) Args) [N|L]. 
+  reducible-to L N (o-lam B) :- !, 
+    pi x\ reducible-to [x | L] N (B x).
+  reducible-to L N (o-app [N|Args]) :-
+    last-n {len L} Args R,
+    forall2 (reducible-to []) R {rev L}.
+
+  type maybe-eta to -> list to -> o.                  ~\customlabel{rule:maybeeta}{(\maybeeta)}~
+  maybe-eta (o-app[o-uva _|Args]) L :- !,
+    forall1 (x\ exists (reducible-to [] x) Args) L, !. 
+  maybe-eta (o-lam B) L :- !, pi x\ maybe-eta (B x) [x | L].
+  maybe-eta (o-app [T|Args]) L :- (name T; T = o-con _),
+    split-last-n {len L} Args First Last,
+    none (x\ exists (y\ occurs-rigidly x y) First) L,
+    forall2 (reducible-to []) {rev L} Last.
+
+
+  type locally-bound tm -> o.
+  type get-scope-aux tm -> list tm -> o.
+  get-scope-aux (con _) [].
+  get-scope-aux (uva _ L) L1 :- 
+    forall2 get-scope-aux L R,
+    flatten R L1.
+  get-scope-aux (lam B) L1 :- 
+    pi x\ locally-bound x => get-scope-aux (B x) L1.
+  get-scope-aux (app L) L1 :- 
+    forall2 get-scope-aux L R,
+    flatten R L1.
+  get-scope-aux X [X] :- name X, not (locally-bound X).
+  get-scope-aux X [] :- name X, (locally-bound X).
+
+  type names1 list tm -> o.
+  names1 L :-
+    names L1, 
+    new_int N,
+    if (1 is N mod 2) (L1 = L) (rev L1 L).
+
+  type get-scope tm -> list tm -> o.
+  get-scope T Scope :-
+    get-scope-aux T ScopeDuplicata,
+    undup ScopeDuplicata Scope.
+  type rigid to -> o.
+  rigid X :- not (X = o-uva _).
+
+  type comp-lam (to -> to) -> (tm -> tm) -> 
+    mmap -> mmap -> links -> links -> subst -> subst -> o.
+  comp-lam F G M1 M2 L1 L3 S1 S2 :-
+    pi x y\ (pi M L S\ comp x y M M L L S S) =>         ~\customlabel{rule:complamh}{(\ensuremath{H_\lambda})}~
+      comp (F x) (G y) M1 M2 L1 (L2 y) S1 S2,
+    close-links L2 L3.
+
+  type close-links (tm -> links) -> links -> o.
+  close-links (v\[X v|L v]) [abs X|R] :- close-links L R.
+  close-links (_\[]) [].
+  type comp to -> tm -> mmap -> mmap -> links -> links ->
+    subst -> subst -> o.
+  comp (o-con C) (con C) M M L L S S.
+  comp (o-lam F) (uva A Scope) M1 M2 L1 L3 S1 S3 :-
+    maybe-eta (o-lam F) [], !,
+      alloc S1 A S2,
+      comp-lam F F1 M1 M2 L1 L2 S2 S3,
+      get-scope (lam F1) Scope, 
+      L3 = [val (link-eta (uva A Scope) (lam F1)) | L2].
+  comp (o-lam F) (lam F1) M1 M2 L1 L2 S1 S2 :-            ~\customlabel{rule:complam}{(\ensuremath{c_\lambda})}~
+    comp-lam F F1 M1 M2 L1 L2 S1 S2.
+  comp (o-uva A) (uva B []) M1 M2 L L S1 S2 :- 
+    m-alloc (ov A) (mv B (arity z)) M1 M2 S1 S2.
+  comp (o-app [o-uva A|Ag]) (uva B Ag1) M1 M2 L L S1 S2 :-
+    pattern-fragment Ag, !,
+      fold6 comp Ag Ag1 M1 M1 L L S1 S1,
+      len Ag Arity, 
+      m-alloc (ov A) (mv B (arity Arity)) M1 M2 S1 S2.
+  comp (o-app [o-uva A|Ag]) (uva B Sc) M1 M3 L1 L3 S1 S4 :- !,
+    pattern-fragment-prefix Ag Pf Extra, alloc S1 B S2,
+    len Pf Ar, m-alloc (ov A) (mv C (arity Ar)) M1 M2 S2 S3,
+    fold6 comp Pf    Pf1    M2 M2 L1 L1 S3 S3,
+    fold6 comp Extra Extra1 M2 M3 L1 L2 S3 S4,
+    Beta = app [uva C Pf1 | Extra1],
+    get-scope Beta Sc, 
+    L3 = [val (link-llam (uva B Sc) Beta) | L2].
+  comp (o-app A) (app A1) M1 M2 L1 L2 S1 S2 :-            ~\customlabel{rule:compapp}{(\ensuremath{c_@})}~
+    fold6 comp A A1 M1 M2 L1 L2 S1 S2.
+
+  type alloc mem A -> addr -> mem A -> o.
+  alloc S N S1 :- mem.new S N S1.
+
+  type compile-terms-diagnostic 
+    triple diagnostic to to -> 
+    triple diagnostic tm tm -> 
+    mmap -> mmap -> 
+    links -> links -> 
+    subst -> subst -> o.
+  compile-terms-diagnostic (triple D FO1 FO2) (triple D HO1 HO2) M1 M3 L1 L3 S1 S3 :-
+    beta-normal FO1 FO1',
+    beta-normal FO2 FO2',
+    comp FO1' HO1 M1 M2 L1 L2 S1 S2,
+    comp FO2' HO2 M2 M3 L2 L3 S2 S3.
+
+  type compile-terms 
+    list (triple diagnostic to to) -> 
+    list (triple diagnostic tm tm) -> 
+    mmap -> links -> subst -> o.
+  compile-terms T H M L S :- 
+    fold6 compile-terms-diagnostic T H [] M_ [] L_ [] S_,
+    print-compil-result T H L_ M_, 
+    deduplicate-map M_ M S_ S L_ L.
+
+  type make-eta-link-aux nat -> addr -> addr -> 
+    list tm -> links -> subst -> subst -> o.
+  make-eta-link-aux z Ad1 Ad2 Scope1 L H1 H1  :-
+    rev Scope1 Scope, eta-expand (uva Ad2 Scope) T1,
+    L = [val (link-eta (uva Ad1 Scope) T1)].
+  make-eta-link-aux (s N) Ad1 Ad2 Scope1 L H1 H3 :-
+    rev Scope1 Scope, alloc H1 Ad H2, 
+    eta-expand (uva Ad Scope) T2,
+    (pi x\ make-eta-link-aux N Ad Ad2 [x|Scope1] (L1 x) H2 H3),
+    close-links L1 L2,
+    L = [val (link-eta (uva Ad1 Scope) T2) | L2].
+
+  type make-eta-link nat -> nat -> addr -> addr -> 
+          list tm -> links -> subst -> subst -> o.
+  make-eta-link (s N) z Ad1 Ad2 Vars L H H1 :- 
+    make-eta-link-aux N Ad2 Ad1 Vars L H H1.
+  make-eta-link z (s N) Ad1 Ad2 Vars L H H1 :- 
+    make-eta-link-aux N Ad1 Ad2 Vars L H H1.
+  make-eta-link (s N) (s M) Ad1 Ad2 Vars Links H H1 :-
+    (pi x\ make-eta-link N M Ad1 Ad2 [x|Vars] (L x) H H1),
+    close-links L Links.
+
+  type deduplicate-map mmap -> mmap -> 
+      subst -> subst -> links -> links -> o.
+  deduplicate-map [] [] H H L L.
+  deduplicate-map [((ov O <-> mv M (arity LenM)) as X1) | Map1] Map2 H1 H3 L1 L3 :-
+    take-list Map1 ((ov O <-> mv M' (arity LenM'))) _, !,
+    std.assert! (not (LenM = LenM')) "Deduplicate map, there is a bug",
+    print "arity-fix links:" {ppmapping X1} "~!~" {ppmapping ((ov O <-> mv M' (arity LenM')))}, 
+    make-eta-link LenM LenM' M M' [] New H1 H2,
+    print "new eta link" {pplinks New},
+    append New L1 L2,
+    deduplicate-map Map1 Map2 H2 H3 L2 L3.
+  deduplicate-map [A|As] [A|Bs] H1 H2 L1 L2 :- 
+    deduplicate-map As Bs H1 H2 L1 L2, !.
+  deduplicate-map [A|_] _ H _ _ _ :- 
+    halt "deduplicating mapping error" {ppmapping A} {ho.ppsubst H}.
+\end{elpicode}

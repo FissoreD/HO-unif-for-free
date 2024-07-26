@@ -1,0 +1,4 @@
+\begin{Verbatim}[commandchars=\\\{\},codes={\catcode`\$=3\catcode`\^=7\catcode`\_=8\relax}]
+decision\PYG{+w}{ }\PYG{n+nv}{X}\PYG{+w}{ }\PYG{k+kd}{:\PYGZhy{}}\PYG{+w}{ }unify\PYG{+w}{ }\PYG{n+nv}{X}\PYG{+w}{ }(all\PYG{+w}{ }\PYG{n+nv}{A}\PYG{+w}{ }\PYG{n+nv}{x\PYGZbs{}}\PYG{+w}{ }app\PYG{+w}{ }\PYG{k+kd}{[}\PYG{n+nv}{P}\PYG{k+kd}{,}\PYG{+w}{ }x\PYG{k+kd}{]}\PYG{p}{)}\PYG{k+kd}{,}\PYG{+w}{ }finite\PYG{+w}{ }\PYG{n+nv}{A}\PYG{k+kd}{,}
+\PYG{+w}{  }\PYG{k+kd}{pi}\PYG{+w}{ }\PYG{n+nv}{x}\PYGZbs{}\PYG{+w}{ }decision\PYG{+w}{ }(app\PYG{+w}{ }\PYG{k+kd}{[}\PYG{n+nv}{P}\PYG{k+kd}{,}\PYG{+w}{ }x\PYG{k+kd}{]}\PYG{p}{)}\PYG{o}{.}
+\end{Verbatim}
