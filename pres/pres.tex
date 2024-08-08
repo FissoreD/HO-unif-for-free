@@ -1,20 +1,21 @@
 \documentclass{pres}
+\newcounter{llength}
+\newcommand{\listlength}[1]{
+  \setcounter{llength}{0}%
+  \foreach \i in #1 {\stepcounter{llength}}%
+}
 
 \usepackage{macros}
 \addbibresource{./bib.bib}
+
+\newtheorem{proposition}[theorem]{Proposition}
 
 \setbeamerfont{title}{}
 \setbeamerfont{subtitle}{parent={normal text},size=\small,shape=\itshape}
 
 \author{Fissore Davide \& Enrico Tassi} 
-\title{
-  Higher-Order unification for free
-}
+\title{Higher-Order unification for free}
 \subtitle{Reusing the meta-language unification for the object language}
-
-
-\newcommand{\cuts}{\textit{cuts}\xspace}
-\newcommand{\cut}{\textit{cut}\xspace}
 
 \newcommand{\sepFrame}[1]{
   \section{#1}
@@ -37,21 +38,363 @@
 
 \begin{document}
 
-  \begin{frame}
-    \titlepage
-  \end{frame}
+\input{pb_printer}
 
-  \begin{frame}
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% \begin{frame}
+
+%   \tableofcontents
+
+% \end{frame}
+
+\sepFrame{Context}
+
+\begin{frame}[fragile]
+  \frametitle{Metaprogramming for type-class resolution}
+
+  \begin{itemize}
+    \item Our goal:
+          \begin{itemize}
+            \item Type-class solver for Coq in Elpi
+          \end{itemize}
+    \item Our problem:
+          \begin{itemize}
+            \item The Elpi's unification algorithm differs from Coq's one
+          \end{itemize}
+    \item Our contribution:
+          \begin{itemize}
+            \item Reusing the meta-language unification for the object language
+          \end{itemize}
+  \end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{A type-class problem in Coq}
+
+  \begin{onlyenv}<1>
+    \begin{coqcode}
+      Instance fin_fin: ~$\forall$~n, Finite (fin n).             (* r1 *)
+      Instance nfact_dec: ~$\forall$~n nf, Decision (nfact n nf). (* r2 *)
+      Instance forall_dec: ~$\forall$~A P, Finite A ~$\to$~            (* r3 *)
+        (~$\forall$~x:A, Decision (P x)) ~$\to$~ Decision (~$\forall$~x:A, P x).
+    \end{coqcode}
+  \end{onlyenv}
+
+  \begin{onlyenv}<2-3>
+    \begin{coqcode}
+      Instance fin_fin: ~$\forall$~n, Finite (fin n).             (* r1 *)
+      Instance nfact_dec: ~$\forall$~n nf, Decision (nfact n nf). (* r2 *)
+      Instance forall_dec: ~$\forall$~A P, Finite A ~$\to$~            (* r3 *)
+        (~$\forall$~x:A, Decision (P x)) ~$\to$~ ~\colorbox{yellow}{Decision ($\forall$x:A, P x)}~.
+    \end{coqcode}
+  \end{onlyenv}
+
+  \begin{onlyenv}<4->
+    \begin{coqcode}
+      Instance fin_fin: ~$\forall$~n, Finite (fin n).             (* r1 *)
+      Instance nfact_dec: ~$\forall$~n nf, Decision (nfact n nf). (* r2 *)
+      Instance forall_dec: ~$\forall$~A P, ~\colorbox{yellow}{Finite A} $\to$~           (* r3 *)
+        ~\colorbox{yellow}{($\forall$x:A, Decision (P x))}~ ~$\to$~ Decision (~$\forall$~x:A, P x).
+    \end{coqcode}
+  \end{onlyenv}
+
+  \mysep{}
+
+  \begin{coqcode}
+    Goal Decision (~$\forall$~x: fin 7, nfact x 3).             (* g *)
+  \end{coqcode}
+
+  \begin{itemize}
+    \only<2>{\item Back-chain to \texttt{forall\_dec} with }
+    \item<2-> $\{A \mapsto fin\ 7; P \mapsto \lambda x.(nfact\ x\ 3)\}$
+    \item<4> subgoals:\\
+      \coqIn{Finite (fin 7)} and \coqIn{(~$\forall$~x:A, Decision ((~$\lambda$~ x.(nfact x 3)) x))}
+  \end{itemize}
+
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Coq terms in elpi}
+
+  \begin{center}
+    \begin{tabular}{c || c}
+      Coq                          & Elpi                                       \\
+      \hline
+      $f\appsep{}a$                & \elpiIn{app["f", "a"]}                     \\
+      $\lambda x.\lambda y.F_{xy}$ & \elpiIn{lam x\ lam y\ app[uva F [], x, y]}        \\
+      $\lambda x.F_{x} a$          & \elpiIn{lam x\ app[uva F [], x, "a"]} \\
+    \end{tabular}
+  \end{center}
+
+  Note on unification:
+
+  \begin{itemize}
+    \item In coq: $\lambda x.F_x$ unifies with $\lambda x.f\ x\ 3$
+    \item In elpi: ``\elpiIn{lam x\app[F, x]}'' can't unify with ``\elpiIn{lam x\app[f, x, 3]}''
+    \item But, ``\elpiIn{lam x\F x}'' unifies with ``\elpiIn{lam x\app[f, x, 3]}''
+  \end{itemize}
+
   
-    \tableofcontents
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The above type-class problem in elpi}
+
+  % Instance fin_fin: ~$\forall$~n, Finite (fin n).             (* r1 *)
+  % Instance nfact_dec: ~$\forall$~n nf, Decision (nfact n nf). (* r2 *)
+
+  \begin{onlyenv}<1-2>
+    \begin{coqcode}
+      Instance forall_dec: ~$\forall$~A P, Finite A ~$\to$~            (* r3 *)
+        (~$\forall$~x:A, Decision (P x)) ~$\to$~ Decision (~$\forall$~x:A, P x).
+      
+      Goal Decision (~$\forall$~x: fin 7, nfact x 3).             (* g *)
+    \end{coqcode}
+  \end{onlyenv}
+
+
+  \only<1-2>{\centering $\downarrow$}
+
+  % finite   (app ["fin", N]).                            % r1
+  % decision (app ["nfact", N, NF]).                      % r2
+
+  \begin{onlyenv}<2-3>
+    \begin{elpicode}
+      decision (all A x\ app [P, x]) :- finite A,           % r3
+        pi w\ decision (app [P, w]).
+      
+        ?- decision (all (app ["fin", "7"]) x\              % g
+                            app ["nfact", x, "3"]).
+    \end{elpicode}
+  \end{onlyenv}
+
+  \phantom{\vspace{20pt}NOTE: Elpi can unify \elpiIn{(P x)} with \elpiIn{app["nfact", x, "3"]}}
+
+
+\end{frame}
+
+\def\appnfactPyg{app\PYG{+w}{ }\PYG{k+kd}{[}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{nfact}\PYG{l+s+s2}{\PYGZdq{}}\PYG{k+kd}{,}\PYG{+w}{ }x\PYG{k+kd}{,}\PYG{+w}{ }\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{3}\PYG{l+s+s2}{\PYGZdq{}}\PYG{k+kd}{]}}
+
+\begin{frame}[fragile]
+  \frametitle{Solving the goal in elpi}
   
-  \end{frame}
+  \begin{elpicode}
+    decision (all A x\ ~\colorbox{yellow}{app [P, x]}~) :- finite A,        % r3
+      pi w\ decision (app [P, w]).
 
-  \sepFrame{Context}
-  \sepFrame{Problem statement}
-  \sepFrame{Compilation and simulation}
-  \sepFrame{Links}
-  \sepFrame{Conclusion}
+    ?- decision (all (app ["fin", "7"]) x\              % g
+                        ~\colorbox{yellow}{\appnfactPyg}~).
+  \end{elpicode}
 
+  \onslide<2>{\vspace{20pt}NOTE: Elpi can unify \elpiIn{(P x)} with \elpiIn{app["nfact", x, "3"]}}
+
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The idea}
+
+  \begin{elpicode}
+    decision (all A x\ ~\colorbox{yellow}{P' x}~) :-                        % r3
+      link P' P A, 
+      finite A,
+      pi w\ decision (P' x).
+
+    ?- decision (all (app ["fin", "7"]) x\               % g
+                        ~\colorbox{yellow}{\appnfactPyg}~).
+  \end{elpicode}
+
+\end{frame}
+
+\sepFrame{Compilation and simulation}
+
+\begin{frame}
+  \frametitle{What we propose}
+
+  \begin{enumerate}
+    \item Compilation:
+    \begin{itemize}
+      \item Recognize \textit{problematic subterms} $p_1,\dots,p_n$
+      \item Replace $p_i$ with fresh unification variables $X_i$
+      \item \textit{Link} $p_i$ with $X_i$
+    \end{itemize}
+    \item Runtime:
+    \begin{itemize}
+      \item Unify $p_i$ and $X_i$ only when some conditions hold
+      \item Decompile remaining links
+    \end{itemize}
+  \end{enumerate}
+
+  \mysep{}
+
+  \begin{description}
+    \item[NOTE:] This unification strategy is generalizable to any meta-language
+      when manipulating terms of the object language
+  \end{description}
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{Some notations}
+
+  \begin{itemize}
+    \item \foUnifPb: the unification problems in the object language (ol)
+    \item \hoUnifPb: the unification problems in the target language (ml)
+    \item \ensuremath{{\mathrm{step}}_o}: the execution of a unif pb in the ol
+    \item \ensuremath{{\mathrm{step}}_m}: the execution of a unif pb in the ml
+    \item \ensuremath{{\mathrm{run}}_o}: the run of $n$ steps
+    \item \ensuremath{{\mathrm{run}}_m}: the run of $n$ steps
+  \end{itemize}
+
+  \mysep
+
+  \begin{itemize}
+    \item \mapStore, \linkStore: the map store, the link store
+    \item A link in \linkStore is like $X =_\lambda t$
+    \item A mapping in \mapStore is like $\{X \mapsto t\}$ 
+  \end{itemize}
+
+  % Spiegare \linkStore, \foUnifPb, \hoUnifPb, step, run, substitution application
+  % pattern fragment, mapping, decompilation, link has lhs and rhs
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{Proven properties}
+
+  % \begin{proposition}[Run equivalence]
+  \begin{description}[]
+    \item[Run Equivalence]
+    $\forall \foUnifPb, \forall n,$ if $~\foUnifPb \subseteq \llambda$
+    $
+      \runFx{\foUnifPb}{n}{\rho} \land
+      \runHx{\foUnifPb}{n}{\rho'}
+      \Rightarrow
+      \forall s \in \foUnifPb, \rho s \Eo \rho' s
+    $
+    \item [Simulation fidelity]
+    In the context of  \frun and \hrun,\\
+    if $~\foUnifPb \subseteq \llambda$ we have that
+    $\forall p \in 1 \ldots n,$
+    $\stepF{\foUnifPb}{p}{\rho_{p-1}}{\rho_p}
+    \Leftrightarrow
+    \stepH{\hoUnifPb}{p}{\sigma_{p-1}}{\linkStore_{p-1}}{\sigma_p}{\linkStore_p}
+    $
+    \item[Fidelity ricovery]
+    In the context of \frun and \hrun, \\
+    if 
+    $\rho_{p-1} \foUnifPb_{p} \subseteq \llambda$ 
+    (even if $\;\foUnifPb_{p} \not\subseteq \llambda$)
+    then\\
+    $
+    \stepF{\foUnifPb}{p}{\rho_{p-1}}{\rho_p} \Leftrightarrow
+    \stepH{\hoUnifPb}{p}{\sigma_{p-1}}{\linkStore_{p-1}}{\sigma_{p}}{\linkStore_p}
+    $
+  \end{description}
+  % \end{proposition}
+    
+    
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{Problematic subterms recognition: \maybebeta}
+
+  A HO variable in the pattern fragment: 
+  \begin{itemize}
+    \item $X_x$ becomes \elpiIn{A x} with mapping $X \mapsto A^1$
+    \item Decompilation: transform the lambda abstraction of the meta language
+          to the lambda abstraction of the object one.
+    \item For example, if $\{A \mapsto (x\backslash f\appsep x\appsep a)\}$, then decompilation
+          produces the following substitution $\{X \mapsto \lambda x.f\appsep x\appsep a\}$
+  \end{itemize}
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{Problematic subterms recognition: \maybeeta}
+
+  \begin{itemize}
+    \item $\lambda x.s \in \maybeeta$, if $\exists \rho, \rho(\lambda x.s)$ is an $\eta$-redex
+    \item Detection of \maybeeta terms is not trivial:
+    \item \begin{center}
+      \begin{tabular}{lll}
+        %Term & Status & Evidence \\\hline
+        $\lambda x. f \appsep (A \appsep x)$ & $\in\maybeeta$ & $\rho = \{~ A \mapsto \lambda x.x ~\}$ \\
+        $\lambda x. f \appsep (A \appsep x) \appsep x$ & $\in\maybeeta$ & $\rho = \{~ A \mapsto \lambda x.a ~\}$\\
+        $\lambda x. f \appsep x \appsep (A \appsep x)$ & $\not\in\maybeeta$ &\\
+        $\lambda x. \lambda y. f \appsep (A \appsep x) \appsep (B \appsep y \appsep x)$ & $\in\maybeeta$ & $\rho = \{~ A \mapsto \lambda x.x~;~ B \mapsto \lambda y.\lambda x.y ~\}$
+      \end{tabular}
+    \end{center}
+    \item Need of some primitives like \texttt{may-contract-to} and \texttt{occurs-rigidly}
+  \end{itemize}
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{Problematic subterms recognition: \maybeeta\ link progression}
+
+  \begin{itemize}
+    \item Several conditions: like lhs is assigned to a rigid term, two
+          $\eta$-link with same lhs, the rhs becomes outside \maybeeta\dots
+    \item These conditions guarantee the prefixed properties !
+    \item An example: %
+        \printAlll
+          {{{\lambda x.X \appsep x,f}}}
+          {{{A,f}}}
+          {{{X,B,1}}}
+          {{{\eta,,A,\lambda x.B_x}}}
+    \item After unification of $A$ with $f$, the lhs of the link is assigned,
+          the link is triggered and $\lambda x.B_x$ is unified with $\lambda
+          x.f\appsep x$
+    \item That is $\{B_x \mapsto f\}$
+    \item Decompilation will assign $\lambda x.f\appsep x$ to $X$
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{Problematic subterms recognition: \maybelam}
+
+  
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{Use of heuristics}
+
+  
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{Use of CHR}
+
+
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{Conclusion}
+
+  \begin{itemize}
+    \item Takes advantage of the unification capabilities of the meta language
+          at the price of handling problematic sub-terms on the side.
+    \item As a result our encoding takes advantage of indexing data structures
+          and mode analysis for clause filtering.
+    \item It is worth mentioning that we replace terms with variables only when
+          it is strictly needed, leaving the rest of the term structure intact
+          and hence indexable.
+    \item Our approach is flexible enough to accommodate different strategies
+          and heuristics to handle terms outside the pattern fragment
+  \end{itemize}
+
+\end{frame}
 
 \end{document}
