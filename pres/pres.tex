@@ -6,6 +6,7 @@
 }
 
 \usepackage{macros}
+\usepackage[export]{adjustbox}% http://ctan.org/pkg/adjustbox
 \addbibresource{./bib.bib}
 
 \newtheorem{proposition}[theorem]{Proposition}
@@ -34,7 +35,7 @@
 }
 
 % \institute{Université Côte d'Azur}
-\date{June 13, 2024}
+\date{September 10, 2024}
 
 \begin{document}
 
@@ -42,6 +43,7 @@
 
 \begin{frame}
   \titlepage
+  \tiny Supported by ANR-17-EURE-0004 \hfill \includegraphics[height=1cm,valign=c]{UCA_DS4H_France2030.png}
 \end{frame}
 
 % \begin{frame}
@@ -126,8 +128,8 @@
       Coq                          & Elpi                                       \\
       \hline
       $f\appsep{}a$                & \elpiIn{app["f", "a"]}                     \\
-      $\lambda x.\lambda y.F_{xy}$ & \elpiIn{lam x\ lam y\ app[uva F [], x, y]}        \\
-      $\lambda x.F_{x} a$          & \elpiIn{lam x\ app[uva F [], x, "a"]} \\
+      $\lambda x.\lambda y.F_{xy}$ & \elpiIn{lam x\ lam y\ app[F, x, y]}        \\
+      $\lambda x.F_{x}\appsep a$          & \elpiIn{lam x\ app[F, x, "a"]} \\
     \end{tabular}
   \end{center}
 
@@ -138,8 +140,6 @@
     \item In elpi: ``\elpiIn{lam x\app[F, x]}'' can't unify with ``\elpiIn{lam x\app[f, x, 3]}''
     \item But, ``\elpiIn{lam x\F x}'' unifies with ``\elpiIn{lam x\app[f, x, 3]}''
   \end{itemize}
-
-  
 
 \end{frame}
 
@@ -169,8 +169,8 @@
       decision (all A x\ app [P, x]) :- finite A,           % r3
         pi w\ decision (app [P, w]).
       
-        ?- decision (all (app ["fin", "7"]) x\              % g
-                            app ["nfact", x, "3"]).
+      ?- decision (all (app ["fin", "7"]) x\                % g
+                          app ["nfact", x, "3"]).
     \end{elpicode}
   \end{onlyenv}
 
@@ -202,13 +202,14 @@
 
   \begin{elpicode}
     decision (all A x\ ~\colorbox{yellow}{P' x}~) :-                        % r3
-      link P' P A, 
+      ~\colorbox{yellow}{link P' P A}~, 
       finite A,
       pi w\ decision (P' x).
 
     ?- decision (all (app ["fin", "7"]) x\               % g
-                        ~\colorbox{yellow}{\appnfactPyg}~).
+                        ~\appnfactPyg~).
   \end{elpicode}
+  
 
 \end{frame}
 
@@ -245,19 +246,19 @@
 
   \begin{itemize}
     \item \foUnifPb: the unification problems in the object language (ol)
-    \item \hoUnifPb: the unification problems in the target language (ml)
-    \item \ensuremath{{\mathrm{step}}_o}: the execution of a unif pb in the ol
-    \item \ensuremath{{\mathrm{step}}_m}: the execution of a unif pb in the ml
-    \item \ensuremath{{\mathrm{run}}_o}: the run of $n$ steps
-    \item \ensuremath{{\mathrm{run}}_m}: the run of $n$ steps
+    \item \hoUnifPb: the unification problems in the meta-language (ml)
+    \item \mapStore, \linkStore: the map store, the link store
+    \item A link in \linkStore is like $X =_\odot t$
+    \item A mapping in \mapStore is like $\{X \mapsto t\}$ 
   \end{itemize}
 
   \mysep
 
   \begin{itemize}
-    \item \mapStore, \linkStore: the map store, the link store
-    \item A link in \linkStore is like $X =_\lambda t$
-    \item A mapping in \mapStore is like $\{X \mapsto t\}$ 
+    \item \runFx{\foUnifPb}{n}{\rho}: the run of $n$ unif pb in the ol
+    \item \runHx{\foUnifPb}{n}{\rho'}: the run of $n$ unif pb in the ml
+    \item \stepF{\foUnifPb}{p}{\rho_{p-1}}{\rho_p}: the execution of a unif pb in ol
+    \item \stepH{\hoUnifPb}{p}{\sigma_{p-1}}{\linkStore_{p-1}}{\sigma_p}{\linkStore_p}
   \end{itemize}
 
   % Spiegare \linkStore, \foUnifPb, \hoUnifPb, step, run, substitution application
@@ -272,34 +273,32 @@
   \begin{description}[]
     \item[Run Equivalence]
     $\forall \foUnifPb, \forall n,$ if $~\foUnifPb \subseteq \llambda$
-    $
+    $$
       \runFx{\foUnifPb}{n}{\rho} \land
       \runHx{\foUnifPb}{n}{\rho'}
       \Rightarrow
       \forall s \in \foUnifPb, \rho s \Eo \rho' s
-    $
+    $$
     \item [Simulation fidelity]
     In the context of  \frun and \hrun,\\
     if $~\foUnifPb \subseteq \llambda$ we have that
     $\forall p \in 1 \ldots n,$
-    $\stepF{\foUnifPb}{p}{\rho_{p-1}}{\rho_p}
+    $$\stepF{\foUnifPb}{p}{\rho_{p-1}}{\rho_p}
     \Leftrightarrow
     \stepH{\hoUnifPb}{p}{\sigma_{p-1}}{\linkStore_{p-1}}{\sigma_p}{\linkStore_p}
-    $
+    $$
     \item[Fidelity ricovery]
     In the context of \frun and \hrun, \\
     if 
     $\rho_{p-1} \foUnifPb_{p} \subseteq \llambda$ 
     (even if $\;\foUnifPb_{p} \not\subseteq \llambda$)
     then\\
-    $
+    $$
     \stepF{\foUnifPb}{p}{\rho_{p-1}}{\rho_p} \Leftrightarrow
     \stepH{\hoUnifPb}{p}{\sigma_{p-1}}{\linkStore_{p-1}}{\sigma_{p}}{\linkStore_p}
-    $
+    $$
   \end{description}
   % \end{proposition}
-    
-    
 
 \end{frame}
 
@@ -362,21 +361,64 @@
 \begin{frame}
   \frametitle{Problematic subterms recognition: \maybelam}
 
-  
+  \begin{itemize}
+    \item We have a term not in \llambda
+    \item Example: 
+      \printAlll
+      {{{X,\lambda x.a},
+        {(X\appsep a),a}}}
+      {{{A,\lambda x.a},
+        {B,a}}}
+      {{{X,A,0}}}
+      {{{\llambda,,B,(A\appsep a)}}}
+    \item After unification of $A$ with $\lambda x.a$, 
+        the rhs of the link is in \llambda,
+        the link is triggered and $B$ is unified to $a$
+    \item Decompilation will assign $\lambda x.a$ to $A$
+  \end{itemize}
 
 \end{frame}
 
-\begin{frame}
-  \frametitle{Use of heuristics}
+% \begin{frame}
+%   \frametitle{Use of heuristics}
 
   
 
-\end{frame}
+% \end{frame}
 
-\begin{frame}
-  \frametitle{Use of CHR}
+\begin{frame}[fragile]
+  \frametitle{Going further: the CHR}
 
+  \begin{itemize}
+    \item Elpi is a dialect of $\lambda$-prolog with CHR
+    \item CHR allows to suspend goals and resume them on given condition
+    \item This fits well our notion of link: a suspended unification problem
+  \end{itemize}
 
+  % \begin{elpicode}
+  %   pred eta i:term, i:term.
+  %   eta A (fun _ _ B as T) :- not (var A), not (var B), !, 
+  %     unify-left-right A T. 
+  %   eta A B :- progress-eta-right B B', !, A = B'. 
+  %   eta A B :- progress-eta-left  A A', !, A' = B.
+  %   eta A B :- scope-check A B, get-vars B Vars, 
+  %     declare_constraint (eta A B) [A|Vars].
+  % \end{elpicode}
+
+  \mysep
+
+  \begin{elpicode}
+    link-eta L R :- not (var L), !, eta-progress-lhs L R.
+    link-eta L R :- not (maybe-eta R), !, eta-progress-rhs L R.
+    link-eta L R :- declare_constraint (link-eta L R) [L,R].
+  \end{elpicode}
+
+  % \begin{elpicode}
+  %   rule (N1 ~$\triangleright$~ G1 ?- link-eta (uvar X LX1) T1)   % match
+  %     /  (N2 ~$\triangleright$~ G2 ?- link-eta (uvar X LX2) T2)   % remove
+  %     |  (relocate LX1 LX2 T2 T2')               % condition
+  %     <=> (N1 ~$\triangleright$~ G1 ?- T1 = T2').                  % new goal
+  % \end{elpicode}
 
 \end{frame}
 
