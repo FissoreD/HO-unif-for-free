@@ -30,7 +30,7 @@
 
   \newcommand{\printMapAux}[1]{
     \nth{\tableData}{##1}{1} \addXdef{\tableData}{\mapsto} 
-    \nth{\tableData}{##1}{2} \addXdef{\tableData}{^} \nth{\tableData}{##1}{3}}
+    \nth{\tableData}{##1}{2} \addXdef{\tableData}{} }
 
   \listlength{#1}
   \foreach \x [count=\i] in #1

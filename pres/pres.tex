@@ -52,7 +52,7 @@
 
 % \end{frame}
 
-\sepFrame{Context}
+% \sepFrame{Context}
 
 \begin{frame}[fragile]
   \frametitle{Metaprogramming for type-class resolution}
@@ -78,27 +78,27 @@
   \frametitle{A type-class problem in Coq}
 
   \begin{onlyenv}<1>
+    % Instance fin_fin: ~$\forall$~n, Finite (fin n).             (* r1 *)
+    % Instance nfact_dec: ~$/\forall$~n nf, Decision (nfact n nf). (* r2 *)
     \begin{coqcode}
-      Instance fin_fin: ~$\forall$~n, Finite (fin n).             (* r1 *)
-      Instance nfact_dec: ~$\forall$~n nf, Decision (nfact n nf). (* r2 *)
       Instance forall_dec: ~$\forall$~A P, Finite A ~$\to$~            (* r3 *)
         (~$\forall$~x:A, Decision (P x)) ~$\to$~ Decision (~$\forall$~x:A, P x).
     \end{coqcode}
   \end{onlyenv}
 
   \begin{onlyenv}<2-3>
+    % Instance fin_fin: ~$\forall$~n, Finite (fin n).             (* r1 *)
+    % Instance nfact_dec: ~$\forall$~n nf, Decision (nfact n nf). (* r2 *)
     \begin{coqcode}
-      Instance fin_fin: ~$\forall$~n, Finite (fin n).             (* r1 *)
-      Instance nfact_dec: ~$\forall$~n nf, Decision (nfact n nf). (* r2 *)
       Instance forall_dec: ~$\forall$~A P, Finite A ~$\to$~            (* r3 *)
         (~$\forall$~x:A, Decision (P x)) ~$\to$~ ~\colorbox{yellow}{Decision ($\forall$x:A, P x)}~.
     \end{coqcode}
   \end{onlyenv}
 
   \begin{onlyenv}<4->
+    % Instance fin_fin: ~$\forall$~n, Finite (fin n).             (* r1 *)
+    % Instance nfact_dec: ~$\forall$~n nf, Decision (nfact n nf). (* r2 *)
     \begin{coqcode}
-      Instance fin_fin: ~$\forall$~n, Finite (fin n).             (* r1 *)
-      Instance nfact_dec: ~$\forall$~n nf, Decision (nfact n nf). (* r2 *)
       Instance forall_dec: ~$\forall$~A P, ~\colorbox{yellow}{Finite A} $\to$~           (* r3 *)
         ~\colorbox{yellow}{($\forall$x:A, Decision (P x))}~ ~$\to$~ Decision (~$\forall$~x:A, P x).
     \end{coqcode}
@@ -128,17 +128,18 @@
       Coq                          & Elpi                                       \\
       \hline
       $f\appsep{}a$                & \elpiIn{app["f", "a"]}                     \\
-      $\lambda x.\lambda y.F_{xy}$ & \elpiIn{lam x\ lam y\ app[F, x, y]}        \\
-      $\lambda x.F_{x}\appsep a$          & \elpiIn{lam x\ app[F, x, "a"]} \\
+      $\lambda x.\lambda y.F\appsep x\appsep y$ & \elpiIn{lam (x\ lam (y\ app[F, x, y]))}        \\
+      $\lambda x.F \appsep x\appsep a$          & \elpiIn{lam (x\ app[F, x, "a"])} \\
     \end{tabular}
   \end{center}
 
   Note on unification:
 
   \begin{itemize}
-    \item In coq: $\lambda x.F_x$ unifies with $\lambda x.f\ x\ 3$
-    \item In elpi: ``\elpiIn{lam x\app[F, x]}'' can't unify with ``\elpiIn{lam x\app[f, x, 3]}''
-    \item But, ``\elpiIn{lam x\F x}'' unifies with ``\elpiIn{lam x\app[f, x, 3]}''
+    \item In coq: $\lambda x.F\appsep x$ unifies with $\lambda x.f\ x\ 3$
+    \item In elpi: \\
+      ``\elpiIn{lam (x\app[F, x])}'' can't unify with ``\elpiIn{lam (x\app["f", x, 3])}''\\
+       But, ``\elpiIn{lam (x\G x)}'' unifies with ``\elpiIn{lam (x\app["f", x, 3])}''
   \end{itemize}
 
 \end{frame}
@@ -164,17 +165,17 @@
   % finite   (app ["fin", N]).                            % r1
   % decision (app ["nfact", N, NF]).                      % r2
 
-  \begin{onlyenv}<2-3>
+  \begin{onlyenv}<2>
     \begin{elpicode}
-      decision (all A x\ app [P, x]) :- finite A,           % r3
+      decision (all A (x\ app [P, x])) :- finite A,         % r3
         pi w\ decision (app [P, w]).
       
-      ?- decision (all (app ["fin", "7"]) x\                % g
-                          app ["nfact", x, "3"]).
+      ?- decision (all (app ["fin", "7"])                   % g
+                          (x\ app ["nfact", x, "3"])).
     \end{elpicode}
   \end{onlyenv}
 
-  \phantom{\vspace{20pt}NOTE: Elpi can unify \elpiIn{(P x)} with \elpiIn{app["nfact", x, "3"]}}
+  % \phantom{\vspace{20pt}NOTE: Elpi can unify \elpiIn{(P x)} with \elpiIn{app["nfact", x, "3"]}}
 
 
 \end{frame}
@@ -185,14 +186,14 @@
   \frametitle{Solving the goal in elpi}
   
   \begin{elpicode}
-    decision (all A x\ ~\colorbox{yellow}{app [P, x]}~) :- finite A,        % r3
+    decision (all A (x\ ~\colorbox{yellow}{app [P, x]}~)) :- finite A,      % r3
       pi w\ decision (app [P, w]).
 
-    ?- decision (all (app ["fin", "7"]) x\              % g
-                        ~\colorbox{yellow}{\appnfactPyg}~).
+    ?- decision (all (app ["fin", "7"])                 % g
+                        (x\ ~\colorbox{yellow}{\appnfactPyg}~)).
   \end{elpicode}
 
-  \onslide<2>{\vspace{20pt}NOTE: Elpi can unify \elpiIn{(P x)} with \elpiIn{app["nfact", x, "3"]}}
+  % \onslide<2>{\vspace{20pt}NOTE: Elpi can unify \elpiIn{(P x)} with \elpiIn{app["nfact", x, "3"]}}
 
 
 \end{frame}
@@ -201,19 +202,19 @@
   \frametitle{The idea}
 
   \begin{elpicode}
-    decision (all A x\ ~\colorbox{yellow}{P' x}~) :-                        % r3
-      ~\colorbox{yellow}{link P' P A}~, 
+    decision (all A (x\ ~\colorbox{yellow}{P' x}~)) :-                      % r3
+      ~\colorbox{yellow}{link P' (fun (x$\backslash$ app[P, x]))}~, 
       finite A,
       pi w\ decision (P' x).
 
-    ?- decision (all (app ["fin", "7"]) x\               % g
-                        ~\appnfactPyg~).
+    ?- decision (all (app ["fin", "7"])                 % g
+                        (x\ ~\appnfactPyg~)).
   \end{elpicode}
   
 
 \end{frame}
 
-\sepFrame{Compilation and simulation}
+% \sepFrame{Compilation and simulation}
 
 \begin{frame}
   \frametitle{What we propose}
@@ -223,7 +224,8 @@
     \begin{itemize}
       \item Recognize \textit{problematic subterms} $p_1,\dots,p_n$
       \item Replace $p_i$ with fresh unification variables $X_i$
-      \item \textit{Link} $p_i$ with $X_i$
+      \item \textit{Link} $p_i$ with $X_i$\\
+        \quad \textit{A link is a suspended unification problem}
     \end{itemize}
     \item Runtime:
     \begin{itemize}
@@ -232,12 +234,12 @@
     \end{itemize}
   \end{enumerate}
 
-  \mysep{}
+  % \mysep{}
 
-  \begin{description}
-    \item[NOTE:] This unification strategy is generalizable to any meta-language
-      when manipulating terms of the object language
-  \end{description}
+  % \begin{description}
+  %   \item[NOTE:] This unification strategy is generalizable to any meta-language
+  %     when manipulating terms of the object language
+  % \end{description}
 
 \end{frame}
 
@@ -247,9 +249,9 @@
   \begin{itemize}
     \item \foUnifPb: the unification problems in the object language (ol)
     \item \hoUnifPb: the unification problems in the meta-language (ml)
-    \item \mapStore, \linkStore: the map store, the link store
-    \item A link in \linkStore is like $X =_\odot t$
-    \item A mapping in \mapStore is like $\{X \mapsto t\}$ 
+    \item \linkStore, \mapStore: the link store, the map store
+    % \item A link in \linkStore is like $X =_\odot t$
+    % \item A mapping in \mapStore is like $\{X \mapsto t\}$ 
   \end{itemize}
 
   \mysep
@@ -257,8 +259,8 @@
   \begin{itemize}
     \item \runFx{\foUnifPb}{n}{\rho}: the run of $n$ unif pb in the ol
     \item \runHx{\foUnifPb}{n}{\rho'}: the run of $n$ unif pb in the ml
-    \item \stepF{\foUnifPb}{p}{\rho_{p-1}}{\rho_p}: the execution of a unif pb in ol
-    \item \stepH{\hoUnifPb}{p}{\sigma_{p-1}}{\linkStore_{p-1}}{\sigma_p}{\linkStore_p}
+    \item \stepF{\foUnifPb}{i}{\rho_{i-1}}{\rho_i}: the execution of the $i^{th}$ unif pb in ol
+    \item \stepH{\hoUnifPb}{i}{\sigma_{i-1}}{\linkStore_{i-1}}{\sigma_i}{\linkStore_i}: the exec of the $i^{th}$ unif pb in ml
   \end{itemize}
 
   % Spiegare \linkStore, \foUnifPb, \hoUnifPb, step, run, substitution application
@@ -287,16 +289,25 @@
     \Leftrightarrow
     \stepH{\hoUnifPb}{p}{\sigma_{p-1}}{\linkStore_{p-1}}{\sigma_p}{\linkStore_p}
     $$
-    \item[Fidelity ricovery]
-    In the context of \frun and \hrun, \\
-    if 
-    $\rho_{p-1} \foUnifPb_{p} \subseteq \llambda$ 
-    (even if $\;\foUnifPb_{p} \not\subseteq \llambda$)
-    then\\
-    $$
-    \stepF{\foUnifPb}{p}{\rho_{p-1}}{\rho_p} \Leftrightarrow
-    \stepH{\hoUnifPb}{p}{\sigma_{p-1}}{\linkStore_{p-1}}{\sigma_{p}}{\linkStore_p}
-    $$
+    % \item[Fidelity ricovery]
+    % In the context of \frun and \hrun, \\
+    % if 
+    % $\rho_{p-1} \foUnifPb_{p} \subseteq \llambda$ 
+    % (even if $\;\foUnifPb_{p} \not\subseteq \llambda$)
+    % then\\
+    % $$
+    % \stepF{\foUnifPb}{p}{\rho_{p-1}}{\rho_p} \Leftrightarrow
+    % \stepH{\hoUnifPb}{p}{\sigma_{p-1}}{\linkStore_{p-1}}{\sigma_{p}}{\linkStore_p}
+    % $$
+    \item[Compilation round trip]
+      % If $\C{s}{t}{l}$ and $l \in \linkStore$
+      % then 
+      % $$\D{\linkStore}{\rho} \land \rho t \Eo \rho s$$
+      If $\C{s}{t}{m}{l}$ and $l \in \linkStore$ and $m \in \mapStore$
+      and
+      $\sigma = \{ A \mapsto t\}$ and $\mapping{X}{A}{n} \in \mapStore$
+      then 
+      $$\D{\sigma}{\mapStore}{\linkStore}{\rho} \land \rho X \Eo \rho s$$
   \end{description}
   % \end{proposition}
 
@@ -305,13 +316,12 @@
 \begin{frame}
   \frametitle{Problematic subterms recognition: \maybebeta}
 
-  A HO variable in the pattern fragment: 
   \begin{itemize}
-    \item $X_x$ becomes \elpiIn{A x} with mapping $X \mapsto A^1$
-    \item Decompilation: transform the lambda abstraction of the meta language
-          to the lambda abstraction of the object one.
-    \item For example, if $\{A \mapsto (x\backslash f\appsep x\appsep a)\}$, then decompilation
-          produces the following substitution $\{X \mapsto \lambda x.f\appsep x\appsep a\}$
+    \item $X\appsep x$ becomes \elpiIn{A x} with mapping $\mapping{X}{A}{1}$
+    \item For example, $\lambda y. X\appsep y = \lambda y. f\appsep y\appsep a$
+    \item Is compiled into: \elpiIn{fun (w\ A w) = fun (w\ app[f, w, a])}
+    \item Unification gives: $\{A \mapsto \elpiIn{(w\ app[f, w, a])}\}$
+    \item Decompilation of $A$ gives $\{X \mapsto \lambda y.f\appsep y\appsep a\}$
   \end{itemize}
 
 \end{frame}
@@ -321,7 +331,7 @@
 
   \begin{itemize}
     \item $\lambda x.s \in \maybeeta$, if $\exists \rho, \rho(\lambda x.s)$ is an $\eta$-redex
-    \item Detection of \maybeeta terms is not trivial:
+    \item Detection of \maybeeta\ terms is not trivial:
     \item \begin{center}
       \begin{tabular}{lll}
         %Term & Status & Evidence \\\hline
@@ -331,47 +341,47 @@
         $\lambda x. \lambda y. f \appsep (A \appsep x) \appsep (B \appsep y \appsep x)$ & $\in\maybeeta$ & $\rho = \{~ A \mapsto \lambda x.x~;~ B \mapsto \lambda y.\lambda x.y ~\}$
       \end{tabular}
     \end{center}
-    \item Need of some primitives like \texttt{may-contract-to} and \texttt{occurs-rigidly}
+    % \item Need of some primitives like \texttt{may-contract-to} and \texttt{occurs-rigidly}
   \end{itemize}
 
 \end{frame}
 
-\begin{frame}
-  \frametitle{Problematic subterms recognition: \maybeeta\ link progression}
+\begin{frame}[fragile]
+  \frametitle{Problematic subterms recognition: \maybeeta\ link resumption}
 
   \begin{itemize}
     \item Several conditions: like lhs is assigned to a rigid term, two
           $\eta$-link with same lhs, the rhs becomes outside \maybeeta\dots
     \item These conditions guarantee the prefixed properties !
     \item An example: %
-        \printAlll
-          {{{\lambda x.X \appsep x,f}}}
-          {{{A,f}}}
-          {{{X,B,1}}}
-          {{{\eta,,A,\lambda x.B_x}}}
-    \item After unification of $A$ with $f$, the lhs of the link is assigned,
-          the link is triggered and $\lambda x.B_x$ is unified with $\lambda
-          x.f\appsep x$
-    \item That is $\{B_x \mapsto f\}$
-    \item Decompilation will assign $\lambda x.f\appsep x$ to $X$
+      \printAlllSingle
+        {{{f,\lambda x.(f\appsep (X\appsep x))}}}
+        {{{\elpiIn{"f"},\elpiIn{A}}}}
+        {{{X,\elpiIn{B},1}}}
+        {{{\eta,,\elpiIn{A},\elpiIn{fun (x\ app["f", B x])}}}}
+    \item After unification of \elpiIn{A} with \elpiIn{"f"},
+          the lhs of the link becomes rigid and
+          \elpiIn{fun (x\ app["f", B x])} is unified with \elpiIn{fun (x\ app["f", x])}
+    \item That is $\{B \mapsto \elpiIn{x\x}\!\!\!\}$
+    \item Decompilation will assign $\lambda x.x$ to $X$
     \end{itemize}
 
 \end{frame}
 
-\begin{frame}
-  \frametitle{Problematic subterms recognition: \maybelam}
+\begin{frame}[fragile]
+  \frametitle{Problematic subterms recognition: \maybelam\footnote{also read \textit{maybe-pattern-fragment}}}
 
   \begin{itemize}
-    \item We have a term not in \llambda
+    % \item We have a term not in \llambda
     \item Example: 
       \printAlll
       {{{X,\lambda x.a},
         {(X\appsep a),a}}}
-      {{{A,\lambda x.a},
-        {B,a}}}
-      {{{X,A,0}}}
-      {{{\llambda,,B,(A\appsep a)}}}
-    \item After unification of $A$ with $\lambda x.a$, 
+      {{{\elpiIn{A},\elpiIn{fun (x\"a")} },
+        {\elpiIn{B},\elpiIn{"a"}}}}
+      {{{X,\elpiIn{A},0}}}
+      {{{\llambda,,\elpiIn{B},\elpiIn{A "a"}}}}
+    \item After unification of \elpiIn{A} with \elpiIn{fun (x\"a")}, 
         the rhs of the link is in \llambda,
         the link is triggered and $B$ is unified to $a$
     \item Decompilation will assign $\lambda x.a$ to $A$
@@ -387,11 +397,10 @@
 % \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Going further: the CHR}
+  \frametitle{Going further: the Constraint Handling Rules}
 
   \begin{itemize}
-    \item Elpi is a dialect of $\lambda$-prolog with CHR
-    \item CHR allows to suspend goals and resume them on given condition
+    \item Elpi has a CHR for goal suspension and resumption
     \item This fits well our notion of link: a suspended unification problem
   \end{itemize}
 
@@ -407,11 +416,24 @@
 
   \mysep
 
+  This can easily introduce new unification behaviors
+  \begin{itemize}
+    \item We can for example mimic the unification of the ol
+    \item Add heuristic for HO unification outside the pattern fragment
+  \end{itemize}
+
+  \mysep
+
   \begin{elpicode}
-    link-eta L R :- not (var L), !, eta-progress-lhs L R.
-    link-eta L R :- not (maybe-eta R), !, eta-progress-rhs L R.
-    link-eta L R :- declare_constraint (link-eta L R) [L,R].
+    % By def, R is not in the pattern fragment
+    link-llam L R :- not (var L), unif-heuristic L R.
   \end{elpicode}
+
+  % \begin{elpicode}
+  %   link-eta L R :- not (var L), !, eta-progress-lhs L R.
+  %   link-eta L R :- not (maybe-eta R), !, eta-progress-rhs L R.
+  %   link-eta L R :- declare_constraint (link-eta L R) [L,R].
+  % \end{elpicode}
 
   % \begin{elpicode}
   %   rule (N1 ~$\triangleright$~ G1 ?- link-eta (uvar X LX1) T1)   % match
@@ -428,13 +450,13 @@
   \begin{itemize}
     \item Takes advantage of the unification capabilities of the meta language
           at the price of handling problematic sub-terms on the side.
-    \item As a result our encoding takes advantage of indexing data structures
-          and mode analysis for clause filtering.
+    % \item As a result our encoding takes advantage of indexing data structures
+    %       and mode analysis for clause filtering.
     \item It is worth mentioning that we replace terms with variables only when
           it is strictly needed, leaving the rest of the term structure intact
-          and hence indexable.
+          and hence \emph{indexable}.
     \item Our approach is flexible enough to accommodate different strategies
-          and heuristics to handle terms outside the pattern fragment
+          and \emph{heuristics} to handle terms outside the pattern fragment
   \end{itemize}
 
 \end{frame}
