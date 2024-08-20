@@ -86,7 +86,7 @@
     \end{coqcode}
   \end{onlyenv}
 
-  \begin{onlyenv}<2-3>
+  \begin{onlyenv}<2>
     % Instance fin_fin: ~$\forall$~n, Finite (fin n).             (* r1 *)
     % Instance nfact_dec: ~$\forall$~n nf, Decision (nfact n nf). (* r2 *)
     \begin{coqcode}
@@ -95,7 +95,7 @@
     \end{coqcode}
   \end{onlyenv}
 
-  \begin{onlyenv}<4->
+  \begin{onlyenv}<3->
     % Instance fin_fin: ~$\forall$~n, Finite (fin n).             (* r1 *)
     % Instance nfact_dec: ~$\forall$~n nf, Decision (nfact n nf). (* r2 *)
     \begin{coqcode}
@@ -111,9 +111,9 @@
   \end{coqcode}
 
   \begin{itemize}
-    \only<2>{\item Back-chain to \texttt{forall\_dec} with }
+    % \only<2>{\item Back-chain to \texttt{forall\_dec} with }
     \item<2-> $\{A \mapsto fin\ 7; P \mapsto \lambda x.(nfact\ x\ 3)\}$
-    \item<4> subgoals:\\
+    \item<3> subgoals:\\
       \coqIn{Finite (fin 7)} and \coqIn{(~$\forall$~x:A, Decision ((~$\lambda$~ x.(nfact x 3)) x))}
   \end{itemize}
 
@@ -121,26 +121,30 @@
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Coq terms in elpi}
+  \frametitle{Coq terms in elpi : HOAS}
 
   \begin{center}
     \begin{tabular}{c || c}
       Coq                          & Elpi                                       \\
       \hline
-      $f\appsep{}a$                & \elpiIn{app["f", "a"]}                     \\
-      $\lambda x.\lambda y.F\appsep x\appsep y$ & \elpiIn{lam (x\ lam (y\ app[F, x, y]))}        \\
-      $\lambda x.F \appsep x\appsep a$          & \elpiIn{lam (x\ app[F, x, "a"])} \\
+      $f$                          & \elpiIn{c"f"}                               \\
+      $f\appsep{}a$                & \elpiIn{app[c"f", c"a"]}                     \\
+      $\lambda (x : T).F\appsep x$ & \elpiIn{fun T (x\ app[F, x])}        \\
+      $\forall (x : T), F\appsep x$ & \elpiIn{all T (x\ app[F, x])}        \\
+      \dots & \dots        \\
+      % $\lambda x.\lambda y.F\appsep x\appsep y$ & \elpiIn{lam (x\ lam (y\ app[F, x, y]))}        \\
+      % $\lambda x.F \appsep x\appsep a$          & \elpiIn{lam (x\ app[F, x, "a"])} \\
     \end{tabular}
   \end{center}
 
-  Note on unification:
+  % Note on unification:
 
-  \begin{itemize}
-    \item In coq: $\lambda x.F\appsep x$ unifies with $\lambda x.f\ x\ 3$
-    \item In elpi: \\
-      ``\elpiIn{lam (x\app[F, x])}'' can't unify with ``\elpiIn{lam (x\app["f", x, 3])}''\\
-       But, ``\elpiIn{lam (x\G x)}'' unifies with ``\elpiIn{lam (x\app["f", x, 3])}''
-  \end{itemize}
+  % \begin{itemize}
+  %   \item In coq: $\lambda x.F\appsep x$ unifies with $\lambda x.f\ x\ 3$
+  %   \item In elpi: \\
+  %     ``\elpiIn{lam (x\app[F, x])}'' can't unify with ``\elpiIn{lam (x\app["f", x, 3])}''\\
+  %      But, ``\elpiIn{lam (x\G x)}'' unifies with ``\elpiIn{lam (x\app["f", x, 3])}''
+  % \end{itemize}
 
 \end{frame}
 
@@ -170,8 +174,8 @@
       decision (all A (x\ app [P, x])) :- finite A,         % r3
         pi w\ decision (app [P, w]).
       
-      ?- decision (all (app ["fin", "7"])                   % g
-                          (x\ app ["nfact", x, "3"])).
+      ?- decision (all (app [c"fin", c"7"])                   % g
+                          (x\ app [c"nfact", x, c"3"])).
     \end{elpicode}
   \end{onlyenv}
 
@@ -180,7 +184,7 @@
 
 \end{frame}
 
-\def\appnfactPyg{app\PYG{+w}{ }\PYG{k+kd}{[}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{nfact}\PYG{l+s+s2}{\PYGZdq{}}\PYG{k+kd}{,}\PYG{+w}{ }x\PYG{k+kd}{,}\PYG{+w}{ }\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{3}\PYG{l+s+s2}{\PYGZdq{}}\PYG{k+kd}{]}}
+\def\appnfactPyg{app\PYG{+w}{ }\PYG{k+kd}{[}c\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{nfact}\PYG{l+s+s2}{\PYGZdq{}}\PYG{k+kd}{,}\PYG{+w}{ }x\PYG{k+kd}{,}\PYG{+w}{ }c\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{3}\PYG{l+s+s2}{\PYGZdq{}}\PYG{k+kd}{]}}
 
 \begin{frame}[fragile]
   \frametitle{Solving the goal in elpi}
@@ -242,7 +246,7 @@
   % \end{description}
 
 \end{frame}
-
+\def\llam{\ensuremath{{\mathcal{L}_\lambda}}\xspace}
 \begin{frame}
   \frametitle{Some notations}
 
@@ -250,6 +254,7 @@
     \item \foUnifPb: the unification problems in the object language (ol)
     \item \hoUnifPb: the unification problems in the meta-language (ml)
     \item \linkStore, \mapStore: the link store, the map store
+    \item Three kinds of links: \maybebeta, \maybeeta, \maybelam\footnote{\llam is a notation for the \textit{pattern fragment}}
     % \item A link in \linkStore is like $X =_\odot t$
     % \item A mapping in \mapStore is like $\{X \mapsto t\}$ 
   \end{itemize}
@@ -282,12 +287,12 @@
       \forall s \in \foUnifPb, \rho s \Eo \rho' s
     $$
     \item [Simulation fidelity]
-    In the context of  \frun and \hrun,\\
-    if $~\foUnifPb \subseteq \llambda$ we have that
-    $\forall p \in 1 \ldots n,$
-    $$\stepF{\foUnifPb}{p}{\rho_{p-1}}{\rho_p}
+    $\forall \foUnifPb$, in the context of  \frun and \hrun,
+    % if $~\foUnifPb \subseteq \llambda$ we have that
+    $\forall i \in 1 \ldots n,$
+    $$\stepF{\foUnifPb}{i}{\rho_{i-1}}{\rho_i}
     \Leftrightarrow
-    \stepH{\hoUnifPb}{p}{\sigma_{p-1}}{\linkStore_{p-1}}{\sigma_p}{\linkStore_p}
+    \stepH{\hoUnifPb}{i}{\sigma_{i-1}}{\linkStore_{i-1}}{\sigma_i}{\linkStore_i}
     $$
     % \item[Fidelity ricovery]
     % In the context of \frun and \hrun, \\
@@ -303,11 +308,11 @@
       % If $\C{s}{t}{l}$ and $l \in \linkStore$
       % then 
       % $$\D{\linkStore}{\rho} \land \rho t \Eo \rho s$$
-      If $\C{s}{t}{m}{l}$ and $l \in \linkStore$ and $m \in \mapStore$
-      and
-      $\sigma = \{ A \mapsto t\}$ and $\mapping{X}{A}{n} \in \mapStore$
-      then 
-      $$\D{\sigma}{\mapStore}{\linkStore}{\rho} \land \rho X \Eo \rho s$$
+      If the compilation of $s$ gives a term $t$ and the stores $\linkStore$ and $\mapStore$
+      % and
+      % $\sigma = \{ A \mapsto t\}$ and $\mapping{X}{A}{n} \in \mapStore$
+      then $\forall \sigma$,
+      $$\D{\sigma}{\mapStore}{\linkStore}{\rho} \land \rho t \Eo \rho s$$
   \end{description}
   % \end{proposition}
 
@@ -317,10 +322,10 @@
   \frametitle{Problematic subterms recognition: \maybebeta}
 
   \begin{itemize}
-    \item $X\appsep x$ becomes \elpiIn{A x} with mapping $\mapping{X}{A}{1}$
+    \item $X\appsep y$ becomes \elpiIn{A y} with mapping $\mapping{X}{A}{1}$
     \item For example, $\lambda y. X\appsep y = \lambda y. f\appsep y\appsep a$
-    \item Is compiled into: \elpiIn{fun (w\ A w) = fun (w\ app[f, w, a])}
-    \item Unification gives: $\{A \mapsto \elpiIn{(w\ app[f, w, a])}\}$
+    \item Is compiled into: \elpiIn{fun (w\ A w) = fun (w\ app[c"f", w, c"a"])}
+    \item Unification gives: $\{A \mapsto \elpiIn{(w\ app[c"f", w, c"a"])}\}$
     \item Decompilation of $A$ gives $\{X \mapsto \lambda y.f\appsep y\appsep a\}$
   \end{itemize}
 
@@ -358,10 +363,10 @@
         {{{f,\lambda x.(f\appsep (X\appsep x))}}}
         {{{\elpiIn{"f"},\elpiIn{A}}}}
         {{{X,\elpiIn{B},1}}}
-        {{{\eta,,\elpiIn{A},\elpiIn{fun (x\ app["f", B x])}}}}
-    \item After unification of \elpiIn{A} with \elpiIn{"f"},
+        {{{\eta,,\elpiIn{A},\elpiIn{fun (x\ app[c"f", B x])}}}}
+    \item After unification of \elpiIn{A} with \elpiIn{c"f"},
           the lhs of the link becomes rigid and
-          \elpiIn{fun (x\ app["f", B x])} is unified with \elpiIn{fun (x\ app["f", x])}
+          \elpiIn{fun (x\ app[c"f", B x])} is unified with \elpiIn{fun (x\ app[c"f", x])}
     \item That is $\{B \mapsto \elpiIn{x\x}\!\!\!\}$
     \item Decompilation will assign $\lambda x.x$ to $X$
     \end{itemize}
@@ -369,7 +374,7 @@
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Problematic subterms recognition: \maybelam\footnote{also read \textit{maybe-pattern-fragment}}}
+  \frametitle{Problematic subterms recognition: \maybelam}
 
   \begin{itemize}
     % \item We have a term not in \llambda
@@ -377,13 +382,13 @@
       \printAlll
       {{{X,\lambda x.a},
         {(X\appsep a),a}}}
-      {{{\elpiIn{A},\elpiIn{fun (x\"a")} },
+      {{{\elpiIn{A},\elpiIn{fun (x\ c"a")} },
         {\elpiIn{B},\elpiIn{"a"}}}}
       {{{X,\elpiIn{A},0}}}
-      {{{\llambda,,\elpiIn{B},\elpiIn{A "a"}}}}
-    \item After unification of \elpiIn{A} with \elpiIn{fun (x\"a")}, 
-        the rhs of the link is in \llambda,
-        the link is triggered and $B$ is unified to $a$
+      {{{\llambda,,\elpiIn{B},\elpiIn{A (c"a")}}}}
+    \item After unification of \elpiIn{A} with \elpiIn{fun (x\"a")}, \\
+        the lhs of the \llambda-link becomes \elpiIn{c"a"},\\
+        the link is triggered and $B$ is unified to \elpiIn{c"a"}
     \item Decompilation will assign $\lambda x.a$ to $A$
   \end{itemize}
 
