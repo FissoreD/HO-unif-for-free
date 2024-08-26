@@ -61,10 +61,13 @@
     \item Our goal:
           \begin{itemize}
             \item Type-class solver for Coq in Elpi
+            \item The goal of a type-class solver is to back-chain lemmas
+                  taken from a database of `type-class instances'. 
           \end{itemize}
     \item Our problem:
           \begin{itemize}
-            \item The Elpi's unification algorithm differs from Coq's one
+            \item Elpi cannot unify correctly HO term of Coq
+            \item But we want to make unification in Elpi
           \end{itemize}
     \item Our contribution:
           \begin{itemize}
@@ -137,6 +140,11 @@
     \end{tabular}
   \end{center}
 
+  \begin{itemize}
+    \item variable bindings and substitutions are for free % when meta language binders represent object logic ones;
+    \item easy term inspection
+  \end{itemize}
+
   % Note on unification:
 
   % \begin{itemize}
@@ -171,7 +179,7 @@
 
   \begin{onlyenv}<2>
     \begin{elpicode}
-      decision (all A (x\ app [P, x])) :- finite A,         % r3
+      decision (all A (x\ app [P, x])) :- finite A,          % r3
         pi w\ decision (app [P, w]).
       
       ?- decision (all (app [c"fin", c"7"])                   % g
@@ -193,7 +201,7 @@
     decision (all A (x\ ~\colorbox{yellow}{app [P, x]}~)) :- finite A,      % r3
       pi w\ decision (app [P, w]).
 
-    ?- decision (all (app ["fin", "7"])                 % g
+    ?- decision (all (app [c"fin", c"7"])               % g
                         (x\ ~\colorbox{yellow}{\appnfactPyg}~)).
   \end{elpicode}
 
@@ -201,24 +209,6 @@
 
 
 \end{frame}
-
-\begin{frame}[fragile]
-  \frametitle{The idea}
-
-  \begin{elpicode}
-    decision (all A (x\ ~\colorbox{yellow}{P' x}~)) :-                      % r3
-      ~\colorbox{yellow}{link P' (fun (x$\backslash$ app[P, x]))}~, 
-      finite A,
-      pi w\ decision (P' x).
-
-    ?- decision (all (app ["fin", "7"])                 % g
-                        (x\ ~\appnfactPyg~)).
-  \end{elpicode}
-  
-
-\end{frame}
-
-% \sepFrame{Compilation and simulation}
 
 \begin{frame}
   \frametitle{What we propose}
@@ -246,6 +236,26 @@
   % \end{description}
 
 \end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{The idea}
+
+  \begin{elpicode}
+    decision (all A (x\ ~\colorbox{yellow}{P' x}~)) :-                      % r3
+      ~\colorbox{yellow}{link P' (app[P, x])}~, 
+      finite A,
+      pi w\ decision (P' x).
+
+    ?- decision (all (app ["fin", "7"])                 % g
+                        (x\ ~\appnfactPyg~)).
+  \end{elpicode}
+  
+
+\end{frame}
+
+% \sepFrame{Compilation and simulation}
+
+
 \def\llam{\ensuremath{{\mathcal{L}_\lambda}}\xspace}
 \begin{frame}
   \frametitle{Some notations}
@@ -254,7 +264,7 @@
     \item \foUnifPb: the unification problems in the object language (ol)
     \item \hoUnifPb: the unification problems in the meta-language (ml)
     \item \linkStore, \mapStore: the link store, the map store
-    \item Three kinds of links: \maybebeta, \maybeeta, \maybelam\footnote{\llam is a notation for the \textit{pattern fragment}}
+    % \item Three kinds of links: \maybebeta, \maybeeta, \maybelam\footnote{\llam is a notation for the \textit{pattern fragment}}
     % \item A link in \linkStore is like $X =_\odot t$
     % \item A mapping in \mapStore is like $\{X \mapsto t\}$ 
   \end{itemize}
@@ -311,28 +321,37 @@
       If the compilation of $s$ gives a term $t$ and the stores $\linkStore$ and $\mapStore$
       % and
       % $\sigma = \{ A \mapsto t\}$ and $\mapping{X}{A}{n} \in \mapStore$
-      then $\forall \sigma$,
-      $$\D{\sigma}{\mapStore}{\linkStore}{\rho} \land \rho t \Eo \rho s$$
+      then
+      $$\D{}{\mapStore}{\linkStore}{\rho} \land \rho t \Eo s$$
   \end{description}
   % \end{proposition}
 
 \end{frame}
 
-\begin{frame}
-  \frametitle{Problematic subterms recognition: \maybebeta}
+\sepFrame{Problematic subterm recognition}
+
+\begin{frame}[fragile]
+  \frametitle{Sketch of \maybebeta\ links}
 
   \begin{itemize}
-    \item $X\appsep y$ becomes \elpiIn{A y} with mapping $\mapping{X}{A}{1}$
-    \item For example, $\lambda y. X\appsep y = \lambda y. f\appsep y\appsep a$
-    \item Is compiled into: \elpiIn{fun (w\ A w) = fun (w\ app[c"f", w, c"a"])}
-    \item Unification gives: $\{A \mapsto \elpiIn{(w\ app[c"f", w, c"a"])}\}$
+    \item An example, let $x$ be a bound variable: 
+      \printAlllSingle
+      {{{X\appsep x,f\appsep x\appsep a}}}
+      {{{\elpiIn{A x},\elpiIn{app[c"f",x,c"a"]}}}}
+      {{{X,\elpiIn{A},0}}}
+      {{}}
+    % \item $X\appsep y$ becomes \elpiIn{A y} with mapping $\mapping{X}{A}{1}$
+    % \item For example, let $y$ be a bound variable, $X\appsep y = f\appsep y\appsep a$
+    % \item Is compiled into: \elpiIn{A y = app[c"f", y, c"a"]}
+    % \item $\mapStore = \{ X \mapsto A \}$
+    \item Unification of $\hoUnifPb_0$ gives: $\{A \mapsto \elpiIn{(w\ app[c"f", w, c"a"])}\}$
     \item Decompilation of $A$ gives $\{X \mapsto \lambda y.f\appsep y\appsep a\}$
   \end{itemize}
 
 \end{frame}
 
 \begin{frame}
-  \frametitle{Problematic subterms recognition: \maybeeta}
+  \frametitle{Sketch of \maybeeta\ links}
 
   \begin{itemize}
     \item $\lambda x.s \in \maybeeta$, if $\exists \rho, \rho(\lambda x.s)$ is an $\eta$-redex
@@ -342,8 +361,8 @@
         %Term & Status & Evidence \\\hline
         $\lambda x. f \appsep (A \appsep x)$ & $\in\maybeeta$ & $\rho = \{~ A \mapsto \lambda x.x ~\}$ \\
         $\lambda x. f \appsep (A \appsep x) \appsep x$ & $\in\maybeeta$ & $\rho = \{~ A \mapsto \lambda x.a ~\}$\\
-        $\lambda x. f \appsep x \appsep (A \appsep x)$ & $\not\in\maybeeta$ &\\
-        $\lambda x. \lambda y. f \appsep (A \appsep x) \appsep (B \appsep y \appsep x)$ & $\in\maybeeta$ & $\rho = \{~ A \mapsto \lambda x.x~;~ B \mapsto \lambda y.\lambda x.y ~\}$
+        $\lambda x. \lambda y. f \appsep (A \appsep x) \appsep (B \appsep y \appsep x)$ & $\in\maybeeta$ & $\rho = \{~ A \mapsto \lambda x.x~;~ B \mapsto \lambda y.\lambda x.y ~\}$\\
+        $\lambda x. f \appsep x \appsep (A \appsep x)$ & $\not\in\maybeeta$ &
       \end{tabular}
     \end{center}
     % \item Need of some primitives like \texttt{may-contract-to} and \texttt{occurs-rigidly}
@@ -352,16 +371,16 @@
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Problematic subterms recognition: \maybeeta\ link resumption}
+  \frametitle{Sketch of \maybeeta\ link resumption}
 
   \begin{itemize}
-    \item Several conditions: like lhs is assigned to a rigid term, two
-          $\eta$-link with same lhs, the rhs becomes outside \maybeeta\dots
-    \item These conditions guarantee the prefixed properties !
+    % \item Several conditions: like lhs is assigned to a rigid term, two
+    %       $\eta$-link with same lhs, the rhs becomes outside \maybeeta\dots
+    % \item These conditions guarantee the prefixed properties !
     \item An example: %
       \printAlllSingle
         {{{f,\lambda x.(f\appsep (X\appsep x))}}}
-        {{{\elpiIn{"f"},\elpiIn{A}}}}
+        {{{\elpiIn{c"f"},\elpiIn{A}}}}
         {{{X,\elpiIn{B},1}}}
         {{{\eta,,\elpiIn{A},\elpiIn{fun (x\ app[c"f", B x])}}}}
     \item After unification of \elpiIn{A} with \elpiIn{c"f"},
@@ -374,22 +393,22 @@
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Problematic subterms recognition: \maybelam}
+  \frametitle{Sketch of \maybelam\ links}
 
   \begin{itemize}
     % \item We have a term not in \llambda
-    \item Example: 
+    \item An example: 
       \printAlll
       {{{X,\lambda x.a},
         {(X\appsep a),a}}}
       {{{\elpiIn{A},\elpiIn{fun (x\ c"a")} },
-        {\elpiIn{B},\elpiIn{"a"}}}}
+        {\elpiIn{B},\elpiIn{c"a"}}}}
       {{{X,\elpiIn{A},0}}}
       {{{\llambda,,\elpiIn{B},\elpiIn{A (c"a")}}}}
-    \item After unification of \elpiIn{A} with \elpiIn{fun (x\"a")}, \\
-        the lhs of the \llambda-link becomes \elpiIn{c"a"},\\
-        the link is triggered and $B$ is unified to \elpiIn{c"a"}
-    \item Decompilation will assign $\lambda x.a$ to $A$
+    \item After unification of \elpiIn{A} with \elpiIn{fun (x\ c"a")}, \\
+        the rhs of the \llambda-link becomes \elpiIn{c"a"}\footnote{after a $\beta$-reduction step},\\
+        the link is triggered and \elpiIn{B} is unified to \elpiIn{c"a"}
+    \item Decompilation will assign $\lambda x.a$ to $X$
   \end{itemize}
 
 \end{frame}
