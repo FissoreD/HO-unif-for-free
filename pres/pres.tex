@@ -331,27 +331,29 @@
 \sepFrame{Problematic subterm recognition}
 
 \begin{frame}[fragile]
-  \frametitle{Sketch of \maybebeta\ links}
+  \frametitle{Sketch of \maybebeta\ terms}
+
+  \def\var{Y}
 
   \begin{itemize}
     \item An example, let $x$ be a bound variable: 
       \printAlllSingle
-      {{{X\appsep x,f\appsep x\appsep a}}}
+      {{{\var\appsep x,f\appsep x\appsep a}}}
       {{{\elpiIn{A x},\elpiIn{app[c"f",x,c"a"]}}}}
-      {{{X,\elpiIn{A},0}}}
+      {{{\var,\elpiIn{A},0}}}
       {{}}
-    % \item $X\appsep y$ becomes \elpiIn{A y} with mapping $\mapping{X}{A}{1}$
-    % \item For example, let $y$ be a bound variable, $X\appsep y = f\appsep y\appsep a$
+    % \item $\var\appsep y$ becomes \elpiIn{A y} with mapping $\mapping{\var}{A}{1}$
+    % \item For example, let $y$ be a bound variable, $\var\appsep y = f\appsep y\appsep a$
     % \item Is compiled into: \elpiIn{A y = app[c"f", y, c"a"]}
-    % \item $\mapStore = \{ X \mapsto A \}$
+    % \item $\mapStore = \{ \var \mapsto A \}$
     \item Unification of $\hoUnifPb_0$ gives: $\{A \mapsto \elpiIn{(w\ app[c"f", w, c"a"])}\}$
-    \item Decompilation of $A$ gives $\{X \mapsto \lambda y.f\appsep y\appsep a\}$
+    \item Decompilation of $A$ gives $\{\var \mapsto \lambda x.f\appsep x\appsep a\}$
   \end{itemize}
 
 \end{frame}
 
 \begin{frame}
-  \frametitle{Sketch of \maybeeta\ links}
+  \frametitle{Sketch of \maybeeta\ terms}
 
   \begin{itemize}
     \item $\lambda x.s \in \maybeeta$, if $\exists \rho, \rho(\lambda x.s)$ is an $\eta$-redex
@@ -371,7 +373,9 @@
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Sketch of \maybeeta\ link resumption}
+  \frametitle{Sketch of \maybeeta\ link}
+
+  \def\var{Y}
 
   \begin{itemize}
     % \item Several conditions: like lhs is assigned to a rigid term, two
@@ -379,15 +383,14 @@
     % \item These conditions guarantee the prefixed properties !
     \item An example: %
       \printAlllSingle
-        {{{f,\lambda x.(f\appsep (X\appsep x))}}}
+        {{{f,\lambda x.(f\appsep (\var\appsep x))}}}
         {{{\elpiIn{c"f"},\elpiIn{A}}}}
-        {{{X,\elpiIn{B},1}}}
+        {{{\var,\elpiIn{B},1}}}
         {{{\eta,,\elpiIn{A},\elpiIn{fun (x\ app[c"f", B x])}}}}
-    \item After unification of \elpiIn{A} with \elpiIn{c"f"},
-          the lhs of the link becomes rigid and
-          \elpiIn{fun (x\ app[c"f", B x])} is unified with \elpiIn{fun (x\ app[c"f", x])}
-    \item That is $\{B \mapsto \elpiIn{x\x}\!\!\!\}$
-    \item Decompilation will assign $\lambda x.x$ to $X$
+    \item After unification of \elpiIn{A} with \elpiIn{c"f"},\\
+          \elpiIn{fun (x\ app[c"f", x])} is unified with \elpiIn{fun (x\ app[c"f", B x])}\\
+          \elpiIn{B} is assigned to \elpiIn{x\x}
+    \item Decompilation will assign $\lambda x.x$ to $\var$
     \end{itemize}
 
 \end{frame}
