@@ -1,4 +1,8 @@
 \documentclass{pres}
+
+\usepackage{calligra}
+\usepackage[T1]{fontenc}
+
 \newcounter{llength}
 \newcommand{\listlength}[1]{
   \setcounter{llength}{0}%
@@ -240,7 +244,7 @@
 \begin{frame}[fragile]
   \frametitle{The idea}
 
-  \def\linkrhs{fun\PYG{+w}{ }\PYG{n+nv}{A}\PYG{+w}{ }\PYG{p}{(}\PYG{n+nv}{x\PYGZbs{}}\PYG{+w}{ }app\PYG{k+kd}{[}\PYG{n+nv}{P\PYGZsq{}}\PYG{k+kd}{,}\PYG{+w}{ }x\PYG{k+kd}{]}\PYG{p}{)}}
+  \def\linkrhs{fun\PYG{+w}{ }\PYG{n+nv}{A}\PYG{+w}{ }\PYG{p}{(}\PYG{n+nv}{x\PYGZbs{}}\PYG{+w}{ }app\PYG{k+kd}{[}\PYG{n+nv}{P}\PYG{k+kd}{,}\PYG{+w}{ }x\PYG{k+kd}{]}\PYG{p}{)}}
 
   \begin{elpicode}
 
@@ -266,7 +270,7 @@
   \begin{itemize}
     \item \foUnifPb: the unification problems in the object language (ol)
     \item \hoUnifPb: the unification problems in the meta-language (ml)
-    \item \linkStore, \mapStore: the link store, the unification-variable map store
+    \item \linkStore, \mapStore: the link store, the unification-variable map
     % \item Three kinds of links: \maybebeta, \maybeeta, \maybelam\footnote{\llam is a notation for the \textit{pattern fragment}}
     % \item A link in \linkStore is like $X =_\odot t$
     % \item A mapping in \mapStore is like $\{X \mapsto t\}$ 
@@ -318,13 +322,19 @@
     % \stepH{\hoUnifPb}{p}{\sigma_{p-1}}{\linkStore_{p-1}}{\sigma_{p}}{\linkStore_p}
     % $$
     \item[Compilation round trip]
-      % If the compilation of $s$ gives a term $t$ and the stores $\linkStore$ and $\mapStore$
-      % then
-      % $$\D{}{\mapStore}{\linkStore}{\rho} \land \rho t \Eo s$$
-      If the compilation of $s$ gives the term $t$, the links $l \in \linkStore$
-      and the mapping $m \in \mapStore$ and $\sigma = \{ A \mapsto t\}$ and
-      $\mapping{X}{A}{n} \in \mapStore$ then
-      $\D{\sigma}{\mapStore}{\linkStore}{\rho}$ and $\rho X \Eo \rho s$.
+      % % If the compilation of $s$ gives a term $t$ and the stores $\linkStore$ and $\mapStore$
+      % % then
+      % % $$\D{}{\mapStore}{\linkStore}{\rho} \land \rho t \Eo s$$
+      % If the compilation of $s$ gives the term $t$, the links $l \in \linkStore$
+      % and the mapping $m \in \mapStore$ and $\sigma = \{ A \mapsto t\}$ and
+      % $\mapping{X}{A}{n} \in \mapStore$ then
+      % $\D{\sigma}{\mapStore}{\linkStore}{\rho}$ and $\rho X \Eo \rho s$.
+      If $\C{s}{t}{m}{l}$ and $l \in \linkStore$ and $m \in \mapStore$
+      and
+      $\sigma = \{ A \mapsto t\}$ and $\mapping{X}{A}{n} \in \mapStore$
+      then\\
+      \centering $\D{\sigma}{\mapStore}{\linkStore}{\rho}$ and
+      $\rho X \Eo \rho s$.
   \end{description}
   % \end{proposition}
 
@@ -407,7 +417,7 @@
         {{{\var,\elpiIn{B},1}}}
         {{}}
     \item We have recognized the \maybebeta\ subterm $\var\appsep x$
-    \item But the unification problem in $\hoUnifPb$ raise a failure...
+    \item But the unification problem in $\hoUnifPb$ raises a failure...
     \end{itemize}
 
 \end{frame}
@@ -428,8 +438,8 @@
         {{{\var,\elpiIn{B},1}}}
         {{{\eta,,\elpiIn{A},\elpiIn{fun (x\ app[c"f", B x])}}}}
     \item After unification of \elpiIn{c"f"} with \elpiIn{A},\\
-          \elpiIn{fun (x\ app[c"f", x])} is unified with \elpiIn{fun (x\ app[c"f", B x])}\\
-          \elpiIn{B} is assigned to \elpiIn{x\x}
+          its $\eta$-expansion is unified with \elpiIn{fun (x\ app[c"f", B x])}\\
+          Hence \elpiIn{B} is assigned to \elpiIn{x\x}
     \item Decompilation will assign $\lambda x.x$ to $\var$
     \end{itemize}
 
@@ -473,7 +483,7 @@
       {{{\var,\elpiIn{A},0}}}
       {{{\llambda,,\elpiIn{B},\elpiIn{A (c"a")}}}}
     \item After unification of \elpiIn{A} with \elpiIn{fun (x\ c"a")}, \\
-        the rhs of the \llambda-link becomes \elpiIn{c"a"}\footnote{after a $\beta$-reduction step},\\
+        the rhs of the \llambda-link becomes \elpiIn{c"a"}, after a $\beta$-reduction step,\\
         the link is triggered and \elpiIn{B} is unified to \elpiIn{c"a"}
     \item Decompilation will assign $\lambda x.a$ to $\var$
   \end{itemize}
@@ -495,16 +505,15 @@
     \item This fits well our notion of link: a suspended unification problem
   \end{itemize}
 
-  % \begin{elpicode}
-  %   pred eta i:term, i:term.
-  %   eta A (fun _ _ B as T) :- not (var A), not (var B), !, 
-  %     unify-left-right A T. 
-  %   eta A B :- progress-eta-right B B', !, A = B'. 
-  %   eta A B :- progress-eta-left  A A', !, A' = B.
-  %   eta A B :- scope-check A B, get-vars B Vars, 
-  %     declare_constraint (eta A B) [A|Vars].
-  % \end{elpicode}
-
+  \begin{elpicode}
+    pred link-eta i:term, i:term.
+    link-eta A (fun _ _ B as T) :- not (var A), not (var B), !, 
+      unify-left-right A T. 
+    link-eta A B :- progress-eta-right B B', !, A = B'. 
+    link-eta A B :- progress-eta-left  A A', !, A' = B.
+    link-eta A B :- scope-check A B, get-vars B Vars, 
+      declare_constraint (link-eta A B) [A|Vars].
+  \end{elpicode}
   \mysep
 
   This can easily introduce new unification behaviors
@@ -512,7 +521,7 @@
     \item Add heuristic for HO unification outside the pattern fragment
   \end{itemize}
 
-  \mysep
+  % \mysep
 
   \begin{elpicode}
     % By def, R is not in the pattern fragment
@@ -548,6 +557,19 @@
     \item Our approach is flexible enough to accommodate different strategies
           and \textbf{heuristics} to handle terms outside the pattern fragment
   \end{itemize}
+
+\end{frame}
+
+\begin{frame}
+  % \frametitle{<title>}
+
+  \centering
+    {\Huge\calligra Thanks!}
+
+  \pause
+  \begin{center}
+    Questions ?
+  \end{center}
 
 \end{frame}
 
