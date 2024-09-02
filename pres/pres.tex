@@ -14,7 +14,7 @@
 \setbeamerfont{title}{}
 \setbeamerfont{subtitle}{parent={normal text},size=\small,shape=\itshape}
 
-\author{Fissore Davide \& Enrico Tassi} 
+\author{\textbf{Fissore Davide} \& Enrico Tassi} 
 \title{Higher-Order unification for free}
 \subtitle{Reusing the meta-language unification for the object language}
 
@@ -66,8 +66,8 @@
           \end{itemize}
     \item Our problem:
           \begin{itemize}
-            \item Elpi cannot unify correctly HO term of Coq
-            \item But we want to make unification in Elpi
+            \item Elpi cannot unify correctly Coq's HO terms
+            \item But we want/need to use Elpi's unification algorithm
           \end{itemize}
     \item Our contribution:
           \begin{itemize}
@@ -240,11 +240,14 @@
 \begin{frame}[fragile]
   \frametitle{The idea}
 
+  \def\linkrhs{fun\PYG{+w}{ }\PYG{n+nv}{A}\PYG{+w}{ }\PYG{p}{(}\PYG{n+nv}{x\PYGZbs{}}\PYG{+w}{ }app\PYG{k+kd}{[}\PYG{n+nv}{P\PYGZsq{}}\PYG{k+kd}{,}\PYG{+w}{ }x\PYG{k+kd}{]}\PYG{p}{)}}
+
   \begin{elpicode}
+
     decision (all A (x\ ~\colorbox{yellow}{P' x}~)) :-                      % r3
-      ~\colorbox{yellow}{link P' (app[P, x])}~, 
+      ~\colorbox{yellow}{link P' (\linkrhs)}~, 
       finite A,
-      pi w\ decision (P' x).
+      pi w\ decision (P' w).
 
     ?- decision (all (app ["fin", "7"])                 % g
                         (x\ ~\appnfactPyg~)).
@@ -263,7 +266,7 @@
   \begin{itemize}
     \item \foUnifPb: the unification problems in the object language (ol)
     \item \hoUnifPb: the unification problems in the meta-language (ml)
-    \item \linkStore, \mapStore: the link store, the map store
+    \item \linkStore, \mapStore: the link store, the unification-variable map store
     % \item Three kinds of links: \maybebeta, \maybeeta, \maybelam\footnote{\llam is a notation for the \textit{pattern fragment}}
     % \item A link in \linkStore is like $X =_\odot t$
     % \item A mapping in \mapStore is like $\{X \mapsto t\}$ 
@@ -315,14 +318,13 @@
     % \stepH{\hoUnifPb}{p}{\sigma_{p-1}}{\linkStore_{p-1}}{\sigma_{p}}{\linkStore_p}
     % $$
     \item[Compilation round trip]
-      % If $\C{s}{t}{l}$ and $l \in \linkStore$
-      % then 
-      % $$\D{\linkStore}{\rho} \land \rho t \Eo \rho s$$
-      If the compilation of $s$ gives a term $t$ and the stores $\linkStore$ and $\mapStore$
-      % and
-      % $\sigma = \{ A \mapsto t\}$ and $\mapping{X}{A}{n} \in \mapStore$
-      then
-      $$\D{}{\mapStore}{\linkStore}{\rho} \land \rho t \Eo s$$
+      % If the compilation of $s$ gives a term $t$ and the stores $\linkStore$ and $\mapStore$
+      % then
+      % $$\D{}{\mapStore}{\linkStore}{\rho} \land \rho t \Eo s$$
+      If the compilation of $s$ gives the term $t$, the links $l \in \linkStore$
+      and the mapping $m \in \mapStore$ and $\sigma = \{ A \mapsto t\}$ and
+      $\mapping{X}{A}{n} \in \mapStore$ then
+      $\D{\sigma}{\mapStore}{\linkStore}{\rho}$ and $\rho X \Eo \rho s$.
   \end{description}
   % \end{proposition}
 
@@ -331,7 +333,24 @@
 \sepFrame{Problematic subterm recognition}
 
 \begin{frame}[fragile]
-  \frametitle{Sketch of \maybebeta\ terms}
+  \frametitle{Sketch of \maybebeta\ terms : the problem}
+
+  \def\var{Y}
+
+  \begin{itemize}
+    \item An example: given a bound variable $x$
+      \printAlllSingle
+      {{{\var\appsep x,f\appsep x\appsep a}}}
+      {{{\elpiIn{app[A, x]},\elpiIn{app[c"f",x,c"a"]}}}}
+      {{{\var,\elpiIn{A},0}}}
+      {{}}
+    \item Unification fails...
+  \end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Sketch of \maybebeta\ terms : the solution}
 
   \def\var{Y}
 
@@ -373,7 +392,28 @@
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Sketch of \maybeeta\ link}
+  \frametitle{Sketch of \maybeeta\ link : the problem}
+
+  \def\var{Y}
+
+  \begin{itemize}
+    % \item Several conditions: like lhs is assigned to a rigid term, two
+    %       $\eta$-link with same lhs, the rhs becomes outside \maybeeta\dots
+    % \item These conditions guarantee the prefixed properties !
+    \item An example: %
+      \printAlllSingle
+        {{{f,\lambda x.(f\appsep (\var\appsep x))}}}
+        {{{\elpiIn{c"f"},\elpiIn{fun (x\ app[c"f", B x])}}}}
+        {{{\var,\elpiIn{B},1}}}
+        {{}}
+    \item We have recognized the \maybebeta\ subterm $\var\appsep x$
+    \item But the unification problem in $\hoUnifPb$ raise a failure...
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Sketch of \maybeeta\ link: the solution}
 
   \def\var{Y}
 
@@ -387,7 +427,7 @@
         {{{\elpiIn{c"f"},\elpiIn{A}}}}
         {{{\var,\elpiIn{B},1}}}
         {{{\eta,,\elpiIn{A},\elpiIn{fun (x\ app[c"f", B x])}}}}
-    \item After unification of \elpiIn{A} with \elpiIn{c"f"},\\
+    \item After unification of \elpiIn{c"f"} with \elpiIn{A},\\
           \elpiIn{fun (x\ app[c"f", x])} is unified with \elpiIn{fun (x\ app[c"f", B x])}\\
           \elpiIn{B} is assigned to \elpiIn{x\x}
     \item Decompilation will assign $\lambda x.x$ to $\var$
@@ -396,22 +436,46 @@
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Sketch of \maybelam\ links}
+  \frametitle{Sketch of \maybelam\ links: the problem}
+
+  \def\var{Y}
 
   \begin{itemize}
     % \item We have a term not in \llambda
     \item An example: 
       \printAlll
-      {{{X,\lambda x.a},
-        {(X\appsep a),a}}}
+      {{{\var,\lambda x.a},
+        {(\var\appsep a),a}}}
+      {{{\elpiIn{A},\elpiIn{fun (x\ c"a")}},
+        {\elpiIn{app[A, c"a"]},\elpiIn{c"a"}}}}
+      {{{\var,A,0}}}
+      {{}}
+    \item Note that $\var\appsep a$ is not a \maybebeta: $a$ is not a bound variable
+    \item We can solve $\hoUnifPb_0$, and assign \elpiIn{fun (x\ c"a")} to \elpiIn{A}
+    \item However, we fail to solve $\hoUnifPb_1$\dots
+  \end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Sketch of \maybelam\ links: the solution}
+
+  \def\var{Y}
+
+  \begin{itemize}
+    % \item We have a term not in \llambda
+    \item An example: 
+      \printAlll
+      {{{\var,\lambda x.a},
+        {(\var\appsep a),a}}}
       {{{\elpiIn{A},\elpiIn{fun (x\ c"a")} },
         {\elpiIn{B},\elpiIn{c"a"}}}}
-      {{{X,\elpiIn{A},0}}}
+      {{{\var,\elpiIn{A},0}}}
       {{{\llambda,,\elpiIn{B},\elpiIn{A (c"a")}}}}
     \item After unification of \elpiIn{A} with \elpiIn{fun (x\ c"a")}, \\
         the rhs of the \llambda-link becomes \elpiIn{c"a"}\footnote{after a $\beta$-reduction step},\\
         the link is triggered and \elpiIn{B} is unified to \elpiIn{c"a"}
-    \item Decompilation will assign $\lambda x.a$ to $X$
+    \item Decompilation will assign $\lambda x.a$ to $\var$
   \end{itemize}
 
 \end{frame}
@@ -427,7 +491,7 @@
   \frametitle{Going further: the Constraint Handling Rules}
 
   \begin{itemize}
-    \item Elpi has a CHR for goal suspension and resumption
+    \item Elpi has CHR for goal suspension and resumption
     \item This fits well our notion of link: a suspended unification problem
   \end{itemize}
 
@@ -445,7 +509,6 @@
 
   This can easily introduce new unification behaviors
   \begin{itemize}
-    \item We can for example mimic the unification of the ol
     \item Add heuristic for HO unification outside the pattern fragment
   \end{itemize}
 
@@ -481,9 +544,9 @@
     %       and mode analysis for clause filtering.
     \item It is worth mentioning that we replace terms with variables only when
           it is strictly needed, leaving the rest of the term structure intact
-          and hence \emph{indexable}.
+          and hence \textbf{indexable}.
     \item Our approach is flexible enough to accommodate different strategies
-          and \emph{heuristics} to handle terms outside the pattern fragment
+          and \textbf{heuristics} to handle terms outside the pattern fragment
   \end{itemize}
 
 \end{frame}
