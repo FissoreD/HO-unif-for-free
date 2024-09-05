@@ -18,7 +18,7 @@
 \setbeamerfont{title}{}
 \setbeamerfont{subtitle}{parent={normal text},size=\small,shape=\itshape}
 
-\author{\textbf{Fissore Davide} \& Enrico Tassi} 
+\author{\textbf{Davide Fissore} \& Enrico Tassi} 
 \title{Higher-Order unification for free}
 \subtitle{Reusing the meta-language unification for the object language}
 
@@ -144,9 +144,10 @@
     \end{tabular}
   \end{center}
 
+  Benefits of this encoding:
   \begin{itemize}
     \item variable bindings and substitutions are for free % when meta language binders represent object logic ones;
-    \item easy term inspection
+    \item easy term inspection (no need of the functor/3 and arg/3 primitives)
   \end{itemize}
 
   % Note on unification:
