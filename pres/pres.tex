@@ -221,16 +221,21 @@
   \begin{enumerate}
     \item Compilation:
     \begin{itemize}
-      \item Recognize \textit{problematic subterms} $p_1,\dots,p_n$
+      \item Recognize \textit{problematic subterms} $p_1,\dots,p_n$\\
+        \quad {There are three kinds: \maybebeta, \maybeeta, \textcolor{gray}{\maybelam}}
       \item Replace $p_i$ with fresh unification variables $X_i$
       \item \textit{Link} $p_i$ with $X_i$\\
         \quad \textit{A link is a suspended unification problem}
     \end{itemize}
     \item Runtime:
     \begin{itemize}
-      \item Unify $p_i$ and $X_i$ only when some conditions hold
-      \item Decompile remaining links
+      \item Execute unification of terms
+      \item If some condition hold, trigger links
     \end{itemize}
+    \item Lastly:
+      \begin{itemize}
+        \item Decompile remaining links
+      \end{itemize}
   \end{enumerate}
 
   % \mysep{}
@@ -250,12 +255,12 @@
   \begin{elpicode}
 
     decision (all A (x\ ~\colorbox{yellow}{P' x}~)) :-                      % r3
-      ~\colorbox{yellow}{link P' (\linkrhs)}~, 
+      link P' (~\linkrhs~), 
       finite A,
       pi w\ decision (P' w).
 
     ?- decision (all (app ["fin", "7"])                 % g
-                        (x\ ~\appnfactPyg~)).
+                        (x\ ~\colorbox{yellow}{\appnfactPyg}~)).
   \end{elpicode}
   
 
@@ -269,8 +274,8 @@
   \frametitle{Some notations}
 
   \begin{itemize}
-    \item \foUnifPb: the unification problems in the object language (ol)
-    \item \hoUnifPb: the unification problems in the meta-language (ml)
+    \item \foUnifPb: the unification problems in coq (ol)
+    \item \hoUnifPb: the unification problems in elpi (ml)
     \item \linkStore, \mapStore: the link store, the unification-variable map
     % \item Three kinds of links: \maybebeta, \maybeeta, \maybelam\footnote{\llam is a notation for the \textit{pattern fragment}}
     % \item A link in \linkStore is like $X =_\odot t$
@@ -292,12 +297,28 @@
 \end{frame}
 
 \begin{frame}
+  \frametitle{A zoom on run$_m$}
+
+  $$
+  \begin{array}{l}
+    % \stepH{\hoUnifPb}{p}{\sigma}{\linkStore}{\sigma''}{\linkStore'} \deff\vspace{2pt}\\
+    %   \qquad\stepHD{\hoUnifPb}{p}{\sigma}{\sigma'}{\sigma''}{\linkStore}\vspace{2pt}\\\\
+    \runH{\foUnifPb}{n}{\rho} \deff \vspace{2pt}\\
+      \qquad \hoUnifPb \times \mapStore \times \linkStore_0 = \{ (t,m,l) | s \in \foUnifPb, \C{s}{t}{m}{l} \}\vspace{2pt}\\
+      \qquad \runHD{\hoUnifPb}{n}{\linkStore}\vspace{2pt}\\
+      \qquad \D{\sigma_{n}}{\mapStore}{\linkStore_{n}}{\rho_{n}}
+    \end{array}
+  $$    
+
+\end{frame}
+
+\begin{frame}
   \frametitle{Proven properties}
 
   % \begin{proposition}[Run equivalence]
   \begin{description}[]
     \item[Run Equivalence]
-    $\forall \foUnifPb, \forall n,$ if $~\foUnifPb \subseteq \llambda$
+    $\forall \foUnifPb, \forall n,$ if each subterm in $\foUnifPb$ is in the pattern fragment
     $$
       \runFx{\foUnifPb}{n}{\rho} \land
       \runHx{\foUnifPb}{n}{\rho'}
@@ -437,7 +458,7 @@
         {{{f,\lambda x.(f\appsep (\var\appsep x))}}}
         {{{\elpiIn{c"f"},\elpiIn{A}}}}
         {{{\var,\elpiIn{B},1}}}
-        {{{\eta,,\elpiIn{A},\elpiIn{fun (x\ app[c"f", B x])}}}}
+        {{{\elpiIn{eta-link},,\elpiIn{A},\elpiIn{(fun (x\ app[c"f", B x]))}}}}
     \item After unification of \elpiIn{c"f"} with \elpiIn{A},\\
           its $\eta$-expansion is unified with \elpiIn{fun (x\ app[c"f", B x])}\\
           Hence \elpiIn{B} is assigned to \elpiIn{x\x}
@@ -446,50 +467,50 @@
 
 \end{frame}
 
-\begin{frame}[fragile]
-  \frametitle{Sketch of \maybelam\ links: the problem}
+% \begin{frame}[fragile]
+%   \frametitle{Sketch of \maybelam\ links: the problem}
 
-  \def\var{Y}
+%   \def\var{Y}
 
-  \begin{itemize}
-    % \item We have a term not in \llambda
-    \item An example: 
-      \printAlll
-      {{{\var,\lambda x.a},
-        {(\var\appsep a),a}}}
-      {{{\elpiIn{A},\elpiIn{fun (x\ c"a")}},
-        {\elpiIn{app[A, c"a"]},\elpiIn{c"a"}}}}
-      {{{\var,A,0}}}
-      {{}}
-    \item Note that $\var\appsep a$ is not a \maybebeta: $a$ is not a bound variable
-    \item We can solve $\hoUnifPb_0$, and assign \elpiIn{fun (x\ c"a")} to \elpiIn{A}
-    \item However, we fail to solve $\hoUnifPb_1$\dots
-  \end{itemize}
+%   \begin{itemize}
+%     % \item We have a term not in \llambda
+%     \item An example: 
+%       \printAlll
+%       {{{\var,\lambda x.d},
+%         {(\var\appsep e),d}}}
+%       {{{\elpiIn{A},\elpiIn{fun (x\ c"d")}},
+%         {\elpiIn{app[A, c"e"]},\elpiIn{c"d"}}}}
+%       {{{\var,A,0}}}
+%       {{}}
+%     \item Note that $\var\appsep a$ is not a \maybebeta: $a$ is not a bound variable
+%     \item We can solve $\hoUnifPb_0$, and assign \elpiIn{fun (x\ c"d")} to \elpiIn{A}
+%     \item However, we fail to solve $\hoUnifPb_1$\dots
+%   \end{itemize}
 
-\end{frame}
+% \end{frame}
 
-\begin{frame}[fragile]
-  \frametitle{Sketch of \maybelam\ links: the solution}
+% \begin{frame}[fragile]
+%   \frametitle{Sketch of \maybelam\ links: the solution}
 
-  \def\var{Y}
+%   \def\var{Y}
 
-  \begin{itemize}
-    % \item We have a term not in \llambda
-    \item An example: 
-      \printAlll
-      {{{\var,\lambda x.a},
-        {(\var\appsep a),a}}}
-      {{{\elpiIn{A},\elpiIn{fun (x\ c"a")} },
-        {\elpiIn{B},\elpiIn{c"a"}}}}
-      {{{\var,\elpiIn{A},0}}}
-      {{{\llambda,,\elpiIn{B},\elpiIn{A (c"a")}}}}
-    \item After unification of \elpiIn{A} with \elpiIn{fun (x\ c"a")}, \\
-        the rhs of the \llambda-link becomes \elpiIn{c"a"}, after a $\beta$-reduction step,\\
-        the link is triggered and \elpiIn{B} is unified to \elpiIn{c"a"}
-    \item Decompilation will assign $\lambda x.a$ to $\var$
-  \end{itemize}
+%   \begin{itemize}
+%     % \item We have a term not in \llambda
+%     \item An example: 
+%       \printAlll
+%       {{{\var,\lambda x.d},
+%         {(\var\appsep e),d}}}
+%       {{{\elpiIn{A},\elpiIn{fun (x\ c"d")} },
+%         {\elpiIn{B},\elpiIn{c"d"}}}}
+%       {{{\var,\elpiIn{A},0}}}
+%       {{{\elpiIn{llam-link},,\elpiIn{B},\elpiIn{(A (c"e"))}}}}
+%     \item After unification of \elpiIn{A} with \elpiIn{fun (x\ c"d")}, \\
+%         the rhs of the \llambda-link becomes \elpiIn{c"d"}, after a $\beta$-reduction step,\\
+%         the link is triggered and \elpiIn{B} is unified to \elpiIn{c"d"}
+%     \item Decompilation will assign $\lambda x.a$ to $\var$
+%   \end{itemize}
 
-\end{frame}
+% \end{frame}
 
 % \begin{frame}
 %   \frametitle{Use of heuristics}
@@ -507,13 +528,13 @@
   \end{itemize}
 
   \begin{elpicode}
-    pred link-eta i:term, i:term.
-    link-eta A (fun _ _ B as T) :- not (var A), not (var B), !, 
+    pred eta-link i:term, i:term.
+    eta-link A (fun _ _ B as T) :- not (var A), not (var B), !, 
       unify-left-right A T. 
-    link-eta A B :- progress-eta-right B B', !, A = B'. 
-    link-eta A B :- progress-eta-left  A A', !, A' = B.
-    link-eta A B :- scope-check A B, get-vars B Vars, 
-      declare_constraint (link-eta A B) [A|Vars].
+    eta-link A B :- progress-eta-right B B', !, A = B'. 
+    eta-link A B :- progress-eta-left  A A', !, A' = B.
+    eta-link A B :- scope-check A B, get-vars B Vars, 
+      declare_constraint (eta-link A B) [A|Vars].
   \end{elpicode}
   \mysep
 
@@ -526,7 +547,7 @@
 
   \begin{elpicode}
     % By def, R is not in the pattern fragment
-    link-llam L R :- not (var L), unif-heuristic L R.
+    llam-link L R :- not (var L), unif-heuristic L R.
   \end{elpicode}
 
   % \begin{elpicode}
@@ -552,9 +573,9 @@
           at the price of handling problematic sub-terms on the side.
     % \item As a result our encoding takes advantage of indexing data structures
     %       and mode analysis for clause filtering.
-    \item It is worth mentioning that we replace terms with variables only when
-          it is strictly needed, leaving the rest of the term structure intact
-          and hence \textbf{indexable}.
+    % \item It is worth mentioning that we replace terms with variables only when
+    %       it is strictly needed, leaving the rest of the term structure intact
+    %       and hence \textbf{indexable}.
     \item Our approach is flexible enough to accommodate different strategies
           and \textbf{heuristics} to handle terms outside the pattern fragment
   \end{itemize}
