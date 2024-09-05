@@ -128,7 +128,7 @@
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Coq terms in elpi : HOAS}
+  \frametitle{Coq terms in Elpi : HOAS}
 
   \begin{center}
     \begin{tabular}{c || c}
@@ -162,7 +162,7 @@
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{The above type-class problem in elpi}
+  \frametitle{The above type-class problem in Elpi}
 
   % Instance fin_fin: ~$\forall$~n, Finite (fin n).             (* r1 *)
   % Instance nfact_dec: ~$\forall$~n nf, Decision (nfact n nf). (* r2 *)
@@ -200,7 +200,7 @@
 \def\appnfactPyg{app\PYG{+w}{ }\PYG{k+kd}{[}c\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{nfact}\PYG{l+s+s2}{\PYGZdq{}}\PYG{k+kd}{,}\PYG{+w}{ }x\PYG{k+kd}{,}\PYG{+w}{ }c\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+s2}{3}\PYG{l+s+s2}{\PYGZdq{}}\PYG{k+kd}{]}}
 
 \begin{frame}[fragile]
-  \frametitle{Solving the goal in elpi}
+  \frametitle{Solving the goal in Elpi}
   
   \begin{elpicode}
     decision (all A (x\ ~\colorbox{yellow}{app [P, x]}~)) :- finite A,      % r3
@@ -274,8 +274,8 @@
   \frametitle{Some notations}
 
   \begin{itemize}
-    \item \foUnifPb: the unification problems in coq (ol)
-    \item \hoUnifPb: the unification problems in elpi (ml)
+    \item \foUnifPb: the unification problems in Coq (ol)
+    \item \hoUnifPb: the unification problems in Elpi (ml)
     \item \linkStore, \mapStore: the link store, the unification-variable map
     % \item Three kinds of links: \maybebeta, \maybeeta, \maybelam\footnote{\llam is a notation for the \textit{pattern fragment}}
     % \item A link in \linkStore is like $X =_\odot t$
@@ -296,17 +296,17 @@
 
 \end{frame}
 
-\begin{frame}
+\begin{frame}[fragile]
   \frametitle{A zoom on run$_m$}
 
   $$
   \begin{array}{l}
-    % \stepH{\hoUnifPb}{p}{\sigma}{\linkStore}{\sigma''}{\linkStore'} \deff\vspace{2pt}\\
-    %   \qquad\stepHD{\hoUnifPb}{p}{\sigma}{\sigma'}{\sigma''}{\linkStore}\vspace{2pt}\\\\
+    \stepH{\hoUnifPb}{p}{\sigma}{\linkStore}{\sigma''}{\linkStore'} \deff\vspace{2pt}\\
+      \qquad\stepHD{\hoUnifPb}{p}{\sigma}{\sigma'}{\sigma''}{\linkStore}\vspace{2pt}\\\\\\
     \runH{\foUnifPb}{n}{\rho} \deff \vspace{2pt}\\
-      \qquad \hoUnifPb \times \mapStore \times \linkStore_0 = \{ (t,m,l) | s \in \foUnifPb, \C{s}{t}{m}{l} \}\vspace{2pt}\\
-      \qquad \runHD{\hoUnifPb}{n}{\linkStore}\vspace{2pt}\\
-      \qquad \D{\sigma_{n}}{\mapStore}{\linkStore_{n}}{\rho_{n}}
+      \qquad \hoUnifPb \times \mapStore \times \linkStore_0 = \{ (t,m,l) | s \in \foUnifPb, \C{s}{t}{m}{l} \}\vspace{2pt} \texttt{:= compilation}\\
+      \qquad \runHD{\hoUnifPb}{n}{\linkStore}\vspace{2pt} \texttt{\phantom{aaaaa}:= runtime}\\
+      \qquad \D{\sigma_{n}}{\mapStore}{\linkStore_{n}}{\rho_{n}} \texttt{\phantom{aaaaaaaaaaaaaaaaaaaaaa} := decompilation}
     \end{array}
   $$    
 
@@ -576,6 +576,7 @@
     % \item It is worth mentioning that we replace terms with variables only when
     %       it is strictly needed, leaving the rest of the term structure intact
     %       and hence \textbf{indexable}.
+    \item TC search up to $\beta\eta$ can be implemented via Elpi rules
     \item Our approach is flexible enough to accommodate different strategies
           and \textbf{heuristics} to handle terms outside the pattern fragment
   \end{itemize}
