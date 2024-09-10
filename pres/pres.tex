@@ -304,9 +304,9 @@
     \stepH{\hoUnifPb}{p}{\sigma}{\linkStore}{\sigma''}{\linkStore'} \deff\vspace{2pt}\\
       \qquad\stepHD{\hoUnifPb}{p}{\sigma}{\sigma'}{\sigma''}{\linkStore}\vspace{2pt}\\\\\\
     \runH{\foUnifPb}{n}{\rho} \deff \vspace{2pt}\\
-      \qquad \hoUnifPb \times \mapStore \times \linkStore_0 = \{ (t,m,l) | s \in \foUnifPb, \C{s}{t}{m}{l} \}\vspace{2pt} \texttt{:= compilation}\\
-      \qquad \runHD{\hoUnifPb}{n}{\linkStore}\vspace{2pt} \texttt{\phantom{aaaaa}:= runtime}\\
-      \qquad \D{\sigma_{n}}{\mapStore}{\linkStore_{n}}{\rho_{n}} \texttt{\phantom{aaaaaaaaaaaaaaaaaaaaaa} := decompilation}
+      \qquad \hoUnifPb \times \mapStore \times \linkStore_0 = \{ (t,m,l) | s \in \foUnifPb, \C{s}{t}{m}{l} \}\vspace{2pt} \texttt{\phantom{ss}\textcolor{gray}{compilation}}\\
+      \qquad \runHD{\hoUnifPb}{n}{\linkStore}\vspace{2pt} \texttt{\phantom{aaaaass}\textcolor{gray}{runtime}}\\
+      \qquad \D{\sigma_{n}}{\mapStore}{\linkStore_{n}}{\rho_{n}} \texttt{\phantom{aaaaaaaaaaaaaaaaaassaaaa} \textcolor{gray}{decompilation}}
     \end{array}
   $$    
 
@@ -362,7 +362,22 @@
 
 \end{frame}
 
-\sepFrame{Problematic subterm recognition}
+% \sepFrame{Problematic subterm recognition}
+
+\begin{frame}
+
+  \vspace{10pt}
+  \centering
+  {\usebeamerfont*{frametitle}\usebeamercolor[fg]{frametitle} Problematic subterms}
+
+  \vspace{10pt}
+  \begin{itemize}
+    \item \maybebeta: maybe beta
+    \item \maybeeta: maybe eta
+    \item \textcolor{gray}{\maybelam: maybe pattern fragment (not in the talk)}
+  \end{itemize}
+
+\end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Sketch of \maybebeta\ terms : the problem}
@@ -576,7 +591,7 @@
     % \item It is worth mentioning that we replace terms with variables only when
     %       it is strictly needed, leaving the rest of the term structure intact
     %       and hence \textbf{indexable}.
-    \item TC search up to $\beta\eta$ can be implemented via Elpi rules
+    \item Type-class search up to $\beta\eta$ can be implemented via Elpi rules
     \item Our approach is flexible enough to accommodate different strategies
           and \textbf{heuristics} to handle terms outside the pattern fragment
   \end{itemize}
