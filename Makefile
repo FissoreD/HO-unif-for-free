@@ -1,16 +1,10 @@
-DEEP_DIR="code/deep"
-
-undefine TEX
-
-paper:
-	cd paper && make
+SRC=src
 
 test-deep:
-	cd $(DEEP_DIR) && timeout 4 elpi main.elpi $(ENV) -exec "main" -- $(ONLY) $(TEX)
-test: test-deep
-test-all: test-deep 
+	cd $(SRC) && timeout 4 elpi main.elpi $(ENV) -exec "main" -- $(ONLY) $(TEX)
+
 debug:
-	cd $(DEEP_DIR) && elpi main.elpi -D DEBUG -exec "main" -- $(ONLY) $(TEX)
+	cd $(SRC) && elpi main.elpi -D DEBUG -exec "main" -- $(ONLY) $(TEX)
 trace:
-	cd $(DEEP_DIR) && elpi main.elpi -trace-on -trace-at run 1 10000 -no-tc -trace-only user -exec "main" -- $(ONLY)
+	cd $(SRC) && elpi main.elpi -trace-on -trace-at run 1 10000 -no-tc -trace-only user -exec "main" -- $(ONLY)
 .PHONY: paper
