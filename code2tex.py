@@ -13,6 +13,7 @@ def build_cnt(ext,cnt,len):
     mint_tag = f"{extension_mapper[ext]}code"
     return "\\documentclass[border=2mm, varwidth]{standalone}" \
         "\\usepackage{mminted}" \
+        "\\usepackage{macro}" \
         "\\begin{document}" \
         "\\newlength{\charwidth}" \
         "\\settowidth{\charwidth}{\\texttt{0}}"\

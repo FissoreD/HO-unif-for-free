@@ -79,7 +79,7 @@ namespace comp {
   % succeeds if T could be an eta expansion, possible cases:
   %  - T = uva seing N (N is also the last of L)
   %  - T = app L such that the last args of L are maybe-eta wrt L
-  type maybe-eta to -> list to -> o.                  % label: rule:maybeeta cnt: \maybeeta
+  type maybe-eta to -> list to -> o.                  
   maybe-eta (o-app[o-uva _|Args]) L :- !,
     % Head is flex -> if N is in Args, we can have eta 
     forall1 (x\ exists (reducible-to [] x) Args) L, !. 
@@ -124,7 +124,7 @@ namespace comp {
   type comp-lam (to -> to) -> (tm -> tm) -> 
     mmap -> mmap -> links -> links -> subst -> subst -> o.
   comp-lam F G M1 M2 L1 L3 S1 S2 :-
-    pi x y\ (pi M L S\ comp x y M M L L S S) =>         % label: rule:complamh cnt: \ensuremath{H_\lambda}
+    pi x y\ (pi M L S\ comp x y M M L L S S) =>       
       comp (F x) (G y) M1 M2 L1 (L2 y) S1 S2,
     close-links L2 L3.
 %ENDSNIP
@@ -149,7 +149,7 @@ namespace comp {
       L3 = [val (link-eta (uva A Scope) (lam F1)) | L2].
 %ENDSNIP
 %SNIP: comp_base
-  comp (o-lam F) (lam F1) M1 M2 L1 L2 S1 S2 :-            % label: rule:complam cnt: \ensuremath{c_\lambda}
+  comp (o-lam F) (lam F1) M1 M2 L1 L2 S1 S2 :-           
     comp-lam F F1 M1 M2 L1 L2 S1 S2.
   comp (o-uva A) (uva B []) M1 M2 L L S1 S2 :- 
     m-alloc (ov A) (mv B (arity z)) M1 M2 S1 S2.
@@ -172,7 +172,7 @@ namespace comp {
     L3 = [val (link-llam (uva B Sc) Beta) | L2].
 %ENDSNIP
 %SNIP: comp_base
-  comp (o-app A) (app A1) M1 M2 L1 L2 S1 S2 :-            % label: rule:compapp cnt: \ensuremath{c_@}
+  comp (o-app A) (app A1) M1 M2 L1 L2 S1 S2 :-
     fold6 comp A A1 M1 M2 L1 L2 S1 S2.
 %ENDSNIP
 
@@ -274,7 +274,7 @@ namespace comp {
 
 %SNIP: alloc_mapping
   type m-alloc ovariable -> mvariable -> mmap -> mmap -> 
-    subst -> subst -> o.                            %~\customlabel{clause:malloc}{(malloc)}~
+    subst -> subst -> o.                            
   m-alloc Ov Mv M M S S :- mem M (Ov <-> Mv), !.
   m-alloc Ov Mv M [Ov <-> Mv|M] S S1 :- Mv = mv N _, new S N S1.
 %ENDSNIP

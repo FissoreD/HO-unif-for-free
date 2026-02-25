@@ -4,7 +4,7 @@
 paper/code/*.tex
 
 img/*
-!img/mminted.sty
+!img/*.sty
 !img/elpi.py
 !img/.latexminted_config
 __pycache__
