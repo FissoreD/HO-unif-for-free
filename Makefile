@@ -1,5 +1,7 @@
 SRC=src
 
+undefine TEX
+
 test:
 	cd $(SRC) && timeout 4 elpi main.elpi $(ENV) -exec "main" -- $(ONLY) $(TEX)
 

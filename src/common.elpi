@@ -20,13 +20,13 @@ kind nat type.
 type z nat.
 type s nat -> nat.
 
-kind bool type.
-type tt bool.
-type ff bool.
+% kind bool type.
+% type tt bool.
+% type ff bool.
 
-kind option type -> type.
-type some A -> option A.
-type none option A.
+% kind option type -> type.
+% type some A -> option A.
+% type none option A.
 
 type int->nat int -> nat -> o.
 int->nat 0 z.
@@ -150,6 +150,8 @@ len [_|L] (s X) :- len L X.
 
 type rev list A -> list A -> o.
 rev L RL  :- rev.aux L []  RL.
+
+type rev.aux list A -> list A -> list A -> o.
 rev.aux [X|XS] ACC R :- rev.aux XS [X|ACC] R.
 rev.aux [] L L.
 
@@ -204,7 +206,7 @@ split-last-n N L First Last :- minus {len L} N PrefLen, split PrefLen L First La
 
 kind test type -> type.
 type test int -> (pair (list (triple diagnostic A A)) (option(list A))) -> test A.
-type declare-test (test A -> o) -> (test A -> string -> o) -> test A -> o.
+type declare-test (test fo.to -> o) -> (test fo.to -> string -> o) -> test fo.to -> o.
 
 kind triple type -> type -> type -> type.
 type triple A -> B -> C -> triple A B C.

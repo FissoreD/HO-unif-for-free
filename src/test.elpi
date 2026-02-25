@@ -118,11 +118,14 @@ same-sols [] L :- if (forall1 ((=) none) L) true (halt "Invalid solution:" {fo.p
 same-sols L [] :- if (forall1 ((=) none) L) true (halt "Invalid solution:" {fo.ppsubst L}).
 same-sols A B :- halt "INVALID SOL" {fo.ppsubst A} " =/= " {fo.ppsubst B}.
 
+type check-sol.aux fo.to -> option fo.to -> o.
+check-sol.aux (fo.o-con "_") none :- !.
+check-sol.aux X (some X).
 
 type check-sol option (list fo.to) -> fo.fsubst -> o.
 check-sol none _. 
 check-sol (some Sol) L :-
-  std.map Sol (x\r\ if (x = fo.o-con "_") (r = none) (r = some x)) L1,
+  std.map Sol check-sol.aux L1,
   same-sols L L1. 
 
 type do-read o.
