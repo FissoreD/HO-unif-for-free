@@ -27,7 +27,7 @@ namespace comp {
 %ENDSNIP
 
   typeabbrev scope (list tm).
-  typeabbrev inctx ho.inctx.
+  typeabbrev (inctx A) (ho.inctx A).
 %SNIP: comp_links
   kind baselink type.
   type link-eta  tm -> tm -> baselink.
