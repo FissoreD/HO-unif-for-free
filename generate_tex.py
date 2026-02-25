@@ -34,7 +34,12 @@ def print_tex(f,lines, fout, raw = False):
         l = re.sub("type (\([^ ]+\)) ([^\.]+)",r"~\\PYG{k+kd}{type} \\PYG{n+nf}{\g<1>} \\PYG{k+kt}{\g<2>}~",l)
         lines1.append(l)
     # print("Printing", lines1, "into")
-    cnt = code2tex.build_cnt(".elpi","".join(lines1).strip(),code2tex.max_len(lines1))
+    cnt = code2tex.build_cnt(".elpi",lines1)
+    if d2 != 0:
+        with open(fout, "w") as fout:
+            cnt1 = fout.read()
+            if cnt == cnt1:
+                return
     with open(fout, "w") as fout:
         fout.write(cnt)
 

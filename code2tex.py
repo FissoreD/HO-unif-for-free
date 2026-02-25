@@ -9,7 +9,15 @@ extension_mapper = {
     ".hs": "hs"
 }
 
-def build_cnt(ext,cnt,len):
+def max_len(l):
+    m = 0
+    for i in l:
+        m = max(m, len(i))
+    return m
+
+def build_cnt(ext,cnt):
+    len = max_len(cnt)
+    cnt = "".join(cnt)
     mint_tag = f"{extension_mapper[ext]}code"
     return "\\documentclass[border=2mm, varwidth]{standalone}" \
         "\\usepackage{mminted}" \
@@ -23,13 +31,6 @@ def build_cnt(ext,cnt,len):
         f"\\end{{{mint_tag}}}\n"\
         "\\end{varwidth}"\
         "\\end{document}"
-
-
-def max_len(l):
-    m = 0
-    for i in l:
-        m = max(m, len(i))
-    return m
 
 # excludes all the content before the first occurence of START
 # if START is absent then it returns all the document
@@ -48,8 +49,7 @@ def build_file(fname):
         cnt = clean_cnt(cnt)
         l = max_len(cnt)
         path = Path(fname)
-        cnt = "".join(cnt)
-        cnt = build_cnt(path.suffix,cnt,l)
+        cnt = build_cnt(path.suffix,cnt)
         with open(path.stem + ".tex", "w") as fout:
             fout.write(cnt)
 
