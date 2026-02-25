@@ -1,6 +1,6 @@
 SRC=src
 
-test-deep:
+test:
 	cd $(SRC) && timeout 4 elpi main.elpi $(ENV) -exec "main" -- $(ONLY) $(TEX)
 
 debug:
