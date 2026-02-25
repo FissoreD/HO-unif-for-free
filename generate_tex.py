@@ -1,4 +1,6 @@
 import os, sys, re
+from datetime import datetime
+import code2tex
 
 def get_file_cnt(lines):
     res = []
@@ -9,27 +11,32 @@ def get_file_cnt(lines):
     finally:
         return res
 
-
-def print_tex(lines, fout, raw = False):
-    with open(fout, "w") as f:
-        if not raw:
-            f.write("\\begin{elpicode}\n")
-        for l in lines:
-            l = re.sub("^ *% +.*\n","",l)   
-            l = re.sub("%~(.*)",r"~\g<1>",l)   
-            l = re.sub("^ *%SNIP.*\n","",l)   
-            l = re.sub("^ *%ENDSNIP.*\n","",l)   
-            l = re.sub("^ *%%%.*\n","",l)   
-            l = re.sub("==l",r"~$\\Ue$~",l) 
-            l = re.sub("===o",r"~$\\Uo$~",l)
-            l = re.sub("==o",r"~$\\Eo$~",l)
-            l = re.sub(".*% *HIDE.*\n","",l)
-            l = re.sub("% label: (.*).* cnt: (.*)",r"~\\customlabel{\g<1>}{(\g<2>)}~",l)
-            l = re.sub("type \(~\$([^ ]+)\$~\) ([^\.]+)",r"~\\PYG{k+kd}{type} \\PYG{n+nf}{(\g<1>)} \\PYG{k+kt}{\g<2>}~",l)
-            l = re.sub("type (\([^ ]+\)) ([^\.]+)",r"~\\PYG{k+kd}{type} \\PYG{n+nf}{\g<1>} \\PYG{k+kt}{\g<2>}~",l)
-            f.write(l)
-        if not raw:
-            f.write("\\end{elpicode}\n")
+def print_tex(f,lines, fout, raw = False):
+    d1 = os.path.getatime(f)
+    d2 = os.path.getatime(fout) if os.path.exists(fout) else 0
+    if d1 <= d2 or len(lines) == 0: return
+    # print("Generating", fout, datetime.fromtimestamp(d1).strftime("%H:%M:%S"), datetime.fromtimestamp(d2).strftime("%H:%M:%S"))
+    lines1 = []
+        # if not raw:
+            # f.write("\\begin{elpicode}\n")
+    for l in lines:
+        l = re.sub("^ *% +.*\n","",l)   
+        l = re.sub("%~(.*)",r"~\g<1>",l)   
+        l = re.sub("^ *%SNIP.*\n","",l)   
+        l = re.sub("^ *%ENDSNIP.*\n","",l)   
+        l = re.sub("^ *%%%.*\n","",l)   
+        l = re.sub("==l",r"~$\\Ue$~",l) 
+        l = re.sub("===o",r"~$\\Uo$~",l)
+        l = re.sub("==o",r"~$\\Eo$~",l)
+        l = re.sub(".*% *HIDE.*\n","",l)
+        l = re.sub("% label: (.*).* cnt: (.*)",r"~\\customlabel{\g<1>}{(\g<2>)}~",l)
+        l = re.sub("type \(~\$([^ ]+)\$~\) ([^\.]+)",r"~\\PYG{k+kd}{type} \\PYG{n+nf}{(\g<1>)} \\PYG{k+kt}{\g<2>}~",l)
+        l = re.sub("type (\([^ ]+\)) ([^\.]+)",r"~\\PYG{k+kd}{type} \\PYG{n+nf}{\g<1>} \\PYG{k+kt}{\g<2>}~",l)
+        lines1.append(l)
+    # print("Printing", lines1, "into")
+    cnt = code2tex.build_cnt(".elpi","".join(lines1).strip(),code2tex.max_len(lines1))
+    with open(fout, "w") as fout:
+        fout.write(cnt)
 
 def mk_fname(fname):
     return fname.split("/")[-1][:-4] + "tex"
@@ -60,12 +67,12 @@ def get_snippets(lines):
 def read_file(out,fname):
     with open(fname) as f:
         lines = f.readlines()
-        print_tex(get_file_cnt(lines), out + "/" + mk_fname(fname))
+        # print_tex(fname,get_file_cnt(lines), out + "/" + mk_fname(fname))
         snippets = get_snippets(lines)
-        for fname in snippets:
-            lines = snippets[fname]
-            print_tex(lines, out + "/" +  fname + ".tex")
-            print_tex(lines, out + "/" +  fname + "_raw.tex", True)
+        for fname_snip in snippets:
+            lines = snippets[fname_snip]
+            print_tex(fname,lines, out + "/" +  fname_snip + ".tex")
+            # print_tex(fname,lines, out + "/" +  fname_snip + "_raw.tex", True)
 
         
 if __name__ == "__main__":

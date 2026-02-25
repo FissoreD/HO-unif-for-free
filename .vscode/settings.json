@@ -15,41 +15,12 @@
                 "-output-directory=%OUTDIR%",
                 "%DOC%"
             ]
-        },
-        {
-            "name": "biber",
-            "command": "biber",
-            "args": [
-                "%OUTDIR%/%DOCFILE%"
-            ]
-        },
-        {
-            "name": "gentex",
-            "command": "make",
-            "args": [
-                "-C", "%DIR%/code/"
-            ]
         }
     ],
     "latex-workshop.latex.recipes": [
         {
-            "name": "pdflatex for pres",
-            "tools": [
-                "pdflatex",
-                "biber",
-                "pdflatex",
-                "pdflatex"
-            ]
-        },
-        {
-            "name": "pdflatex for paper",
-            "tools": [
-                "gentex",
-                "pdflatex",
-                "biber",
-                "pdflatex",
-                "pdflatex"
-            ]
+            "name": "pdflatex",
+            "tools": [ "pdflatex", ]
         }
     ],
     "latex-workshop.latex.recipe.default": "lastUsed"
