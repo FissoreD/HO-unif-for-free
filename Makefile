@@ -30,7 +30,7 @@ latex: $(PDFFILES)
 	cd $(OUT) && $(TEX_CMD) $(notdir $<) && $(TEX_CMD) $(notdir $<)
 
 main:
-	$(MAKE) generator -j4 && $(MAKE) latex -j4 -k
+	$(MAKE) generator -j && $(MAKE) latex -j
 
 
 
