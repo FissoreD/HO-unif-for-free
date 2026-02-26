@@ -36,12 +36,12 @@ def print_tex(f,lines, fout, raw = False):
     # print("Printing", lines1, "into")
     cnt = code2tex.build_cnt(".elpi",lines1)
     if d2 != 0:
-        with open(fout, "w") as fout:
-            cnt1 = fout.read()
+        with open(fout, "r") as fr:
+            cnt1 = fr.read()
             if cnt == cnt1:
                 return
-    with open(fout, "w") as fout:
-        fout.write(cnt)
+    with open(fout, "w") as fw:
+        fw.write(cnt)
 
 def mk_fname(fname):
     return fname.split("/")[-1][:-4] + "tex"

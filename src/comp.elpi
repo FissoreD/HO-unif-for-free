@@ -141,7 +141,7 @@ namespace comp {
   comp (o-con C) (con C) M M L L S S.
 %ENDSNIP
 %SNIP: comp_eta
-  comp (o-lam F) (uva A Scope) M1 M2 L1 L3 S1 S3 :-
+  comp (o-lam F) (uva A Scope) M1 M2 L1 L3 S1 S3 :-           
     maybe-eta (o-lam F) [], !,
     alloc S1 A S2,
     comp-lam F F1 M1 M2 L1 L2 S2 S3,
@@ -149,7 +149,7 @@ namespace comp {
     L3 = [val (link-eta (uva A Scope) (lam F1)) | L2].
 %ENDSNIP
 %SNIP: comp_base
-  comp (o-lam F) (lam F1) M1 M2 L1 L2 S1 S2 :-           
+  comp (o-lam F) (lam F1) M1 M2 L1 L2 S1 S2 :-        % $r_\lambda$    
     comp-lam F F1 M1 M2 L1 L2 S1 S2.
   comp (o-uva A) (uva B []) M1 M2 L L S1 S2 :- 
     m-alloc (ov A) (mv B (arity z)) M1 M2 S1 S2.
@@ -172,7 +172,7 @@ namespace comp {
     L3 = [val (link-llam (uva B Sc) Beta) | L2].
 %ENDSNIP
 %SNIP: comp_base
-  comp (o-app A) (app A1) M1 M2 L1 L2 S1 S2 :-
+  comp (o-app A) (app A1) M1 M2 L1 L2 S1 S2 :-        % $r_@$ 
     fold6 comp A A1 M1 M2 L1 L2 S1 S2.
 %ENDSNIP
 
