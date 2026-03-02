@@ -8,4 +8,4 @@ test:
 debug:
 	cd $(SRC) && elpi main.elpi -D DEBUG -exec "main" -- $(ONLY) $(TEX)
 trace:
-	cd $(SRC) && elpi main.elpi -trace-on -trace-at run 1 10000 -no-tc -trace-only user -exec "main" -- $(ONLY)
+	cd $(SRC) && elpi main.elpi -trace-on -trace-at run 1 10000 -trace-only user -exec "main" -- $(ONLY) $(TEX)

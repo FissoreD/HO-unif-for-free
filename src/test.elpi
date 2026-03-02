@@ -145,23 +145,26 @@ ptest (test _ (pr Pbs none)) S :-
   S is {std.string.concat "\n" S1} ^ "\n==> _".
 
 type pppbsc (A -> string -> o) -> diagn A -> string -> o.
-pppbsc F (triple _ A B) S :- tex, !, F A AS, F B BS, S is "{" ^ AS ^ "," ^ BS ^ "}".
+pppbsc F (triple _ A B) S :- tex, !, F A AS, F B BS, S is AS ^ "," ^ BS.
 pppbsc F (triple ok A B) S :- F A AS, F B BS, S is AS ^ " == " ^ BS.
 pppbsc F (triple (error _) A B) S :- F A AS, F B BS, S is AS ^ " =/= " ^ BS.
 
-type print-compil-result list (diagn fo.to) -> list (diagn ho.tm) -> comp.links -> comp.mmap -> o.
-print-compil-result C P L M :- tex, !, 
+type print-compil-result int -> list (diagn fo.to) -> list (diagn ho.tm) -> comp.links -> comp.mmap -> o.
+print-compil-result N C P L M :- tex, !, 
   Sep = "\n  ", Sep1 is "," ^ Sep ^ "  ",
-  std.string.concat Sep1 {std.map C (pppbsc fo.pp)} Cpp,
-  std.string.concat Sep1 {std.map P (pppbsc ho.pp)} Ppp, 
-  std.string.concat Sep1 {comp.pplinks L} Lpp, 
-  std.string.concat Sep1 {comp.ppmappings M} Mpp,
-  if (C = [_]) (Single = "Single") (Single = ""),
-  R is "\\printAlll" ^ Single ^ Sep ^ "{{" ^ Cpp ^ "}}" ^ Sep ^ "{{" ^ Ppp ^ "}}" ^ Sep ^ "{{" ^ Mpp ^ "}}" ^ Sep ^ "{{" ^ Lpp ^ "}}",
-  print "The result of the compilation is",
+  std.string.concat "," {std.map C (pppbsc fo.pp)} Cpp,
+  std.string.concat "," {std.map P (pppbsc ho.pp)} Ppp, 
+  std.string.concat "," {comp.ppmappings M} Mpp,
+  comp.pplinks L LL,
+  std.string.concat "," LL Lpp,
+  % if (C = [_]) (Single = "Single") (Single = ""),
+  % R is "\\printAlll" ^ Single ^ Sep ^ "{{" ^ Cpp ^ "}}" ^ Sep ^ "{{" ^ Ppp ^ "}}" ^ Sep ^ "{{" ^ Mpp ^ "}}" ^ Sep ^ "{{" ^ Lpp ^ "}}",
+  NS is int_to_string N,
+  R is "-->" ^ NS ^ "|" ^ Cpp ^ "|" ^ Ppp ^ "|" ^ Mpp ^ "|" ^ Lpp,
+  % print "The result of the compilation is",
   print R.
 
-print-compil-result _ P L M :-
+print-compil-result _ _ P L M :-
   print "## After compilation the terms are" {std.map P (pppbsc ho.pp)},
   print "## After compilation the links are" {comp.pplinks L},
   print "## After compilation the mappings are" {comp.ppmappings M}.
@@ -170,8 +173,8 @@ type xtest o -> test fo.to -> o.
 xtest Mode (test N (pr LR Sol) as Test) :- Mode => std.do![
   print "## Test" N ":" {ptest Test},
   printC "run test?",
-  comp.compile-terms LR Uproblems Map2 Links2 HO_Subst1,
-  print-compil-result LR Uproblems Links2 Map2,
+  comp.compile-terms N LR Uproblems Map2 Links2 HO_Subst1,
+  print-compil-result N LR Uproblems Links2 Map2,
   printC "continue to prolog?",
   prolog Uproblems Links2 Links1 HO_Subst1 HO_Subst2 D,
   if2 (D = ok) (
