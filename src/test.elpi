@@ -262,6 +262,11 @@ macro @sokl-delay N SX SS :- @sokl-call comp.suspend-out-of-lam N SX SS.
    pr ok "f = X"
 ] ["f"].
 
+@sokl 1310 [
+   pr ok "λx.(X x) = f",
+] ["f"].
+
+
 @sokl 132 [
   pr ok "λx.(X x) = λx.(f x x)",  % visto che buchiamo a sx  la link deve usare il PF sotto il lambda
   pr ok "X = λy.(f y y)"
@@ -801,6 +806,12 @@ macro @sokl-delay N SX SS :- @sokl-call comp.suspend-out-of-lam N SX SS.
   pr ok "λx.(X x) = a",
   pr (error "unif") "X = λx.a"
 ] [].
+
+@sokl 70071 [
+  pr ok "λx.(X x) = f",
+  pr (error "unif") "X = λx.a"
+] [].
+
 
 % TEST NON IN PF
 @sokl 9001 [
