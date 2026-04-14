@@ -41,8 +41,8 @@ fold2 F [X|XS] [Y|YS] A A1 :- F X Y A A0, fold2 F XS YS A0 A1.
   muva N A ==m muva N B :- forall2 (==m) A B.
 %ENDSNIP: heq
 
+% [unif T1 T2 SOld SNew] check if T1 and T2 unify looking into SOld. SNew is the final substution
 %SNIP: ue_type
-  % [unif T1 T2 SOld SNew] check if T1 and T2 unify looking into SOld. SNew is the final substution
   pred (==l) mtm, mtm, subst -> subst.
 %ENDSNIP
   (A ==l B) C _ :- (var A; var B; var C), halt "Passed var to unif". %HIDE
