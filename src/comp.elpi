@@ -5,11 +5,11 @@ typeabbrev addr mem.addr.
 typeabbrev addr mem.addr.
 
 namespace comp {
-  shorten fo.{ (==o), o-lam, o-app, o-con, o-uva , eta-contract , beta, beta-normal }.
-  shorten ho.{ (==l), lam, app, con, uva , abs , val , deref-assmt }.
+  shorten fo.{ (==o), olam, oapp, ocon, ouva , eta-contract , beta, beta-normal }.
+  shorten ho.{ (==l), mlam, mapp, mcon, muva , abs , val , deref-assmt }.
   shorten mem.{ set? , unset? , assign }.
-  typeabbrev to fo.to.
-  typeabbrev tm ho.tm.
+  typeabbrev otm fo.otm.
+  typeabbrev mtm ho.mtm.
   typeabbrev subst ho.subst.
   typeabbrev fsubst fo.fsubst.
 
@@ -26,12 +26,12 @@ namespace comp {
   typeabbrev mmap (list mapping).
 %ENDSNIP
 
-  typeabbrev scope (list tm).
+  typeabbrev scope (list mtm).
   typeabbrev (inctx A) (ho.inctx A).
 %SNIP: comp_links
   kind baselink type.
-  type link-eta  tm -> tm -> baselink.
-  type link-llam tm -> tm -> baselink.
+  type link-eta  mtm -> mtm -> baselink.
+  type link-llam mtm -> mtm -> baselink.
   typeabbrev links (list (inctx baselink)).
 %ENDSNIP
   typeabbrev link (inctx baselink).
@@ -40,11 +40,11 @@ namespace comp {
   macro @val-link-llam T1 T2 :- ho.val (link-llam T1 T2).
 
 
-  type get-lhs link -> tm -> o.
+  type get-lhs link -> mtm -> o.
   get-lhs (val (link-llam A _)) A.
   get-lhs (val (link-eta A _)) A.
 
-  type get-rhs link -> tm -> o.
+  type get-rhs link -> mtm -> o.
   get-rhs (val (link-llam _ A)) A.
   get-rhs (val (link-eta _ A)) A.
 
@@ -53,172 +53,169 @@ namespace comp {
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %SNIP: maybe_eta
-  % a term use a binder B if there exists a sub-term which `surely` reduce to B
+  % a term use a binder B if there exists a sub-term which `surely` reduce otm B
   % for example: `f (g x) a` use the binder x
-  %       while: `f (A x) a` may not use x, since A can reduce to a constant
-  type occurs-rigidly to -> to -> o.
+  %       while: `f (A x) a` may not use x, since A can reduce otm a constant
+  type occurs-rigidly otm -> otm -> o.
   occurs-rigidly N N.
-  occurs-rigidly _ (o-app [o-uva _|_]) :- !, fail.
-  occurs-rigidly N (o-app L) :- exists (occurs-rigidly N) L.
-  occurs-rigidly N (o-lam B) :- pi x\ occurs-rigidly N (B x).
+  occurs-rigidly _ (oapp [ouva _|_]) :- !, fail.
+  occurs-rigidly N (oapp L) :- exists (occurs-rigidly N) L.
+  occurs-rigidly N (olam B) :- pi x\ occurs-rigidly N (B x).
 
-  % [reducible-to L N T] it ∃𝜎, 𝜎t = n
-  type reducible-to list to -> to -> to -> o.
-  reducible-to _ N N :- !.
-  reducible-to L N (o-app[o-uva _|Args]) :- !, 
+  % [reducible-otm L N T] it ∃𝜎, 𝜎t = n
+  type reducible-otm list otm -> otm -> otm -> o.
+  reducible-otm _ N N :- !.
+  reducible-otm L N (oapp[ouva _|Args]) :- !, 
     % Head is flex -> if N is in Args, we can have eta
-    forall1 (x\ exists (reducible-to [] x) Args) [N|L]. 
-  reducible-to L N (o-lam B) :- !, 
-    pi x\ reducible-to [x | L] N (B x).
-  reducible-to L N (o-app [N|Args]) :-
-    % Head is rigid -> to be an eta we consider also L
+    forall1 (x\ exists (reducible-otm [] x) Args) [N|L]. 
+  reducible-otm L N (olam B) :- !, 
+    pi x\ reducible-otm [x | L] N (B x).
+  reducible-otm L N (oapp [N|Args]) :-
+    % Head is rigid -> otm be an eta we consider also L
     last-n {len L} Args R,
-    forall2 (reducible-to []) R {rev L}.
+    forall2 (reducible-otm []) R {rev L}.
 
   % takes a name N a term T and a list of bound variables.
   % succeeds if T could be an eta expansion, possible cases:
-  %  - T = uva seing N (N is also the last of L)
-  %  - T = app L such that the last args of L are maybe-eta wrt L
-  type maybe-eta to -> list to -> o.                  
-  maybe-eta (o-app[o-uva _|Args]) L :- !,
+  %  - T = muva seing N (N is also the last of L)
+  %  - T = mapp L such that the last args of L are maybe-eta wrt L
+  type maybe-eta otm -> list otm -> o.                  
+  maybe-eta (oapp[ouva _|Args]) L :- !,
     % Head is flex -> if N is in Args, we can have eta 
-    forall1 (x\ exists (reducible-to [] x) Args) L, !. 
-  maybe-eta (o-lam B) L :- !, pi x\ maybe-eta (B x) [x | L].
-  maybe-eta (o-app [T|Args]) L :- (name T; T = o-con _),
-    % Head is rigid -> to be an eta we consider also L
+    forall1 (x\ exists (reducible-otm [] x) Args) L, !. 
+  maybe-eta (olam B) L :- !, pi x\ maybe-eta (B x) [x | L].
+  maybe-eta (oapp [T|Args]) L :- (name T; T = ocon _),
+    % Head is rigid -> otm be an eta we consider also L
     split-last-n {len L} Args First Last,
     % forall1 (x\ forall1 (y\ not (occurs-rigidly x y)) First) L,
     none (x\ exists (y\ occurs-rigidly x y) First) L,
-    forall2 (reducible-to []) {rev L} Last.
+    forall2 (reducible-otm []) {rev L} Last.
 %ENDSNIP
 
 
-  type locally-bound tm -> o.
-  type get-scope-aux tm -> list tm -> o.
-  get-scope-aux (con _) [].
-  get-scope-aux (uva _ L) L1 :- 
-    forall2 get-scope-aux L R,
+  type locally-bound mtm -> o.
+  type get-scope-aux mtm -> list mtm -> o.
+  get-scope-aux (mcon _) [].
+  get-scope-aux (muva _ L) L1 :- 
+    map get-scope-aux L R,
     flatten R L1.
-  get-scope-aux (lam B) L1 :- 
+  get-scope-aux (mlam B) L1 :- 
     pi x\ locally-bound x => get-scope-aux (B x) L1.
-  get-scope-aux (app L) L1 :- 
-    forall2 get-scope-aux L R,
+  get-scope-aux (mapp L) L1 :- 
+    map get-scope-aux L R,
     flatten R L1.
   get-scope-aux X [X] :- name X, not (locally-bound X).
   get-scope-aux X [] :- name X, (locally-bound X).
 
-  type names1 list tm -> o.
+  type names1 list mtm -> o.
   names1 L :-
     names L1, 
     new_int N,
     if (1 is N mod 2) (L1 = L) (rev L1 L).
 
-  type get-scope tm -> list tm -> o.
+  type get-scope mtm -> list mtm -> o.
   get-scope T Scope :-
     get-scope-aux T ScopeDuplicata,
     undup ScopeDuplicata Scope.
-  type rigid to -> o.
-  rigid X :- not (X = o-uva _).
+  type rigid otm -> o.
+  rigid X :- not (X = ouva _).
 
 %SNIP: comp_lam
-  type comp-lam (to -> to) -> (tm -> tm) -> 
-    mmap -> mmap -> links -> links -> subst -> subst -> o.
-  comp-lam F G M1 M2 L1 L3 S1 S2 :-
-    pi x y\ (pi M L S\ comp x y M M L L S S) =>       
-      comp (F x) (G y) M1 M2 L1 (L2 y) S1 S2,
+  pred comp-lam (otm -> otm), mmap, links, subst -> 
+                (mtm -> mtm), mmap, links, subst.
+  comp-lam F M1 L1 S1 G M2 L3 S2 :-
+    pi x y\ (pi M L S\ comp x M L S y M L S) =>       
+      comp (F x) M1 L1 S1 (G y) M2 (L2 y) S2,
     close-links L2 L3.
 %ENDSNIP
 
 %SNIP: comp_close_links
-  type close-links (tm -> links) -> links -> o.
+  pred close-links (mtm -> links) -> links.
   % close-links (v\[X  |L v]) [X|R] :- !, close-links L R.
   close-links (v\[X v|L v]) [abs X|R] :- close-links L R.
   close-links (_\[]) [].
 %ENDSNIP
 %SNIP: comp_base
-  type comp to -> tm -> mmap -> mmap -> links -> links ->
-    subst -> subst -> o.
-  comp (o-con C) (con C) M M L L S S.
+  pred comp otm, mmap, links, subst -> 
+            mtm, mmap, links, subst.
+  comp (ocon C) M L S (mcon C) M L S.
 %ENDSNIP
 %SNIP: comp_eta
-  comp (o-lam F) (uva A Scope) M1 M2 L1 L3 S1 S3 :-           
-    maybe-eta (o-lam F) [], !,
+  comp (olam F) M1 L1 S1 (muva A Scope) M2 L3 S3 :-
+    maybe-eta (olam F) [], !,
     alloc S1 A S2,
-    comp-lam F F1 M1 M2 L1 L2 S2 S3,
-    get-scope (lam F1) Scope, 
-    L3 = [val (link-eta (uva A Scope) (lam F1)) | L2].
+    comp-lam F M1 L1 S2 G M2 L2 S3,
+    get-scope (mlam G) Scope, 
+    L3 = [val (link-eta (muva A Scope) (mlam G)) | L2].
 %ENDSNIP
 %SNIP: comp_base
-  comp (o-lam F) (lam F1) M1 M2 L1 L2 S1 S2 :-        % $r_\lambda$    
-    comp-lam F F1 M1 M2 L1 L2 S1 S2.
-  comp (o-uva A) (uva B []) M1 M2 L L S1 S2 :- 
-    m-alloc (ov A) (mv B (arity z)) M1 M2 S1 S2.
+  comp (olam F) M1 L1 S1 (mlam G) M2 L2 S2 :-        % $r_\lambda$    
+    comp-lam F M1 L1 S1 G M2 L2 S2.
+  comp (ouva A) M1 L S1 (muva B []) M2 L S2 :- 
+    m-alloc (ov A) M1 S1 (mv B (arity z)) M2 S2.
 %ENDSNIP
 %SNIP: comp_base_beta
-  comp (o-app [o-uva A|Ag]) (uva B Ag1) M1 M2 L L S1 S2 :-
+  comp (oapp [ouva A|Ag]) M1 L S1 (muva B Ag1) M2 L S2 :-
     pattern-fragment Ag, !,
-      fold6 comp Ag Ag1 M1 M1 L L S1 S1,
+      fold6 comp Ag M1 L S1 Ag1 M1 L S1,
       len Ag Arity, 
-      m-alloc (ov A) (mv B (arity Arity)) M1 M2 S1 S2.
+      m-alloc (ov A) M1 S1 (mv B (arity Arity)) M2 S2.
 %ENDSNIP
 %SNIP: comp_beta
-  comp (o-app [o-uva A|Ag]) (uva B Sc) M1 M3 L1 L3 S1 S4 :- !,
+  comp (oapp [ouva A|Ag]) M1 L1 S1 (muva B Sc) M3 L3 S4 :- !,
     pattern-fragment-prefix Ag Pf Extra, alloc S1 B S2,
-    len Pf Ar, m-alloc (ov A) (mv C (arity Ar)) M1 M2 S2 S3,
-    fold6 comp Pf    Pf1    M2 M2 L1 L1 S3 S3,
-    fold6 comp Extra Extra1 M2 M3 L1 L2 S3 S4,
-    Beta = app [uva C Pf1 | Extra1],
+    len Pf Ar, m-alloc (ov A) M1 S2 (mv C (arity Ar)) M2 S3,
+    fold6 comp Pf    M2 L1 S3 Pf1    M2 L1 S3,
+    fold6 comp Extra M2 L1 S3 Extra1 M3 L2 S4,
+    Beta = mapp [muva C Pf1 | Extra1],
     get-scope Beta Sc, 
-    L3 = [val (link-llam (uva B Sc) Beta) | L2].
+    L3 = [val (link-llam (muva B Sc) Beta) | L2].
 %ENDSNIP
 %SNIP: comp_base
-  comp (o-app A) (app A1) M1 M2 L1 L2 S1 S2 :-        % $r_@$ 
-    fold6 comp A A1 M1 M2 L1 L2 S1 S2.
+  comp (oapp A) M1 L1 S1 (mapp A1) M2 L2 S2 :-        % $r_@$ 
+    fold6 comp A M1 L1 S1 A1 M2 L2 S2.
 %ENDSNIP
 
   type alloc mem A -> addr -> mem A -> o.
   alloc S N S1 :- mem.new S N S1.
 
-  type compile-terms-diagnostic 
-    triple diagnostic to to -> 
-    triple diagnostic tm tm -> 
-    mmap -> mmap -> 
-    links -> links -> 
-    subst -> subst -> o.
-  compile-terms-diagnostic (triple D FO1 FO2) (triple D HO1 HO2) M1 M3 L1 L3 S1 S3 :-
+  pred compile-terms-diagnostic 
+    triple diagnostic otm otm, mmap, links, subst ->
+    triple diagnostic mtm mtm, mmap, links, subst.
+  compile-terms-diagnostic (triple D FO1 FO2) M1 L1 S1 (triple D HO1 HO2) M3 L3 S3 :-
     beta-normal FO1 FO1',
     beta-normal FO2 FO2',
-    comp FO1' HO1 M1 M2 L1 L2 S1 S2,
-    comp FO2' HO2 M2 M3 L2 L3 S2 S3.
+    comp FO1' M1 L1 S1 HO1 M2 L2 S2,
+    comp FO2' M2 L2 S2 HO2 M3 L3 S3.
 
   type compile-terms int ->
-    list (triple diagnostic to to) -> 
-    list (triple diagnostic tm tm) -> 
+    list (triple diagnostic otm otm) -> 
+    list (triple diagnostic mtm mtm) -> 
     mmap -> links -> subst -> o.
   compile-terms N T H M L S :- 
-    fold6 compile-terms-diagnostic T H [] M_ [] L_ [] S_,
+    fold6 compile-terms-diagnostic T [] [] [] H M_ L_ S_,
     print-compil-result N T H L_ M_, 
     print "Deduplicate mappings on" {ppmappings M_} {pplinks L_}, % HIDE
     deduplicate-map M_ M S_ S L_ L.
 
   % Ad1 is the variable with smaller arity, Ad2 is eta expanded N times
   type make-eta-link-aux nat -> addr -> addr -> 
-    list tm -> links -> subst -> subst -> o.
+    list mtm -> links -> subst -> subst -> o.
   make-eta-link-aux z Ad1 Ad2 Scope1 L H1 H1  :-
-    rev Scope1 Scope, eta-expand (uva Ad2 Scope) T1,
-    L = [val (link-eta (uva Ad1 Scope) T1)].
+    rev Scope1 Scope, eta-expand (muva Ad2 Scope) T1,
+    L = [val (link-eta (muva Ad1 Scope) T1)].
   make-eta-link-aux (s N) Ad1 Ad2 Scope1 L H1 H3 :-
     rev Scope1 Scope, alloc H1 Ad H2, 
-    eta-expand (uva Ad Scope) T2,
+    eta-expand (muva Ad Scope) T2,
     (pi x\ make-eta-link-aux N Ad Ad2 [x|Scope1] (L1 x) H2 H3),
     close-links L1 L2,
-    L = [val (link-eta (uva Ad1 Scope) T2) | L2].
+    L = [val (link-eta (muva Ad1 Scope) T2) | L2].
 
   % [make-eta-link ArityAd1, ArityAd2, Ad1, Ad2 Vars, Link]
   % as long as the arities are > 0, we eat one arity by putting a variable in the ctx
   % in the base case we return the link-eta eta-extending N times the variable with higher arity.
   type make-eta-link nat -> nat -> addr -> addr -> 
-          list tm -> links -> subst -> subst -> o.
+          list mtm -> links -> subst -> subst -> o.
   make-eta-link (s N) z Ad1 Ad2 Vars L H H1 :- 
     make-eta-link-aux N Ad2 Ad1 Vars L H H1.
   make-eta-link z (s N) Ad1 Ad2 Vars L H H1 :- 
@@ -235,7 +232,7 @@ namespace comp {
   %   ==> c0 |- `X1 c0' =η= c1\ `X4 c0 c1'
   % where: 
   %  - they share a common variable from the context (i.e. c0),
-  %  - X4 is the eta-expanded once to be fully applied
+  %  - X4 is the eta-expanded once otm be fully applied
   type deduplicate-map mmap -> mmap -> 
       subst -> subst -> links -> links -> o.
   deduplicate-map [] [] H H L L.
@@ -257,26 +254,25 @@ namespace comp {
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% AUXILIARY %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  type mk-app tm -> tm -> tm -> o.
-  mk-app (uva N L) T (uva N R) :- append L [T] R.
-  mk-app (con C) T (app [con C, T]).
-  mk-app (app L) T (app R) :- append L [T] R.
-  mk-app T L (app [T, L]) :- name T.
+  type mk-mapp mtm -> mtm -> mtm -> o.
+  mk-mapp (muva N L) T (muva N R) :- append L [T] R.
+  mk-mapp (mcon C) T (mapp [mcon C, T]).
+  mk-mapp (mapp L) T (mapp R) :- append L [T] R.
+  mk-mapp T L (mapp [T, L]) :- name T.
 
-  type eta-expand-n tm -> nat -> tm -> o.
+  type eta-expand-n mtm -> nat -> mtm -> o.
   eta-expand-n T z T.
-  eta-expand-n T (s N) (lam R2) :- 
-    pi x\ mk-app T x (R1 x), eta-expand-n (R1 x) N (R2 x). 
+  eta-expand-n T (s N) (mlam R2) :- 
+    pi x\ mk-mapp T x (R1 x), eta-expand-n (R1 x) N (R2 x). 
 
-  type eta-expand tm -> tm -> o.
-  eta-expand T (lam T') :- pi x\ mk-app T x (T' x). 
+  type eta-expand mtm -> mtm -> o.
+  eta-expand T (mlam T') :- pi x\ mk-mapp T x (T' x). 
 
 
 %SNIP: alloc_mapping
-  type m-alloc ovariable -> mvariable -> mmap -> mmap -> 
-    subst -> subst -> o.                            
-  m-alloc Ov Mv M M S S :- mem M (Ov <-> Mv), !.
-  m-alloc Ov Mv M [Ov <-> Mv|M] S S1 :- Mv = mv N _, new S N S1.
+  pred m-alloc ovariable, mmap, subst -> mvariable, mmap, subst.
+  m-alloc Ov M S Mv M S :- mem M (Ov <-> Mv), !.
+  m-alloc Ov M S Mv [Ov <-> Mv|M] S1 :- Mv = mv N _, new S N S1.
 %ENDSNIP
 
 type new  mem A -> addr -> mem A -> o.
@@ -288,83 +284,83 @@ new A B C :- mem.new A B C.
 
   macro @one :- s z.
 
-  type occurs-rigidly-ho tm -> tm -> o.
+  type occurs-rigidly-ho mtm -> mtm -> o.
   occurs-rigidly-ho N N.
-  occurs-rigidly-ho _ (uva _ _) :- !, fail.
-  occurs-rigidly-ho N (app L) :- exists (occurs-rigidly-ho N) L.
-  occurs-rigidly-ho N (lam B) :- pi x\ occurs-rigidly-ho N (B x).
+  occurs-rigidly-ho _ (muva _ _) :- !, fail.
+  occurs-rigidly-ho N (mapp L) :- exists (occurs-rigidly-ho N) L.
+  occurs-rigidly-ho N (mlam B) :- pi x\ occurs-rigidly-ho N (B x).
 
-  type reducible-to-ho list tm -> tm -> tm -> o.
-  reducible-to-ho _ N N :- !.
-  reducible-to-ho L N (uva _ Args) :- !, forall1 (mem Args) [N|L]. 
-  reducible-to-ho L N (lam B) :- !, pi x\ reducible-to-ho [x | L] N (B x).
-  reducible-to-ho L N (app [N|Args]) :- last-n {len L} Args R,
-    forall2 (reducible-to-ho []) R {rev L}.
+  type reducible-otm-ho list mtm -> mtm -> mtm -> o.
+  reducible-otm-ho _ N N :- !.
+  reducible-otm-ho L N (muva _ Args) :- !, forall1 (mem Args) [N|L]. 
+  reducible-otm-ho L N (mlam B) :- !, pi x\ reducible-otm-ho [x | L] N (B x).
+  reducible-otm-ho L N (mapp [N|Args]) :- last-n {len L} Args R,
+    forall2 (reducible-otm-ho []) R {rev L}.
 
-  type maybe-eta-ho tm -> list tm -> o.
-  maybe-eta-ho (uva _ Args) L :- !, forall1 (mem Args) L, !. 
-  maybe-eta-ho (lam B) L :- !, pi x\ maybe-eta-ho (B x) [x | L].
-  maybe-eta-ho (app [T|Args]) L :- (T = con _; name T),
+  type maybe-eta-ho mtm -> list mtm -> o.
+  maybe-eta-ho (muva _ Args) L :- !, forall1 (mem Args) L, !. 
+  maybe-eta-ho (mlam B) L :- !, pi x\ maybe-eta-ho (B x) [x | L].
+  maybe-eta-ho (mapp [T|Args]) L :- (T = mcon _; name T),
     split-last-n {len L} Args First Last,
     none (x\ exists (occurs-rigidly-ho x) First) L,
-    forall2 (reducible-to-ho []) {rev L} Last.
+    forall2 (reducible-otm-ho []) {rev L} Last.
 
-  type close-term tm -> list tm -> tm -> o.
+  type close-term mtm -> list mtm -> mtm -> o.
   close-term T [] T' :- (pi x\ ho.copy x x :- name x) => ho.copy T T'.
-  close-term T [X|Xs] (lam T') :- pi x\ ho.copy X x => close-term T Xs (T' x).
+  close-term T [X|Xs] (mlam T') :- pi x\ ho.copy X x => close-term T Xs (T' x).
 
   % if there exists a subst s such that contract-rigid st t', then
   % maybe-eta t must succeed
-  type contract-rigid list tm -> tm -> tm -> o.
-  contract-rigid L (lam F) T :- !,
+  type contract-rigid list mtm -> mtm -> mtm -> o.
+  contract-rigid L (mlam F) T :- !,
     pi x\ contract-rigid [x|L] (F x) T. % also checks H Prefix does not see x
-  contract-rigid L (app [H|Args]) T :-
+  contract-rigid L (mapp [H|Args]) T :-
     rev L LRev, append Prefix LRev Args,
-    if (Prefix = []) (T = H) (T = app [H|Prefix]).
+    if (Prefix = []) (T = H) (T = mapp [H|Prefix]).
   contract-rigid L T T' :- not (maybe-eta-ho T L), !, print "It is not a maybe-eta", 
     close-term T {std.rev L} T'.
 
-  % invariante: a sx non c'è mai una eta espansione, a destra c'è una lam, altrimenti il link eta è buttato via
-  type progress-eta-link tm -> tm -> subst -> subst -> links -> o.
-  progress-eta-link (app _ as T) (lam x\ _ as T1) H H1 [] :- !, 
-    print "progress η app left", % HIDE
+  % invariante: a sx non c'è mai una eta espansione, a destra c'è una mlam, altrimenti il link eta è buttato via
+  type progress-eta-link mtm -> mtm -> subst -> subst -> links -> o.
+  progress-eta-link (mapp _ as T) (mlam x\ _ as T1) H H1 [] :- !, 
+    print "progress η mapp left", % HIDE
     ({eta-expand T} ==l T1) H H1.
-  progress-eta-link (con _ as T) (lam x\ _ as T1) H H1 [] :- !, 
-    print "progress η con left", % HIDE
+  progress-eta-link (mcon _ as T) (mlam x\ _ as T1) H H1 [] :- !, 
+    print "progress η mcon left", % HIDE
     ({eta-expand T} ==l T1) H H1.
-  progress-eta-link T (lam x\ _ as T1) H H1 [] :- name T, !, 
+  progress-eta-link T (mlam x\ _ as T1) H H1 [] :- name T, !, 
     print "progress η name left", % HIDE
     ({eta-expand T} ==l T1) H H1.
-  progress-eta-link (lam _ as T) T1 H H1 [] :- !, 
-    print "progress η lam left", % HIDE 
+  progress-eta-link (mlam _ as T) T1 H H1 [] :- !, 
+    print "progress η mlam left", % HIDE 
     (T ==l T1) H H1.
-  progress-eta-link (uva _ _ as X) T H H1 [] :- 
+  progress-eta-link (muva _ _ as X) T H H1 [] :- 
     contract-rigid [] T T1, !, 
     print "progress η right", % HIDE
     (X ==l T1) H H1.
   progress-eta-link T1 T2 H H [val (link-eta T1 T2)].
 
-  type is-in-pf tm -> o.
-  is-in-pf uvar :- halt "passed var to is-in-pf".
-  is-in-pf (app [uva _ _ | _]) :- !, fail.
-  is-in-pf (lam B) :- !, pi x\ is-in-pf (B x).
-  is-in-pf (con _).
-  is-in-pf (app L) :- forall1 is-in-pf L.
+  type is-in-pf mtm -> o.
+  is-in-pf uvar :- halt "passed var otm is-in-pf".
+  is-in-pf (mapp [muva _ _ | _]) :- !, fail.
+  is-in-pf (mlam B) :- !, pi x\ is-in-pf (B x).
+  is-in-pf (mcon _).
+  is-in-pf (mapp L) :- forall1 is-in-pf L.
   is-in-pf N :- name N.
-  is-in-pf (uva _ L) :- pattern-fragment L.
+  is-in-pf (muva _ L) :- pattern-fragment L.
 
-  type progress-beta-llambda list tm -> tm -> tm -> subst -> subst -> links -> o.
+  type progress-beta-llambda list mtm -> mtm -> mtm -> subst -> subst -> links -> o.
   progress-beta-llambda [] T1 T2 S1 S2 [] :- !,
     (T1 ==l T2) S1 S2.
   progress-beta-llambda Ag T1 T2 S S [L] :-
-    L = val (link-llam T1 (app [T2|Ag])).
+    L = val (link-llam T1 (mapp [T2|Ag])).
 
-  type suspend-out-of-lam o.
+  type suspend-out-of-mlam o.
   type progress-beta-force o.
 
 %SNIP: progress_heuristic
-  type app-align-heuristic tm -> tm -> subst -> subst -> o.
-  app-align-heuristic (app [HD|L1]) (app [UV|L2]) S1 S2 :-
+  type mapp-align-heuristic mtm -> mtm -> subst -> subst -> o.
+  mapp-align-heuristic (mapp [HD|L1]) (mapp [UV|L2]) S1 S2 :-
     print "Unification align heuristics", % HIDE
     append Prefix L2 L1,
     !, % HIDE
@@ -372,7 +368,7 @@ new A B C :- mem.new A B C.
     print "End unif heuristic", %HIDE
     (UV ==l T) S1 S2.
 %ENDSNIP
-  app-align-heuristic (app [HD|L1]) (app [UV|L2]) S1 S2 :-
+  mapp-align-heuristic (mapp [HD|L1]) (mapp [UV|L2]) S1 S2 :-
     print "Unification align heuristics", % HIDE
     append Prefix L1 L2,
     !, % HIDE
@@ -380,57 +376,57 @@ new A B C :- mem.new A B C.
     print "End unif heuristic", %HIDE
     (T ==l HD) S1 S2. % XXX this time  T is not in llam
   % progress-out-llambda LHS V_RHS AG_RHS S1 S2 L % Note AG_RHS is non-empty, otherwise we are in llambda
-  type progress-out-llambda tm -> tm -> subst -> subst -> links -> o.
-  progress-out-llambda T1 T2 S S [val(link-llam T1 T2)] :- suspend-out-of-lam, !,
+  type progress-out-llambda mtm -> mtm -> subst -> subst -> links -> o.
+  progress-out-llambda T1 T2 S S [val(link-llam T1 T2)] :- suspend-out-of-mlam, !,
     print "Unification out of Lλ delayed".
   progress-out-llambda _ _ _ _ _ :- print "Unif out llambda: fail", fail.
 
-  % a sx non c'è mai un app[uva _ _ | _] per costruzione
-  % a dx abbiamo sempre app[uva _ N | L] dove N è nel PF e L no
-  type progress-beta-link tm -> tm -> subst -> subst -> links -> o.
-  % progress-beta-link T (app[uva V Scope | L] as T2) S S2 [@val-link-llam T T2] :- 
+  % a sx non c'è mai un mapp[muva _ _ | _] per costruzione
+  % a dx abbiamo sempre mapp[muva _ N | L] dove N è nel PF e L no
+  type progress-beta-link mtm -> mtm -> subst -> subst -> links -> o.
+  % progress-beta-link T (mapp[muva V Scope | L] as T2) S S2 [@val-link-llam T T2] :- 
   %   arity T Arity, len L ArgsNb, ArgsNb >n Arity, !,
   %   minus ArgsNb Arity Diff, alloc S V1 S1,
-  %   eta-expand (uva V1 Scope) Diff T1,
-  %   (uva V Scope ==l T1) S1 S2,
+  %   eta-expand (muva V1 Scope) Diff T1,
+  %   (muva V Scope ==l T1) S1 S2,
   %   print "progress β big arity" {ho.pp T} "unified with" {ho.pp T1} "->" {ho.ppsubst S2}.
 
-  % this is for beta links of the form `link-llam T (app[uva N [], app[B, x] | ...])
-  % and B is instantiated to (x\x)
-  % In this case, the terms on the right becomes (app[uva N [], x | L])
-  % We want to put the name x in the scope of N to make HO unif, therefore, we
-  % build a new var N' of arity 1, eta-linked to N and the beta links is updated
-  % New links will be: [link-llam T (app[uva N' [x] | L]), link-eta N (λx.uva N' [x])]
+  % this is for beta links of the form `link-llam T (mapp[muva N [], mapp[B, x] | ...])
+  % and B is instantiated otm (x\x)
+  % In this case, the terms on the right becomes (mapp[muva N [], x | L])
+  % We want otm put the name x in the scope of N otm make HO unif, therefore, we
+  % build a new var N' of arity 1, eta-linked otm N and the beta links is updated
+  % New links will be: [link-llam T (mapp[muva N' [x] | L]), link-eta N (λx.muva N' [x])]
 
-  progress-beta-link T (app[uva Ad1 Scope1 | [HD|TL]]) S1 S4 NewLinks :-
+  progress-beta-link T (mapp[muva Ad1 Scope1 | [HD|TL]]) S1 S4 NewLinks :-
     append Scope1 [HD] Scope2,
     pattern-fragment Scope2, !,
     alloc S1 Ad2 S2,
-    LinkEta = val (link-eta (uva Ad1 Scope1) {eta-expand (uva Ad2 Scope1)}),
-    progress-beta-llambda TL T (uva Ad2 Scope2) S2 S4 L,
+    LinkEta = val (link-eta (muva Ad1 Scope1) {eta-expand (muva Ad2 Scope1)}),
+    progress-beta-llambda TL T (muva Ad2 Scope2) S2 S4 L,
     NewLinks = [LinkEta | L].
 
-  progress-beta-link T1 T2 S1 S2 [] :- T2 = app[uva _ _|_], not (T1 = uva _ _), progress-beta-force, !,
-    app-align-heuristic T1 T2 S1 S2.
+  progress-beta-link T1 T2 S1 S2 [] :- T2 = mapp[muva _ _|_], not (T1 = muva _ _), progress-beta-force, !,
+    mapp-align-heuristic T1 T2 S1 S2.
 
-  progress-beta-link T1 T2 S1 S2 L :- T2 = app[uva _ _|_], not (T1 = uva _ _), suspend-out-of-lam, !,
+  progress-beta-link T1 T2 S1 S2 L :- T2 = mapp[muva _ _|_], not (T1 = muva _ _), suspend-out-of-mlam, !,
     progress-out-llambda T1 T2 S1 S2 L.
 
-  progress-beta-link (app [A|_]) (app[uva _ _|_]) _ _ _ :-
-    not (A = uva _ _), !, fail.
+  progress-beta-link (mapp [A|_]) (mapp[muva _ _|_]) _ _ _ :-
+    not (A = muva _ _), !, fail.
 
-  progress-beta-link T1 (app[uva _ _ | _] as T2) H H [@val-link-llam T1 T2] :- !, print "No β progress1".
+  progress-beta-link T1 (mapp[muva _ _ | _] as T2) H H [@val-link-llam T1 T2] :- !, print "No β progress1".
 
-  progress-beta-link T1 (app [Hd | MS]) S1 S2 [] :- % Hd is rigid!
+  progress-beta-link T1 (mapp [Hd | MS]) S1 S2 [] :- % Hd is rigid!
     ho.beta Hd MS T3, is-in-pf T3, !, 
     print "Progress β deep with" {ho.pp T3}, % HIDE
     (T1 ==l T3) S1 S2.
 
-  progress-beta-link _ (uva _ _) _ _ _ :- !, halt "progress beta-link: invariant broken". 
+  progress-beta-link _ (muva _ _) _ _ _ :- !, halt "progress beta-link: invariant broken". 
 
   progress-beta-link T1 T2 S S [val (link-llam T1 T2)] :- !, print "no progress β".
 
-  type solve-link-abs link -> links -> list tm -> subst -> subst -> o.
+  type solve-link-abs link -> links -> list mtm -> subst -> subst -> o.
   solve-link-abs (ho.abs X) R L H H1 :- 
     (pi x\ solve-link-abs (X x) (R' x) [x|L] H H1),
     close-links R' R.
@@ -453,25 +449,25 @@ new A B C :- mem.new A B C.
     pi x\ link-abs-same-lhs (F x) B.
   link-abs-same-lhs A (ho.abs G) :- 
     pi x\ link-abs-same-lhs A (G x).
-  link-abs-same-lhs (val (link-eta (uva N _) _)) (val (link-eta (uva N _) _)) :- !.
-  link-abs-same-lhs _ _ :- suspend-out-of-lam, !, fail.
+  link-abs-same-lhs (val (link-eta (muva N _) _)) (val (link-eta (muva N _) _)) :- !.
+  link-abs-same-lhs _ _ :- suspend-out-of-mlam, !, fail.
   link-abs-same-lhs A B :-
-    get-lhs A (uva N _),
-    get-lhs B (uva N _), !.
+    get-lhs A (muva N _),
+    get-lhs B (muva N _), !.
 
   type same-link link -> link -> subst -> subst -> o.
   % same-link (ho.abs F) (ho.abs G) H H1 :- !, pi x\ same-link (F x) (G x) H H1.
   same-link (ho.abs F) G H H1 :- !, pi x\ same-link (F x) G H H1.
   same-link A (ho.abs G) H H1 :- !, pi x\ same-link A (G x) H H1.
-  same-link (val (link-eta (uva N S1) A))
-                (val (link-eta (uva N S2) B)) H H1 :- !,
+  same-link (val (link-eta (muva N S1) A))
+                (val (link-eta (muva N S2) B)) H H1 :- !,
     std.assert! (std.length S1 {std.length S2}) "no same scope", % HIDE
     forall3 (x\y\r\ r = ho.copy x y) S1 S2 Perm,
     Perm => ho.copy A A',
     (A' ==l B) H H1.
   same-link L1 L2 H H1 :-
-    get-lhs L1 (uva N S1), get-rhs L1 A,
-    get-lhs L2 (uva N S2), get-rhs L2 B,
+    get-lhs L1 (muva N S1), get-rhs L1 A,
+    get-lhs L2 (muva N S2), get-rhs L2 B,
     std.assert! (std.length S1 {std.length S2}) "no same scope", % HIDE
     forall3 (x\y\r\ r = ho.copy x y) S1 S2 Perm,
     Perm => ho.copy A A',
@@ -498,13 +494,13 @@ new A B C :- mem.new A B C.
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% OCC CHECK %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  type get-head-link link -> addr -> tm -> o.
-  get-head-link (@val-link-eta (uva Ad _) T) Ad T :- !.
-  get-head-link (@val-link-llam (uva Ad _) T) Ad T :- !.
-  get-head-link (ho.abs B) Ad (lam T) :- !, pi x\ get-head-link (B x) Ad (T x).
+  type get-head-link link -> addr -> mtm -> o.
+  get-head-link (@val-link-eta (muva Ad _) T) Ad T :- !.
+  get-head-link (@val-link-llam (muva Ad _) T) Ad T :- !.
+  get-head-link (ho.abs B) Ad (mlam T) :- !, pi x\ get-head-link (B x) Ad (T x).
   get-head-link Link _ _ :- print "get-head-link: attention not in PF" {pplink Link} /*,halt*/, fail.
 
-  type find-link-by-var addr -> links -> links -> list tm -> list links -> o.
+  type find-link-by-var addr -> links -> links -> list mtm -> list links -> o.
   find-link-by-var _ _ [] [] [].
   find-link-by-var Ad Prefix [Hd | L1] [T | L2] [Hd1|LL] :-
     append Prefix L1 Hd1,
@@ -513,25 +509,25 @@ new A B C :- mem.new A B C.
   find-link-by-var Ad Prefix [Hd | L1] L2 LL :- !,
     find-link-by-var Ad [Hd | Prefix] L1 L2 LL.
 
-  type not_occ_links_aux addr -> links -> tm -> o.
-  not_occ_links_aux Ad _ (uva Ad _) :- !, fail.
-  not_occ_links_aux Ad L (uva Ad1 _) :- !, 
+  type not_occ_links_aux addr -> links -> mtm -> o.
+  not_occ_links_aux Ad _ (muva Ad _) :- !, fail.
+  not_occ_links_aux Ad L (muva Ad1 _) :- !, 
     find-link-by-var Ad1 [] L Terms Links,
     forall2 (not_occ_links_aux Ad) Links Terms.
-  not_occ_links_aux _ _ (con _) :- !.
+  not_occ_links_aux _ _ (mcon _) :- !.
   not_occ_links_aux _ _ N :- name N, !.
-  not_occ_links_aux Ad L (lam B) :- !, pi x\ not_occ_links_aux Ad L (B x).
-  not_occ_links_aux Ad L (app B) :- !, forall1 (not_occ_links_aux Ad L) B.
+  not_occ_links_aux Ad L (mlam B) :- !, pi x\ not_occ_links_aux Ad L (B x).
+  not_occ_links_aux Ad L (mapp B) :- !, forall1 (not_occ_links_aux Ad L) B.
 
-  type not_occ_links addr -> tm -> links -> o.
-  not_occ_links _ (con _) _.
-  not_occ_links Ad (lam B) L :- pi x\ not_occ_links Ad (B x) L.
-  not_occ_links Ad (uva Ad _) _ :- !.
-  not_occ_links Ad1 (uva Ad2 _) L :- 
+  type not_occ_links addr -> mtm -> links -> o.
+  not_occ_links _ (mcon _) _.
+  not_occ_links Ad (mlam B) L :- pi x\ not_occ_links Ad (B x) L.
+  not_occ_links Ad (muva Ad _) _ :- !.
+  not_occ_links Ad1 (muva Ad2 _) L :- 
     find-link-by-var Ad2 [] L Terms Links,
     forall2 (not_occ_links_aux Ad1) Links Terms.
-  not_occ_links Ad (app L) Links :-
-    not_occ_links_aux Ad Links (app L).
+  not_occ_links Ad (mapp L) Links :-
+    not_occ_links_aux Ad Links (mapp L).
   not_occ_links _ N _ :- name N.
 
   type occur-check-links links -> o.
@@ -544,26 +540,26 @@ new A B C :- mem.new A B C.
     print "OC is partial: a term is not in PF"
     occur-check-links MS.
 
-  type scope-check-aux list tm -> link -> link -> subst -> subst -> o.
-  scope-check-aux L (abs A) NL S S1 :- % This removes an abs when not needed: NL does not use x
-    (pi x\ scope-check-aux L (A x) NL S S1), !.
-  scope-check-aux L (abs A) (abs NL) S S1 :- !,
-    (pi x\ scope-check-aux [x|L] (A x) (NL x) S S1).
-  scope-check-aux L (val (link-eta (uva V Sc) R))  (val (link-eta (uva V Sc) R'))  S1 S3 :-
+  pred scope-check-aux list mtm, link, subst -> link, subst.
+  scope-check-aux L (abs A) S NL S1 :- % This removes an abs when not needed: NL does not use x
+    (pi x\ scope-check-aux L (A x) S NL S1), !.
+  scope-check-aux L (abs A) S (abs NL) S1 :- !,
+    (pi x\ scope-check-aux [x|L] (A x) S (NL x) S1).
+  scope-check-aux L (val (link-eta (muva V Sc) R)) S1 (val (link-eta (muva V Sc) R')) S3 :-
     exists (not-in Sc) L, !,
-    print "scope-check for link-eta" {pplink (val (link-eta (uva V Sc) R))}, % HIDE
-    new S1 U S2, eta-expand (uva U Sc) R',
+    print "scope-check for link-eta" {pplink (val (link-eta (muva V Sc) R))}, % HIDE
+    new S1 U S2, eta-expand (muva U Sc) R',
     (R' ==l R) S2 S3.
-  scope-check-aux L (val (link-llam (uva V Sc) R)) (val (link-llam (uva V Sc) R')) S1 S3 :-
+  scope-check-aux L (val (link-llam (muva V Sc) R)) S1 (val (link-llam (muva V Sc) R')) S3 :-
     exists (not-in Sc) L, !,
-    print "scope-check for link-llam" {pplink (val (link-llam (uva V Sc) R))}, % HIDE
-    new S1 U S2, (uva U Sc) = R',
+    print "scope-check for link-llam" {pplink (val (link-llam (muva V Sc) R))}, % HIDE
+    new S1 U S2, (muva U Sc) = R',
     (R' ==l R) S2 S3.
-  scope-check-aux _ A A S S.
+  scope-check-aux _ A S A S.
 
   type scope-check links -> links -> subst -> subst -> o.
   scope-check L1 L2 S1 S2 :-
-    fold2 (scope-check-aux []) L1 L2 S1 S2.
+    fold2 (scope-check-aux []) L1 S1 L2 S2.
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% CHECK %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -571,7 +567,7 @@ new A B C :- mem.new A B C.
 
   :index(_ 1)
   type deref-links subst -> links -> links -> o.
-  deref-links H L1 L2 :- forall2 (deref-link H) L1 L2, !.
+  deref-links H L1 L2 :- map (deref-link H) L1 L2, !.
   deref-links _ _ _ :- halt "Bug in deref links". % HIDE
 
   type deref-link subst -> link -> link -> o.
@@ -580,15 +576,15 @@ new A B C :- mem.new A B C.
   deref-link H (@val-link-llam A B) (@val-link-llam A1 B1) :- ho.deref H A A1, ho.deref H B B1.
 
 %SNIP: progress
-  type progress links -> links -> subst -> subst -> o.
+  pred progress links, subst -> links, subst.
 %ENDSNIP
-  progress L0 L1 S S1 :- % unessential, could be inlined
+  progress L0 S L1 S1 :- % unessential, could be inlined
     deref-links S L0 L,
     not (L0 = L),
     !,
-    progress L L1 S S1.
+    progress L S L1 S1.
 %SNIP: progress
-  progress L L3 S S3 :-
+  progress L S L3 S3 :-
     print "\nfixpoint iteration on:" {pplinks L}, !, % HIDE
     progress1 L L1 S S1,
     !, % HIDE
@@ -601,16 +597,16 @@ new A B C :- mem.new A B C.
     scope-check L1 L2 S1 S2
     ) (print "Scope check ok") (print "Scope check ko", fail), %HIDE
     if (L = L2, S = S2) (L3 = L2, S3 = S2)
-       (progress L2 L3 S2 S3).
+       (progress L2 S2 L3 S3).
 %ENDSNIP
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% DECOMPL %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  type abs->lam ho.assignment -> tm -> o.
-  abs->lam (ho.abs T) (lam R)  :- !, pi x\ abs->lam (T x) (R x).
-  abs->lam (ho.val A) A.
+  type abs->mlam ho.assignment -> mtm -> o.
+  abs->mlam (ho.abs T) (mlam R)  :- !, pi x\ abs->mlam (T x) (R x).
+  abs->mlam (ho.val A) A.
 
   type commit-links-aux link -> subst -> subst -> o.
   commit-links-aux (@val-link-eta T1 T2) H1 H2 :- 
@@ -641,8 +637,8 @@ new A B C :- mem.new A B C.
     std.assert!( % HIDE
     deref-assmt S A A1,
     true) "Should not fail", % HIDE
-    abs->lam A1 T, decomp M T T1, 
-    %eta-contract T1 T2, % "nice to our users, not really needed"
+    abs->mlam A1 T, decomp M T T1, 
+    %eta-contract T1 T2, % "nice otm our users, not really needed"
     assign V F1 T1 F2,
     decompm M MS S F2 F3. 
   decompm M [_ <-> mv H _|MS] S F1 F2 :- unset? H S,
@@ -651,39 +647,39 @@ new A B C :- mem.new A B C.
 %ENDSNIP
 
 %SNIP: decomp
-  type decomp mmap -> tm -> to -> o.
-  decomp _ (con C)  (o-con C).
-  decomp M (app A) (o-app B) :- map (decomp M) A B.
+  type decomp mmap -> mtm -> otm -> o.
+  decomp _ (mcon C)  (ocon C).
+  decomp M (mapp A) (oapp B) :- map (decomp M) A B.
    % [H|Ag], beta H Ag R.
-  decomp M (lam F) (o-lam G) :- 
+  decomp M (mlam F) (olam G) :- 
     pi x y\ (pi M\ decomp M x y) => decomp M (F x) (G y).
-  decomp M (uva Mv Ag) R :-
+  decomp M (muva Mv Ag) R :-
     mem M (ov Ov <-> mv Mv _), 
     map (decomp M) Ag Bg,
-    beta (o-uva Ov) Bg R.
+    beta (ouva Ov) Bg R.
   decomp M H _ :- halt "Fail in decomp" {ppmappings M} {ho.pp H}. % HIDE
 %ENDSNIP
 
-  type add-new-map-aux subst -> list tm -> mmap -> 
+  type add-new-map-aux subst -> list mtm -> mmap -> 
         mmap ->  fo.fsubst -> fo.fsubst -> o.
   add-new-map-aux _ [] _ [] S S.
   add-new-map-aux H [T|Ts] L L2 S S2 :- 
     add-new-map H T L L1 S S1, 
     add-new-map-aux H Ts L1 L2 S1 S2.
 
-  type add-new-map subst -> tm -> mmap -> 
+  type add-new-map subst -> mtm -> mmap -> 
       mmap ->  fo.fsubst -> fo.fsubst -> o.
-  add-new-map _ (uva N _) Map [] F1 F1 :- 
+  add-new-map _ (muva N _) Map [] F1 F1 :- 
     mem Map (_ <-> mv N _), !.
-  add-new-map H (uva N L) Map [Map1 | MapL] F1 F3 :-
+  add-new-map H (muva N L) Map [Map1 | MapL] F1 F3 :-
     alloc F1 M F2,
     len L Arity, Map1 = (ov M <-> mv N (arity Arity)),
-    add-new-map H (app L) [Map1 | Map] MapL F2 F3.
-  add-new-map H (lam B) Map NewMap F1 F2 :- 
+    add-new-map H (mapp L) [Map1 | Map] MapL F2 F3.
+  add-new-map H (mlam B) Map NewMap F1 F2 :- 
     pi x\ add-new-map H (B x) Map NewMap F1 F2.
-  add-new-map H (app L) Map NewMap F1 F3 :- 
+  add-new-map H (mapp L) Map NewMap F1 F3 :- 
     add-new-map-aux H L Map NewMap F1 F3.
-  add-new-map _ (con _) _ [] F F :- !.
+  add-new-map _ (mcon _) _ [] F F :- !.
   add-new-map _ N _ [] F F :- name N.
 
   type complete-mapping-under-ass subst -> ho.assignment -> 
@@ -728,7 +724,7 @@ new A B C :- mem.new A B C.
     S is {fo.ppuva N} ^ " -> " ^ {ho.ppuva M} ^ " (" ^ {ppnat Len} ^ ")".
 
   type ppmappings mmap -> list string -> o.
-  ppmappings M Str :- forall2 ppmapping M Str.
+  ppmappings M Str :- map ppmapping M Str.
 
   macro @binder-names :- ["x", "y", "z", "w"].
 
@@ -751,14 +747,14 @@ new A B C :- mem.new A B C.
     S is Eta-beta ^ "," ^ {std.string.concat "~" Ctx} ^ "," ^ Left ^ "," ^ Right.
 
   type pplink link -> string -> o.
-  pplink uvar _ :- halt "passed var to pplink".
+  pplink uvar _ :- halt "passed var otm pplink".
   pplink L S :- tex, !, pplink-latex L S.
   pplink (ho.abs F) S :- pi x\ std.any->string x N, pplink (F x) S1, S is N ^ " " ^ S1.
   pplink (@val-link-eta A B) S :- S is "|- " ^ {ho.pp A} ^ " =η= " ^ {ho.pp B}.
   pplink (@val-link-llam A B) S :- S is "|- " ^ {ho.pp A} ^ " =β= " ^ {ho.pp B}.
 
   type pplinks links -> list string -> o.
-  pplinks L R :- forall2 pplink L R.
+  pplinks L R :- map pplink L R.
 
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

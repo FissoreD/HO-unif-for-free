@@ -4,8 +4,8 @@ macro @read :- input_line std_in _.
 
 shorten ho.{(==l)}.
 shorten fo.{(==o), beta-normal}.
-typeabbrev tm ho.tm.
-typeabbrev to fo.to.
+typeabbrev mtm ho.mtm.
+typeabbrev otm fo.otm.
 typeabbrev subst ho.subst.
 typeabbrev fsubst fo.fsubst.
 typeabbrev links comp.links.
@@ -22,36 +22,35 @@ valid-error H :- halt "Invalid message error" H.
 %BEGIN
 
 %SNIP: hstep
-type hstep tm -> tm -> links -> links -> subst -> subst -> o.
-hstep T1 T2 L1 L2 S1 S3 :-
+pred hstep mtm, mtm, links, subst -> links, subst.
+hstep T1 T2 L1 S1 L2 S3 :-
   (T1 ==l T2) S1 S2,
   print "## After unif subst is" {ho.ppsubst S2}, % HIDE
   comp.deref-links S2 L1 L1D, % HIDE 
   print "## Links are" {comp.pplinks L1D}, % HIDE
   printC "solve links?", !, % HIDE
-  progress L1 L2 S2 S3.
+  progress L1 S2 L2 S3.
 %ENDSNIP
 
 %SNIP: compile
-type compile to -> tm -> mmap -> mmap ->  links -> links -> 
-  subst -> subst -> o.
-compile F G M1 M2 L1 L2 S1 S2 :-
-  beta-normal F F', comp F' G M1 M2 L1 L2 S1 S2.
+pred compile otm, mmap, links, subst -> mtm, mmap, links, subst.
+compile F M1 L1 S1 G M2 L2 S2 :-
+  beta-normal F F', comp F' M1 L1 S1 G M2 L2 S2.
 %ENDSNIP
 
 %SNIP: unif_fo
-type (===o) to -> to -> fsubst -> o.
+pred (===o) otm, otm -> fsubst.
 (A ===o B) F :-
-  compile A A' [] M1 [] L1 [] S1,
-  compile B B' M1 M2 L1 L2 S1 S2,
-  hstep A' B' L2 L3 S2 S3,
+  compile A [] [] [] A' M1 L1 S1,
+  compile B M1 L1 S1 B' M2 L2 S2,
+  hstep A' B' L2 S2 L3 S3,
   decompile M2 L3 S3 [] F.
 %ENDSNIP
 
 %END
 
 type prolog 
-  list (triple diagnostic ho.tm ho.tm) -> 
+  list (triple diagnostic ho.mtm ho.mtm) -> 
   comp.links -> comp.links ->
   ho.subst -> ho.subst ->
   diagnostic ->
@@ -59,7 +58,7 @@ type prolog
 prolog [] L L H H ok :- print "end proggram\n".
 prolog [triple ok L R|Us] Links Links2 H H3 D :- !, std.do! [
   print "## prolog unif step" {ho.pp {ho.deref H L}} "=" {ho.pp {ho.deref H R}},
-  hstep L R Links Links1 H H2,
+  hstep L R Links H Links1 H2,
   print "## After solve links, links are" {comp.pplinks Links1},
   print "## After solve links, subst is" {ho.ppsubst H2},
   ],
@@ -76,7 +75,7 @@ prolog [triple (error X as E) L R|_] Links Links H H2 E :-
       % if solve-link has success, then the error is decompl else 
       print "Before solve links fixpoint",
       if 
-        (if (comp.progress Links _ H1 H2) (X = "decompl") (X = "unif"))
+        (if (comp.progress Links H1 _ H2) (X = "decompl") (X = "unif"))
         true
         (print "\nERROR:" {ho.pp L} "=" {ho.pp R} "succeeds even if it should not", fail))
      (H2 = H).
@@ -92,14 +91,14 @@ decompile-subst Mappings Links H F F1 :-
   comp.decompile Mappings Links H F F1.
 decompile-subst _ _ _ _ _ :- !, print "Fail decompl-subst", fail.
 
-type build-fo-subst list (triple diagnostic fo.to fo.to) -> fo.fsubst -> fo.fsubst -> o.
+type build-fo-subst list (triple diagnostic fo.otm fo.otm) -> fo.fsubst -> fo.fsubst -> o.
 build-fo-subst [] L L.
 build-fo-subst [triple _ L R | TL] A D :-
   fo.extend-subst L A B, fo.extend-subst R B C,
   build-fo-subst TL C D.
 
 type validate-solution 
-  list (triple diagnostic fo.to fo.to) ->
+  list (triple diagnostic fo.otm fo.otm) ->
   fo.fsubst ->
   o.
 validate-solution [] _.
@@ -110,7 +109,7 @@ validate-solution [triple ok L R|Goals] FS :-
   validate-solution Goals FS].
 validate-solution [triple (error _) _ _|_] _.
 
-type same-sols list (option fo.to) -> list (option fo.to) -> o.
+type same-sols list (option fo.otm) -> list (option fo.otm) -> o.
 same-sols [] [].
 same-sols [none|L] [none|M] :- !, same-sols L M.
 same-sols [some A|L] [some A'|M] :- A ==o A', !, same-sols L M.
@@ -118,11 +117,11 @@ same-sols [] L :- if (forall1 ((=) none) L) true (halt "Invalid solution:" {fo.p
 same-sols L [] :- if (forall1 ((=) none) L) true (halt "Invalid solution:" {fo.ppsubst L}).
 same-sols A B :- halt "INVALID SOL" {fo.ppsubst A} " =/= " {fo.ppsubst B}.
 
-type check-sol.aux fo.to -> option fo.to -> o.
-check-sol.aux (fo.o-con "_") none :- !.
+type check-sol.aux fo.otm -> option fo.otm -> o.
+check-sol.aux (fo.ocon "_") none :- !.
 check-sol.aux X (some X).
 
-type check-sol option (list fo.to) -> fo.fsubst -> o.
+type check-sol option (list fo.otm) -> fo.fsubst -> o.
 check-sol none _. 
 check-sol (some Sol) L :-
   std.map Sol check-sol.aux L1,
@@ -135,7 +134,7 @@ do-read.
 type printC string -> o.
 printC A :- X = "@@@@@@@@@@@@@@@@@@@@@@@@@", print X A X, (not do-read; @read), !.
 
-type ptest test fo.to -> string -> o.
+type ptest test fo.otm -> string -> o.
 ptest (test _ (pr Pbs (some Sol))) S :-
   std.map Pbs (pppbsc fo.pp) S1,
   fo.ppsubst {std.map Sol (x\r\ r = some x)} S2,
@@ -149,7 +148,7 @@ pppbsc F (triple _ A B) S :- tex, !, F A AS, F B BS, S is AS ^ "," ^ BS.
 pppbsc F (triple ok A B) S :- F A AS, F B BS, S is AS ^ " == " ^ BS.
 pppbsc F (triple (error _) A B) S :- F A AS, F B BS, S is AS ^ " =/= " ^ BS.
 
-type print-compil-result int -> list (diagn fo.to) -> list (diagn ho.tm) -> comp.links -> comp.mmap -> o.
+type print-compil-result int -> list (diagn fo.otm) -> list (diagn ho.mtm) -> comp.links -> comp.mmap -> o.
 print-compil-result N C P L M :- tex, !, 
   Sep = "\n  ", Sep1 is "," ^ Sep ^ "  ",
   std.string.concat "," {std.map C (pppbsc fo.pp)} Cpp,
@@ -169,25 +168,25 @@ print-compil-result _ _ P L M :-
   print "## After compilation the links are" {comp.pplinks L},
   print "## After compilation the mappings are" {comp.ppmappings M}.
 
-type xtest o -> test fo.to -> o.
+type xtest o -> test fo.otm -> o.
 xtest Mode (test N (pr LR Sol) as Test) :- Mode => std.do![
   print "## Test" N ":" {ptest Test},
   printC "run test?",
   comp.compile-terms N LR Uproblems Map2 Links2 HO_Subst1,
   print-compil-result N LR Uproblems Links2 Map2,
-  printC "continue to prolog?",
+  printC "continue otm prolog?",
   prolog Uproblems Links2 Links1 HO_Subst1 HO_Subst2 D,
   if2 (D = ok) (
     print "## After prolog HO subst is" {ho.ppsubst HO_Subst2},
     print "## After prolog links are" {comp.pplinks Links1},
     print "## After prolog mappings are" {comp.ppmappings Map2},
-    printC "continue to decomp?",
+    printC "continue otm decomp?",
     build-fo-subst LR [] FO_Subst,
     decompile-subst Map2 Links1 HO_Subst2 FO_Subst Sol1,
     print "## After decomp FO subst is" {fo.ppsubst Sol1},
-    printC "continue to validate solution?",
+    printC "continue otm validate solution?",
     validate-solution LR Sol1,
-    printC "continue to check solution vs expected?",
+    printC "continue otm check solution vs expected?",
     check-sol Sol Sol1
   )  
     (D = error "decompl")
@@ -196,7 +195,7 @@ xtest Mode (test N (pr LR Sol) as Test) :- Mode => std.do![
 
 ].
 
-type parse-triple pair diagnostic string -> triple diagnostic fo.to fo.to -> o.
+type parse-triple pair diagnostic string -> triple diagnostic fo.otm fo.otm -> o.
 parse-triple (pr D S) (triple D A B) :- parse-eq S A B.
 
 macro @sok N SE SS :- (declare-test (xtest true) ptest (test N (pr [triple ok X Y] (some S))) :- parse-eq SE X Y, std.map SS parse S).
@@ -204,13 +203,13 @@ macro @sko N SE :- (declare-test (xtest true) ptest (test N (pr [triple (error "
 macro @sokl-call Mode N SX SS :- (declare-test (xtest Mode) ptest (test N (pr X (some S))) :- std.map SX parse-triple X, std.map SS parse S).
 macro @sokl N SX SS :- @sokl-call true N SX SS.
 macro @sokl-force-progress N SX SS :- @sokl-call comp.progress-beta-force N SX SS.
-macro @sokl-delay N SX SS :- @sokl-call comp.suspend-out-of-lam N SX SS.
+macro @sokl-delay N SX SS :- @sokl-call comp.suspend-out-of-mlam N SX SS.
 
 % macro @okl N E S :- (declare-test xtest ptest (test N (pr E (some S)))).
 
 @sok 1 "f X = f a" ["a"].
-% @ok 2 (@app [X  @a]) (@app [f, @a]) [f].                                           % here two solutions for X: fun _ => a, fun x => x
-% @ok 3 (λx. @app [X  x  @a]) (λx. @app [f, x  @a]) [f].
+% @ok 2 (@mapp [X  @a]) (@mapp [f, @a]) [f].                                           % here two solutions for X: fun _ => a, fun x => x
+% @ok 3 (λx. @mapp [X  x  @a]) (λx. @mapp [f, x  @a]) [f].
 
 @sko 4 "f X = X".
 @sko 5 "f X  X = f a b".
@@ -249,7 +248,7 @@ macro @sokl-delay N SX SS :- @sokl-call comp.suspend-out-of-lam N SX SS.
 ] ["λx. λy. (f (Y  y) (Z y x))"].
 
 @sok 11 "λx. (X  x) = λx. (f x  x a)" ["λx. (f x  x a)"].
-% @ok 12 (λx. @app [X  x  @a]) (λx. @app [f, x  x  @a]) [λx. @app [f, x  x]].                 % here two solutions for X: fun x _ => f x x a, fun x y => f x x y
+% @ok 12 (λx. @mapp [X  x  @a]) (λx. @mapp [f, x  x  @a]) [λx. @mapp [f, x  x]].                 % here two solutions for X: fun x _ => f x x a, fun x y => f x x y
 
 @sokl 13 [
   pr ok "λx.(X x) = λx.(f x)", 
@@ -294,7 +293,7 @@ macro @sokl-delay N SX SS :- @sokl-call comp.suspend-out-of-lam N SX SS.
 
 @sokl 17 [
   pr ok "X = λx.x",
-  % (pr ok (@app [X  @a]) (@a)),
+  % (pr ok (@mapp [X  @a]) (@a)),
   pr ok "X a = Y"
 ] ["λx.x", "a"]. % beta redex
 
@@ -369,9 +368,9 @@ macro @sokl-delay N SX SS :- @sokl-call comp.suspend-out-of-lam N SX SS.
 ] ["λx.x", "f"].
 
 /*
-  C = lam xy.y
-  B = lam x.x
-  A = lam xy. A (B x) (C x y)
+  C = mlam xy.y
+  B = mlam x.x
+  A = mlam xy. A (B x) (C x y)
 */
 
 @sokl 26 [
@@ -452,7 +451,7 @@ macro @sokl-delay N SX SS :- @sokl-call comp.suspend-out-of-lam N SX SS.
 % TODO: se invertiamo i pb di unificazione deve andare per euristica
 % di proiezione
 
-% beta applied to more args than needed
+% beta applied otm more args than needed
 @sokl 39 [
   pr ok "X = λx.λy.λz.y",
   pr ok "λy.(X y a b) = λy.a",

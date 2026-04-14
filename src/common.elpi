@@ -63,7 +63,7 @@ not-in [X | TL] T :- not (X = T), not-in TL T.
 type exists (A -> o) -> list A -> o.
 exists F [X|XS] :- F X ; exists F XS.
 
-type forall2 (A -> B -> o) -> list A -> list B -> o.
+pred forall2 (pred A, B ->), list A, list B ->.
 forall2 _ [] [].
 forall2 F [X|XS] [Y|YS] :- F X Y, forall2 F XS YS.
 
@@ -72,13 +72,13 @@ forall3 _ [] [] [].
 forall3 F [X|XS] [Y|YS] [Z|ZS] :- F X Y Z, forall3 F XS YS ZS.
 
 /* same as forall2, sometimes more intuitive name */
-type map (A -> B -> o) -> list A -> list B -> o.
+pred map (pred A -> B), list A -> list B.
 map _ [] [].
 map F [X|XS] [Y|YS] :- F X Y, map F XS YS.
 
-type fold2 (A -> A1 -> B -> B -> o) -> list A -> list A1 -> B -> B -> o.
-fold2 _ [] [] A A.
-fold2 F [X|XS] [Y|YS] A A1 :- F X Y A A0, fold2 F XS YS A0 A1.
+pred fold2 (pred A, B -> A1, B), list A, B -> list A1, B.
+fold2 _ [] A [] A.
+fold2 F [X|XS] A [Y|YS] A1 :- F X A Y A0, fold2 F XS A0 YS A1.
 
 type fold (A -> B -> B -> o) -> list A -> B -> B -> o.
 fold _ [] A A.
@@ -114,9 +114,9 @@ type fold4 (A -> A1 -> B -> B -> C -> C -> o) -> list A -> list A1 -> B -> B -> 
 fold4 _ [] [] A A B B.
 fold4 F [X|XS] [Y|YS] A A1 B B1 :- F X Y A A0 B B0, fold4 F XS YS A0 A1 B0 B1.
 
-type fold6 (A -> A1 -> B -> B -> C -> C -> D -> D -> o) -> list A -> list A1 -> B -> B -> C -> C -> D -> D -> o.
-fold6 _ [] [] A A B B C C.
-fold6 F [X|XS] [Y|YS] A A1 B B1 C C1 :- F X Y A A0 B B0 C C0, fold6 F XS YS A0 A1 B0 B1 C0 C1.
+pred fold6 (pred A, B, C, D -> A1, B, C, D), list A, B, C, D -> list A1, B, C, D.
+fold6 _ [] A B C [] A B C.
+fold6 F [X|XS] A B C [Y|YS] A1 B1 C1 :- F X A B C Y A0 B0 C0, fold6 F XS A0 B0 C0 YS A1 B1 C1.
 
 type flatten-aux list A -> list (list A) -> list A -> o.
 flatten-aux [] L L1 :- flatten L L1.
@@ -206,7 +206,7 @@ split-last-n N L First Last :- minus {len L} N PrefLen, split PrefLen L First La
 
 kind test type -> type.
 type test int -> (pair (list (triple diagnostic A A)) (option(list A))) -> test A.
-type declare-test (test fo.to -> o) -> (test fo.to -> string -> o) -> test fo.to -> o.
+type declare-test (test fo.otm -> o) -> (test fo.otm -> string -> o) -> test fo.otm -> o.
 
 kind triple type -> type -> type -> type.
 type triple A -> B -> C -> triple A B C.

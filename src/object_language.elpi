@@ -5,124 +5,124 @@ namespace fo {
 %BEGIN
 
 %SNIP: fo_tm
-  kind to type.
-  type o-app list to -> to.
-  type o-lam (to -> to) -> to.
-  type o-con string -> to.
-  type o-uva addr -> to.
+  kind otm type.
+  type oapp list otm -> otm.
+  type olam (otm -> otm) -> otm.
+  type ocon string -> otm.
+  type ouva addr -> otm.
 %ENDSNIP
 
 %SNIP: fo_subst
-  typeabbrev fsubst (mem.mem to).
+  typeabbrev fsubst (mem.mem otm).
 %ENDSNIP
 
 %SNIP: fderef
-  type fder fsubst -> to -> to -> o.
+  type fder fsubst -> otm -> otm -> o.
   fder S X _ :- (var S; var X), fatal "flex fder". % HIDE
-  fder _ (o-con C) (o-con C).
-  fder S (o-app A) (o-app B) :- map (fder S) A B.
-  fder S (o-lam F) (o-lam G) :-
+  fder _ (ocon C) (ocon C).
+  fder S (oapp A) (oapp B) :- map (fder S) A B.
+  fder S (olam F) (olam G) :-
     pi x\ fder S x x => fder S (F x) (G x).
-  fder S (o-uva N) R :- set? N S T, fder S T R.
-% fder S (o-app [o-uva N|L]) R :- set? N S T, !, beta T L R', fder S R' R.
-  fder S (o-uva N) (o-uva N) :- unset? N S.
+  fder S (ouva N) R :- set? N S T, fder S T R.
+% fder S (oapp [ouva N|L]) R :- set? N S T, !, beta T L R', fder S R' R.
+  fder S (ouva N) (ouva N) :- unset? N S.
 % fder _ N N :- name N.
 
-  type fderef fsubst -> to -> to -> o.                
+  type fderef fsubst -> otm -> otm -> o.                
   fderef S T T2 :- fder S T T1, napp T1 T2.
 %ENDSNIP
 
 
 %SNIP: feq
-  type (==o) to -> to -> o.                             
+  pred (==o) otm, otm ->.                             
   X ==o Y :- (var X ; var Y), fatal "flex equal". % HIDE
-  o-con X ==o o-con X.
-  o-app A ==o o-app B :- forall2 (==o) A B.
-  o-lam F ==o o-lam G :- pi x\ x ==o x => F x ==o G x.       % $r_{\lambda\lambda}$  
-  o-uva N ==o o-uva N.
-  o-lam F ==o T :-                                          % $r_{\eta_l}$   
+  ocon C ==o ocon C.
+  oapp A ==o oapp B :- forall2 (==o) A B.
+  olam F ==o olam G :- pi x\ x ==o x => F x ==o G x.       % $r_{\lambda\lambda}$  
+  ouva N ==o ouva N.
+  olam F ==o T :-                                          % $r_{\eta_l}$   
     pi x\ beta T [x] (T' x), x ==o x => F x ==o T' x.
-  T ==o o-lam F :-                                          % $r_{\eta_r}$   
+  T ==o olam F :-                                          % $r_{\eta_r}$   
     pi x\ beta T [x] (T' x), x ==o x => T' x ==o F x.
-  o-app [o-lam X|L] ==o T :- beta (o-lam X) L R, R ==o T.   % $r_{\beta_l}$  
-  T ==o o-app [o-lam X|L] :- beta (o-lam X) L R, T ==o R.   % $r_{\beta_r}$  
+  oapp [olam X|L] ==o T :- beta (olam X) L R, R ==o T.   % $r_{\beta_l}$  
+  T ==o oapp [olam X|L] :- beta (olam X) L R, T ==o R.   % $r_{\beta_r}$  
 %ENDSNIP
 
-  % [extend-subst T S S'] forall o-uva N in T, extends S with none at pos N
-  % this is used only in test to build the subst-map before running it
-  type extend-subst to -> fsubst -> fsubst -> o.
-  extend-subst (o-uva N) S S' :- mem.alloc N S S'.
-  extend-subst (o-lam F) S S' :-
+  % [extend-subst T S S'] forall ouva N in T, extends S with none at pos N
+  % this is used only in test otm build the subst-map before running it
+  type extend-subst otm -> fsubst -> fsubst -> o.
+  extend-subst (ouva N) S S' :- mem.alloc N S S'.
+  extend-subst (olam F) S S' :-
     pi x\ (pi S\extend-subst x S S) => extend-subst (F x) S S'.
-  extend-subst (o-con _) S S.
-  extend-subst (o-app L) S S1 :- fold extend-subst L S S1.
+  extend-subst (ocon _) S S.
+  extend-subst (oapp L) S S1 :- fold extend-subst L S S1.
 
 %SNIP: beta_fo
-  type beta to -> list to -> to -> o.
+  type beta otm -> list otm -> otm -> o.
   beta A [] A.
-  beta (o-lam Bo) [H | L] R :- napp (Bo H) F, beta F L R.
-  beta (o-app A) L (o-app X) :- append A L X.
-  beta (o-uva N) L (o-app [o-uva N | L]).
-  beta (o-con H) L (o-app [o-con H | L]).
-  beta N L (o-app [N | L]) :- name N.
+  beta (olam Bo) [H | L] R :- napp (Bo H) F, beta F L R.
+  beta (oapp A) L (oapp X) :- append A L X.
+  beta (ouva N) L (oapp [ouva N | L]).
+  beta (ocon H) L (oapp [ocon H | L]).
+  beta N L (oapp [N | L]) :- name N.
 
-  type napp to -> to -> o.
-  napp (o-con C) (o-con C).
-  napp (o-uva A) (o-uva A).
-  napp (o-lam F) (o-lam G) :- pi x\ napp (F x) (G x).
-  napp (o-app [o-app L1 |L2]) T :- !,
-    append L1 L2 L3, napp (o-app L3) T.
-  napp (o-app L) (o-app L1) :- map napp L L1.
+  type napp otm -> otm -> o.
+  napp (ocon C) (ocon C).
+  napp (ouva A) (ouva A).
+  napp (olam F) (olam G) :- pi x\ napp (F x) (G x).
+  napp (oapp [oapp L1 |L2]) T :- !,
+    append L1 L2 L3, napp (oapp L3) T.
+  napp (oapp L) (oapp L1) :- map napp L L1.
   napp N N :- name N.
 %ENDSNIP
 
-  type beta-normal to -> to -> o.
-  beta-normal (uvar _ _) _ :- halt "Passed uvar to beta-normal".
+  type beta-normal otm -> otm -> o.
+  beta-normal (uvar _ _) _ :- halt "Passed uvar otm beta-normal".
   beta-normal A A :- name A.
-  beta-normal (o-con A) (o-con A).
-  beta-normal (o-uva A) (o-uva A).
-  beta-normal (o-lam A) (o-lam B) :-
+  beta-normal (ocon A) (ocon A).
+  beta-normal (ouva A) (ouva A).
+  beta-normal (olam A) (olam B) :-
     pi x\ beta-normal (A x) (B x).
-  beta-normal (o-app [o-lam B | L]) T2 :- !,
-    beta (o-lam B) L T1, beta-normal T1 T2.
-  beta-normal (o-app L) (o-app L1) :-
+  beta-normal (oapp [olam B | L]) T2 :- !,
+    beta (olam B) L T1, beta-normal T1 T2.
+  beta-normal (oapp L) (oapp L1) :-
     map beta-normal L L1.
 
-  type mk-app to -> list to -> to -> o.
-  mk-app T L S :- beta T L S.
+  type mk-mapp otm -> list otm -> otm -> o.
+  mk-mapp T L S :- beta T L S.
 
-  type eta-contract to -> to -> o.
+  type eta-contract otm -> otm -> o.
   eta-contract X _ :- var X, halt "Eta-contract first args is flexible". % HIDE
-  eta-contract (o-con X) (o-con X).
-  eta-contract (o-app L) (o-app L1) :- map eta-contract L L1.
-  eta-contract (o-lam F) T :- eta-contract-aux [] (o-lam F) T.
-  eta-contract (o-lam F) (o-lam F1) :-
+  eta-contract (ocon X) (ocon X).
+  eta-contract (oapp L) (oapp L1) :- map eta-contract L L1.
+  eta-contract (olam F) T :- eta-contract-aux [] (olam F) T.
+  eta-contract (olam F) (olam F1) :-
     pi x\ eta-contract x x => eta-contract (F x) (F1 x).
-  eta-contract (o-uva X) (o-uva X).
+  eta-contract (ouva X) (ouva X).
   eta-contract X X :- name X.
 
-  type eta-contract-aux list to -> to -> to -> o.
-  eta-contract-aux L (o-lam F) T :- 
+  type eta-contract-aux list otm -> otm -> otm -> o.
+  eta-contract-aux L (olam F) T :- 
     pi x\ eta-contract-aux [x|L] (F x) T. % also checks H Prefix does not see x
-  eta-contract-aux L (o-app [H|Args]) T :- 
+  eta-contract-aux L (oapp [H|Args]) T :- 
     rev L LRev, append Prefix LRev Args,
-    if (Prefix = []) (T = H) (T = o-app [H|Prefix]).
+    if (Prefix = []) (T = H) (T = oapp [H|Prefix]).
 %END
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PRINTER %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   macro @binder-names :- ["x", "y", "z", "w"].
-  macro @o-uva N :- o-uva (mem.addr {int->nat N}).
+  macro @ouva N :- ouva (mem.addr {int->nat N}).
 
   % type pp-var-clean string -> string -> o.
   % pp-var-clean S1 S2 :-
-  %   std.any->string (@o-uva 0) T1,
-  %   std.any->string (@o-uva 1) T2,
-  %   std.any->string (@o-uva 2) T3,
-  %   std.any->string (@o-uva 3) T4,
+  %   std.any->string (@ouva 0) T1,
+  %   std.any->string (@ouva 1) T2,
+  %   std.any->string (@ouva 2) T3,
+  %   std.any->string (@ouva 3) T4,
   %   L1 = [T1,T2,T3,T4, "c0", "c1", "c2", "c3"],
-  %   L2 = ["o-uva X", "o-uva Y", "o-uva Z", "o-uva W", "x", "y", "z", "w"],
+  %   L2 = ["ouva X", "ouva Y", "ouva Z", "ouva W", "x", "y", "z", "w"],
   %   std.map2 L1 L2 (x\y\z\z = pr x y) L3,
   %   fold (x\a\r\ sigma A B\ x = pr A B, rex.replace A B a r) L3 S1 S2.
 
@@ -134,22 +134,22 @@ namespace fo {
   appsep "\\appsep " :- tex, !.
   appsep " ".
 
-  type pp to -> string -> o.
+  type pp otm -> string -> o.
   % pp T S :- tex, !, 
   %   std.any->string T S1, 
   %   pp-var-clean S1 S2,
   %   rex.replace "fo." "" S2 S3,
   %   rex.replace " \\\\" "\\\\" S3 S4,
-  %   rex.replace "o-con \(.\)" "o-con\"\1\"" S4 S.
+  %   rex.replace "ocon \(.\)" "ocon\"\1\"" S4 S.
   pp T S :- pp1 @binder-names T S.
 
-  type pp1 list string -> to -> string -> o.
+  type pp1 list string -> otm -> string -> o.
   pp1 _ X "_" :- var X, !.
-  pp1 XS (o-app L) S :- !, std.string.concat {appsep} {std.map L (pp1 XS)} X, S is "(" ^ X ^ ")".
-  pp1 _ (o-con S) S :- !.
-  pp1 [] (o-lam F) S :- !, pi x\ std.any->string x N, pp1 [] (F x) S1, S is {lambda} ^ N ^ "." ^ S1.
-  pp1 [X|XS] (o-lam F) S :- !, pi x\ (pp1 _ x X :- !) => pp1 XS (F x) S1, S is {lambda} ^ X ^ "." ^ S1.
-  pp1 _ (o-uva N) S :- !, ppuva N S.
+  pp1 XS (oapp L) S :- !, std.string.concat {appsep} {std.map L (pp1 XS)} X, S is "(" ^ X ^ ")".
+  pp1 _ (ocon S) S :- !.
+  pp1 [] (olam F) S :- !, pi x\ std.any->string x N, pp1 [] (F x) S1, S is {lambda} ^ N ^ "." ^ S1.
+  pp1 [X|XS] (olam F) S :- !, pi x\ (pp1 _ x X :- !) => pp1 XS (F x) S1, S is {lambda} ^ X ^ "." ^ S1.
+  pp1 _ (ouva N) S :- !, ppuva N S.
   pp1 _ X S :- name X, !, std.any->string X S.
   pp1 _ _ "fo.pp1 ERROR".
 
@@ -166,42 +166,42 @@ namespace fo {
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PARSER %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  type parse string -> to -> o.
+  type parse string -> otm -> o.
   parse S T :- rex.split "" S L, utf8-norm L L1, if (parse-aux L1 T) true (halt "Error parse" S).
 
-  type parse-aux list string -> to -> o.
+  type parse-aux list string -> otm -> o.
   parse-aux L1 T :- ll L1 [] T, !.
-  parse-aux L1 T :- llapp L1 [] [] A, T = o-app A, !.
+  parse-aux L1 T :- llapp L1 [] [] A, T = oapp A, !.
   parse-aux L1 _ :- std.string.concat "" L1 S, halt "parse error:" S. 
 
-  type parse-eq string -> to -> to -> o.
+  type parse-eq string -> otm -> otm -> o.
   parse-eq S A B  :- rex.split "" S L, utf8-norm L L1, if (parse-eq-aux L1 A B) true (halt "Error parse-eq" S).
 
-  type parse-eq-aux list string -> to -> to -> o.
+  type parse-eq-aux list string -> otm -> otm -> o.
   parse-eq-aux L1 A B :-
-    llapp L1 L2 [] AA, if (AA = [A]) true (A = o-app AA), !,
+    llapp L1 L2 [] AA, if (AA = [A]) true (A = oapp AA), !,
     ee L2 L3,
-    llapp L3 [] [] BB, if (BB = [B]) true (B = o-app BB).
+    llapp L3 [] [] BB, if (BB = [B]) true (B = oapp BB).
 
   type ee list string -> list string -> o.
   ee ["="|L] L.
   ee [" "|L] L1 :- ee L L1.
 
-  type ll list string -> list string -> to -> o.
-  ll [C|L] L (o-con C) :- rex.match "[a-z]" C.
-  ll ["_"|L] L (o-con "_").
-  ll ["C",N|L] L (o-uva (mem.addr R)) :- rex.match "[0-9]" N, N' is string_to_int N, int->nat N' R. 
-  ll ["X"|L] L (o-uva (mem.addr z)).
-  ll ["Y"|L] L (o-uva (mem.addr (s z))).
-  ll ["Z"|L] L (o-uva (mem.addr (s (s z)))).
-  ll ["W"|L] L (o-uva (mem.addr (s (s (s z))))).
+  type ll list string -> list string -> otm -> o.
+  ll [C|L] L (ocon C) :- rex.match "[a-z]" C.
+  ll ["_"|L] L (ocon "_").
+  ll ["C",N|L] L (ouva (mem.addr R)) :- rex.match "[0-9]" N, N' is string_to_int N, int->nat N' R. 
+  ll ["X"|L] L (ouva (mem.addr z)).
+  ll ["Y"|L] L (ouva (mem.addr (s z))).
+  ll ["Z"|L] L (ouva (mem.addr (s (s z)))).
+  ll ["W"|L] L (ouva (mem.addr (s (s (s z))))).
   ll [ C |_] _ _ :- rex.match "[A-Z]" C, halt "Parser:" C "is not parsed as a knwon variable".
-  ll ["(","@"|L] L1 T :- !, llapp L L1 [] A, if (A = [T]) true (T = o-app A).
-  ll ["("|L] L1 T :- llapp L L1 [] A, if (A = [T]) true (T = o-app A).
-  ll ["λ",V,"."|L] L1 (o-lam X) :- pi x\ (pi L\ ll [V|L] L x :- !) => ll L L1 (X x).
+  ll ["(","@"|L] L1 T :- !, llapp L L1 [] A, if (A = [T]) true (T = oapp A).
+  ll ["("|L] L1 T :- llapp L L1 [] A, if (A = [T]) true (T = oapp A).
+  ll ["λ",V,"."|L] L1 (olam X) :- pi x\ (pi L\ ll [V|L] L x :- !) => ll L L1 (X x).
   ll [" "|L] L1 X :- ll L L1 X.
 
-  type llapp list string -> list string -> list to -> list to -> o.
+  type llapp list string -> list string -> list otm -> list otm -> o.
   llapp [")"|L] L A RA :- !, rev A RA.
   llapp L L2 A B :- ll L L1 X, !, llapp L1 L2 [X|A] B.
   llapp L L A RA :- rev A RA.
@@ -213,10 +213,10 @@ namespace fo {
 
   type test-parse-1 o.
   test-parse-1 :-
-    parse "C0" (o-uva (mem.addr z)),
-    parse "f" (o-con "f"),
-    parse "(f)" (o-con "f"),
-    parse "(f g)" (o-app [o-con "f", o-con "g"]),
-    parse "λx.x" (o-lam x\x).
+    parse "C0" (ouva (mem.addr z)),
+    parse "f" (ocon "f"),
+    parse "(f)" (ocon "f"),
+    parse "(f g)" (oapp [ocon "f", ocon "g"]),
+    parse "λx.x" (olam x\x).
 
 }
