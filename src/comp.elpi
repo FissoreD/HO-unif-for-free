@@ -7,7 +7,7 @@ typeabbrev addr mem.addr.
 namespace comp {
   shorten fo.{ (==o), olam, oapp, ocon, ouva , eta-contract , beta, beta-normal }.
   shorten ho.{ (==l), mlam, mapp, mcon, muva , abs , val , deref-assmt }.
-  shorten mem.{ set? , unset? , assign }.
+  shorten mem.{ set? , unset? , assign, new }.
   typeabbrev otm fo.otm.
   typeabbrev mtm ho.mtm.
   typeabbrev subst ho.subst.
@@ -142,7 +142,7 @@ namespace comp {
 %SNIP: comp_eta
   comp (olam F) M1 L1 S1 (muva A Scope) M2 L3 S3 :-
     maybe-eta (olam F) [], !,
-    alloc S1 A S2,
+    new S1 A S2,
     comp-lam F M1 L1 S2 G M2 L2 S3,
     get-scope (mlam G) Scope, 
     L3 = [val (muva A Scope >=eta mlam G) | L2].
@@ -162,7 +162,7 @@ namespace comp {
 %ENDSNIP
 %SNIP: comp_beta
   comp (oapp [ouva A|Ag]) M1 L1 S1 (muva B Sc) M3 L3 S4 :- !,
-    pattern-fragment-prefix Ag Pf Extra, alloc S1 B S2,
+    pattern-fragment-prefix Ag Pf Extra, new S1 B S2,
     len Pf Ar, m-alloc (ovar A) M1 S2 (mvar C Ar) M2 S3,
     fold6 comp Pf    M2 L1 S3 Pf1    M2 L1 S3,
     fold6 comp Extra M2 L1 S3 Extra1 M3 L2 S4,
@@ -174,9 +174,6 @@ namespace comp {
   comp (oapp A) M1 L1 S1 (mapp B) M2 L2 S2 :-        % $r_@$ 
     fold6 comp A M1 L1 S1 B M2 L2 S2.
 %ENDSNIP
-
-  type alloc memory A -> addr -> memory A -> o.
-  alloc S N S1 :- mem.new S N S1.
 
   pred compile-terms-diagnostic 
     triple diagnostic otm otm, mmap, links, subst ->
@@ -204,7 +201,7 @@ namespace comp {
     rev Scope1 Scope, eta-expand (muva Ad2 Scope) T1,
     L = [val (muva Ad1 Scope >=eta T1)].
   make-eta-link-aux (s N) Ad1 Ad2 Scope1 L H1 H3 :-
-    rev Scope1 Scope, alloc H1 Ad H2, 
+    rev Scope1 Scope, new H1 Ad H2, 
     eta-expand (muva Ad Scope) T2,
     (pi x\ make-eta-link-aux N Ad Ad2 [x|Scope1] (L1 x) H2 H3),
     close-links L1 L2,
@@ -273,9 +270,6 @@ namespace comp {
   m-alloc Ov M S Mv M S :- mem M (Ov <-> Mv), !.
   m-alloc Ov M S Mv [Ov <-> Mv|M] S1 :- Mv = mvar N _, new S N S1.
 %ENDSNIP
-
-type new  memory A -> addr -> memory A -> o.
-new A B C :- mem.new A B C.
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PROGRESS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -400,7 +394,7 @@ new A B C :- mem.new A B C.
   progress-beta-link T (mapp[muva Ad1 Scope1 | [HD|TL]]) S1 S4 NewLinks :-
     append Scope1 [HD] Scope2,
     pattern-fragment Scope2, !,
-    alloc S1 Ad2 S2,
+    new S1 Ad2 S2,
     LinkEta = val (muva Ad1 Scope1 >=eta {eta-expand (muva Ad2 Scope1)}),
     progress-beta-llambda TL T (muva Ad2 Scope2) S2 S4 L,
     NewLinks = [LinkEta | L].
@@ -671,7 +665,7 @@ new A B C :- mem.new A B C.
   add-new-map _ (muva N _) Map [] F1 F1 :- 
     mem Map (_ <-> mvar N _), !.
   add-new-map H (muva N L) Map [Map1 | MapL] F1 F3 :-
-    alloc F1 M F2,
+    new F1 M F2,
     len L Arity, Map1 = (ovar M <-> mvar N Arity),
     add-new-map H (mapp L) [Map1 | Map] MapL F2 F3.
   add-new-map H (mlam B) Map NewMap F1 F2 :- 
