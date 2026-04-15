@@ -146,7 +146,7 @@ namespace comp {
     alloc S1 A S2,
     comp-lam F M1 L1 S2 G M2 L2 S3,
     get-scope (mlam G) Scope, 
-    L3 = [val ((muva A Scope) >=eta (mlam G)) | L2].
+    L3 = [val (muva A Scope >=eta mlam G) | L2].
 %ENDSNIP
 %SNIP: comp_base
   comp (olam F) M1 L1 S1 (mlam G) M2 L2 S2 :-        % $r_\lambda$    
@@ -203,13 +203,13 @@ namespace comp {
     list mtm -> links -> subst -> subst -> o.
   make-eta-link-aux z Ad1 Ad2 Scope1 L H1 H1  :-
     rev Scope1 Scope, eta-expand (muva Ad2 Scope) T1,
-    L = [val ((muva Ad1 Scope) >=eta T1)].
+    L = [val (muva Ad1 Scope >=eta T1)].
   make-eta-link-aux (s N) Ad1 Ad2 Scope1 L H1 H3 :-
     rev Scope1 Scope, alloc H1 Ad H2, 
     eta-expand (muva Ad Scope) T2,
     (pi x\ make-eta-link-aux N Ad Ad2 [x|Scope1] (L1 x) H2 H3),
     close-links L1 L2,
-    L = [val ((muva Ad1 Scope) >=eta T2) | L2].
+    L = [val (muva Ad1 Scope >=eta T2) | L2].
 
   % [make-eta-link ArityAd1, ArityAd2, Ad1, Ad2 Vars, Link]
   % as long as the arities are > 0, we eat one arity by putting a variable in the ctx
