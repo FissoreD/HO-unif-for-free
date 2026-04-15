@@ -137,7 +137,7 @@ namespace comp {
 %ENDSNIP
 %SNIP: comp_base
   pred comp otm, mmap, links, subst -> mtm, mmap, links, subst.
-  comp (ocon C) M1 L1 S1 (mcon C) M1 L1 S1.
+  comp (ocon C) M1 L1 S1 (mcon C) M1 L1 S1.          % $r_c$  
 %ENDSNIP
 %SNIP: comp_eta
   comp (olam F) M1 L1 S1 (muva A Scope) M2 L3 S3 :-
@@ -150,7 +150,7 @@ namespace comp {
 %SNIP: comp_base
   comp (olam F) M1 L1 S1 (mlam G) M2 L2 S2 :-        % $r_\lambda$    
     comp-lam F M1 L1 S1 G M2 L2 S2.
-  comp (ouva A) M1 L1 S1 (muva B []) M2 L1 S2 :- 
+  comp (ouva A) M1 L1 S1 (muva B []) M2 L1 S2 :-     % $r_v$  
     m-alloc (ovar A) M1 S1 (mvar B z) M2 S2.
 %ENDSNIP
 %SNIP: comp_base_beta
