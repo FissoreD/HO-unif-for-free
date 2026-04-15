@@ -192,10 +192,11 @@ fold2 F [X|XS] [Y|YS] A A1 :- F X Y A A0, fold2 F XS YS A0 A1.
 %ENDSNIP
 
 %SNIP: move
-  pred move assignment, list mtm -> mtm.
-  move (abs Bo) [H|L] R :- move (Bo H) L R.
-  move (val A)  [] A :- !.
-                        % !. % to ease traces?
+  pred move assignment, 
+          list mtm -> mtm.
+  move (abs Bo) [H|L] R :- 
+    move (Bo H) L R.
+  move (val A)  [] A.
   % move (val (muva N A)) L     (muva N X) :- append A L X.
   move (abs A)         []    _ :- !, fatal "Invalid move call: too few args for abs" A. % HIDE
   move A               L    _ :- !, fatal "Invalid move call:" A L. % HIDE
