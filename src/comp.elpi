@@ -142,9 +142,9 @@ namespace comp {
 %SNIP: comp_eta
   comp (olam F) M1 L1 S1 (muva A Scope) M2 L3 S3 :-
     maybe-eta (olam F) [], !,
-    new S1 A S2,
+    new S1 A S2,                         % allocates a fresh variable A in S1
     comp-lam F M1 L1 S2 G M2 L2 S3,
-    get-scope (mlam G) Scope, 
+    get-scope (mlam G) Scope,            % returns the free names in $\texttt{lam}_m$
     L3 = [val (muva A Scope >=eta mlam G) | L2].
 %ENDSNIP
 %SNIP: comp_base

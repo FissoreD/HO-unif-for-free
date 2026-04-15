@@ -38,11 +38,11 @@ namespace fo {
   X ==o Y :- (var X ; var Y), fatal "flex equal". % HIDE
   ocon C ==o ocon C.
   oapp A ==o oapp B :- forall2 (==o) A B.
-  olam F ==o olam G :- pi x\ x ==o x => F x ==o G x.       % $r_{\lambda\lambda}$  
+  olam F ==o olam G :- pi x\ x ==o x => F x ==o G x.      % $r_{\lambda\lambda}$  
   ouva N ==o ouva N.
-  olam F ==o T :-                                          % $r_{\eta_l}$   
+  olam F ==o T :-                                       % $r_{\eta_l}$   
     pi x\ beta T [x] (T' x), x ==o x => F x ==o T' x.
-  T ==o olam F :-                                          % $r_{\eta_r}$   
+  T ==o olam F :-                                       % $r_{\eta_r}$   
     pi x\ beta T [x] (T' x), x ==o x => T' x ==o F x.
   oapp [olam X|L] ==o T :- beta (olam X) L R, R ==o T.   % $r_{\beta_l}$  
   T ==o oapp [olam X|L] :- beta (olam X) L R, T ==o R.   % $r_{\beta_r}$  
