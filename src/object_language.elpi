@@ -13,7 +13,7 @@ namespace fo {
 %ENDSNIP
 
 %SNIP: fo_subst
-  typeabbrev fsubst (mem.mem otm).
+  typeabbrev fsubst (mem.memory otm).
 %ENDSNIP
 
 %SNIP: fderef

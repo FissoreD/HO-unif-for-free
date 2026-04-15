@@ -3,45 +3,45 @@ namespace mem {
   kind addr type.
   type addr nat -> addr.
 %SNIP: mem_types
-  typeabbrev (mem A) (list (option A)).
-  pred set? addr, mem A -> A.
+  typeabbrev (memory A) (list (option A)).
+  pred set? addr, memory A -> A.
 %ENDSNIP
   set? (addr A) Mem Val :- get A Mem Val.
 
 %SNIP: mem_types
-  pred unset? addr, mem A ->.
+  pred unset? addr, memory A ->.
 %ENDSNIP
   unset? Addr Mem :- not (set? Addr Mem _).
 
-  type assign-aux nat -> mem A -> A -> mem A -> o.
+  type assign-aux nat -> memory A -> A -> memory A -> o.
   assign-aux z (none :: L) Y (some Y :: L).
   assign-aux (s N) (X :: L) Y (X :: L1) :- assign-aux N L Y L1.
 
 %SNIP: mem_types
-  pred assign addr, mem A, A -> mem A.
+  pred assign addr, memory A, A -> memory A.
 %ENDSNIP
   assign (addr A) Mem1 Val Mem2 :- assign-aux A Mem1 Val Mem2.
 
-  type get nat -> mem A -> A -> o.
+  type get nat -> memory A -> A -> o.
   get z (some Y :: _) Y.
   get (s N) (_ :: L) X :- get N L X.
 
-  type alloc-aux nat -> mem A -> mem A -> o.
+  type alloc-aux nat -> memory A -> memory A -> o.
   alloc-aux z [] [none] :- !.
   alloc-aux z L L.
   alloc-aux (s N) [] [none | M] :- alloc-aux N [] M.
   alloc-aux (s N) [X | L] [X | M] :- alloc-aux N L M.
 
-  type alloc addr -> mem A -> mem A -> o.
+  type alloc addr -> memory A -> memory A -> o.
   alloc (addr A as Ad) Mem1 Mem2 :- unset? Ad Mem1, 
     alloc-aux A Mem1 Mem2.
 
-  type new-aux mem A -> nat -> mem A -> o.
+  type new-aux memory A -> nat -> memory A -> o.
   new-aux [] z [none].
   new-aux [A | As] (s N) [A | Bs] :- new-aux As N Bs.
 
 %SNIP: mem_types
-  pred new mem A -> addr, mem A.
+  pred new memory A -> addr, memory A.
 %ENDSNIP
   new Mem1 (addr Ad) Mem2 :- new-aux Mem1 Ad Mem2.
 
@@ -55,10 +55,10 @@ namespace mem {
   type ppaddr addr -> string -> o.
   ppaddr (addr A) S :- ppnat A S.
 
-  type pp mem A -> (addr -> string -> o) -> (A -> string -> o) -> list string -> o.
+  type pp memory A -> (addr -> string -> o) -> (A -> string -> o) -> list string -> o.
   pp L PP_AD PP S :- ppmem.aux z PP_AD PP L S.
 
-  type ppmem.aux nat -> (addr -> string -> o) -> (A -> string -> o) -> mem A -> list string -> o.
+  type ppmem.aux nat -> (addr -> string -> o) -> (A -> string -> o) -> memory A -> list string -> o.
   ppmem.aux _ _ _ [] [].
   ppmem.aux N PP_AD PP [some X|XS] [L|LS] :- PP X Cnt, PP_AD (addr N) AD, L is AD ^ " " ^ Cnt, ppmem.aux (s N) PP_AD PP XS LS.
   ppmem.aux N PP_AD PP [none|XS] [L|LS] :-  PP_AD (addr N) AD, L is AD ^ " := _", ppmem.aux (s N) PP_AD PP XS LS.

@@ -8,7 +8,7 @@ internal-test ho.test-unif-7.
 
 namespace ho {
   shorten mem.{ set? , unset? , assign , new }.
-  typeabbrev (mem A) (list (option A)).
+  typeabbrev (memory A) (mem.memory A).
 
 %BEGIN
 
@@ -17,7 +17,7 @@ namespace ho {
   type abs (mtm -> inctx A) -> inctx A.
   type val A -> inctx A.
   typeabbrev assignment (inctx mtm).
-  typeabbrev subst (mem assignment).
+  typeabbrev subst (memory assignment).
 %ENDSNIP
 
 %SNIP: ho_tm

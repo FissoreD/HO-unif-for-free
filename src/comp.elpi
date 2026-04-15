@@ -1,6 +1,6 @@
 internal-test comp.test-maybe-eta.
 
-typeabbrev (mem A) (mem.mem A).
+typeabbrev (memory A) (mem.memory A).
 typeabbrev addr mem.addr.
 typeabbrev addr mem.addr.
 
@@ -176,7 +176,7 @@ namespace comp {
     fold6 comp A M1 L1 S1 A1 M2 L2 S2.
 %ENDSNIP
 
-  type alloc mem A -> addr -> mem A -> o.
+  type alloc memory A -> addr -> memory A -> o.
   alloc S N S1 :- mem.new S N S1.
 
   pred compile-terms-diagnostic 
@@ -275,7 +275,7 @@ namespace comp {
   m-alloc Ov M S Mv [Ov <-> Mv|M] S1 :- Mv = mvar N _, new S N S1.
 %ENDSNIP
 
-type new  mem A -> addr -> mem A -> o.
+type new  memory A -> addr -> memory A -> o.
 new A B C :- mem.new A B C.
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
