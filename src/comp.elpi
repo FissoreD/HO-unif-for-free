@@ -154,9 +154,9 @@ namespace comp {
     m-alloc (ovar A) M1 S1 (mvar B z) M2 S2.
 %ENDSNIP
 %SNIP: comp_base_beta
-  comp (oapp [ouva A|Ag]) M1 L S1 (muva B Ag1) M2 L S2 :-
+  comp (oapp [ouva A|Ag]) M1 L S1 (muva B Bg) M2 L S2 :-
     pattern-fragment Ag, !,
-      fold6 comp Ag M1 L S1 Ag1 M1 L S1,
+      fold6 comp Ag M1 L S1 Bg M1 L S1,
       len Ag Arity, 
       m-alloc (ovar A) M1 S1 (mvar B Arity) M2 S2.
 %ENDSNIP
