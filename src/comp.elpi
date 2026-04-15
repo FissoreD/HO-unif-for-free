@@ -136,9 +136,8 @@ namespace comp {
   close-links (_\[]) [].
 %ENDSNIP
 %SNIP: comp_base
-  pred comp otm, mmap, links, subst -> 
-            mtm, mmap, links, subst.
-  comp (ocon C) M L S (mcon C) M L S.
+  pred comp otm, mmap, links, subst -> mtm, mmap, links, subst.
+  comp (ocon C) M1 L1 S1 (mcon C) M1 L1 S1.
 %ENDSNIP
 %SNIP: comp_eta
   comp (olam F) M1 L1 S1 (muva A Scope) M2 L3 S3 :-
@@ -151,7 +150,7 @@ namespace comp {
 %SNIP: comp_base
   comp (olam F) M1 L1 S1 (mlam G) M2 L2 S2 :-        % $r_\lambda$    
     comp-lam F M1 L1 S1 G M2 L2 S2.
-  comp (ouva A) M1 L S1 (muva B []) M2 L S2 :- 
+  comp (ouva A) M1 L1 S1 (muva B []) M2 L1 S2 :- 
     m-alloc (ovar A) M1 S1 (mvar B z) M2 S2.
 %ENDSNIP
 %SNIP: comp_base_beta
@@ -172,8 +171,8 @@ namespace comp {
     L3 = [val (muva B Sc >=llam Beta) | L2].
 %ENDSNIP
 %SNIP: comp_base
-  comp (oapp A) M1 L1 S1 (mapp A1) M2 L2 S2 :-        % $r_@$ 
-    fold6 comp A M1 L1 S1 A1 M2 L2 S2.
+  comp (oapp A) M1 L1 S1 (mapp B) M2 L2 S2 :-        % $r_@$ 
+    fold6 comp A M1 L1 S1 B M2 L2 S2.
 %ENDSNIP
 
   type alloc memory A -> addr -> memory A -> o.
