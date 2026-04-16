@@ -144,7 +144,7 @@ namespace comp {
     maybe-eta (olam F) [], !,
     new S1 A S2,                         % allocates a fresh variable A in S1
     comp-lam F M1 L1 S2 G M2 L2 S3,
-    get-scope (mlam G) Scope,            % returns the free names in $\texttt{lam}_m$
+    get-scope (mlam G) Scope,            % returns the set of free names in $\texttt{lam}_m$
     L3 = [val (muva A Scope >=eta mlam G) | L2].
 %ENDSNIP
 %SNIP: comp_base
@@ -167,7 +167,7 @@ namespace comp {
     fold6 comp Pf    M2 L1 S3 Pf1    M2 L1 S3,
     fold6 comp Extra M2 L1 S3 Extra1 M3 L2 S4,
     Beta = mapp [muva C Pf1 | Extra1],
-    get-scope Beta Sc, 
+    get-scope Beta Sc,                  % returns the set of free names of Beta
     L3 = [val (muva B Sc >=llam Beta) | L2].
 %ENDSNIP
 %SNIP: comp_base
