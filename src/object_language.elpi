@@ -5,7 +5,7 @@ namespace fo {
 %BEGIN
 
 %SNIP: fo_tm
-  kind otm type.
+  kind otm  type.
   type oapp list otm -> otm.
   type olam (otm -> otm) -> otm.
   type ocon string -> otm.
