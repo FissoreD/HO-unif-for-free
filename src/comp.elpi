@@ -268,7 +268,7 @@ namespace comp {
 %SNIP: alloc_mapping
   pred m-alloc ovariable, mmap, subst -> mvariable, mmap, subst.
   m-alloc Ov M S Mv M S :- mem M (Ov <-> Mv), !.
-  m-alloc Ov M S Mv [Ov <-> Mv|M] S1 :- Mv = mvar N _, new S N S1.
+  m-alloc Ov M S Mv [Ov <-> Mv|M] S1 :- Mv = mvar N Ag, new S N S1.
 %ENDSNIP
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
